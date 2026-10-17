@@ -39,6 +39,22 @@ npm run probe:mame:game -- \
 This emits `mamegame-probe.{html,js,wasm,data}`. The `.data` file embeds the
 ignored local ROMs for this probe and must not be published or committed.
 
+For ROM-free driver-family size probes, choose one of the tracked definitions
+under `mame/targets/` and supply a representative machine only through the
+local environment:
+
+```sh
+MAME_PROBE_MACHINE=<local-machine> \
+MAME_PROBE_TARGET="$PWD/mame/targets/<family>.lua" \
+MAME_PROBE_OUTPUT=mamefamily-<family> \
+EMSDK_DIR="$PWD/res/emsdk" \
+npm run probe:mame:family -- "$PWD/.cache/mame0161-source"
+```
+
+The family probe runs `-listfull` and does not preload ROM content. Set
+`MAME_FAMILY_PROBE_URL` and `MAME_FAMILY_PROBE_MACHINE` to exercise its generic
+browser test.
+
 Serve the source directory, then run the CTG browser case against the artifact:
 
 ```sh

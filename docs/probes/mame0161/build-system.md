@@ -111,8 +111,11 @@ storage still need a cold CI measurement.
 | `mametiny-probe.js` loader | 284,902 |
 | `mametiny-probe.wasm` | 6,487,485 |
 | `mametiny-probe.wasm` gzip -9 | 1,671,277 |
+| `mametiny-probe.wasm` Brotli 11 | 1,257,309 |
 
-Brotli is not installed on this host, so its P3 number remains pending.
+Node.js's bundled Brotli 1.1.0 encoder supplied the quality-11 measurement.
+The Irem M72 family measurement and exact compression method are recorded in
+[family-sizes.md](family-sizes.md).
 
 The probe pre-JavaScript supplies `-listfull`, a deterministic ROM-free MAME
 path. Chromium loaded the generated shell over ordinary localhost HTTP,
@@ -142,6 +145,6 @@ or PThread loader. Thus the tiny proof does not require pthreads, COOP or COEP.
 - The 0.161 scripts default to `python`; this host needs
   `PYTHON_EXECUTABLE=python2` for the release-era generators.
 
-P3 still needs purpose-built CPS-1, Irem M72 and Neo Geo subset definitions and
-raw/gzip/brotli measurements. P4–P12 then require the real bridge and the
-private local fixture; successful `-listfull` startup is not game parity.
+P3 now has purpose-built CPS-1, Irem M72 and Neo Geo subset definitions plus
+raw/gzip/Brotli measurements. P4–P12 require the real bridge and the private
+local fixture; successful `-listfull` startup is not game parity.

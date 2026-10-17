@@ -34,6 +34,38 @@ fi
 case "${probe_kind}" in
     list)
         ;;
+    family)
+        machine="${MAME_PROBE_MACHINE:-}"
+        target_file="${MAME_PROBE_TARGET:-${project_root}/res/mame-runtimeprobe.lua}"
+        output_name="${MAME_PROBE_OUTPUT:-mamefamily-probe}"
+        shift
+
+        if [[ ! "${machine}" =~ ^[a-z0-9_]+$ ]]; then
+            echo "MAME_PROBE_MACHINE must be a non-empty MAME short name" >&2
+            exit 2
+        fi
+        if [[ ! "${output_name}" =~ ^[a-z0-9_-]+$ ]]; then
+            echo "MAME_PROBE_OUTPUT must be a safe artifact basename" >&2
+            exit 2
+        fi
+        if [[ "$#" -ne 0 ]]; then
+            echo "The family probe accepts only the MAME source path" >&2
+            exit 2
+        fi
+        if [[ ! -f "${target_file}" ]]; then
+            echo "Missing private local target definition: ${target_file}" >&2
+            exit 2
+        fi
+
+        install -m 0644 \
+            "${target_file}" \
+            "${source_dir}/scripts/target/mame/runtimeprobe.lua"
+        printf '%s\n' "${machine}" > "${source_dir}/src/mame/runtimeprobe.lst"
+
+        output_name="${output_name}"
+        subtarget="runtimeprobe"
+        bitcode_name="mameruntimeprobe.bc"
+        ;;
     game)
         machine="${MAME_PROBE_MACHINE:-}"
         parent="${MAME_PROBE_PARENT:-}"
@@ -100,7 +132,7 @@ case "${probe_kind}" in
         link_options=(--pre-js "${generated_pre_js}" "${link_options[@]}")
         ;;
     *)
-        echo "Unknown MAME_PROBE_KIND: ${probe_kind} (expected list or game)" >&2
+        echo "Unknown MAME_PROBE_KIND: ${probe_kind} (expected list, family or game)" >&2
         exit 2
         ;;
 esac

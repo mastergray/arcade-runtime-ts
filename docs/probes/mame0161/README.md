@@ -14,10 +14,10 @@ caches and generated emulator artifacts must not be copied here.
 | -- | ------ | ------------------------------- |
 | P1 | Partial | The official source package confirms version 0.161 and the historical licence, and a native `tiny` build produced consistent CLI metadata. Tagged-tree authentication and execution of the Windows reference remain; see [source-and-licence.md](source-and-licence.md) and [native-cli.md](native-cli.md). |
 | P2 | Pass | Emscripten 1.38.31 completed a clean `tiny` build in 2:59.60 plus a 33.82-second final link, and Chromium ran the result without emulator errors; see [build-system.md](build-system.md). |
-| P3 | Partial | 0.161 supports paired Lua/list subsets. The `tiny` payload is 6,487,485 bytes raw and 1,671,277 bytes gzip; brotli and the three target-family measurements remain. |
+| P3 | Pass | The bundled `tiny` plus representative CPS-1, Irem M72 and Neo Geo driver-source subsets have raw/gzip/Brotli measurements and instantiate in Chromium; see [family-sizes.md](family-sizes.md). |
 | P4 | Not started | A runnable module now exists; the second-machine test still needs the bridge and an executable game path. |
 | P5 | Partial | The stock Emscripten main loop advances one fixed 1/60-second scheduler slice per browser callback. Correct behavior at other machine/display rates still requires the browser harness. |
-| P6 | Pass (tiny) | The module imports fixed, non-shared memory, contains no atomic instructions or pthread loader, and ran over ordinary localhost HTTP without cross-origin isolation. Recheck family builds when P3 adds them. |
+| P6 | Pass | The `tiny`, CPS-1, Irem M72 and Neo Geo modules import fixed, non-shared memory, have no PThread loader and run over ordinary localhost HTTP without cross-origin isolation. |
 | P7 | Partial | The required lifecycle, OSD update, render-target, sound and input-device APIs exist; see [bridge-hooks.md](bridge-hooks.md). Runtime proof remains. |
 | P8 | Partial | NVRAM/config save functions exist, but NVRAM save is private and normally exit-only. A small public flush patch is required and must be exercised. |
 | P9 | Partial | A custom OSD can own a render target and consume its primitive list at machine update cadence. Buffer format, orientation and cost require the browser module. |

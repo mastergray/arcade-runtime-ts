@@ -28,6 +28,7 @@
     "build": "run-s clean compile",
     "build:package": "run-s clean compile:package",
     "probe:mame:tiny": "scripts/probe-mame0161-tiny.sh",
+    "probe:mame:family": "MAME_PROBE_KIND=family scripts/probe-mame0161-tiny.sh",
     "probe:mame:game": "MAME_PROBE_KIND=game scripts/probe-mame0161-tiny.sh",
     "test": "node --import tsx tests/run.ts spec",
     "test:spec": "node --import tsx tests/run.ts spec",

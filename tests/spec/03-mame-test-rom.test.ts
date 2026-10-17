@@ -29,9 +29,15 @@ const testFile: TestFile = {
                     "the package exposes only a generic game-probe command",
                     () => {
                         const packageJson = JSON.parse(readText(PACKAGE_URL)) as { scripts: Record<string, string> };
-                        return packageJson.scripts["probe:mame:game"] ?? "";
+                        return [
+                            packageJson.scripts["probe:mame:family"] ?? "",
+                            packageJson.scripts["probe:mame:game"] ?? "",
+                        ].join("\n");
                     },
-                    P.equals("MAME_PROBE_KIND=game scripts/probe-mame0161-tiny.sh"),
+                    P.equals([
+                        "MAME_PROBE_KIND=family scripts/probe-mame0161-tiny.sh",
+                        "MAME_PROBE_KIND=game scripts/probe-mame0161-tiny.sh",
+                    ].join("\n")),
                 )
                 .start(undefined),
         },
