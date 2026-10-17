@@ -19,6 +19,20 @@ not compiled into WebAssembly or committed to this repository.
 See the [implementation spec](docs/mame-game-runtime-spec.md) for the
 architecture, milestones, probe plan and acceptance criteria.
 
+## Development
+
+The scaffold requires Node.js 22.13 or newer and npm:
+
+```sh
+npm install
+npm run check
+npm test
+npm run build
+```
+
+The package currently exposes an intentionally empty public module. Runtime
+exports begin after M0 establishes a viable direct-MAME toolchain and bridge.
+
 ## Repository policy
 
 ROMs, native emulator binaries, locally compiled emulator artifacts and
