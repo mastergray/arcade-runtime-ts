@@ -1,0 +1,170 @@
+From: mastergray <mastergray@users.noreply.github.com>
+Subject: [PATCH] make mame0161 tiny build with Emscripten 1.38.31
+
+Keep the native build unchanged while adapting the legacy asmjs target to
+the first pinned WebAssembly-capable Fastcomp SDK.  SDL2 is supplied by the
+Emscripten port, unavailable POSIX/thread helpers are omitted, and the old
+inline allocation tracker is disabled because Fastcomp mixes those inline
+delete operators with libc++ allocation.  The upload guard and sound init
+changes also remove undefined behavior exposed by Clang.
+
+--- a/scripts/toolchain.lua
++++ b/scripts/toolchain.lua
+@@ -684,10 +684,12 @@
+ 	configuration { "asmjs" }
+ 		targetdir (_buildDir .. "asmjs" .. "/bin")
+ 		objdir (_buildDir .. "asmjs" .. "/obj")
++		defines {
++			"NO_MEM_TRACKING",
++		}
+ 		buildoptions {
+-			"-isystem$(EMSCRIPTEN)/system/include",
+-			"-isystem$(EMSCRIPTEN)/system/include/compat",
+-			"-isystem$(EMSCRIPTEN)/system/include/libc",
++			"-s",
++			"USE_SDL=2",
+ 			"-Wno-cast-align",
+ 			"-Wno-tautological-compare",
+ 			"-Wno-self-assign-field",
+@@ -698,6 +700,10 @@
+ 			"-Wno-unknown-warning-option",
+ 			"-Wno-extern-c-compat",
+ 		}
++		linkoptions {
++			"-s",
++			"USE_SDL=2",
++		}
+ 
+ 	configuration { "nacl or nacl-arm or pnacl" }
+ 		buildoptions {
+@@ -861,7 +867,7 @@
+ 	configuration { "asmjs" }
+ 		postbuildcommands {
+ 			"$(SILENT) echo Running asmjs finalize.",
+-			"$(SILENT) $(EMSCRIPTEN)/emcc -O2 -s TOTAL_MEMORY=268435456 \"$(TARGET)\" -o \"$(TARGET)\".html"
++			"$(SILENT) $(EMSCRIPTEN)/emcc -O2 -s USE_SDL=2 -s TOTAL_MEMORY=268435456 \"$(TARGET)\" -o \"$(TARGET)\".html"
+ 			-- ALLOW_MEMORY_GROWTH
+ 		}
+ 
+--- a/scripts/src/osd/sdl.lua
++++ b/scripts/src/osd/sdl.lua
+@@ -27,7 +27,7 @@
+ 		}
+ 	end
+ 
+-	if BASE_TARGETOS=="unix" and _OPTIONS["targetos"]~="macosx" then
++	if BASE_TARGETOS=="unix" and _OPTIONS["targetos"]~="macosx" and _OPTIONS["targetos"]~="asmjs" then
+ 		if _OPTIONS["SDL_LIBVER"]=="sdl2" then
+ 			links {
+ 				"SDL2_ttf",
+@@ -259,9 +259,11 @@
+ 				}
+ 			end
+ 		end
+-		local str = backtick(sdlconfigcmd() .. " --libs")
+-		addlibfromstring(str)
+-		addoptionsfromstring(str)
++		if _OPTIONS["targetos"]~="asmjs" then
++			local str = backtick(sdlconfigcmd() .. " --libs")
++			addlibfromstring(str)
++			addoptionsfromstring(str)
++		end
+ 		if _OPTIONS["targetos"]~="haiku" then
+ 			links {
+ 				"m",
+@@ -272,7 +274,7 @@
+ 					"socket",
+ 					"nsl",
+ 				}
+-			else
++			elseif _OPTIONS["targetos"]~="asmjs" then
+ 				links {
+ 					"util",
+ 				}
+--- a/scripts/src/3rdparty.lua
++++ b/scripts/src/3rdparty.lua
+@@ -263,7 +263,7 @@
+ 		defines {
+ 			"LUA_COMPAT_ALL",
+ 		}
+-	if not (_OPTIONS["targetos"]=="windows") then
++	if not (_OPTIONS["targetos"]=="windows" or _OPTIONS["targetos"]=="asmjs") then
+ 		defines {
+ 			"LUA_USE_POSIX",
+ 		}
+@@ -360,9 +360,17 @@
+ 		"ForceCPP",
+ 	}
+ 	defines {
+-		"MONGOOSE_ENABLE_THREADS",
+ 		"NS_STACK_SIZE=0"
+ 	}
++	if _OPTIONS["targetos"]=="asmjs" then
++		defines {
++			"MONGOOSE_NO_POPEN",
++		}
++	else
++		defines {
++			"MONGOOSE_ENABLE_THREADS",
++		}
++	end
+ 
+ 	includedirs {
+ 		MAME_DIR .. "3rdparty/mongoose",
+--- a/src/emu/webengine.c
++++ b/src/emu/webengine.c
+@@ -321,8 +321,8 @@
+ 	else if (!strncmp(conn->uri, "/keyupload",8))
+ 	{
+ 		char *upload_data;
+-		int data_length, ofs = 0;
+-		char var_name[100], file_name[255];
++		int data_length = 0, ofs = 0;
++		char var_name[100] = { 0 }, file_name[255] = { 0 };
+ 		while ((ofs = mg_parse_multipart(conn->content + ofs, conn->content_len - ofs, var_name, sizeof(var_name), file_name, sizeof(file_name), (const char **)&upload_data, &data_length)) > 0) {
+ 				mg_printf_data(conn, "File: %s, size: %d bytes", file_name, data_length);
+ 		}
+@@ -330,7 +330,7 @@
+ 		// That upload_data contains more than we need. It also has the headers.
+ 		// We'll need to strip it down to just what we want.
+ 
+-		if ((&data_length > 0) && (sizeof(file_name) > 0))
++		if ((data_length > 0) && (file_name[0] != '\0'))
+ 		{
+ 			// MSVC doesn't yet support variable-length arrays, so chop the string the old-fashioned way
+ 			upload_data[data_length] = '\0';
+--- a/src/emu/luaengine.c
++++ b/src/emu/luaengine.c
+@@ -1023,7 +1023,9 @@
+ 
+ void lua_engine::start_console()
+ {
++#ifndef EMSCRIPTEN
+ 	mg_start_thread(::serve_lua, this);
++#endif
+ }
+ 
+ //-------------------------------------------------
+--- a/src/osd/modules/sound/js_sound.c
++++ b/src/osd/modules/sound/js_sound.c
+@@ -25,7 +25,7 @@
+ 	}
+ 	virtual ~sound_js() { }
+ 
+-	virtual int init(const osd_options &options) { }
++	virtual int init(const osd_options &options) { return 0; }
+ 	virtual void exit() { }
+ 
+ 	// sound_module
+--- a/src/lib/util/corealloc.c
++++ b/src/lib/util/corealloc.c
+@@ -130,7 +130,9 @@
+ 	}
+ 
+ 	// add a new entry
++#ifndef NO_MEM_TRACKING
+ 	memory_entry::allocate(size, result, file, line, array);
++#endif
+ 
+ 	return result;
+ }

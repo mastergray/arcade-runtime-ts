@@ -1,0 +1,10 @@
+{
+  "repository": "https://github.com/mamedev/mame.git",
+  "tag": "mame0161",
+  "commit": "76b978d039f922ed84796deb999389ebb1579191",
+  "releaseDate": "2015-04-29",
+  "sourcePackages": [
+    "mame0161s.exe",
+    "mame0161s.zip"
+  ]
+}

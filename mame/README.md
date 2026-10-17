@@ -4,10 +4,30 @@ This directory owns the reproducible direct-MAME WebAssembly build. `VERSION`
 pins the initial source release to `mame0161` so it can be compared with the
 local native reference.
 
-M0 must determine and record the exact source identity, licence files,
-compatible Emscripten SDK, build commands and required patches before those
-inputs are added here. In particular, `EMSDK_VERSION` is intentionally absent
-until probe P2 has evidence for a working version.
+M0 records the exact source identity, licence files, compatible Emscripten SDK,
+build commands and required patches here. `EMSDK_VERSION` pins the first SDK
+that completed a clean `tiny` WebAssembly build and browser smoke run. The
+ordered files in `patches/` adapt the pinned source without vendoring it.
+
+The reproducible smoke command is:
+
+```sh
+EMSDK_DIR="$PWD/res/emsdk" npm run probe:mame:tiny -- \
+  "$PWD/.cache/mame0161-source"
+```
+
+It applies the compatibility patch when needed, builds `mametiny.bc`, and
+links `mametiny-probe.{html,js,wasm}`. The probe pre-JavaScript selects MAME's
+ROM-free `-listfull` path; it is test harness code, not the runtime bridge.
+
+Serve the source directory, then run the CTG browser case against the artifact:
+
+```sh
+python3 -m http.server 8877 --directory "$PWD/.cache/mame0161-source"
+MAME_TINY_PROBE_URL=http://127.0.0.1:8877/mametiny-probe.html \
+  npm run test:browser
+```
 
 The repository does not compile or redistribute the native executable in
-`res/`, and it does not vendor ROMs or a MAME source checkout.
+`res/`, and it does not vendor ROMs, SDK files, generated emulator artifacts,
+or a MAME source checkout.

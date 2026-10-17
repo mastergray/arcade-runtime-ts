@@ -1,0 +1,59 @@
+// realizes: docs/mame-game-runtime-spec.md > §13.1 P2 browser toolchain
+
+// Dependencies:
+import { readFileSync } from "node:fs";                          // Reads the committed SDK and patch inputs
+import CTGTest, { CTGTestPredicates as P } from "ctg-js-test";   // Pipeline API and predicate builders
+
+// Type dependencies:
+import type { TestFile } from "../run.ts";                       // Manifest contract consumed by the runner
+
+/**
+ *
+ * Constants
+ *
+ */
+
+const EMSDK_VERSION_URL = new URL("../../mame/EMSDK_VERSION", import.meta.url);
+const PATCH_URL = new URL("../../mame/patches/0001-emscripten-1.38.31-compatibility.patch", import.meta.url);
+const PROBE_SCRIPT_URL = new URL("../../scripts/probe-mame0161-tiny.sh", import.meta.url);
+
+/**
+ *
+ * Functions
+ *
+ */
+
+// HELPER :: URL -> STRING
+// Reads a committed text input exactly as the probe tooling will.
+const readText = (url: URL): string => readFileSync(url, "utf8");
+
+const testFile: TestFile = {
+    label: "direct-MAME browser toolchain pin",
+    cases: [
+        {
+            label: "pins the tested Fastcomp SDK",
+            run: () => CTGTest.init("emsdk identity")
+                .assert("version is 1.38.31", () => readText(EMSDK_VERSION_URL).trim(), P.equals("1.38.31"))
+                .start(undefined),
+        },
+        {
+            label: "keeps the compatibility patch and probe command reproducible",
+            run: () => CTGTest.init("probe inputs")
+                .assert(
+                    "patch targets the pinned source",
+                    () => readText(PATCH_URL).includes("NO_MEM_TRACKING")
+                        && readText(PATCH_URL).includes("USE_SDL=2"),
+                    P.equals(true),
+                )
+                .assert(
+                    "probe performs the WebAssembly link",
+                    () => readText(PROBE_SCRIPT_URL).includes("mametiny-probe.html")
+                        && readText(PROBE_SCRIPT_URL).includes("TOTAL_MEMORY=268435456"),
+                    P.equals(true),
+                )
+                .start(undefined),
+        },
+    ],
+};
+
+export default testFile;
