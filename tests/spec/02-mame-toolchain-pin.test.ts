@@ -47,8 +47,10 @@ const testFile: TestFile = {
                 )
                 .assert(
                     "probe performs the WebAssembly link",
-                    () => readText(PROBE_SCRIPT_URL).includes("mametiny-probe.html")
-                        && readText(PROBE_SCRIPT_URL).includes("TOTAL_MEMORY=268435456"),
+                    () => readText(PROBE_SCRIPT_URL).includes('output_name="mametiny-probe"')
+                        && readText(PROBE_SCRIPT_URL).includes('-o "${source_dir}/${output_name}.html"')
+                        && readText(PROBE_SCRIPT_URL).includes("TOTAL_MEMORY=268435456")
+                        && readText(PROBE_SCRIPT_URL).includes("DISABLE_EXCEPTION_CATCHING=0"),
                     P.equals(true),
                 )
                 .start(undefined),

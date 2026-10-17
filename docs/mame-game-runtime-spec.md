@@ -97,8 +97,8 @@ devices.
 ### 0.2 Definition of the first usable release
 
 The first usable release is M0 through M8 in §12. It needs a pinned
-direct-MAME source build and at least one legally redistributable
-automated test ROM. The initial pin is MAME 0.161 so the browser build
+direct-MAME source build and at least one legally authorized automated
+test ROM acquired separately from its approved source. The initial pin is MAME 0.161 so the browser build
 can be compared against the supplied native reference and its ROM-set
 generation. If the M0 probe proves 0.161 technically infeasible, work
 stops at a written decision gate: the project chooses another explicit
@@ -111,12 +111,14 @@ so arbitrary ROM zips are never implied to be interchangeable.
 The runtime, npm package, source repository and automated build outputs
 do not ship third-party commercial ROM data. A user-supplied deployment
 may copy ROMs into its private output only when the user asks it to.
-Files under this checkout's `res/` directory are local manual probe
-inputs, not package fixtures: do not import, publish, hash into source,
-or copy them into a default build. In particular, clone sets and BIOS-
-based machines often need parent or BIOS zips that are not inferable
-from a filename alone; `pack-roms` must report those dependencies from
-the selected build's DAT/audit data.
+Commercial and user-supplied files under this checkout's `res/` directory are
+local manual probe inputs, not package fixtures: do not import, publish, hash
+them into source, or copy them into a default build. The selected M0 fixture,
+its identity, ROM hashes and driver-specific target definition remain local
+rather than becoming repository metadata. In particular, clone sets and BIOS-
+based machines often need parent or BIOS zips that are not inferable from a
+filename alone; `pack-roms` must report those dependencies from the selected
+build's DAT/audit data.
 
 ### 0.4 Emulator licensing
 
@@ -204,7 +206,7 @@ mame-game-runtime-ts/
     scripts/
         build-mame.ts           # checkout, patch, emmake, copy artifacts
         build-libretro.ts       # checkout, build and link a core with the shim
-        fetch-test-roms.ts      # downloads the free test ROMs (§11.3)
+        probe-mame0161-tiny.sh  # builds ROM-free and private local-game probes
         pack-roms.ts            # validates a manifest's ROM set
         build-manifests.ts
         serve-harness.ts
@@ -1428,7 +1430,7 @@ critical path to the first usable release.
 | M7 | **Manifests, shell, `build-manifests`, `pack-roms`.** | A manifest game builds to a standalone folder that runs from a static host |
 | M8 | **Gamepads.** | Two standard pads drive players 1 and 2 |
 | M9 | **Analog inputs.** Add MAME web-device axes for trackball, dial and paddle controls. | One analog-stick/dial title and one trackball title are playable |
-| M10 | **Local MAME 0.161 compatibility matrix.** Audit and manually verify the supplied `rtypeu.zip`, `sharrier1.zip` and `sonicwi2.zip` with every required parent/BIOS set supplied separately by the user. | Each set either boots and has verified metadata or has a precise audit/driver blocker recorded; no local ROM enters source or CI |
+| M10 | **Local MAME 0.161 compatibility matrix.** Audit and manually verify user-supplied local sets with every required parent/BIOS set supplied separately by the user. | Each set either boots and has verified metadata or has a precise audit/driver blocker recorded; no local ROM enters source or CI |
 | M11 | **Optional FBNeo probe.** Answer L1–L8 (§13.2) only after M0–M8 pass. | Written evidence that the optional backend adds a measured benefit worth its separate ROM lineage and licence constraints |
 | M12 | **Optional `LibretroAdapter`.** Build only the approved optional core(s) through the common adapter contract. | One optional-core manifest runs through the unchanged shell, controls and storage APIs and is clearly labeled non-MAME where applicable |
 | M13 | **Pinned MAME upgrade probe.** Evaluate a newer MAME source tag through the direct bridge without changing the 0.161 build. | Side-by-side build plus documented ROM, save-state, size and performance migration costs |
@@ -1459,7 +1461,7 @@ measurements under `docs/probes/mame0161/`.
 | P9 | What renderer buffer format/orientation is available, and what does upright RGBA conversion cost on a mid-range phone? | Video bridge and rotation design |
 | P10 | What mixer format/chunk cadence is available at 48 kHz? | Sound bridge and `ArcadeAudio` constants |
 | P11 | Does ROM audit output reach the bridge before exit in a stable parseable form, including missing parent and BIOS dependencies? | `pack-roms` and `ROM_SET_INVALID` reporting |
-| P12 | For one legally redistributable test ROM, do native 0.161 and browser 0.161 agree on machine identity, visible geometry, refresh rate, first stable-frame hash and basic input behavior, and does the browser sustain full speed on desktop and a mid-range phone? | M0 go/no-go and parity baseline |
+| P12 | For one legally authorized, separately acquired test ROM, do native 0.161 and browser 0.161 agree on machine identity, visible geometry, refresh rate, first stable-frame hash and basic input behavior, and does the browser sustain full speed on desktop and a mid-range phone? | M0 go/no-go and parity baseline |
 
 M0 passes only when P1–P12 have evidence and a direct 0.161 browser
 build is technically viable. If it fails, the decision record names the
@@ -1517,10 +1519,11 @@ required emulator artifacts; and a corrupt/mismatched `build.json`
 fails before any ROM is copied. Packaging tests assert that `npm pack`
 contains no ROM, emulator cache, `res/` file or locally compiled WASM.
 
-**Test ROMs.** Required browser cases use a legally redistributable ROM
-supported by the pinned MAME 0.161 build. `scripts/fetch-test-roms.ts`
-fetches it into a git-ignored folder and records its public source and
-expected digest; the suite skips locally when it is absent. Optional
+**Test ROMs.** Required browser cases use a legally obtained, user-supplied ROM
+supported by the pinned MAME 0.161 build. The machine identity, parent identity,
+driver-specific target definition and archive paths are private local probe
+inputs and are not committed. The suite skips locally when its separately built
+artifact is absent. Optional
 libretro cases add a separate fixture only after L7 identifies one.
 Commercial sets, including files under `res/`, are local manual
 verification material only and never enter source, packages or CI.

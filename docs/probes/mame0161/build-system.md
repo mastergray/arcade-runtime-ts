@@ -143,5 +143,5 @@ or PThread loader. Thus the tiny proof does not require pthreads, COOP or COEP.
   `PYTHON_EXECUTABLE=python2` for the release-era generators.
 
 P3 still needs purpose-built CPS-1, Irem M72 and Neo Geo subset definitions and
-raw/gzip/brotli measurements. P4–P12 then require the real bridge and a legally
-redistributable test ROM; successful `-listfull` startup is not game parity.
+raw/gzip/brotli measurements. P4–P12 then require the real bridge and the
+private local fixture; successful `-listfull` startup is not game parity.

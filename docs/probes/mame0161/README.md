@@ -23,7 +23,7 @@ caches and generated emulator artifacts must not be copied here.
 | P9 | Partial | A custom OSD can own a render target and consume its primitive list at machine update cadence. Buffer format, orientation and cost require the browser module. |
 | P10 | Partial | The stock JavaScript sound shim forwards signed 16-bit samples and a per-update sample count. Rate and runtime cadence still require measurement. |
 | P11 | Partial | Audit results use structured enums/records and route summaries through interceptable OSD output channels. Missing-parent/BIOS behavior still needs a browser run. |
-| P12 | Not started | Depends on P2–P11 and a legally redistributable test ROM. |
+| P12 | Partial | A private, local-only fixture passes the 0.161 hash audit and boots to a visible browser frame with basic digital input events. Native parity, stable-frame hashing and performance measurements remain. |
 
 ## Working rules
 

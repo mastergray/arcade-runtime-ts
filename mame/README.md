@@ -20,6 +20,25 @@ It applies the compatibility patch when needed, builds `mametiny.bc`, and
 links `mametiny-probe.{html,js,wasm}`. The probe pre-JavaScript selects MAME's
 ROM-free `-listfull` path; it is test harness code, not the runtime bridge.
 
+The real-game M0 probe takes its target definition, machine, optional parent
+and ROM archives only as private local inputs. The selected title is
+deliberately not recorded in the repository. Store the target definition at
+the ignored `res/mame-runtimeprobe.lua` path (or set `MAME_PROBE_TARGET`) and
+build with the matching MAME short names and ignored archives:
+
+```sh
+MAME_PROBE_MACHINE=<machine> \
+MAME_PROBE_PARENT=<parent-if-required> \
+EMSDK_DIR="$PWD/res/emsdk" \
+npm run probe:mame:game -- \
+  "$PWD/.cache/mame0161-source" \
+  "$PWD/res/<parent-if-required>.zip" \
+  "$PWD/res/<machine>.zip"
+```
+
+This emits `mamegame-probe.{html,js,wasm,data}`. The `.data` file embeds the
+ignored local ROMs for this probe and must not be published or committed.
+
 Serve the source directory, then run the CTG browser case against the artifact:
 
 ```sh
@@ -27,6 +46,9 @@ python3 -m http.server 8877 --directory "$PWD/.cache/mame0161-source"
 MAME_TINY_PROBE_URL=http://127.0.0.1:8877/mametiny-probe.html \
   npm run test:browser
 ```
+
+Set `MAME_GAME_PROBE_URL` to the served `mamegame-probe.html` path to run the
+private local-game browser case.
 
 The repository does not compile or redistribute the native executable in
 `res/`, and it does not vendor ROMs, SDK files, generated emulator artifacts,

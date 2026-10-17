@@ -1,0 +1,69 @@
+// realizes: docs/mame-game-runtime-spec.md > §13.1 P12 private local fixture
+
+// Dependencies:
+import { readFileSync } from "node:fs";                          // Reads the generic local-probe contracts
+import CTGTest, { CTGTestPredicates as P } from "ctg-js-test";   // Pipeline API and predicate builders
+
+// Type dependencies:
+import type { TestFile } from "../run.ts";                       // Manifest contract consumed by the runner
+
+/**
+ *
+ * Constants
+ *
+ */
+
+const PACKAGE_URL = new URL("../../package.json", import.meta.url);
+const PROBE_SCRIPT_URL = new URL("../../scripts/probe-mame0161-tiny.sh", import.meta.url);
+const PRE_JS_URL = new URL("../../mame/bridge/game-probe-pre.js", import.meta.url);
+
+const readText = (url: URL): string => readFileSync(url, "utf8");
+
+const testFile: TestFile = {
+    label: "MAME 0.161 private local-game probe",
+    cases: [
+        {
+            label: "keeps the selected machine and ROM paths out of tracked configuration",
+            run: () => CTGTest.init("private fixture inputs")
+                .assert(
+                    "the package exposes only a generic game-probe command",
+                    () => {
+                        const packageJson = JSON.parse(readText(PACKAGE_URL)) as { scripts: Record<string, string> };
+                        return packageJson.scripts["probe:mame:game"] ?? "";
+                    },
+                    P.equals("MAME_PROBE_KIND=game scripts/probe-mame0161-tiny.sh"),
+                )
+                .start(undefined),
+        },
+        {
+            label: "accepts the machine, parent and archives only as local inputs",
+            run: () => CTGTest.init("local probe contract")
+                .assert(
+                    "the probe requires local machine and archive inputs",
+                    () => {
+                        const build = readText(PROBE_SCRIPT_URL);
+                        return build.includes("MAME_PROBE_MACHINE")
+                            && build.includes("MAME_PROBE_PARENT")
+                            && build.includes("MAME_PROBE_TARGET")
+                            && build.includes("res/mame-runtimeprobe.lua")
+                            && build.includes("Missing local ROM archive")
+                            && build.includes("--preload-file");
+                    },
+                    P.equals(true),
+                )
+                .assert(
+                    "the tracked bridge stays machine-neutral",
+                    () => {
+                        const preJs = readText(PRE_JS_URL);
+                        return preJs.includes("MAME_PROBE_MACHINE")
+                            && preJs.includes('"-rompath", "/roms"')
+                            && preJs.includes('"-sound", "none"');
+                    },
+                    P.equals(true),
+                )
+                .start(undefined),
+        },
+    ],
+};
+
+export default testFile;
