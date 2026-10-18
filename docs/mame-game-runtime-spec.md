@@ -562,7 +562,9 @@ build reports into `build.json`, which is what
 
 `MODULARIZE` matters: MAME keeps global state that may not reset cleanly
 after a machine exits, so the adapter instantiates a **fresh module per
-`start()`** and discards it on exit unless probe P4 proves reuse safe.
+`start()`** and discards it on exit. Probe P4 confirmed that the stock browser
+loop cannot return to `machine_manager` to construct a second machine in the
+same instance.
 
 ### 4.2 Web OSD modules (`0001-web-osd-modules.patch`)
 

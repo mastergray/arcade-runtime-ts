@@ -29,6 +29,7 @@ build with the matching MAME short names and ignored archives:
 ```sh
 MAME_PROBE_MACHINE=<machine> \
 MAME_PROBE_PARENT=<parent-if-required> \
+MAME_PROBE_SECOND_MACHINE=<different-parent-or-clone-if-testing-lifecycle> \
 EMSDK_DIR="$PWD/res/emsdk" \
 npm run probe:mame:game -- \
   "$PWD/.cache/mame0161-source" \
@@ -38,6 +39,10 @@ npm run probe:mame:game -- \
 
 This emits `mamegame-probe.{html,js,wasm,data}`. The `.data` file embeds the
 ignored local ROMs for this probe and must not be published or committed.
+When `MAME_PROBE_SECOND_MACHINE` names the other compiled parent/clone entry,
+the same artifact can run the P4 lifecycle test. Set
+`MAME_LIFECYCLE_PROBE_URL` to its served URL; the test requests an in-module
+transition and boots the second entry in a separate fresh-module control.
 
 For ROM-free driver-family size probes, choose one of the tracked definitions
 under `mame/targets/` and supply a representative machine only through the

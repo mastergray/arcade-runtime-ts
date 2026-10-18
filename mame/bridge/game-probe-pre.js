@@ -14,13 +14,38 @@ function jsmess_set_mastervolume() {}
 if (typeof MAME_PROBE_MACHINE !== "string" || MAME_PROBE_MACHINE.length === 0) {
     throw new Error("Missing local MAME probe machine");
 }
+if (typeof MAME_PROBE_SECOND_MACHINE !== "string") {
+    throw new Error("Missing local MAME second probe machine configuration");
+}
+
+var selectedProbeMachine = MAME_PROBE_MACHINE;
+if (MAME_PROBE_SECOND_MACHINE.length > 0 && typeof window !== "undefined") {
+    var probeParams = new URL(window.location.href).searchParams;
+    if (probeParams.get("mame_probe_machine") === "second") {
+        selectedProbeMachine = MAME_PROBE_SECOND_MACHINE;
+    }
+}
+
+JSMESS.initialMachine = MAME_PROBE_MACHINE;
+JSMESS.secondMachine = MAME_PROBE_SECOND_MACHINE;
+JSMESS.configuredMachine = selectedProbeMachine;
+JSMESS.currentMachine = function() {
+    return JSMESS.currentMachineName || "";
+};
+JSMESS.scheduledEventPending = function() {
+    return JSMESS.scheduledEvent === true;
+};
+JSMESS.scheduleMachine = function(machine) {
+    JSMESS.scheduleResult = null;
+    JSMESS.requestedMachine = machine;
+};
 
 Module["onRuntimeInitialized"] = function() {
     JSMESS.running = true;
 };
 
 Module["arguments"] = [
-    MAME_PROBE_MACHINE,
+    selectedProbeMachine,
     "-rompath", "/roms",
     "-video", "soft",
     "-sound", "none",

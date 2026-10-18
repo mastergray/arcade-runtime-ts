@@ -1,0 +1,49 @@
+From: mastergray <mastergray@users.noreply.github.com>
+Subject: [PATCH] expose minimal browser lifecycle probe hooks
+
+Keep the native build unchanged while exposing the active driver, pending
+lifecycle-event state and MAME's existing new-driver request to the local
+browser probe.  These diagnostics determine whether the stock Emscripten
+loop can return to machine_manager and construct a second running_machine.
+
+--- a/src/emu/machine.c
++++ b/src/emu/machine.c
+@@ -70,6 +70,7 @@
+ 
+ #include "emu.h"
+ #include "emuopts.h"
++#include "drivenum.h"
+ #include "osdepend.h"
+ #include "config.h"
+ #include "debugger.h"
+@@ -1350,6 +1351,30 @@
+ static running_machine * jsmess_machine;
+ 
+ void js_main_loop() {
++	int schedule_result = -1;
++	const char *requested_machine = emscripten_run_script_string(
++		"(function(){if(typeof JSMESS==='undefined')return '';var machine=JSMESS.requestedMachine;JSMESS.requestedMachine='';return typeof machine==='string'?machine:'';})()");
++	if (requested_machine != NULL && requested_machine[0] != '\0') {
++		int index = driver_list::find(requested_machine);
++		if (index == -1) {
++			schedule_result = 2;
++		}
++		else {
++			machine_manager::instance()->schedule_new_driver(driver_list::driver(index));
++			jsmess_machine->schedule_hard_reset();
++			schedule_result = 0;
++		}
++	}
++
++	EM_ASM_ARGS({
++		if (typeof JSMESS !== "undefined") {
++			JSMESS.currentMachineName = UTF8ToString($0);
++			JSMESS.scheduledEvent = $1 !== 0;
++			JSMESS.mainLoopTicks = (JSMESS.mainLoopTicks || 0) + 1;
++			if ($2 >= 0) JSMESS.scheduleResult = $2;
++		}
++	}, jsmess_machine->system().name, jsmess_machine->scheduled_event_pending(), schedule_result);
++
+ 	device_scheduler * scheduler;
+ 	scheduler = &(jsmess_machine->scheduler());
+ 	attotime stoptime = scheduler->time() + attotime(0,HZ_TO_ATTOSECONDS(60));

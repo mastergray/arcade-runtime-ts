@@ -16,6 +16,7 @@ import type { TestFile } from "../run.ts";                       // Manifest con
 const PACKAGE_URL = new URL("../../package.json", import.meta.url);
 const PROBE_SCRIPT_URL = new URL("../../scripts/probe-mame0161-tiny.sh", import.meta.url);
 const PRE_JS_URL = new URL("../../mame/bridge/game-probe-pre.js", import.meta.url);
+const LIFECYCLE_PATCH_URL = new URL("../../mame/patches/0002-emscripten-lifecycle-probe.patch", import.meta.url);
 
 const readText = (url: URL): string => readFileSync(url, "utf8");
 
@@ -50,6 +51,7 @@ const testFile: TestFile = {
                         const build = readText(PROBE_SCRIPT_URL);
                         return build.includes("MAME_PROBE_MACHINE")
                             && build.includes("MAME_PROBE_PARENT")
+                            && build.includes("MAME_PROBE_SECOND_MACHINE")
                             && build.includes("MAME_PROBE_TARGET")
                             && build.includes("res/mame-runtimeprobe.lua")
                             && build.includes("Missing local ROM archive")
@@ -64,6 +66,32 @@ const testFile: TestFile = {
                         return preJs.includes("MAME_PROBE_MACHINE")
                             && preJs.includes('"-rompath", "/roms"')
                             && preJs.includes('"-sound", "none"');
+                    },
+                    P.equals(true),
+                )
+                .start(undefined),
+        },
+        {
+            label: "keeps the two-machine lifecycle diagnostics generic",
+            run: () => CTGTest.init("private lifecycle probe contract")
+                .assert(
+                    "the bridge selects the local second entry symbolically",
+                    () => {
+                        const preJs = readText(PRE_JS_URL);
+                        return preJs.includes("MAME_PROBE_SECOND_MACHINE")
+                            && preJs.includes('mame_probe_machine") === "second"')
+                            && preJs.includes("scheduleMachine");
+                    },
+                    P.equals(true),
+                )
+                .assert(
+                    "the source patch instruments the stock new-driver path",
+                    () => {
+                        const patch = readText(LIFECYCLE_PATCH_URL);
+                        return patch.includes("schedule_new_driver")
+                            && patch.includes("schedule_hard_reset")
+                            && patch.includes("scheduled_event_pending")
+                            && patch.includes("mainLoopTicks");
                     },
                     P.equals(true),
                 )

@@ -4,7 +4,8 @@ set -euo pipefail
 project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source_dir="${1:-}"
 emsdk_dir="${EMSDK_DIR:-${project_root}/res/emsdk}"
-patch_file="${project_root}/mame/patches/0001-emscripten-1.38.31-compatibility.patch"
+compatibility_patch="${project_root}/mame/patches/0001-emscripten-1.38.31-compatibility.patch"
+lifecycle_probe_patch="${project_root}/mame/patches/0002-emscripten-lifecycle-probe.patch"
 expected_emsdk="$(tr -d '[:space:]' < "${project_root}/mame/EMSDK_VERSION")"
 probe_kind="${MAME_PROBE_KIND:-list}"
 pre_js="${project_root}/mame/bridge/tiny-probe-pre.js"
@@ -69,6 +70,7 @@ case "${probe_kind}" in
     game)
         machine="${MAME_PROBE_MACHINE:-}"
         parent="${MAME_PROBE_PARENT:-}"
+        second_machine="${MAME_PROBE_SECOND_MACHINE:-}"
         target_file="${MAME_PROBE_TARGET:-${project_root}/res/mame-runtimeprobe.lua}"
         shift
 
@@ -78,6 +80,10 @@ case "${probe_kind}" in
         fi
         if [[ -n "${parent}" && ! "${parent}" =~ ^[a-z0-9_]+$ ]]; then
             echo "MAME_PROBE_PARENT must be a MAME short name when supplied" >&2
+            exit 2
+        fi
+        if [[ -n "${second_machine}" && ! "${second_machine}" =~ ^[a-z0-9_]+$ ]]; then
+            echo "MAME_PROBE_SECOND_MACHINE must be a MAME short name when supplied" >&2
             exit 2
         fi
         if [[ "$#" -eq 0 ]]; then
@@ -94,6 +100,18 @@ case "${probe_kind}" in
         if [[ -n "${parent}" ]]; then
             required_archives["${parent}"]=0
             drivers=("${parent}" "${machine}")
+        fi
+        if [[ -n "${second_machine}" ]]; then
+            second_machine_in_build=0
+            for driver in "${drivers[@]}"; do
+                if [[ "${driver}" == "${second_machine}" ]]; then
+                    second_machine_in_build=1
+                fi
+            done
+            if [[ "${second_machine_in_build}" -ne 1 || "${second_machine}" == "${machine}" ]]; then
+                echo "MAME_PROBE_SECOND_MACHINE must name a different compiled parent/clone entry" >&2
+                exit 2
+            fi
         fi
 
         for rom_archive in "$@"; do
@@ -125,6 +143,7 @@ case "${probe_kind}" in
 
         generated_pre_js="$(mktemp)"
         printf 'var MAME_PROBE_MACHINE = "%s";\n' "${machine}" > "${generated_pre_js}"
+        printf 'var MAME_PROBE_SECOND_MACHINE = "%s";\n' "${second_machine}" >> "${generated_pre_js}"
         pre_js="${project_root}/mame/bridge/game-probe-pre.js"
         output_name="mamegame-probe"
         subtarget="runtimeprobe"
@@ -137,11 +156,31 @@ case "${probe_kind}" in
         ;;
 esac
 
-if patch --dry-run --silent --forward --batch -p1 -d "${source_dir}" < "${patch_file}" >/dev/null 2>&1; then
-    patch --silent --forward --batch -p1 -d "${source_dir}" < "${patch_file}"
-elif ! patch --dry-run --silent --reverse --batch -p1 -d "${source_dir}" < "${patch_file}" >/dev/null 2>&1; then
-    echo "MAME source is neither pristine nor already patched" >&2
-    exit 2
+apply_source_patch() {
+    local patch_file="$1"
+    if patch --dry-run --silent --forward --batch -p1 -d "${source_dir}" < "${patch_file}" >/dev/null 2>&1; then
+        patch --silent --forward --batch -p1 -d "${source_dir}" < "${patch_file}"
+    elif ! patch --dry-run --silent --reverse --batch -p1 -d "${source_dir}" < "${patch_file}" >/dev/null 2>&1; then
+        echo "MAME source does not accept $(basename "${patch_file}")" >&2
+        exit 2
+    fi
+}
+
+remove_source_patch() {
+    local patch_file="$1"
+    if patch --dry-run --silent --reverse --batch -p1 -d "${source_dir}" < "${patch_file}" >/dev/null 2>&1; then
+        patch --silent --reverse --batch -p1 -d "${source_dir}" < "${patch_file}"
+    elif ! patch --dry-run --silent --forward --batch -p1 -d "${source_dir}" < "${patch_file}" >/dev/null 2>&1; then
+        echo "MAME source does not accept $(basename "${patch_file}")" >&2
+        exit 2
+    fi
+}
+
+apply_source_patch "${compatibility_patch}"
+if [[ "${probe_kind}" == "game" ]]; then
+    apply_source_patch "${lifecycle_probe_patch}"
+else
+    remove_source_patch "${lifecycle_probe_patch}"
 fi
 
 # Emscripten 1.38.31 invokes its Python entry points through `python`.
@@ -157,6 +196,23 @@ if ! emcc --version 2>&1 | grep -Fq "${expected_emsdk}"; then
 fi
 
 export EMSCRIPTEN="${emsdk_dir}/emscripten/${expected_emsdk}"
+
+# The release-era archiver can retain a renamed duplicate member when a core
+# object changes. Recreate the aggregate so the linker cannot select stale
+# code from an earlier probe build.
+rm -f "${source_dir}/build/asmjs/bin/libemu.a"
+
+# Regenerated projects reuse these archive paths across private/family target
+# definitions. Recreate them so a target switch cannot retain object membership
+# from the previously selected driver source set.
+if [[ "${subtarget}" == "runtimeprobe" ]]; then
+    rm -f \
+        "${source_dir}/build/asmjs/bin/mame_runtimeprobe/libbus.a" \
+        "${source_dir}/build/asmjs/bin/mame_runtimeprobe/libdasm.a" \
+        "${source_dir}/build/asmjs/bin/mame_runtimeprobe/libmame_runtimeprobe.a" \
+        "${source_dir}/build/asmjs/bin/mame_runtimeprobe/liboptional.a" \
+        "${source_dir}/${bitcode_name}"
+fi
 
 make -C "${source_dir}" -j2 \
     SUBTARGET="${subtarget}" \
