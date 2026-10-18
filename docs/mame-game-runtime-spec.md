@@ -541,6 +541,13 @@ Codes:
    artifact names, licence/notice metadata and the machine list
    (`-listfull` run once against the fresh build under Node).
 
+P6 confirms that the direct MAME 0.161 outputs use non-shared memory and no
+thread worker or loader, so their `build.json` files record `pthreads: false`.
+The build runs the tracked threading inspector over every generated
+JavaScript/WebAssembly pair and fails if that measured result changes; a
+future shared-memory build requires a new probe and matching deployment
+headers rather than silently retaining this value.
+
 A build file:
 
 ```json

@@ -61,6 +61,18 @@ The family probe runs `-listfull` and does not preload ROM content. Set
 `MAME_FAMILY_PROBE_URL` and `MAME_FAMILY_PROBE_MACHINE` to exercise its generic
 browser test.
 
+Inspect generated JavaScript/WebAssembly pairs for PThread requirements by
+passing artifact stems without extensions:
+
+```sh
+npm run probe:mame:threading -- \
+  "$PWD/.cache/mame0161-source/mametiny-probe" \
+  "$PWD/.cache/mame0161-source/mamefamily-<family>"
+```
+
+The inspector reports Wasm memory limits, threaded-loader markers and worker
+artifacts, and exits non-zero when the artifact requires pthreads.
+
 Serve the source directory, then run the CTG browser case against the artifact:
 
 ```sh
@@ -71,6 +83,9 @@ MAME_TINY_PROBE_URL=http://127.0.0.1:8877/mametiny-probe.html \
 
 Set `MAME_GAME_PROBE_URL` to the served `mamegame-probe.html` path to run the
 private local-game browser case.
+
+Set `MAME_THREADING_PROBE_URL` to the ROM-free `mametiny-probe.html` path to
+verify that it instantiates without shared memory, COOP or COEP headers.
 
 For P5, build the same private fixture under a separate generic basename by
 setting `MAME_PROBE_OUTPUT=mamepacing-probe`. Set `MAME_PACING_PROBE_URL` to
