@@ -629,10 +629,10 @@ assuming flag names across releases:
 `-video web -sound web -keyboardprovider web -joystickprovider web
 -ctrlr web -rompath /mame/roms -nvram_directory /mame/nvram
 -cfg_directory /mame/cfg -state_directory /mame/sta
--skip_gameinfo -nomouse -noautosave`.
+-skip_gameinfo -nomouse -noautosave -nothrottle`.
 
 Overridable through `ArcadeStartConfig.options`: `samplerate`,
-`frameskip`, `throttle`, `bios` (e.g. Neo Geo MVS vs AES), `dipswitch`
+`frameskip`, `bios` (e.g. Neo Geo MVS vs AES), `dipswitch`
 values via a generated cfg (later milestone).
 
 ---
@@ -693,6 +693,14 @@ Session behavior:
   into a reused `Uint8ClampedArray` (heap views are invalidated by
   memory growth, so nothing keeps a view across callbacks).
 - **`onSound`** copies into a reused `Float32Array` the same way.
+- **Frame pacing.** The web bridge replaces MAME 0.161's fixed
+  1/60-second-per-`requestAnimationFrame` outer loop and runs with the native
+  blocking throttle disabled. Each browser scheduler tick adds elapsed
+  monotonic time to an accumulator and advances MAME's device scheduler by
+  one primary-screen period for every complete period accumulated, capped at
+  four periods per tick. Excess time is discarded after the cap so a resumed
+  background tab does not fast-forward. `onTick` still comes from each
+  emulated screen frame, independently of a 60, 90, 120 or 144 Hz display.
 - **`saveState` / `loadState`** resolve or reject with `STATE_FAILED`
   on `onStateDone`.
 - **`persist`** calls `web_flush_nvram()` and rehashes `nvram`, `cfg`
@@ -1456,7 +1464,7 @@ measurements under `docs/probes/mame0161/`.
 | P2 | Which emsdk version can compile that source, what build-system changes are required, and how long does a clean single-family build take? | `EMSDK_VERSION`, build-only patch set and CI feasibility |
 | P3 | Can 0.161 produce driver-family subsets, and what are raw/gzip/brotli sizes for a small family, CPS-1, Irem M72 and Neo Geo? | Family layout and download budget |
 | P4 | Can one module instance run a second machine after exit, or must every start instantiate a fresh module? | Fresh-module lifecycle in §5 |
-| P5 | How does its main loop schedule emulated frames, and does a 59.6 Hz game run correctly on 60, 90, 120 and 144 Hz displays? | Whether the bridge replaces or wraps MAME pacing |
+| P5 | How does its main loop schedule emulated frames, and does a near-60 Hz game run correctly on 60, 90, 120 and 144 Hz displays? | Whether the bridge replaces or wraps MAME pacing |
 | P6 | Does any viable build require pthreads? | COOP/COEP requirements and static-host compatibility |
 | P7 | Which video, sound, input, pause, reset, save/load and exit hooks exist in 0.161's OSD/running-machine APIs? | Exact scope of bridge patches 0001 and 0002 |
 | P8 | Can NVRAM/config be flushed mid-run without exiting? | Whether patch 0003 is required |

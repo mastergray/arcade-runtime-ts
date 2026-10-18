@@ -30,6 +30,7 @@ build with the matching MAME short names and ignored archives:
 MAME_PROBE_MACHINE=<machine> \
 MAME_PROBE_PARENT=<parent-if-required> \
 MAME_PROBE_SECOND_MACHINE=<different-parent-or-clone-if-testing-lifecycle> \
+MAME_PROBE_OUTPUT=<optional-artifact-basename> \
 EMSDK_DIR="$PWD/res/emsdk" \
 npm run probe:mame:game -- \
   "$PWD/.cache/mame0161-source" \
@@ -37,7 +38,7 @@ npm run probe:mame:game -- \
   "$PWD/res/<machine>.zip"
 ```
 
-This emits `mamegame-probe.{html,js,wasm,data}`. The `.data` file embeds the
+This emits `mamegame-probe.{html,js,wasm,data}` by default. The `.data` file embeds the
 ignored local ROMs for this probe and must not be published or committed.
 When `MAME_PROBE_SECOND_MACHINE` names the other compiled parent/clone entry,
 the same artifact can run the P4 lifecycle test. Set
@@ -70,6 +71,12 @@ MAME_TINY_PROBE_URL=http://127.0.0.1:8877/mametiny-probe.html \
 
 Set `MAME_GAME_PROBE_URL` to the served `mamegame-probe.html` path to run the
 private local-game browser case.
+
+For P5, build the same private fixture under a separate generic basename by
+setting `MAME_PROBE_OUTPUT=mamepacing-probe`. Set `MAME_PACING_PROBE_URL` to
+its served HTML path. The browser test replays controlled 60, 90, 120 and 144
+Hz callback cadences and compares wall time with scheduler time and screen
+frames; generated artifacts and local ROM inputs remain ignored.
 
 The repository does not compile or redistribute the native executable in
 `res/`, and it does not vendor ROMs, SDK files, generated emulator artifacts,

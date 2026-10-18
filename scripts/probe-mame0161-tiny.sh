@@ -6,6 +6,7 @@ source_dir="${1:-}"
 emsdk_dir="${EMSDK_DIR:-${project_root}/res/emsdk}"
 compatibility_patch="${project_root}/mame/patches/0001-emscripten-1.38.31-compatibility.patch"
 lifecycle_probe_patch="${project_root}/mame/patches/0002-emscripten-lifecycle-probe.patch"
+pacing_probe_patch="${project_root}/mame/patches/0003-emscripten-pacing-probe.patch"
 expected_emsdk="$(tr -d '[:space:]' < "${project_root}/mame/EMSDK_VERSION")"
 probe_kind="${MAME_PROBE_KIND:-list}"
 pre_js="${project_root}/mame/bridge/tiny-probe-pre.js"
@@ -72,6 +73,7 @@ case "${probe_kind}" in
         parent="${MAME_PROBE_PARENT:-}"
         second_machine="${MAME_PROBE_SECOND_MACHINE:-}"
         target_file="${MAME_PROBE_TARGET:-${project_root}/res/mame-runtimeprobe.lua}"
+        output_name="${MAME_PROBE_OUTPUT:-mamegame-probe}"
         shift
 
         if [[ ! "${machine}" =~ ^[a-z0-9_]+$ ]]; then
@@ -84,6 +86,10 @@ case "${probe_kind}" in
         fi
         if [[ -n "${second_machine}" && ! "${second_machine}" =~ ^[a-z0-9_]+$ ]]; then
             echo "MAME_PROBE_SECOND_MACHINE must be a MAME short name when supplied" >&2
+            exit 2
+        fi
+        if [[ ! "${output_name}" =~ ^[a-z0-9_-]+$ ]]; then
+            echo "MAME_PROBE_OUTPUT must be a safe artifact basename" >&2
             exit 2
         fi
         if [[ "$#" -eq 0 ]]; then
@@ -145,7 +151,6 @@ case "${probe_kind}" in
         printf 'var MAME_PROBE_MACHINE = "%s";\n' "${machine}" > "${generated_pre_js}"
         printf 'var MAME_PROBE_SECOND_MACHINE = "%s";\n' "${second_machine}" >> "${generated_pre_js}"
         pre_js="${project_root}/mame/bridge/game-probe-pre.js"
-        output_name="mamegame-probe"
         subtarget="runtimeprobe"
         bitcode_name="mameruntimeprobe.bc"
         link_options=(--pre-js "${generated_pre_js}" "${link_options[@]}")
@@ -176,10 +181,23 @@ remove_source_patch() {
     fi
 }
 
+remove_source_patch_if_applied() {
+    local patch_file="$1"
+    if patch --dry-run --silent --reverse --batch -p1 -d "${source_dir}" < "${patch_file}" >/dev/null 2>&1; then
+        patch --silent --reverse --batch -p1 -d "${source_dir}" < "${patch_file}"
+    fi
+}
+
 apply_source_patch "${compatibility_patch}"
 if [[ "${probe_kind}" == "game" ]]; then
+    # The pacing probe is layered on the lifecycle probe and overlaps its
+    # function context. Peel it off before checking P4 so repeated builds are
+    # idempotent, then restore the complete game-probe stack.
+    remove_source_patch_if_applied "${pacing_probe_patch}"
     apply_source_patch "${lifecycle_probe_patch}"
+    apply_source_patch "${pacing_probe_patch}"
 else
+    remove_source_patch "${pacing_probe_patch}"
     remove_source_patch "${lifecycle_probe_patch}"
 fi
 

@@ -1,0 +1,56 @@
+From: mastergray <mastergray@users.noreply.github.com>
+Subject: [PATCH] expose browser frame-pacing probe telemetry
+
+Measure the stock Emscripten main-loop callback without changing its fixed
+scheduler slice or MAME's throttle.  The local browser probe can compare
+emulated time, screen frames and callback blocking across display cadences.
+
+--- a/src/emu/machine.c
++++ b/src/emu/machine.c
+@@ -1353,0 +1354,15 @@
++	EM_ASM({
++		if (typeof JSMESS !== "undefined") {
++			var pacing = JSMESS.pacing || (JSMESS.pacing = {});
++			var now = performance.now();
++			if (typeof pacing.lastCallbackStartMs === "number") {
++				pacing.callbackIntervalTotalMs = (pacing.callbackIntervalTotalMs || 0)
++					+ now - pacing.lastCallbackStartMs;
++				pacing.callbackIntervalCount = (pacing.callbackIntervalCount || 0) + 1;
++			}
++			pacing.lastCallbackStartMs = now;
++			pacing.currentCallbackStartMs = now;
++			pacing.callbackCount = (pacing.callbackCount || 0) + 1;
++		}
++	});
++
+@@ -1379,0 +1395 @@
++	attotime callback_start_time = scheduler->time();
+@@ -1383,0 +1400,28 @@
++
++	attotime current_time = scheduler->time();
++	attotime callback_advance = current_time - callback_start_time;
++	screen_device *screen = jsmess_machine->first_screen();
++	UINT32 emulated_time_microseconds = UINT32(current_time.seconds) * 1000000
++		+ UINT32(current_time.attoseconds / ATTOSECONDS_PER_MICROSECOND);
++	UINT32 callback_advance_microseconds = UINT32(callback_advance.seconds) * 1000000
++		+ UINT32(callback_advance.attoseconds / ATTOSECONDS_PER_MICROSECOND);
++	UINT32 screen_frame_number = screen == NULL ? 0 : UINT32(screen->frame_number());
++	int refresh_millihertz = screen == NULL ? 0
++		: int(1000.0 * ATTOSECONDS_TO_HZ(screen->frame_period().attoseconds) + 0.5);
++	int speed_permille = int(jsmess_machine->video().speed_percent() * 1000.0 + 0.5);
++
++	EM_ASM_ARGS({
++		if (typeof JSMESS !== "undefined") {
++			var pacing = JSMESS.pacing || (JSMESS.pacing = {});
++			var now = performance.now();
++			var workMs = now - pacing.currentCallbackStartMs;
++			pacing.callbackWorkTotalMs = (pacing.callbackWorkTotalMs || 0) + workMs;
++			pacing.callbackWorkMaxMs = Math.max(pacing.callbackWorkMaxMs || 0, workMs);
++			pacing.emulatedTimeUs = $0;
++			pacing.screenFrameNumber = $1;
++			pacing.refreshMilliHz = $2;
++			pacing.speedPermille = $3;
++			pacing.lastEmulatedAdvanceUs = $4;
++		}
++	}, emulated_time_microseconds, screen_frame_number, refresh_millihertz,
++		speed_permille, callback_advance_microseconds);

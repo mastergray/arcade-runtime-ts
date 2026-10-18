@@ -17,6 +17,7 @@ const PACKAGE_URL = new URL("../../package.json", import.meta.url);
 const PROBE_SCRIPT_URL = new URL("../../scripts/probe-mame0161-tiny.sh", import.meta.url);
 const PRE_JS_URL = new URL("../../mame/bridge/game-probe-pre.js", import.meta.url);
 const LIFECYCLE_PATCH_URL = new URL("../../mame/patches/0002-emscripten-lifecycle-probe.patch", import.meta.url);
+const PACING_PATCH_URL = new URL("../../mame/patches/0003-emscripten-pacing-probe.patch", import.meta.url);
 
 const readText = (url: URL): string => readFileSync(url, "utf8");
 
@@ -92,6 +93,35 @@ const testFile: TestFile = {
                             && patch.includes("schedule_hard_reset")
                             && patch.includes("scheduled_event_pending")
                             && patch.includes("mainLoopTicks");
+                    },
+                    P.equals(true),
+                )
+                .start(undefined),
+        },
+        {
+            label: "keeps frame-pacing instrumentation generic and observational",
+            run: () => CTGTest.init("private pacing probe contract")
+                .assert(
+                    "the source patch measures without replacing stock pacing",
+                    () => {
+                        const patch = readText(PACING_PATCH_URL);
+                        return patch.includes("callbackIntervalTotalMs")
+                            && patch.includes("callbackWorkTotalMs")
+                            && patch.includes("emulatedTimeUs")
+                            && patch.includes("screenFrameNumber")
+                            && patch.includes("refreshMilliHz")
+                            && patch.includes("speedPermille")
+                            && !patch.includes("emscripten_set_main_loop");
+                    },
+                    P.equals(true),
+                )
+                .assert(
+                    "the browser bridge exposes a controlled generic cadence",
+                    () => {
+                        const preJs = readText(PRE_JS_URL);
+                        return preJs.includes("mame_probe_hz")
+                            && preJs.includes("requestAnimationFrame")
+                            && preJs.includes("pacingSnapshot");
                     },
                     P.equals(true),
                 )
