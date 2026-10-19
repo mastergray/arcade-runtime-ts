@@ -1,0 +1,104 @@
+From: mastergray <mastergray@users.noreply.github.com>
+Subject: [PATCH] expose browser bridge-hook probe operations
+
+Exercise the narrow running-machine APIs intended for the web bridge and
+report machine notifications, state-operation completion and input state.
+The probe leaves the stock browser loop behavior unchanged so its lifecycle
+gaps remain observable. Scheduled state operations are serviced after a
+scheduler slice, matching the boundary in the native run loop. Timer dumps
+are diagnostics rather than state preparation, and are suppressed only for
+Emscripten because the timer-dump path crashes the Fastcomp output.
+
+--- a/src/emu/machine.h
++++ b/src/emu/machine.h
+@@ -220,0 +221,3 @@
++#if defined(EMSCRIPTEN)
++	void probe_service_saveload() { handle_saveload(); }
++#endif
+--- a/src/emu/machine.c
++++ b/src/emu/machine.c
+@@ -876,0 +877,10 @@
++#if defined(EMSCRIPTEN)
++	EM_ASM_ARGS({
++		if (typeof JSMESS !== "undefined") {
++			var notifications = JSMESS.machineNotifications
++				|| (JSMESS.machineNotifications = [0, 0, 0, 0, 0]);
++			notifications[$0] = (notifications[$0] || 0) + 1;
++		}
++	}, which);
++#endif
++
+@@ -892,0 +903,6 @@
++#if defined(EMSCRIPTEN)
++	int probe_saveload_operation = int(m_saveload_schedule);
++	bool probe_saveload_success = false;
++	int probe_saveload_error = -1;
++	int probe_file_error = -1;
++#endif
+@@ -913,0 +930,3 @@
++#if defined(EMSCRIPTEN)
++	probe_file_error = int(filerr);
++#endif
+@@ -917,0 +937,3 @@
++#if defined(EMSCRIPTEN)
++		probe_saveload_error = int(saverr);
++#endif
+@@ -938,0 +961,3 @@
++#if defined(EMSCRIPTEN)
++				probe_saveload_success = true;
++#endif
+@@ -958,0 +984,12 @@
++#if defined(EMSCRIPTEN)
++	EM_ASM_ARGS({
++		if (typeof JSMESS !== "undefined") {
++			JSMESS.stateOperationCount = (JSMESS.stateOperationCount || 0) + 1;
++			JSMESS.lastStateOperation = $0;
++			JSMESS.lastStateOperationSucceeded = $1 !== 0;
++			JSMESS.lastStateOperationError = $2;
++			JSMESS.lastStateFileError = $3;
++		}
++	}, probe_saveload_operation, probe_saveload_success,
++		probe_saveload_error, probe_file_error);
++#endif
+@@ -1368,0 +1406,14 @@
++	int hook_result = -1;
++	int hook_request = emscripten_run_script_int(
++		"(function(){if(typeof JSMESS==='undefined')return 0;var request=JSMESS.hookRequest|0;JSMESS.hookRequest=0;return request;})()");
++	switch (hook_request) {
++		case 0: break;
++		case 1: jsmess_machine->pause(); hook_result = 0; break;
++		case 2: jsmess_machine->resume(); hook_result = 0; break;
++		case 3: jsmess_machine->schedule_soft_reset(); hook_result = 0; break;
++		case 4: jsmess_machine->schedule_save("p7-probe"); hook_result = 0; break;
++		case 5: jsmess_machine->schedule_load("p7-probe"); hook_result = 0; break;
++		case 6: jsmess_machine->schedule_exit(); hook_result = 0; break;
++		default: hook_result = 2; break;
++	}
++
+@@ -1399,0 +1451,3 @@
++	if (jsmess_machine->save_or_load_pending()) {
++		jsmess_machine->probe_service_saveload();
++	}
+@@ -1427,0 +1482,12 @@
++
++	EM_ASM_ARGS({
++		if (typeof JSMESS !== "undefined") {
++			JSMESS.machinePaused = $0 !== 0;
++			JSMESS.exitPending = $1 !== 0;
++			JSMESS.stateOperationPending = $2 !== 0;
++			JSMESS.inputRightPressed = $3 !== 0;
++			if ($4 >= 0) JSMESS.hookResult = $4;
++		}
++	}, jsmess_machine->paused(), jsmess_machine->exit_pending(),
++		jsmess_machine->save_or_load_pending(),
++		jsmess_machine->ioport().type_pressed(IPT_JOYSTICK_RIGHT, 0), hook_result);
+--- a/src/emu/schedule.c
++++ b/src/emu/schedule.c
+@@ -652,0 +653 @@
++#if !defined(EMSCRIPTEN)
+@@ -655,0 +657 @@
++#endif
+@@ -686,0 +689 @@
++#if !defined(EMSCRIPTEN)
+@@ -689,0 +693 @@
++#endif

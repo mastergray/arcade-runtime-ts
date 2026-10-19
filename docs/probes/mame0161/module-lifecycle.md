@@ -43,8 +43,9 @@ adds diagnostics without changing the lifecycle. On each browser callback it:
   `schedule_new_driver()` plus `schedule_hard_reset()` sequence used by MAME.
 
 The game-probe builder accepts the second short name only through
-`MAME_PROBE_SECOND_MACHINE`, verifies that it is a different entry already in
-the parent/clone build, and injects it into the ignored generated artifact.
+`secondMachine` in the ignored probe config, verifies that it is a different
+entry already in the parent/clone build, and injects it into the ignored
+generated artifact.
 The tracked bridge and browser test contain no machine or ROM identity.
 
 Run the browser check against a locally served two-machine artifact:

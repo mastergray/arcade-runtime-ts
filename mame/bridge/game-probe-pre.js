@@ -31,16 +31,26 @@ if (typeof window !== "undefined"
 }
 
 // These names are referenced by the stock JavaScript sound shim. The probe
-// selects `-sound none`, but no-op definitions keep the link safe if MAME
-// initializes volume before applying that selection.
-function jsmess_update_audio_stream() {}
-function jsmess_set_mastervolume() {}
+// records its boundary traffic when `-sound js` is selected and remains safe
+// when another probe selects `-sound none`.
+function jsmess_update_audio_stream(bufferPointer, frames) {
+    JSMESS.audioCallbackCount = (JSMESS.audioCallbackCount || 0) + 1;
+    JSMESS.audioFrameCount = (JSMESS.audioFrameCount || 0) + frames;
+    JSMESS.lastAudioBufferPointer = bufferPointer;
+    JSMESS.lastAudioFrames = frames;
+}
+function jsmess_set_mastervolume(attenuation) {
+    JSMESS.masterAttenuation = attenuation;
+}
 
 if (typeof MAME_PROBE_MACHINE !== "string" || MAME_PROBE_MACHINE.length === 0) {
     throw new Error("Missing local MAME probe machine");
 }
 if (typeof MAME_PROBE_SECOND_MACHINE !== "string") {
     throw new Error("Missing local MAME second probe machine configuration");
+}
+if (MAME_PROBE_SOUND !== "none" && MAME_PROBE_SOUND !== "js") {
+    throw new Error("Invalid local MAME sound probe configuration");
 }
 
 var selectedProbeMachine = MAME_PROBE_MACHINE;
@@ -80,6 +90,28 @@ JSMESS.pacingSnapshot = function() {
         lastEmulatedAdvanceUs: pacing.lastEmulatedAdvanceUs,
     };
 };
+JSMESS.requestHook = function(name) {
+    var commands = {
+        pause: 1,
+        resume: 2,
+        softReset: 3,
+        save: 4,
+        load: 5,
+        exit: 6,
+    };
+    if (name === "save") {
+        // Emscripten 1.38.31's libc path crashes when open(O_CREAT) creates
+        // the state file. Create only the missing MEMFS node here; MAME still
+        // owns truncation, serialization and every subsequent load.
+        var statePath = "/sta/" + JSMESS.currentMachine() + "/p7-probe.sta";
+        if (!FS.analyzePath(statePath).exists) {
+            FS.mkdirTree(statePath.slice(0, statePath.lastIndexOf("/")));
+            FS.writeFile(statePath, new Uint8Array(0));
+        }
+    }
+    JSMESS.hookResult = null;
+    JSMESS.hookRequest = commands[name] || -1;
+};
 
 Module["onRuntimeInitialized"] = function() {
     JSMESS.running = true;
@@ -89,7 +121,7 @@ Module["arguments"] = [
     selectedProbeMachine,
     "-rompath", "/roms",
     "-video", "soft",
-    "-sound", "none",
+    "-sound", MAME_PROBE_SOUND,
     "-window",
     "-nomaximize",
     "-skip_gameinfo",

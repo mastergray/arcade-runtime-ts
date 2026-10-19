@@ -2,11 +2,12 @@
 set -euo pipefail
 
 project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-source_dir="${1:-}"
+source_dir=""
 emsdk_dir="${EMSDK_DIR:-${project_root}/res/emsdk}"
 compatibility_patch="${project_root}/mame/patches/0001-emscripten-1.38.31-compatibility.patch"
 lifecycle_probe_patch="${project_root}/mame/patches/0002-emscripten-lifecycle-probe.patch"
 pacing_probe_patch="${project_root}/mame/patches/0003-emscripten-pacing-probe.patch"
+bridge_hooks_probe_patch="${project_root}/mame/patches/0004-emscripten-bridge-hooks-probe.patch"
 expected_emsdk="$(tr -d '[:space:]' < "${project_root}/mame/EMSDK_VERSION")"
 probe_kind="${MAME_PROBE_KIND:-list}"
 pre_js="${project_root}/mame/bridge/tiny-probe-pre.js"
@@ -15,16 +16,53 @@ subtarget="tiny"
 bitcode_name="mametiny.bc"
 link_options=()
 generated_pre_js=""
+config_output=""
 
 cleanup() {
     if [[ -n "${generated_pre_js}" ]]; then
         rm -f "${generated_pre_js}"
     fi
+    if [[ -n "${config_output}" ]]; then
+        rm -f "${config_output}"
+    fi
 }
 trap cleanup EXIT
 
+if [[ "${probe_kind}" == "list" ]]; then
+    source_dir="${1:-}"
+else
+    config_file="${1:-}"
+    if [[ -z "${config_file}" || "$#" -ne 1 ]]; then
+        echo "Usage: $0 /path/to/private-probe.json" >&2
+        exit 2
+    fi
+    if [[ ! -f "${config_file}" ]]; then
+        echo "Missing private local probe config: ${config_file}" >&2
+        exit 2
+    fi
+
+    config_output="$(mktemp)"
+    node "${project_root}/scripts/read-mame-probe-config.js" \
+        "${config_file}" "${probe_kind}" > "${config_output}"
+    mapfile -d '' -t probe_config < "${config_output}"
+    if [[ "${#probe_config[@]}" -lt 8 ]]; then
+        echo "Private local probe config is incomplete" >&2
+        exit 2
+    fi
+
+    source_dir="${probe_config[0]}"
+    emsdk_dir="${probe_config[1]}"
+    machine="${probe_config[2]}"
+    parent="${probe_config[3]}"
+    second_machine="${probe_config[4]}"
+    sound="${probe_config[5]}"
+    target_file="${probe_config[6]}"
+    output_name="${probe_config[7]}"
+    rom_archives=("${probe_config[@]:8}")
+fi
+
 if [[ -z "${source_dir}" || ! -f "${source_dir}/makefile" ]]; then
-    echo "Usage: EMSDK_DIR=/path/to/emsdk $0 /path/to/mame0161-source" >&2
+    echo "Missing MAME 0.161 source checkout: ${source_dir}" >&2
     exit 2
 fi
 
@@ -37,21 +75,12 @@ case "${probe_kind}" in
     list)
         ;;
     family)
-        machine="${MAME_PROBE_MACHINE:-}"
-        target_file="${MAME_PROBE_TARGET:-${project_root}/res/mame-runtimeprobe.lua}"
-        output_name="${MAME_PROBE_OUTPUT:-mamefamily-probe}"
-        shift
-
         if [[ ! "${machine}" =~ ^[a-z0-9_]+$ ]]; then
-            echo "MAME_PROBE_MACHINE must be a non-empty MAME short name" >&2
+            echo "Probe machine must be a non-empty MAME short name" >&2
             exit 2
         fi
         if [[ ! "${output_name}" =~ ^[a-z0-9_-]+$ ]]; then
-            echo "MAME_PROBE_OUTPUT must be a safe artifact basename" >&2
-            exit 2
-        fi
-        if [[ "$#" -ne 0 ]]; then
-            echo "The family probe accepts only the MAME source path" >&2
+            echo "Probe output must be a safe artifact basename" >&2
             exit 2
         fi
         if [[ ! -f "${target_file}" ]]; then
@@ -69,31 +98,28 @@ case "${probe_kind}" in
         bitcode_name="mameruntimeprobe.bc"
         ;;
     game)
-        machine="${MAME_PROBE_MACHINE:-}"
-        parent="${MAME_PROBE_PARENT:-}"
-        second_machine="${MAME_PROBE_SECOND_MACHINE:-}"
-        target_file="${MAME_PROBE_TARGET:-${project_root}/res/mame-runtimeprobe.lua}"
-        output_name="${MAME_PROBE_OUTPUT:-mamegame-probe}"
-        shift
-
         if [[ ! "${machine}" =~ ^[a-z0-9_]+$ ]]; then
-            echo "MAME_PROBE_MACHINE must be a non-empty MAME short name" >&2
+            echo "Probe machine must be a non-empty MAME short name" >&2
             exit 2
         fi
         if [[ -n "${parent}" && ! "${parent}" =~ ^[a-z0-9_]+$ ]]; then
-            echo "MAME_PROBE_PARENT must be a MAME short name when supplied" >&2
+            echo "Probe parent must be a MAME short name when supplied" >&2
             exit 2
         fi
         if [[ -n "${second_machine}" && ! "${second_machine}" =~ ^[a-z0-9_]+$ ]]; then
-            echo "MAME_PROBE_SECOND_MACHINE must be a MAME short name when supplied" >&2
+            echo "Probe secondMachine must be a MAME short name when supplied" >&2
             exit 2
         fi
         if [[ ! "${output_name}" =~ ^[a-z0-9_-]+$ ]]; then
-            echo "MAME_PROBE_OUTPUT must be a safe artifact basename" >&2
+            echo "Probe output must be a safe artifact basename" >&2
             exit 2
         fi
-        if [[ "$#" -eq 0 ]]; then
-            echo "The game probe requires local ROM archives after the source path" >&2
+        if [[ "${sound}" != "none" && "${sound}" != "js" ]]; then
+            echo "Probe sound must be none or js" >&2
+            exit 2
+        fi
+        if [[ "${#rom_archives[@]}" -eq 0 ]]; then
+            echo "The game probe requires local ROM archives in its config" >&2
             exit 2
         fi
         if [[ ! -f "${target_file}" ]]; then
@@ -115,12 +141,12 @@ case "${probe_kind}" in
                 fi
             done
             if [[ "${second_machine_in_build}" -ne 1 || "${second_machine}" == "${machine}" ]]; then
-                echo "MAME_PROBE_SECOND_MACHINE must name a different compiled parent/clone entry" >&2
+                echo "Probe secondMachine must name a different compiled parent/clone entry" >&2
                 exit 2
             fi
         fi
 
-        for rom_archive in "$@"; do
+        for rom_archive in "${rom_archives[@]}"; do
             if [[ ! -f "${rom_archive}" ]]; then
                 echo "Missing local ROM archive: ${rom_archive}" >&2
                 exit 2
@@ -150,6 +176,7 @@ case "${probe_kind}" in
         generated_pre_js="$(mktemp)"
         printf 'var MAME_PROBE_MACHINE = "%s";\n' "${machine}" > "${generated_pre_js}"
         printf 'var MAME_PROBE_SECOND_MACHINE = "%s";\n' "${second_machine}" >> "${generated_pre_js}"
+        printf 'var MAME_PROBE_SOUND = "%s";\n' "${sound}" >> "${generated_pre_js}"
         pre_js="${project_root}/mame/bridge/game-probe-pre.js"
         subtarget="runtimeprobe"
         bitcode_name="mameruntimeprobe.bc"
@@ -188,15 +215,24 @@ remove_source_patch_if_applied() {
     fi
 }
 
+bridge_hooks_probe_is_applied() {
+    grep -Fq 'probe_service_saveload()' "${source_dir}/src/emu/machine.h"
+}
+
 apply_source_patch "${compatibility_patch}"
 if [[ "${probe_kind}" == "game" ]]; then
     # The pacing probe is layered on the lifecycle probe and overlaps its
-    # function context. Peel it off before checking P4 so repeated builds are
-    # idempotent, then restore the complete game-probe stack.
-    remove_source_patch_if_applied "${pacing_probe_patch}"
-    apply_source_patch "${lifecycle_probe_patch}"
-    apply_source_patch "${pacing_probe_patch}"
+    # function context. When P7 is absent, peel P5 off before checking P4 and
+    # restore the complete stack. An already-complete stack stays untouched so
+    # the P7 header probe does not force an unnecessary broad rebuild.
+    if ! bridge_hooks_probe_is_applied; then
+        remove_source_patch_if_applied "${pacing_probe_patch}"
+        apply_source_patch "${lifecycle_probe_patch}"
+        apply_source_patch "${pacing_probe_patch}"
+        apply_source_patch "${bridge_hooks_probe_patch}"
+    fi
 else
+    remove_source_patch "${bridge_hooks_probe_patch}"
     remove_source_patch "${pacing_probe_patch}"
     remove_source_patch "${lifecycle_probe_patch}"
 fi

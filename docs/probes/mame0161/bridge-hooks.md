@@ -1,7 +1,8 @@
 # P7–P11: 0.161 bridge-hook findings
 
-Status: source API inventory complete enough to design the first bridge;
-runtime behavior remains unproven until a WebAssembly build exists.
+Status: P7 passed. The runtime boundaries and the stock browser-loop gaps are
+now measured. P8–P11 retain the source findings below and still need their
+dedicated runtime probes.
 
 ## Lifecycle and control (P7)
 
@@ -24,7 +25,38 @@ The release already adds Emscripten-only `js_get_machine()`, `js_get_ui()` and
 intended access pattern, but the final patch should expose narrow operations
 instead of exporting raw C++ object pointers as the public bridge contract.
 
-## Input
+## Runtime probe (P7)
+
+Observed 2026-10-19 with the pinned Emscripten 1.38.31 toolchain and headless
+Chromium. The fixture, its machine names and its ROM archives remain private
+local inputs and are not recorded here.
+
+[`0004-emscripten-bridge-hooks-probe.patch`](../../../mame/patches/0004-emscripten-bridge-hooks-probe.patch)
+counts machine notifications and exposes generic requests for pause, resume,
+soft reset, scheduled save/load and exit. It also reports one stock SDL input
+state and the native file/save error codes. The JavaScript shim counts the
+stock `js` sound-module callbacks without consuming their samples.
+
+[`06-mame-bridge-hooks-probe.test.ts`](../../../tests/browser/06-mame-bridge-hooks-probe.test.ts)
+runs each terminal or stateful observation in a fresh module through
+`ctg-js-browser-test`:
+
+| Boundary | Runtime result | Bridge consequence |
+| -------- | -------------- | ------------------ |
+| Video/frame | More than 30 `MACHINE_NOTIFY_FRAME` callbacks arrived after startup. | The production loop can expose a frame/tick notification, while P9 still owns pixels, format and orientation. |
+| Sound | The stock `js` module repeatedly supplied a non-zero `INT16` buffer address and frame count. | A web sound module can adapt this mixed-PCM boundary; P10 still measures rate and cadence. |
+| Input | Pressing and releasing a browser arrow key changed `IPT_JOYSTICK_RIGHT` from false to true and back through SDL. | MAME's input port layer is live; the production module should replace SDL key handling with bridge-owned virtual-device states. |
+| Pause/resume | Both notifications and the paused flag changed, but machine time still advanced by more than 250 ms over 20 browser callbacks while paused. | The replacement outer loop must branch on `paused()` and must not advance the device scheduler while paused. |
+| Soft reset | `schedule_soft_reset()` produced a second reset notification without a shell exception. | The narrow soft-reset export can use the existing scheduler API. |
+| State load | A scheduled load with no state file reported a file-open error, no save-format error and no shell exception. | The bridge can distinguish file and serialization failures and report completion rather than scraping UI text. |
+| State round trip | A scheduled save succeeded, machine time advanced, a scheduled load rewound to the saved time, and another 30 callbacks advanced without an exception. Two legacy-toolchain accommodations were required: pre-create the missing MEMFS state node before native `open(O_CREAT)`, and suppress the scheduler's diagnostic-only timer dumps under Emscripten. | Use scheduled operations at a dedicated between-timeslice boundary; do not expose `immediate_save()`/`immediate_load()`. Preserve both Emscripten accommodations in the production patch. |
+| Exit | `schedule_exit()` set `exit_pending`, but 20 more callbacks ran and no exit notifier fired. | Stop the browser loop and discard the module explicitly; do not wait for the abandoned native `run()` stack to perform cleanup. |
+
+P4 already established the same terminal behavior for hard reset and a
+new-driver request. A hard reset therefore means a fresh module, not an
+in-module machine transition.
+
+## Input source boundary
 
 The OSD owns input enumeration. The included minimal OSD demonstrates the
 needed pattern: add an input device through `machine.input().device_class(...)`,
@@ -32,11 +64,11 @@ then add items backed by small callbacks and stable state fields. A web input
 module can register per-player digital devices/items and have each callback
 read bridge-owned state set by exported functions.
 
-The first runtime patch still needs to prove the exact item IDs and generated
-controller configuration for player buttons, directions, coin, start, service
-and test. Browser DOM key handling does not belong in MAME; JavaScript maps
-physical sources to `ArcadeControl` and only sends normalized control states
-across the bridge.
+The runtime probe confirms that input reaches `ioport_manager`; it does not
+prove the final web device's item IDs or generated controller configuration
+for player buttons, directions, coin, start, service and test. Browser DOM key
+handling does not belong in MAME; JavaScript maps physical sources to
+`ArcadeControl` and only sends normalized control states across the bridge.
 
 ## Video (P9)
 
@@ -102,14 +134,19 @@ records rather than depend on human-readable text alone.
 
 ## Patch implications
 
-The source supports the bridge architecture in the specification. The current
-minimum patch shape is:
+The source and runtime probe support the bridge architecture in the
+specification. The minimum patch shape is:
 
 1. add web video/input/sound OSD modules and fix the `js` sound `init()` return;
-2. add narrow exported lifecycle, control, metadata and save-state functions;
-3. expose a safe mid-run NVRAM/config flush; and
-4. register an OSD output delegate for structured audit/error delivery.
+2. add narrow exported lifecycle, control, metadata and scheduled state
+   functions, plus explicit result callbacks;
+3. replace the stock outer loop so pause does not run the scheduler, pending
+   state work is serviced at a controlled boundary, and terminal operations
+   stop callbacks rather than waiting on an abandoned stack;
+4. expose a safe mid-run NVRAM/config flush; and
+5. register an OSD output delegate for structured audit/error delivery.
 
-This inventory is not acceptance evidence for timing, rendering, audio or
-persistence; those remain browser measurements after P2 produces a runnable
-module.
+P7 accepts the scheduled state boundary and its save/load round trip for the
+probe fixture. The final adapter still needs the same assertions against its
+public Promise API. Rendering, audio cadence, persistence and audit behavior
+remain P8–P11 measurements.

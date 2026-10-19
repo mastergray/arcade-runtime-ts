@@ -34,12 +34,11 @@ The tracked family definitions are `mame/targets/cps1.lua`,
 and device cores but contain no private machine or ROM identity. A local probe
 supplies one representative machine at build time:
 
+Create an ignored JSON config with the source, emsdk, representative machine,
+tracked target path and generic output basename, then run:
+
 ```sh
-MAME_PROBE_MACHINE=<local-machine> \
-MAME_PROBE_TARGET="$PWD/mame/targets/<family>.lua" \
-MAME_PROBE_OUTPUT=mamefamily-<family> \
-EMSDK_DIR="$PWD/res/emsdk" \
-npm run probe:mame:family -- "$PWD/.cache/mame0161-source"
+npm run probe:mame:family -- "$PWD/res/mame-family-probe.json"
 ```
 
 Each resulting module instantiated in Chromium and returned its generated

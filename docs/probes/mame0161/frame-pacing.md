@@ -46,7 +46,7 @@ measures three seconds. This is deterministic cadence replay in headless
 Chromium, not a claim about the timing characteristics of a physical monitor.
 
 Build a separate ignored artifact by adding
-`MAME_PROBE_OUTPUT=mamepacing-probe` to the generic local-game command, serve
+`"output": "mamepacing-probe"` in the ignored local-game config, serve
 the source directory, then run:
 
 ```sh

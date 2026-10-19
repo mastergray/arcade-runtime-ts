@@ -618,6 +618,13 @@ Callbacks into JS (`EM_JS`): `onTick`, `onFrame`, `onSound`,
 `onStateDone(ok)`, `onExit`, `onLog(level, text)`. `onTick` fires once
 per emulated frame even when frameskip suppresses video.
 
+P7 confirmed that scheduled state work can be serviced at an explicit
+between-timeslice boundary: save, continued execution, load, time rewind and
+continued execution all passed. The pinned toolchain additionally requires
+the missing MEMFS state node to be created before MAME opens it and requires
+the scheduler's diagnostic-only timer dumps to be suppressed. The bridge
+never calls `immediate_save` or `immediate_load`.
+
 ### 4.4 Generated controller config
 
 At start, the adapter writes `/mame/ctrlr/web.cfg` mapping each MAME
@@ -708,8 +715,13 @@ Session behavior:
   four periods per tick. Excess time is discarded after the cap so a resumed
   background tab does not fast-forward. `onTick` still comes from each
   emulated screen frame, independently of a 60, 90, 120 or 144 Hz display.
+- **Pause and terminal control.** A paused tick pumps the video/OSD boundary
+  without advancing the device scheduler. Exit and hard reset stop browser
+  callbacks explicitly; hard reset creates a fresh module, while exit flushes
+  persistence and reports completion before the old module is discarded.
 - **`saveState` / `loadState`** resolve or reject with `STATE_FAILED`
-  on `onStateDone`.
+  on `onStateDone`. The loop services one pending scheduled operation only at
+  its between-timeslice boundary and yields before scheduling more emulation.
 - **`persist`** calls `web_flush_nvram()` and rehashes `nvram`, `cfg`
   and `sta`. It returns `null` when those hashes have not changed since
   start or the previous successful `persist`. Otherwise it writes a
