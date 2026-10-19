@@ -37,7 +37,7 @@
     "test:all": "node --import tsx tests/run.ts spec browser"
   },
   "author": "mastergray",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/mastergray/mame-game-runtime-ts.git"

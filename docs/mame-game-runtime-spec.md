@@ -15,20 +15,18 @@ with Emscripten** and owns the browser bridge:
 
 - **Direct MAME path (built first).** Compile a pinned MAME source tree
   with a small C++ web OSD/bridge. The initial compatibility target is
-  MAME 0.161, corresponding to the local `mame0161b_64bit.exe`
-  reference. The bridge hands frames and samples to JavaScript instead
-  of opening native devices and takes input from JavaScript instead of
-  SDL events.
+  the official `mame0161` tag. The bridge hands frames and samples to
+  JavaScript instead of opening native devices and takes input from
+  JavaScript instead of SDL events.
 - **Optional libretro path (later).** After direct MAME reaches feature
   parity, FBNeo, MAME 2003-Plus or a libretro MAME core may implement the
   same adapter boundary as performance/coverage alternatives. Their ROM
   sets and behavior are labeled separately; they never stand in for or
   prove direct-MAME compatibility.
 
-The Windows executable is never translated, bundled or run in the
-browser. It is an already-compiled reference binary used only for local
-ROM auditing and behavioral comparison. The WebAssembly artifact comes
-from the corresponding MAME source.
+The WebAssembly artifact and native comparison baseline are both built from
+the authenticated source tag. Prebuilt platform executables are not inputs to
+the runtime or its acceptance evidence.
 
 Target content is early-'90s arcade hardware: Capcom CPS-1, SNK Neo
 Geo, Sega System 16/18/32, Irem M72/M92, Konami boards of the period,
@@ -98,13 +96,13 @@ devices.
 
 The first usable release is M0 through M8 in §12. It needs a pinned
 direct-MAME source build and at least one legally authorized automated
-test ROM acquired separately from its approved source. The initial pin is MAME 0.161 so the browser build
-can be compared against the supplied native reference and its ROM-set
-generation. If the M0 probe proves 0.161 technically infeasible, work
-stops at a written decision gate: the project chooses another explicit
-MAME source release or accepts a ROM migration. It does not silently
-substitute FBNeo. Every manifest labels its adapter and ROM-set lineage
-so arbitrary ROM zips are never implied to be interchangeable.
+test ROM acquired separately from its approved source. The initial pin is
+MAME 0.161 so the browser build can be compared against a source-built native
+baseline from the same ROM-set generation. If the M0 probe proves 0.161
+technically infeasible, work stops at a written decision gate: the project
+chooses another explicit MAME source release or accepts a ROM migration. It
+does not silently substitute FBNeo. Every manifest labels its adapter and
+ROM-set lineage so arbitrary ROM zips are never implied to be interchangeable.
 
 ### 0.3 ROM ownership and local fixtures
 
@@ -561,8 +559,8 @@ A build file:
 The source path above reflects the expected 0.161-era tree; P1/P2
 replace it with the exact audited path if the matching source differs.
 
-`sources` comes from the pinned native reference's `-listsource
-<machine>` output or the equivalent source-tree data for that release.
+`sources` comes from the pinned source-built binary's `-listsource <machine>`
+output or the equivalent source-tree data for that release.
 `machines` is informational; the authoritative list is what the pinned
 build reports into `build.json`, which is what
 `MACHINE_NOT_IN_BUILD` checks against.
@@ -1449,7 +1447,7 @@ critical path to the first usable release.
 
 | # | Milestone | Acceptance |
 | - | --------- | ---------- |
-| M0 | **Probe direct MAME 0.161.** Obtain the matching source, build one small driver family with Emscripten, compare it with the native reference and answer P1–P12 (§13.1). | Probe record plus an explicit go/no-go decision for 0.161; no backend substitution |
+| M0 | **Probe direct MAME 0.161.** Authenticate the official source, build one small driver family natively and with Emscripten, compare those builds and answer P1–P12 (§13.1). | Probe record plus an explicit go/no-go decision for 0.161; no backend substitution |
 | M1 | **MAME bridge + `MameEmulatorAdapter` + `ArcadeDisplay`.** Implement the pinned build recipe, web OSD modules, bridge exports and fresh-module lifecycle. | A MAME 0.161 game renders upright at native size and correct speed on 60 and 120 Hz displays |
 | M2 | **`ArcadeAudio`.** | Audible after one gesture; `queuedMs` stays under the cap for 60 s |
 | M3 | **`ArcadeInput` + `KeyboardSource` + generated MAME controller config.** | Coin, start and play from the keyboard without MAME default-key handling |
@@ -1479,7 +1477,7 @@ measurements under `docs/probes/mame0161/`.
 
 | ID | Question | Decides |
 | -- | -------- | ------- |
-| P1 | What official source tag/archive exactly corresponds to `mame0161b_64bit.exe`, what licence/notices govern its built artifacts, and do `-help`, `-listfull`, `-listsource` and `-listxml` agree on the reference version/machine data? | Immutable source identity, distribution gate and native comparison baseline |
+| P1 | What official source tag/archive defines MAME 0.161, what licence/notices govern its built artifacts, and do source-built `-help`, `-listfull`, `-listsource` and `-listxml` outputs agree on the version and machine data? | Immutable source identity, distribution gate and native comparison baseline |
 | P2 | Which emsdk version can compile that source, what build-system changes are required, and how long does a clean single-family build take? | `EMSDK_VERSION`, build-only patch set and CI feasibility |
 | P3 | Can 0.161 produce driver-family subsets, and what are raw/gzip/brotli sizes for a small family, CPS-1, Irem M72 and Neo Geo? | Family layout and download budget |
 | P4 | Can one module instance run a second machine after exit, or must every start instantiate a fresh module? | Fresh-module lifecycle in §5 |

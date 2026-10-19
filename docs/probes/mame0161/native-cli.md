@@ -1,8 +1,10 @@
 # P1: source-built native CLI baseline
 
-Observed 2026-10-17 from the extracted 0.161 source package. This is a native
-Linux `tiny`-subtarget baseline, not yet a comparison against the supplied
-Windows reference.
+Status: pass.
+
+Observed 2026-10-17 from the extracted 0.161 source package. This native Linux
+`tiny`-subtarget build is the P1 comparison baseline for browser builds from
+the same authenticated source.
 
 ## Build
 
@@ -87,10 +89,10 @@ silently treated as clean native behavior. They are a compatibility warning to
 recheck under the eventual pinned Emscripten toolchain and, if necessary, with
 a minimal allocator patch.
 
-## Remaining comparison
+## Conclusion
 
-P1 remains partial until the same commands can run against the 0.161 Windows
-reference and the local source package is authenticated against the pinned tag
-tree or an independently published official checksum. The future browser
-module must then reproduce the same release, 25-name subset and source/XML
-relationships.
+The source package has since matched the official tagged tree byte-for-byte,
+as recorded in [source-and-licence.md](source-and-licence.md). A separately
+compiled platform executable would duplicate that provenance evidence and is
+not part of P1 acceptance. Future browser modules must reproduce this release,
+25-name subset and the recorded source/XML relationships.

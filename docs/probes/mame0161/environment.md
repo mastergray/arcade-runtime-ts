@@ -17,7 +17,7 @@ Observed 2026-10-17 in the project workspace.
 | Tool or capability | Status |
 | ------------------ | ------ |
 | `emcc`, `emmake` | Emscripten 1.38.31 Fastcomp installed locally under ignored `res/emsdk/` |
-| Wine | Not installed; the Windows reference cannot yet run here |
+| Wine | Not installed and not required; P1 uses authenticated source and a source-built native baseline |
 | Docker client | Installed |
 | Docker daemon | Unavailable to the workspace user through its Unix socket |
 | 7-Zip CLI | Not installed |

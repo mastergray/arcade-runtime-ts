@@ -2,7 +2,7 @@
 
 This directory owns the reproducible direct-MAME WebAssembly build. `VERSION`
 pins the initial source release to `mame0161` so it can be compared with the
-local native reference.
+source-built native baseline.
 
 M0 records the exact source identity, licence files, compatible Emscripten SDK,
 build commands and required patches here. `EMSDK_VERSION` pins the first SDK
@@ -16,9 +16,10 @@ EMSDK_DIR="$PWD/res/emsdk" npm run probe:mame:tiny -- \
   "$PWD/.cache/mame0161-source"
 ```
 
-It applies the compatibility patch when needed, builds `mametiny.bc`, and
-links `mametiny-probe.{html,js,wasm}`. The probe pre-JavaScript selects MAME's
-ROM-free `-listfull` path; it is test harness code, not the runtime bridge.
+It applies the compatibility and browser-only Mongoose-removal patches when
+needed, builds `mametiny.bc`, and links `mametiny-probe.{html,js,wasm}`. The
+probe pre-JavaScript selects MAME's ROM-free `-listfull` path; it is test
+harness code, not the runtime bridge.
 
 The real-game M0 probe takes its source, target definition, machine, optional
 parent and ROM archives from one ignored local JSON file. The selected title
@@ -115,6 +116,6 @@ pause/exit behavior. It also verifies save, continued execution, load, time
 rewind and continued execution. These probe-only hooks do not define the
 production web bridge API.
 
-The repository does not compile or redistribute the native executable in
-`res/`, and it does not vendor ROMs, SDK files, generated emulator artifacts,
-or a MAME source checkout.
+The repository does not redistribute prebuilt executables from `res/`, and it
+does not vendor ROMs, SDK files, generated emulator artifacts or a MAME source
+checkout.

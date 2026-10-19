@@ -1,0 +1,95 @@
+From: mastergray <mastergray@users.noreply.github.com>
+Subject: [PATCH] omit the unused Mongoose server from browser builds
+
+The runtime supplies its own JavaScript bridge and never exposes MAME's
+internal HTTP/WebSocket server.  Keep native MAME behavior unchanged while
+replacing the web engine with no-op browser stubs, avoiding the Lua console's
+Mongoose header, and omitting the Mongoose archive from the asmjs link.
+
+--- a/scripts/src/main.lua
++++ b/scripts/src/main.lua
+@@ -95,8 +95,12 @@
+ 		"sqllite3",
+ 		"zlib",
+ 		"jsoncpp",
+-		"mongoose",
+ 	}
++	if _OPTIONS["targetos"]~="asmjs" then
++		links {
++			"mongoose",
++		}
++	end
+ 	if _OPTIONS["NO_USE_MIDI"]=="0" then
+ 		links {
+ 			"portmidi",
+--- a/src/emu/luaengine.c
++++ b/src/emu/luaengine.c
+@@ -17,7 +17,9 @@
+ #include "osdepend.h"
+ #include "drivenum.h"
+ #include "ui/ui.h"
++#if !defined(EMSCRIPTEN)
+ #include "mongoose/mongoose.h"
++#endif
+ 
+ //**************************************************************************
+ //  LUA ENGINE
+@@ -811,6 +813,7 @@
+ 
+ osd_lock *lock;
+ 
++#if !defined(EMSCRIPTEN)
+ void lua_engine::serve_lua()
+ {
+ 	osd_sleep(osd_ticks_per_second() / 1000 * 50);
+@@ -868,6 +871,7 @@
+ 	engine->serve_lua();
+ 	return NULL;
+ }
++#endif
+ 
+ 
+ //-------------------------------------------------
+--- a/src/emu/webengine.c
++++ b/src/emu/webengine.c
+@@ -8,7 +8,6 @@
+ 
+ ***************************************************************************/
+ 
+-#include "mongoose/mongoose.h"
+ #include "jsoncpp/include/json/json.h"
+ #include "emu.h"
+ #include "emuopts.h"
+@@ -18,6 +17,26 @@
+ 
+ #include "osdepend.h"
+ 
++#if defined(EMSCRIPTEN)
++
++web_engine::web_engine(emu_options &options)
++	: m_options(options),
++		m_machine(NULL),
++		m_server(NULL),
++		m_exiting_core(false),
++		m_http(false)
++{
++}
++
++web_engine::~web_engine() { }
++void web_engine::close() { }
++void web_engine::serve() { }
++void web_engine::push_message(const char *message) { (void)message; }
++
++#else
++
++#include "mongoose/mongoose.h"
++
+ //**************************************************************************
+ //  WEB ENGINE
+ //**************************************************************************
+@@ -543,3 +562,5 @@
+ 		}
+ 	}
+ }
++
++#endif

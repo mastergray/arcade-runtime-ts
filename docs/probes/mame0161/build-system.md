@@ -64,7 +64,7 @@ audited pair before the remaining P3 size measurements are meaningful.
 ## Required compatibility patch
 
 [`0001-emscripten-1.38.31-compatibility.patch`](../../../mame/patches/0001-emscripten-1.38.31-compatibility.patch)
-is the complete build-only patch for this proof. It:
+contains the pinned-toolchain compatibility changes. It:
 
 - removes hard-coded legacy system include paths that override 1.38.31's
   libc/libc++ include order;
@@ -78,6 +78,17 @@ is the complete build-only patch for this proof. It:
 - disables MAME's diagnostic allocation tracker for this target while keeping
   its explicit allocation paths untracked. This prevents Fastcomp from mixing
   inline tracked deletes with libc++ allocations.
+
+[`0005-emscripten-disable-mongoose.patch`](../../../mame/patches/0005-emscripten-disable-mongoose.patch)
+then removes MAME's unused internal HTTP/WebSocket server from browser builds.
+It substitutes a no-op `web_engine`, omits the Mongoose archive from the asmjs
+link and leaves native builds unchanged. The browser runtime owns its own
+bridge and does not support MAME's `-http` feature.
+
+Two consecutive incremental probe builds completed after this patch. The
+generated `mametiny` dependency list contains no Mongoose archive, `llvm-nm`
+finds no `mg_*` or `ns_*` symbols in `mametiny.bc`, and the maintained CTG
+browser startup/static-hosting cases both pass against the resulting module.
 
 The generated GNU Make project does not retain the stock post-build command,
 so the reproducible probe script performs the final `emcc` link explicitly.

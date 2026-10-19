@@ -12,12 +12,19 @@ a standalone static deployment for desktop and mobile browsers.
 ## Status
 
 Specification and feasibility-probe stage. Direct MAME source is the
-primary implementation path, initially targeting MAME 0.161. The local
-Windows executable under `res/` is a native comparison reference; it is
-not compiled into WebAssembly or committed to this repository.
+primary implementation path, initially targeting the authenticated official
+MAME 0.161 tag. Native and WebAssembly comparison builds come from that same
+source tree.
 
 See the [implementation spec](docs/mame-game-runtime-spec.md) for the
 architecture, milestones, probe plan and acceptance criteria.
+
+## Licensing
+
+The original TypeScript runtime and npm package use the
+[MIT licence](LICENSE). MAME is a separately built input: source patches and
+generated MAME 0.161 artifacts retain MAME's historical licence and all
+applicable third-party notices rather than being relicensed as MIT.
 
 ## Development
 

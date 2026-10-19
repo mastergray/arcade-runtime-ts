@@ -5,6 +5,7 @@ project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source_dir=""
 emsdk_dir="${EMSDK_DIR:-${project_root}/res/emsdk}"
 compatibility_patch="${project_root}/mame/patches/0001-emscripten-1.38.31-compatibility.patch"
+no_mongoose_patch="${project_root}/mame/patches/0005-emscripten-disable-mongoose.patch"
 lifecycle_probe_patch="${project_root}/mame/patches/0002-emscripten-lifecycle-probe.patch"
 pacing_probe_patch="${project_root}/mame/patches/0003-emscripten-pacing-probe.patch"
 bridge_hooks_probe_patch="${project_root}/mame/patches/0004-emscripten-bridge-hooks-probe.patch"
@@ -192,7 +193,7 @@ apply_source_patch() {
     local patch_file="$1"
     if patch --dry-run --silent --forward --batch -p1 -d "${source_dir}" < "${patch_file}" >/dev/null 2>&1; then
         patch --silent --forward --batch -p1 -d "${source_dir}" < "${patch_file}"
-    elif ! patch --dry-run --silent --reverse --batch -p1 -d "${source_dir}" < "${patch_file}" >/dev/null 2>&1; then
+    elif ! patch --dry-run --silent --reverse --forward --batch -p1 -d "${source_dir}" < "${patch_file}" >/dev/null 2>&1; then
         echo "MAME source does not accept $(basename "${patch_file}")" >&2
         exit 2
     fi
@@ -200,7 +201,7 @@ apply_source_patch() {
 
 remove_source_patch() {
     local patch_file="$1"
-    if patch --dry-run --silent --reverse --batch -p1 -d "${source_dir}" < "${patch_file}" >/dev/null 2>&1; then
+    if patch --dry-run --silent --reverse --forward --batch -p1 -d "${source_dir}" < "${patch_file}" >/dev/null 2>&1; then
         patch --silent --reverse --batch -p1 -d "${source_dir}" < "${patch_file}"
     elif ! patch --dry-run --silent --forward --batch -p1 -d "${source_dir}" < "${patch_file}" >/dev/null 2>&1; then
         echo "MAME source does not accept $(basename "${patch_file}")" >&2
@@ -210,7 +211,7 @@ remove_source_patch() {
 
 remove_source_patch_if_applied() {
     local patch_file="$1"
-    if patch --dry-run --silent --reverse --batch -p1 -d "${source_dir}" < "${patch_file}" >/dev/null 2>&1; then
+    if patch --dry-run --silent --reverse --forward --batch -p1 -d "${source_dir}" < "${patch_file}" >/dev/null 2>&1; then
         patch --silent --reverse --batch -p1 -d "${source_dir}" < "${patch_file}"
     fi
 }
@@ -236,6 +237,7 @@ else
     remove_source_patch "${pacing_probe_patch}"
     remove_source_patch "${lifecycle_probe_patch}"
 fi
+apply_source_patch "${no_mongoose_patch}"
 
 # Emscripten 1.38.31 invokes its Python entry points through `python`.
 # The tracked shim selects Python 2 without modifying the installed SDK.

@@ -1,6 +1,7 @@
 {
   "repository": "https://github.com/mamedev/mame.git",
   "tag": "mame0161",
+  "tagObject": "e86fa8bcf4430937777d7a384f8ea7b9a01569ab",
   "commit": "76b978d039f922ed84796deb999389ebb1579191",
   "releaseDate": "2015-04-29",
   "sourcePackages": [

@@ -13,11 +13,12 @@ import type { TestFile } from "../run.ts";                       // Manifest con
  *
  */
 
-// INTERFACE :: {repository:STRING, tag:STRING, commit:STRING, releaseDate:STRING, sourcePackages:[STRING]}
+// INTERFACE :: {repository:STRING, tag:STRING, tagObject:STRING, commit:STRING, releaseDate:STRING, sourcePackages:[STRING]}
 // Immutable direct-MAME source identity established by P1.
 interface SourcePin {
     repository: string;
     tag: string;
+    tagObject: string;
     commit: string;
     releaseDate: string;
     sourcePackages: string[];
@@ -44,6 +45,7 @@ const EXPECTED_PIN: PinSnapshot = {
     source: {
         repository: "https://github.com/mamedev/mame.git",
         tag: "mame0161",
+        tagObject: "e86fa8bcf4430937777d7a384f8ea7b9a01569ab",
         commit: "76b978d039f922ed84796deb999389ebb1579191",
         releaseDate: "2015-04-29",
         sourcePackages: ["mame0161s.exe", "mame0161s.zip"],
