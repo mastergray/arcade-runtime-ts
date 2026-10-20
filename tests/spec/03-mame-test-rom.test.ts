@@ -22,6 +22,7 @@ const PACING_PATCH_URL = new URL("../../mame/patches/0003-emscripten-pacing-prob
 const BRIDGE_HOOKS_PATCH_URL = new URL("../../mame/patches/0004-emscripten-bridge-hooks-probe.patch", import.meta.url);
 const PERSISTENCE_PATCH_URL = new URL("../../mame/patches/0006-emscripten-persistence-probe.patch", import.meta.url);
 const VIDEO_PATCH_URL = new URL("../../mame/patches/0007-emscripten-video-probe.patch", import.meta.url);
+const AUDIO_PATCH_URL = new URL("../../mame/patches/0008-emscripten-audio-probe.patch", import.meta.url);
 
 const readText = (url: URL): string => readFileSync(url, "utf8");
 
@@ -222,6 +223,37 @@ const testFile: TestFile = {
                             && build.includes("video_probe_is_applied")
                             && build.includes('apply_source_patch "${video_probe_patch}"')
                             && build.includes('remove_source_patch "${video_probe_patch}"');
+                    },
+                    P.equals(true),
+                )
+                .start(undefined),
+        },
+        {
+            label: "measures the stock 48 kHz stereo mixer boundary",
+            run: () => CTGTest.init("private audio probe contract")
+                .assert(
+                    "the source patch reports native mixer facts with each callback",
+                    () => {
+                        const patch = readText(AUDIO_PATCH_URL);
+                        return patch.includes("sample_rate()")
+                            && patch.includes("is_throttled")
+                            && patch.includes("jsmess_update_audio_stream($0, $1, $2, $3)");
+                    },
+                    P.equals(true),
+                )
+                .assert(
+                    "the bridge samples signed interleaved stereo at an explicit 48 kHz",
+                    () => {
+                        const preJs = readText(PRE_JS_URL);
+                        const build = readText(PROBE_SCRIPT_URL);
+                        return preJs.includes('"-samplerate", "48000"')
+                            && preJs.includes("HEAP16[sampleOffset + frame * 2]")
+                            && preJs.includes("HEAP16[sampleOffset + frame * 2 + 1]")
+                            && preJs.includes('JSMESS.audioChannelOrder = "left-right"')
+                            && preJs.includes("resetAudioProbe")
+                            && build.includes("audio_probe_is_applied")
+                            && build.includes('apply_source_patch "${audio_probe_patch}"')
+                            && build.includes('remove_source_patch "${audio_probe_patch}"');
                     },
                     P.equals(true),
                 )

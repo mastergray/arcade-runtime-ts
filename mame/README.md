@@ -130,6 +130,12 @@ target to check orientation, and measures 30 warmed samples under Chromium's
 4× CPU-throttled mobile proxy. That proxy selects the bridge design; P12 still
 requires sustained-speed confirmation on an actual mid-range phone.
 
+P10 reuses the artifact with `"sound": "js"`. Set `MAME_AUDIO_PROBE_URL` to
+its served HTML path. The browser case discards startup traffic, then checks
+the native 48 kHz sample-rate report, signed interleaved left/right samples,
+exact 960-frame mixer chunks and browser-visible callback cadence. The probe
+uses the fixed `-samplerate 48000` runtime setting selected by the architecture.
+
 The repository does not redistribute prebuilt executables from `res/`, and it
 does not vendor ROMs, SDK files, generated emulator artifacts or a MAME source
 checkout.

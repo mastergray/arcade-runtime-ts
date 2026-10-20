@@ -98,14 +98,79 @@ if (typeof window !== "undefined"
     JSMESS.requestedDisplayHz = pacingCadenceHz;
 }
 
-// These names are referenced by the stock JavaScript sound shim. The probe
-// records its boundary traffic when `-sound js` is selected and remains safe
-// when another probe selects `-sound none`.
-function jsmess_update_audio_stream(bufferPointer, frames) {
+// These names are referenced by the JavaScript sound shim. The probe records
+// its production-shaped interleaved stereo boundary when `-sound js` is
+// selected and remains safe when another probe selects `-sound none`.
+JSMESS.resetAudioProbe = function() {
+    JSMESS.audioCallbackCount = 0;
+    JSMESS.audioFrameCount = 0;
+    JSMESS.audioProbeCallbacks = [];
+    JSMESS.audioProbeFirstCallbackMs = null;
+    JSMESS.audioProbeLastCallbackMs = null;
+    JSMESS.audioLeftMinimum = 32767;
+    JSMESS.audioLeftMaximum = -32768;
+    JSMESS.audioRightMinimum = 32767;
+    JSMESS.audioRightMaximum = -32768;
+    JSMESS.audioLeftNonZeroSamples = 0;
+    JSMESS.audioRightNonZeroSamples = 0;
+    JSMESS.audioDifferentChannelFrames = 0;
+    JSMESS.audioThrottledCallbacks = 0;
+};
+JSMESS.resetAudioProbe();
+
+function jsmess_update_audio_stream(bufferPointer, frames, sampleRate, isThrottled) {
+    var callbackMs = performance.now();
+    var sampleOffset = bufferPointer >>> 1;
+    var leftMinimum = 32767;
+    var leftMaximum = -32768;
+    var rightMinimum = 32767;
+    var rightMaximum = -32768;
+    var leftNonZeroSamples = 0;
+    var rightNonZeroSamples = 0;
+    var differentChannelFrames = 0;
+
+    for (var frame = 0; frame < frames; frame++) {
+        var left = HEAP16[sampleOffset + frame * 2];
+        var right = HEAP16[sampleOffset + frame * 2 + 1];
+        leftMinimum = Math.min(leftMinimum, left);
+        leftMaximum = Math.max(leftMaximum, left);
+        rightMinimum = Math.min(rightMinimum, right);
+        rightMaximum = Math.max(rightMaximum, right);
+        if (left !== 0) leftNonZeroSamples++;
+        if (right !== 0) rightNonZeroSamples++;
+        if (left !== right) differentChannelFrames++;
+    }
+
     JSMESS.audioCallbackCount = (JSMESS.audioCallbackCount || 0) + 1;
     JSMESS.audioFrameCount = (JSMESS.audioFrameCount || 0) + frames;
     JSMESS.lastAudioBufferPointer = bufferPointer;
     JSMESS.lastAudioFrames = frames;
+    JSMESS.audioSampleRate = sampleRate;
+    JSMESS.audioFormat = "S16LE";
+    JSMESS.audioChannels = 2;
+    JSMESS.audioLayout = "interleaved";
+    JSMESS.audioChannelOrder = "left-right";
+    JSMESS.audioLeftMinimum = Math.min(JSMESS.audioLeftMinimum, leftMinimum);
+    JSMESS.audioLeftMaximum = Math.max(JSMESS.audioLeftMaximum, leftMaximum);
+    JSMESS.audioRightMinimum = Math.min(JSMESS.audioRightMinimum, rightMinimum);
+    JSMESS.audioRightMaximum = Math.max(JSMESS.audioRightMaximum, rightMaximum);
+    JSMESS.audioLeftNonZeroSamples += leftNonZeroSamples;
+    JSMESS.audioRightNonZeroSamples += rightNonZeroSamples;
+    JSMESS.audioDifferentChannelFrames += differentChannelFrames;
+    JSMESS.audioThrottledCallbacks += isThrottled ? 1 : 0;
+    if (JSMESS.audioProbeFirstCallbackMs === null) {
+        JSMESS.audioProbeFirstCallbackMs = callbackMs;
+    }
+    if (JSMESS.audioProbeCallbacks.length < 512) {
+        JSMESS.audioProbeCallbacks.push({
+            atMs: callbackMs,
+            bufferPointer: bufferPointer,
+            frames: frames,
+            sampleRate: sampleRate,
+            throttled: isThrottled !== 0,
+        });
+    }
+    JSMESS.audioProbeLastCallbackMs = callbackMs;
 }
 function jsmess_set_mastervolume(attenuation) {
     JSMESS.masterAttenuation = attenuation;
@@ -195,6 +260,7 @@ Module["arguments"] = [
     "-rompath", "/roms",
     "-video", "soft",
     "-sound", MAME_PROBE_SOUND,
+    "-samplerate", "48000",
     "-window",
     "-nomaximize",
     "-skip_gameinfo",

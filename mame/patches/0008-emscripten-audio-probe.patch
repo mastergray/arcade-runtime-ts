@@ -1,0 +1,15 @@
+From: mastergray <mastergray@users.noreply.github.com>
+Subject: [PATCH] expose mixer rate and throttle state to the browser audio probe
+
+Keep the stock JavaScript sound-module boundary intact while forwarding the
+configured mixer rate and current throttle state alongside its PCM address and
+frame count.  The generic pre-JavaScript probe uses these values to distinguish
+the native mixer contract from wall-clock observations.
+
+--- a/src/osd/modules/sound/js_sound.c
++++ b/src/osd/modules/sound/js_sound.c
+@@ -37,2 +37,2 @@
+-		jsmess_update_audio_stream($0, $1);
+-		}, (unsigned int)buffer, samples_this_frame);
++		jsmess_update_audio_stream($0, $1, $2, $3);
++		}, (unsigned int)buffer, samples_this_frame, sample_rate(), is_throttled ? 1 : 0);

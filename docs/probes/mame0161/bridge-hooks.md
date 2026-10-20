@@ -1,9 +1,9 @@
 # P7–P11: 0.161 bridge-hook findings
 
-Status: P7–P9 passed. The runtime boundaries, stock browser-loop gaps,
-mid-run persistence behavior and upright RGBA render path are measured.
-P10–P11 retain the source findings below and still need their dedicated
-runtime probes.
+Status: P7–P10 passed. The runtime boundaries, stock browser-loop gaps,
+mid-run persistence behavior, upright RGBA render path and mixer boundary are
+measured. P11 retains the source findings below and still needs its dedicated
+runtime probe.
 
 ## Lifecycle and control (P7)
 
@@ -45,7 +45,7 @@ runs each terminal or stateful observation in a fresh module through
 | Boundary | Runtime result | Bridge consequence |
 | -------- | -------------- | ------------------ |
 | Video/frame | More than 30 `MACHINE_NOTIFY_FRAME` callbacks arrived after startup. | The production loop can expose a frame/tick notification, while P9 still owns pixels, format and orientation. |
-| Sound | The stock `js` module repeatedly supplied a non-zero `INT16` buffer address and frame count. | A web sound module can adapt this mixed-PCM boundary; P10 still measures rate and cadence. |
+| Sound | The stock `js` module repeatedly supplied a non-zero `INT16` buffer address and frame count. | A web sound module can adapt this mixed-PCM boundary; P10 measures its exact format and cadence below. |
 | Input | Pressing and releasing a browser arrow key changed `IPT_JOYSTICK_RIGHT` from false to true and back through SDL. | MAME's input port layer is live; the production module should replace SDL key handling with bridge-owned virtual-device states. |
 | Pause/resume | Both notifications and the paused flag changed, but machine time still advanced by more than 250 ms over 20 browser callbacks while paused. | The replacement outer loop must branch on `paused()` and must not advance the device scheduler while paused. |
 | Soft reset | `schedule_soft_reset()` produced a second reset notification without a shell exception. | The narrow soft-reset export can use the existing scheduler API. |
@@ -106,8 +106,8 @@ the later combined P7–P9 regression produced these ranges:
 
 | Work | p50 range | p95 range |
 | ---- | ---------: | ---------: |
-| RGB32 → opaque RGBA8888 | 0.800–1.000 ms | 1.200–3.400 ms |
-| Software primitive rasterization | 3.100–3.500 ms | 4.799–5.900 ms |
+| RGB32 → opaque RGBA8888 | 0.700–1.000 ms | 1.200–3.400 ms |
+| Software primitive rasterization | 3.000–3.500 ms | 4.799–5.900 ms |
 | Rasterization + conversion | 3.600–4.500 ms | 5.799–7.200 ms |
 
 The worst observed combined p95 is below one 16.667 ms frame budget, so P9
@@ -121,13 +121,41 @@ full-speed evidence.
 
 The release's `js` sound module receives `const INT16 *buffer` plus
 `samples_this_frame` and forwards the address/count to JavaScript. Master
-attenuation is forwarded separately. The format is therefore signed 16-bit
-PCM at the module boundary; channel ordering, negotiated sample rate and
-callback cadence still need runtime measurement.
+attenuation is forwarded separately. `osd_common_t::update_audio_stream()`
+defines the buffer as stereo samples in left/right order at the configured
+sample rate. `sound_manager::update()` clamps each channel to signed 16-bit,
+interleaves left then right, and passes `finalmix_offset / 2`, so the count is
+stereo frames rather than individual samples. Its periodic update timer runs
+at 50 Hz.
 
 The module's `init()` method declares `int` but does not return a value. The
 first compatibility patch should return success explicitly before judging a
 toolchain failure.
+
+The dedicated runtime probe ran on 2026-10-19 with the pinned Emscripten
+1.38.31 toolchain and headless Chromium. The private fixture identity and ROM
+inputs remain local. The command line fixed `-samplerate 48000`, while
+[`0008-emscripten-audio-probe.patch`](../../../mame/patches/0008-emscripten-audio-probe.patch)
+forwarded the sound module's own `sample_rate()` and throttle state with each
+stock callback. The JavaScript probe read the two channel slots through the
+signed `HEAP16` view; it did not derive the format or rate from wall time.
+
+[`09-mame-audio-probe.test.ts`](../../../tests/browser/09-mame-audio-probe.test.ts)
+discarded 25 startup callbacks, then measured 150 callbacks. Dedicated P10 and
+combined P7–P10 regression runs produced these ranges across three executions:
+
+| Observation | Result | Bridge consequence |
+| ----------- | -----: | ------------------ |
+| Mixer format | `S16LE`, two interleaved channels, left then right | De-interleave `HEAP16` pairs and normalize each signed value to Web Audio float channels. |
+| Native rate | 48,000 stereo frames/s reported on every callback | Set `ArcadeSession.sampleRate` from the native boundary; do not infer it from browser cadence. |
+| Native chunk | Exactly 960 stereo frames, or 20 ms, on every callback | Forward one native mixer update as one audio batch; the 16 ms minimum chunk does not need extra accumulation. |
+| Browser delivery | 49.90–49.92 callbacks/s; 18.1–18.2 ms interval p50 and 29.2–30.2 ms p95 | Expect main-loop quantization around the 50 Hz average and schedule by accumulated audio duration, not individual arrival intervals. |
+| Sustained delivery | 47,904–47,921 stereo frames/s over the measured window | The stock throttled loop remained within 0.20% of the configured rate during this short probe. |
+
+Both channel positions contained live, in-range signed values, and all 150
+callbacks reported the throttled state. The 120 ms queue cap therefore holds
+six normal mixer chunks. Long-run drift and queue behavior remain covered by
+the release gate rather than this short boundary probe.
 
 ## Persistence (P8)
 
@@ -211,6 +239,8 @@ specification. The minimum patch shape is:
 P7 accepts the scheduled state boundary and its save/load round trip for the
 probe fixture. P8 accepts the NVRAM/IDBFS round trip and excludes the unsafe
 config-save call. P9 accepts core primitive rasterization, core-owned
-orientation and explicit RGB32-to-RGBA conversion. The final adapter still
-needs the same assertions against its public Promise API. Audio cadence and
-audit behavior remain P10–P11 measurements.
+orientation and explicit RGB32-to-RGBA conversion. P10 accepts 48 kHz,
+interleaved signed-16 left/right audio in 20 ms native chunks and
+duration-based browser scheduling. The final adapter still needs the same
+assertions against its public Promise API. Audit behavior remains the P11
+measurement.

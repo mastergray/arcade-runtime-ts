@@ -604,11 +604,20 @@ C++ buffer converts them to opaque `RGBA8888`. Native orientation produced
 the expected visible dimensions, and forcing a further quarter turn
 transposed the dimensions while preserving the complete pixel aggregates.
 For a 71,680-pixel frame under Chromium's 4× CPU-throttled, 390×844 mobile
-proxy, two 30-sample runs measured RGBA conversion at 0.8–1.0 ms p50 /
+proxy, three 30-sample runs measured RGBA conversion at 0.7–1.0 ms p50 /
 1.2–3.4 ms p95 and rasterization plus conversion at 3.6–4.5 ms p50 /
 5.8–7.2 ms p95. This selects the primitive-rasterization design; P12 still
 owns confirmation on an actual mid-range phone and the sustained full-speed
 gate.
+
+P10 confirmed the sound design at the stock mixer boundary. With the runtime
+fixed to 48 kHz, MAME supplied two interleaved signed-16 channels in left/right
+order as exact 960-frame (20 ms) chunks. Three warmed 150-callback Chromium
+runs averaged 49.90–49.92 callbacks/s and 47,904–47,921 stereo frames/s; their
+18.1–18.2 ms p50 and 29.2–30.2 ms p95 delivery intervals reflect the 50 Hz
+mixer crossing the stock near-60 Hz outer loop. `ArcadeAudio` therefore
+schedules by buffer duration, retains the 16 ms minimum and 120 ms cap, and
+does not infer rate from callback arrival time.
 
 ### 4.3 Bridge exports (`0002-web-bridge-exports.patch`)
 

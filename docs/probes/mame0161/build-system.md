@@ -160,9 +160,10 @@ or PThread loader. Thus the tiny proof does not require pthreads, COOP or COEP.
 - `src/emu/machine.c` advances the scheduler by exactly 1/60 second on each
   browser callback and registers an Emscripten main loop with browser-selected
   cadence. That is a P5 risk for 59.6 Hz games and high-refresh displays.
-- `src/osd/modules/sound/js_sound.c` forwards signed 16-bit PCM and a sample
-  count to JavaScript functions supplied by the future bridge. The CLI probe
-  deliberately does not exercise that audio callback.
+- `src/osd/modules/sound/js_sound.c` forwards the mixed buffer and stereo-frame
+  count to JavaScript functions supplied by the future bridge. The later P10
+  browser probe confirms 48 kHz signed-16, interleaved left/right audio in
+  exact 960-frame updates; see [bridge-hooks.md](bridge-hooks.md).
 - The fixed 256 MiB memory is sufficient for `tiny`; family builds must measure
   their own peak and determine whether growth is compatible.
 - The 0.161 scripts default to `python`; this host needs
