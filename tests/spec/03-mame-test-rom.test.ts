@@ -24,6 +24,10 @@ const PERSISTENCE_PATCH_URL = new URL("../../mame/patches/0006-emscripten-persis
 const VIDEO_PATCH_URL = new URL("../../mame/patches/0007-emscripten-video-probe.patch", import.meta.url);
 const AUDIO_PATCH_URL = new URL("../../mame/patches/0008-emscripten-audio-probe.patch", import.meta.url);
 const AUDIT_PATCH_URL = new URL("../../mame/patches/0009-emscripten-audit-output-probe.patch", import.meta.url);
+const PARITY_PATCH_URL = new URL("../../mame/patches/0010-native-browser-parity-probe.patch", import.meta.url);
+const NATIVE_PARITY_SCRIPT_URL = new URL("../../scripts/probe-mame0161-native-parity.sh", import.meta.url);
+const PARITY_RESULT_WRITER_URL = new URL("../../scripts/write-mame-parity-result.js", import.meta.url);
+const PARITY_BROWSER_TEST_URL = new URL("../browser/11-mame-parity-probe.test.ts", import.meta.url);
 
 const readText = (url: URL): string => readFileSync(url, "utf8");
 
@@ -288,6 +292,60 @@ const testFile: TestFile = {
                             && build.includes("audit_output_probe_is_applied")
                             && build.includes('apply_source_patch "${audit_output_probe_patch}"')
                             && build.includes('remove_source_patch "${audit_output_probe_patch}"');
+                    },
+                    P.equals(true),
+                )
+                .start(undefined),
+        },
+        {
+            label: "compares one private fixture across native and browser builds",
+            run: () => CTGTest.init("native/browser parity contract")
+                .assert(
+                    "the same core checkpoint records identity, video and input in both builds",
+                    () => {
+                        const patch = readText(PARITY_PATCH_URL);
+                        return patch.includes("const UINT64 capture_frame = 180")
+                            && patch.includes("create_snapshot_bitmap(screen)")
+                            && patch.includes("checksum = (checksum ^ red) * 16777619U")
+                            && patch.includes("refresh_millihertz")
+                            && patch.includes("right->port().read() & right->mask()")
+                            && patch.includes("JSMESS.parityFrame")
+                            && patch.includes("JSMESS.parityInput")
+                            && patch.includes("P12_FRAME")
+                            && patch.includes("P12_INPUT");
+                    },
+                    P.equals(true),
+                )
+                .assert(
+                    "the native runner emits a config-relative structured baseline",
+                    () => {
+                        const packageJson = JSON.parse(readText(PACKAGE_URL)) as { scripts: Record<string, string> };
+                        const reader = readText(CONFIG_READER_URL);
+                        const runner = readText(NATIVE_PARITY_SCRIPT_URL);
+                        const writer = readText(PARITY_RESULT_WRITER_URL);
+                        return packageJson.scripts["probe:mame:parity:native"]
+                                === "scripts/probe-mame0161-native-parity.sh"
+                            && reader.includes('"native-parity"')
+                            && reader.includes('pathValue("nativeResult"')
+                            && runner.includes("CPPFLAGS=-DNO_MEM_TRACKING")
+                            && runner.includes("-seconds_to_run 5")
+                            && runner.includes("write-mame-parity-result.js")
+                            && writer.includes("Native parity output did not contain complete frame and input records");
+                    },
+                    P.equals(true),
+                )
+                .assert(
+                    "the browser comparison uses one ignored JSON config and exact parity fields",
+                    () => {
+                        const browser = readText(PARITY_BROWSER_TEST_URL);
+                        return browser.includes("MAME_PARITY_PROBE_CONFIG")
+                            && browser.includes("machineMatches")
+                            && browser.includes("geometryMatches")
+                            && browser.includes("refreshMatches")
+                            && browser.includes("frameHashMatches")
+                            && browser.includes("coreInputMatches")
+                            && browser.includes("reportedSpeedRatio")
+                            && browser.includes("ctg-js-browser-test");
                     },
                     P.equals(true),
                 )

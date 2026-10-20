@@ -30,6 +30,7 @@
     "probe:mame:tiny": "scripts/probe-mame0161-tiny.sh",
     "probe:mame:family": "MAME_PROBE_KIND=family scripts/probe-mame0161-tiny.sh",
     "probe:mame:game": "MAME_PROBE_KIND=game scripts/probe-mame0161-tiny.sh",
+    "probe:mame:parity:native": "scripts/probe-mame0161-native-parity.sh",
     "probe:mame:threading": "node --import tsx scripts/inspect-mame-threading.ts",
     "test": "node --import tsx tests/run.ts spec",
     "test:spec": "node --import tsx tests/run.ts spec",

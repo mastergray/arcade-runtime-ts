@@ -113,8 +113,8 @@ The worst observed combined p95 is below one 16.667 ms frame budget, so P9
 selects direct primitive rasterization plus explicit RGBA conversion. The
 extra forced-rotation render is probe-only and excluded from those production
 path timings. CPU throttling is an engineering proxy, not a physical handset
-measurement; P12 still requires an actual mid-range-phone run and sustained
-full-speed evidence.
+measurement; sustained physical-phone validation remains an M4 and release
+gate after the production display and touch paths exist.
 
 ## Sound (P10)
 

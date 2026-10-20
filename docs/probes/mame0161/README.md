@@ -1,12 +1,22 @@
 # MAME 0.161 feasibility probe
 
-Status: in progress. No go/no-go decision has been made.
+Status: complete. Decision: **go** with direct MAME 0.161 for M1.
 
 This directory holds the M0 evidence and decision described in
 [§13.1 of the runtime specification](../../mame-game-runtime-spec.md#131-direct-mame-0161-source-m0).
 It records exact environments, source identities, commands, patches, logs and
 measurements needed to answer P1–P12. Local ROMs, native binaries, source
 caches and generated emulator artifacts must not be copied here.
+
+## Decision
+
+All P1–P12 questions have passing evidence, and the direct MAME 0.161 browser
+build is technically viable. Proceed with the direct bridge and adapter in M1.
+The probe-established constraints remain part of that implementation: use a
+fresh module for each start, replace the blocking outer pacing loop, keep the
+build single-threaded, and expose narrow video, audio, input, persistence and
+frontend-result boundaries. Physical-phone sustained performance is deferred
+to M4 and the release gate, when the production display and touch paths exist.
 
 ## Progress
 
@@ -20,14 +30,15 @@ caches and generated emulator artifacts must not be copied here.
 | P6 | Pass | The `tiny`, CPS-1, Irem M72, Neo Geo and real-game modules use fixed non-shared memory, have no PThread loader and run over ordinary HTTP without cross-origin isolation; see [threading-and-hosting.md](threading-and-hosting.md). |
 | P7 | Pass | Frame, PCM, input, pause/resume, soft-reset, state-result and exit boundaries were exercised. Scheduled save/advance/load/continue passes after the two pinned-toolchain accommodations documented in [bridge-hooks.md](bridge-hooks.md); pause and terminal behavior still require the replacement control loop. |
 | P8 | Pass | A narrow mid-run NVRAM wrapper wrote a real device's non-empty file, IDBFS synced it, and a fresh module hydrated the identical file before startup. Stock `config_save_settings()` is not safe mid-run in this browser build and is excluded; adapter-owned cfg files remain part of the persisted overlay. See [bridge-hooks.md](bridge-hooks.md). |
-| P9 | Pass | The native software target yields RGB32/BGRX memory and converts to opaque RGBA8888. A forced quarter turn transposed geometry while preserving pixel aggregates; across dedicated and combined 4× CPU-throttled mobile-proxy runs, conversion p95 was at most 3.4 ms and raster-plus-conversion p95 was at most 7.2 ms. Actual-phone sustained speed remains P12. See [bridge-hooks.md](bridge-hooks.md). |
+| P9 | Pass | The native software target yields RGB32/BGRX memory and converts to opaque RGBA8888. A forced quarter turn transposed geometry while preserving pixel aggregates; across dedicated and combined 4× CPU-throttled mobile-proxy runs, conversion p95 was at most 3.4 ms and raster-plus-conversion p95 was at most 7.2 ms. Physical-phone confirmation is an M4/release gate. See [bridge-hooks.md](bridge-hooks.md). |
 | P10 | Pass | The 48 kHz mixer supplied interleaved signed 16-bit left/right stereo in exact 960-frame (20 ms) chunks. Four 150-callback runs averaged 49.90–49.97 callbacks/s and 47,904–47,971 frames/s; see [bridge-hooks.md](bridge-hooks.md). |
 | P11 | Pass | Missing parent and BIOS fixtures each produced an ordered detailed error plus terminal error on the OSD error channel, followed by frontend result `MAMERR_MISSING_FILES` (`2`) before any main-loop tick. The adapter must consume an explicit frontend-result callback rather than wait for `Module.onExit`; see [bridge-hooks.md](bridge-hooks.md). |
-| P12 | Partial | A private, local-only fixture passes the 0.161 hash audit and boots to a visible browser frame with basic digital input events. Native parity, stable-frame hashing and performance measurements remain. |
+| P12 | Pass | Native and browser builds agree exactly on the private fixture's machine identity, visible geometry, refresh rate, deterministic frame-180 RGBA hash and a core-visible digital input transition. A 10-second Chromium run sustained 0.999× emulated time and 0.999 reported speed, and a real browser key press/release reached the core; see [parity.md](parity.md). |
 
 ## Working rules
 
-- Treat `mame0161` as a candidate until every P1–P12 row has evidence.
+- Reopen M0 if the source or toolchain pin changes; do not silently carry this
+  decision to a different MAME or Emscripten release.
 - Keep source checkouts and generated artifacts under ignored local caches.
 - Record failed commands and toolchain versions; a failed candidate is useful
   evidence, but it is not an `EMSDK_VERSION` pin.

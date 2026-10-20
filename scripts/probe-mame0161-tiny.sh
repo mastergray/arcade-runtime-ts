@@ -13,6 +13,7 @@ persistence_probe_patch="${project_root}/mame/patches/0006-emscripten-persistenc
 video_probe_patch="${project_root}/mame/patches/0007-emscripten-video-probe.patch"
 audio_probe_patch="${project_root}/mame/patches/0008-emscripten-audio-probe.patch"
 audit_output_probe_patch="${project_root}/mame/patches/0009-emscripten-audit-output-probe.patch"
+parity_probe_patch="${project_root}/mame/patches/0010-native-browser-parity-probe.patch"
 expected_emsdk="$(tr -d '[:space:]' < "${project_root}/mame/EMSDK_VERSION")"
 probe_kind="${MAME_PROBE_KIND:-list}"
 pre_js="${project_root}/mame/bridge/tiny-probe-pre.js"
@@ -244,6 +245,14 @@ audit_output_probe_is_applied() {
         && grep -Fq 'JSMESS.frontendResult' "${source_dir}/src/emu/clifront.c"
 }
 
+parity_probe_is_applied() {
+    grep -Fq 'probe_parity_frame' "${source_dir}/src/emu/video.c" \
+        && grep -Fq 'virtual osd_font *font_alloc() { return NULL; }' \
+            "${source_dir}/src/osd/osdmini/osdmini.h" \
+        && grep -Fq 'm_samples = samples == NULL ? NULL : samples->base();' \
+            "${source_dir}/src/mame/audio/m72.c"
+}
+
 apply_source_patch "${compatibility_patch}"
 if [[ "${probe_kind}" == "game" ]]; then
     # The pacing probe is layered on the lifecycle probe and overlaps its
@@ -268,7 +277,11 @@ if [[ "${probe_kind}" == "game" ]]; then
     if ! audit_output_probe_is_applied; then
         apply_source_patch "${audit_output_probe_patch}"
     fi
+    if ! parity_probe_is_applied; then
+        apply_source_patch "${parity_probe_patch}"
+    fi
 else
+    remove_source_patch "${parity_probe_patch}"
     remove_source_patch "${audit_output_probe_patch}"
     remove_source_patch "${audio_probe_patch}"
     remove_source_patch "${video_probe_patch}"

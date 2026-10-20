@@ -1,0 +1,200 @@
+From: mastergray <mastergray@users.noreply.github.com>
+Subject: [PATCH] capture a deterministic native/browser parity checkpoint
+
+Capture the hidden native render target after a fixed emulated-frame warmup
+and exercise one digital input through the core port boundary.  The same code
+runs in native and Emscripten builds so geometry, refresh, RGBA hash and input
+transitions can be compared without wall-clock screenshot timing.
+
+The minimal native OSD deliberately has no host font provider; return no OSD
+font so the core falls back to its embedded UI font instead of dereferencing
+the uninitialized modular-font pointer.
+
+The selected legacy driver family also shares an audio device between
+configurations with and without a sample-ROM region.  Treat the absent region
+as an empty sample source instead of relying on a null dereference that happens
+not to trap in WebAssembly linear memory.
+
+--- a/src/osd/osdmini/osdmini.h
++++ b/src/osd/osdmini/osdmini.h
+@@ -36,6 +36,7 @@ public:
+ 	// general overridables
+ 	virtual void init(running_machine &machine);
+ 	virtual void update(bool skip_redraw);
++	virtual osd_font *font_alloc() { return NULL; }
+ };
+ 
+ 
+--- a/src/mame/audio/m72.c
++++ b/src/mame/audio/m72.c
+@@ -72,8 +72,9 @@ void m72_audio_device::device_config_complete()
+ 
+ void m72_audio_device::device_start()
+ {
+-	m_samples = machine().root_device().memregion("samples")->base();
+-	m_samples_size = machine().root_device().memregion("samples")->bytes();
++	memory_region *samples = machine().root_device().memregion("samples");
++	m_samples = samples == NULL ? NULL : samples->base();
++	m_samples_size = samples == NULL ? 0 : samples->bytes();
+ 	m_space = &machine().device("soundcpu")->memory().space(AS_IO);
+ 	m_dac = machine().device<dac_device>("dac");
+ 
+
+--- a/src/emu/video.h
++++ b/src/emu/video.h
+@@ -112,6 +112,7 @@ private:
+ 	void exit();
+ 	void screenless_update_callback(void *ptr, int param);
+ 	void postload();
++	void probe_parity_frame(screen_device *screen, UINT64 frame_number);
+ 
+ 	// effective value helpers
+ 	int effective_autoframeskip() const;
+@@ -168,6 +169,10 @@ private:
+ 	INT32               m_snap_width;               // width of snapshots (0 == auto)
+ 	INT32               m_snap_height;              // height of snapshots (0 == auto)
+ 
++	bool                m_probe_input_found;         // parity input exists
++	bool                m_probe_input_initial;       // parity input before injection
++	bool                m_probe_input_pressed;       // parity input after injection
++
+ 	// movie recording - MNG
+ 	auto_pointer<emu_file> m_mng_file;              // handle to the open movie file
+ 	attotime            m_mng_frame_period;         // period of a single movie frame
+--- a/src/emu/video.c
++++ b/src/emu/video.c
+@@ -106,6 +106,9 @@ video_manager::video_manager(running_machine &machine)
+ 		m_snap_native(true),
+ 		m_snap_width(0),
+ 		m_snap_height(0),
++		m_probe_input_found(false),
++		m_probe_input_initial(false),
++		m_probe_input_pressed(false),
+ 		m_mng_frame_period(attotime::zero),
+ 		m_mng_next_frame_time(attotime::zero),
+ 		m_mng_frame(0),
+@@ -217,6 +220,10 @@ void video_manager::frame_update(bool debug)
+ 		else
+ 			m_empty_skip_count = 0;
+ 	}
++	screen_device *probe_screen = machine().first_screen();
++	if (!debug && phase == MACHINE_PHASE_RUNNING && probe_screen != NULL)
++		probe_parity_frame(probe_screen, probe_screen->frame_number());
++
+ 
+ 	// draw the user interface
+ 	machine().ui().update_and_render(&machine().render().ui_container());
+@@ -1102,6 +1109,113 @@ void video_manager::create_snapshot_bitmap(screen_device *screen)
+ 	primlist.release_lock();
+ }
+ 
++
++//-------------------------------------------------
++//  probe_parity_frame - capture a deterministic
++//  cross-platform checkpoint and input transition
++//-------------------------------------------------
++
++void video_manager::probe_parity_frame(screen_device *screen, UINT64 frame_number)
++{
++	const UINT64 capture_frame = 180;
++	ioport_field *right = NULL;
++	for (ioport_port *port = machine().ioport().first_port(); port != NULL && right == NULL; port = port->next())
++		for (ioport_field *field = port->first_field(); field != NULL; field = field->next())
++			if (field->type() == IPT_JOYSTICK_RIGHT && field->player() == 0)
++			{
++				right = field;
++				break;
++			}
++
++	if (frame_number == capture_frame)
++	{
++		create_snapshot_bitmap(screen);
++		UINT32 width = m_snap_bitmap.width();
++		UINT32 height = m_snap_bitmap.height();
++		UINT32 checksum = 2166136261U;
++		UINT32 non_black_pixels = 0;
++		for (UINT32 y = 0; y < height; y++)
++		{
++			const UINT32 *source = &m_snap_bitmap.pix32(y);
++			for (UINT32 x = 0; x < width; x++)
++			{
++				UINT32 pixel = source[x];
++				UINT8 red = (pixel >> 16) & 0xff;
++				UINT8 green = (pixel >> 8) & 0xff;
++				UINT8 blue = pixel & 0xff;
++				if ((red | green | blue) != 0)
++					non_black_pixels++;
++				checksum = (checksum ^ red) * 16777619U;
++				checksum = (checksum ^ green) * 16777619U;
++				checksum = (checksum ^ blue) * 16777619U;
++				checksum = (checksum ^ 0xff) * 16777619U;
++			}
++		}
++
++		const rectangle &visible = screen->visible_area();
++		int refresh_millihertz = int(1000.0
++			* ATTOSECONDS_TO_HZ(screen->frame_period().attoseconds) + 0.5);
++		m_probe_input_found = right != NULL;
++		m_probe_input_initial = machine().ioport().type_pressed(IPT_JOYSTICK_RIGHT, 0);
++		if (right != NULL)
++			right->set_value(1);
++
++#if defined(EMSCRIPTEN)
++		EM_ASM_ARGS({
++			if (typeof JSMESS === "undefined") return;
++			var parity = {};
++			parity.machine = UTF8ToString($0);
++			parity.frame = $1 >>> 0;
++			parity.width = $2 >>> 0;
++			parity.height = $3 >>> 0;
++			parity.visibleWidth = $4 >>> 0;
++			parity.visibleHeight = $5 >>> 0;
++			parity.refreshMilliHz = $6 >>> 0;
++			parity.checksum = ("00000000" + ($7 >>> 0).toString(16)).slice(-8);
++			parity.nonBlackPixels = $8 >>> 0;
++			JSMESS.parityFrame = parity;
++		}, machine().system().name, UINT32(frame_number), width, height,
++			visible.width(), visible.height(), refresh_millihertz, checksum,
++			non_black_pixels);
++#else
++		osd_printf_info("P12_FRAME machine=%s frame=%u width=%u height=%u visible=%ux%u refresh_millihz=%d checksum=%08x nonblack=%u\n",
++			machine().system().name, UINT32(frame_number), width, height,
++			visible.width(), visible.height(), refresh_millihertz, checksum,
++			non_black_pixels);
++#endif
++	}
++	else if (frame_number == capture_frame + 1)
++	{
++		m_probe_input_pressed = right != NULL
++			&& (right->port().read() & right->mask())
++				!= (right->defvalue() & right->mask());
++		if (right != NULL)
++			right->set_value(0);
++	}
++	else if (frame_number == capture_frame + 2)
++	{
++		bool released = right == NULL
++			|| (right->port().read() & right->mask())
++				== (right->defvalue() & right->mask());
++#if defined(EMSCRIPTEN)
++		EM_ASM_ARGS({
++			if (typeof JSMESS === "undefined") return;
++			var input = {};
++			input.found = $0 !== 0;
++			input.initiallyReleased = $1 === 0;
++			input.pressed = $2 !== 0;
++			input.released = $3 !== 0;
++			JSMESS.parityInput = input;
++		}, m_probe_input_found, m_probe_input_initial,
++			m_probe_input_pressed, released);
++#else
++		osd_printf_info("P12_INPUT found=%d initially_released=%d pressed=%d released=%d\n",
++			m_probe_input_found, !m_probe_input_initial,
++			m_probe_input_pressed, released);
++#endif
++	}
++}
++
+ #if defined(EMSCRIPTEN)
+ void video_manager::probe_render_rgba()
+ {

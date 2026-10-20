@@ -3,8 +3,8 @@ import { dirname, resolve } from "node:path";
 
 const [configArgument, kind] = process.argv.slice(2);
 
-if (configArgument === undefined || (kind !== "family" && kind !== "game")) {
-    throw new Error("Usage: read-mame-probe-config.js <config.json> <family|game>");
+if (configArgument === undefined || !["family", "game", "native-parity"].includes(kind)) {
+    throw new Error("Usage: read-mame-probe-config.js <config.json> <family|game|native-parity>");
 }
 
 const configPath = resolve(configArgument);
@@ -41,7 +41,10 @@ const values = [
     stringValue("secondMachine"),
     stringValue("sound", "none"),
     pathValue("target", "mame-runtimeprobe.lua"),
-    stringValue("output", kind === "game" ? "mamegame-probe" : "mamefamily-probe"),
+    stringValue("output", kind === "family" ? "mamefamily-probe" : "mamegame-probe"),
+    ...(kind === "native-parity"
+        ? [pathValue("nativeResult", "../.cache/mame0161-source/mameparity-native.json")]
+        : []),
     ...roms.map((value) => resolve(configDirectory, value)),
 ];
 

@@ -606,9 +606,10 @@ transposed the dimensions while preserving the complete pixel aggregates.
 For a 71,680-pixel frame under Chromium's 4× CPU-throttled, 390×844 mobile
 proxy, four 30-sample runs measured RGBA conversion at 0.6–1.0 ms p50 /
 1.1–3.4 ms p95 and rasterization plus conversion at 3.5–4.5 ms p50 /
-5.1–7.2 ms p95. This selects the primitive-rasterization design; P12 still
-owns confirmation on an actual mid-range phone and the sustained full-speed
-gate.
+5.1–7.2 ms p95. This is sufficient to select the primitive-rasterization
+design for M1. Sustained performance on an actual mid-range phone is an M4
+and release-gate requirement, when the production display and touch paths
+exist to measure together.
 
 P10 confirmed the sound design at the stock mixer boundary. With the runtime
 fixed to 48 kHz, MAME supplied two interleaved signed-16 channels in left/right
@@ -1493,7 +1494,7 @@ critical path to the first usable release.
 | M1 | **MAME bridge + `MameEmulatorAdapter` + `ArcadeDisplay`.** Implement the pinned build recipe, web OSD modules, bridge exports and fresh-module lifecycle. | A MAME 0.161 game renders upright at native size and correct speed on 60 and 120 Hz displays |
 | M2 | **`ArcadeAudio`.** | Audible after one gesture; `queuedMs` stays under the cap for 60 s |
 | M3 | **`ArcadeInput` + `KeyboardSource` + generated MAME controller config.** | Coin, start and play from the keyboard without MAME default-key handling |
-| M4 | **Touch controls + `ArcadeMapper`.** | Playable on a phone with d-pad, buttons, coin, start |
+| M4 | **Touch controls + `ArcadeMapper`.** | Playable with d-pad, buttons, coin and start while sustaining full speed for 60 seconds on a documented mid-range physical phone |
 | M5 | **Saves.** NVRAM flush, `persist`, `ArcadeStorage`, save states. | High-score table and a save state survive a reload |
 | M6 | **`ArcadeDeployment`.** One config composes the whole page. | Harness page is itself a deployment |
 | M7 | **Manifests, shell, `build-manifests`, `pack-roms`.** | A manifest game builds to a standalone folder that runs from a static host |
@@ -1527,10 +1528,10 @@ measurements under `docs/probes/mame0161/`.
 | P6 | Does any viable build require pthreads? | COOP/COEP requirements and static-host compatibility |
 | P7 | Which video, sound, input, pause, reset, save/load and exit hooks exist in 0.161's OSD/running-machine APIs? | Exact scope of bridge patches 0001 and 0002 |
 | P8 | Can NVRAM/config be flushed mid-run without exiting? | Whether patch 0003 is required |
-| P9 | What renderer buffer format/orientation is available, and what does upright RGBA conversion cost on a mid-range phone? | Video bridge and rotation design |
+| P9 | What renderer buffer format/orientation is available, and what does upright RGBA conversion cost under a throttled mobile-browser proxy? | Video bridge and rotation design |
 | P10 | What mixer format/chunk cadence is available at 48 kHz? | Sound bridge and `ArcadeAudio` constants |
 | P11 | Does ROM audit output reach the bridge before exit in a stable parseable form, including missing parent and BIOS dependencies? | `pack-roms` and `ROM_SET_INVALID` reporting |
-| P12 | For one legally authorized, separately acquired test ROM, do native 0.161 and browser 0.161 agree on machine identity, visible geometry, refresh rate, first stable-frame hash and basic input behavior, and does the browser sustain full speed on desktop and a mid-range phone? | M0 go/no-go and parity baseline |
+| P12 | For one legally authorized, separately acquired test ROM, do native 0.161 and browser 0.161 agree on machine identity, visible geometry, refresh rate, first stable-frame hash and basic input behavior, and does the browser sustain full speed on desktop? | M0 go/no-go and parity baseline |
 
 M0 passes only when P1–P12 have evidence and a direct 0.161 browser
 build is technically viable. If it fails, the decision record names the
@@ -1615,7 +1616,8 @@ The first usable release demonstrates all of these flows:
    the pinned direct MAME source version.
 2. Insert coin, start and play from a physical keyboard on desktop.
 3. Play the same deployment with touch controls in phone portrait and
-   landscape layouts; rotate while running without restarting.
+   landscape layouts; rotate while running without restarting, and sustain
+   full speed for 60 seconds on a documented mid-range physical phone.
 4. Hear synchronized stereo after one user gesture and remain below the
    audio queue cap for a 60-second run.
 5. Save NVRAM and a named state, reload the page, restore both, then
