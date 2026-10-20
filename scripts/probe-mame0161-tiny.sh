@@ -10,6 +10,7 @@ lifecycle_probe_patch="${project_root}/mame/patches/0002-emscripten-lifecycle-pr
 pacing_probe_patch="${project_root}/mame/patches/0003-emscripten-pacing-probe.patch"
 bridge_hooks_probe_patch="${project_root}/mame/patches/0004-emscripten-bridge-hooks-probe.patch"
 persistence_probe_patch="${project_root}/mame/patches/0006-emscripten-persistence-probe.patch"
+video_probe_patch="${project_root}/mame/patches/0007-emscripten-video-probe.patch"
 expected_emsdk="$(tr -d '[:space:]' < "${project_root}/mame/EMSDK_VERSION")"
 probe_kind="${MAME_PROBE_KIND:-list}"
 pre_js="${project_root}/mame/bridge/tiny-probe-pre.js"
@@ -221,6 +222,14 @@ bridge_hooks_probe_is_applied() {
     grep -Fq 'probe_service_saveload()' "${source_dir}/src/emu/machine.h"
 }
 
+persistence_probe_is_applied() {
+    grep -Fq 'probe_flush_nvram()' "${source_dir}/src/emu/machine.h"
+}
+
+video_probe_is_applied() {
+    grep -Fq 'probe_render_rgba()' "${source_dir}/src/emu/video.h"
+}
+
 apply_source_patch "${compatibility_patch}"
 if [[ "${probe_kind}" == "game" ]]; then
     # The pacing probe is layered on the lifecycle probe and overlaps its
@@ -233,8 +242,14 @@ if [[ "${probe_kind}" == "game" ]]; then
         apply_source_patch "${pacing_probe_patch}"
         apply_source_patch "${bridge_hooks_probe_patch}"
     fi
-    apply_source_patch "${persistence_probe_patch}"
+    if ! persistence_probe_is_applied; then
+        apply_source_patch "${persistence_probe_patch}"
+    fi
+    if ! video_probe_is_applied; then
+        apply_source_patch "${video_probe_patch}"
+    fi
 else
+    remove_source_patch "${video_probe_patch}"
     remove_source_patch "${persistence_probe_patch}"
     remove_source_patch "${bridge_hooks_probe_patch}"
     remove_source_patch "${pacing_probe_patch}"

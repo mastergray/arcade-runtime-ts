@@ -141,6 +141,9 @@ JSMESS.scheduleMachine = function(machine) {
     JSMESS.scheduleResult = null;
     JSMESS.requestedMachine = machine;
 };
+JSMESS.resetVideoProbe = function() {
+    JSMESS.videoProbeFrames = [];
+};
 JSMESS.pacingSnapshot = function() {
     var pacing = JSMESS.pacing || {};
     return {
@@ -167,6 +170,7 @@ JSMESS.requestHook = function(name) {
         load: 5,
         exit: 6,
         flushPersistence: 7,
+        captureVideo: 8,
     };
     if (name === "save") {
         // Emscripten 1.38.31's libc path crashes when open(O_CREAT) creates

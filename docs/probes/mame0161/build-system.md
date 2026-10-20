@@ -98,6 +98,13 @@ persistence round trip. The game-only
 is applied after the P7 bridge-hook layer and removed before ROM-free list or
 family builds.
 
+The game-only
+[`0007-emscripten-video-probe.patch`](../../../mame/patches/0007-emscripten-video-probe.patch)
+is then applied for P9. Because the P8 and P9 probe patches use minimal
+context to keep the tracked patch artifacts whitespace-clean, the build script
+checks their unique declarations before applying them; consecutive builds do
+not duplicate either layer.
+
 ## Clean build result
 
 The successful clean run used two make jobs and a warmed SDK/SDL port cache:

@@ -123,6 +123,13 @@ the exact file was hydrated before startup. The probe intentionally does not
 call MAME's shutdown-oriented configuration saver; adapter-owned cfg files
 remain part of the runtime's cumulative persistence overlay.
 
+P9 also reuses the generic artifact. Set `MAME_VIDEO_PROBE_URL` to its served
+HTML path. The browser case captures MAME's hidden native software-renderer
+target, verifies explicit RGB32-to-RGBA conversion, forces a quarter-turn
+target to check orientation, and measures 30 warmed samples under Chromium's
+4× CPU-throttled mobile proxy. That proxy selects the bridge design; P12 still
+requires sustained-speed confirmation on an actual mid-range phone.
+
 The repository does not redistribute prebuilt executables from `res/`, and it
 does not vendor ROMs, SDK files, generated emulator artifacts or a MAME source
 checkout.

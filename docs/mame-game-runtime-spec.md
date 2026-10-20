@@ -597,6 +597,19 @@ at the older OSD boundary while preserving the JavaScript-facing API.
   state lives in a static array the bridge writes into; MAME polls it
   like any other device.
 
+P9 confirmed the video design against the core's hidden native snapshot
+target. The software renderer produces numeric `RGB32` pixels
+(`0x00RRGGBB`, observed as BGRX bytes in little-endian Wasm memory); a reused
+C++ buffer converts them to opaque `RGBA8888`. Native orientation produced
+the expected visible dimensions, and forcing a further quarter turn
+transposed the dimensions while preserving the complete pixel aggregates.
+For a 71,680-pixel frame under Chromium's 4× CPU-throttled, 390×844 mobile
+proxy, two 30-sample runs measured RGBA conversion at 0.8–1.0 ms p50 /
+1.2–3.4 ms p95 and rasterization plus conversion at 3.6–4.5 ms p50 /
+5.8–7.2 ms p95. This selects the primitive-rasterization design; P12 still
+owns confirmation on an actual mid-range phone and the sustained full-speed
+gate.
+
 ### 4.3 Bridge exports (`0002-web-bridge-exports.patch`)
 
 C functions marked `EMSCRIPTEN_KEEPALIVE`, called from the adapter

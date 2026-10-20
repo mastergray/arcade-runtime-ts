@@ -1,0 +1,165 @@
+From: mastergray <mastergray@users.noreply.github.com>
+Subject: [PATCH] measure upright RGBA rendering in the browser probe
+
+Exercise the core software renderer through its hidden native snapshot target,
+convert the resulting RGB32 bitmap to an opaque RGBA buffer, and expose only
+generic geometry, format, integrity and timing observations to JavaScript.
+
+--- a/src/emu/video.h
++++ b/src/emu/video.h
+@@ -89,0 +90,3 @@
++#if defined(EMSCRIPTEN)
++	void probe_render_rgba();
++#endif
+--- a/src/emu/video.c
++++ b/src/emu/video.c
+@@ -19,0 +20 @@
++#include "rendutil.h"
+@@ -24,0 +26,4 @@
++#if defined(EMSCRIPTEN)
++#include <emscripten.h>
++#endif
++
+@@ -1102,0 +1108,138 @@
++
++#if defined(EMSCRIPTEN)
++void video_manager::probe_render_rgba()
++{
++	screen_device *screen = machine().first_screen();
++	if (screen == NULL)
++		return;
++
++	osd_ticks_t raster_start = osd_ticks();
++	create_snapshot_bitmap(screen);
++	osd_ticks_t raster_ticks = osd_ticks() - raster_start;
++
++	UINT32 width = m_snap_bitmap.width();
++	UINT32 height = m_snap_bitmap.height();
++	static std::vector<UINT8> rgba;
++	rgba.resize(width * height * 4);
++	UINT64 source_red_sum = 0;
++	UINT64 source_green_sum = 0;
++	UINT64 source_blue_sum = 0;
++	UINT32 source_xor = 0;
++
++	osd_ticks_t conversion_start = osd_ticks();
++	for (UINT32 y = 0; y < height; y++)
++	{
++		const UINT32 *source = &m_snap_bitmap.pix32(y);
++		UINT8 *destination = &rgba[y * width * 4];
++		for (UINT32 x = 0; x < width; x++)
++		{
++			UINT32 pixel = source[x];
++			UINT8 red = (pixel >> 16) & 0xff;
++			UINT8 green = (pixel >> 8) & 0xff;
++			UINT8 blue = pixel & 0xff;
++			destination[x * 4 + 0] = red;
++			destination[x * 4 + 1] = green;
++			destination[x * 4 + 2] = blue;
++			destination[x * 4 + 3] = 0xff;
++			source_red_sum += red;
++			source_green_sum += green;
++			source_blue_sum += blue;
++			source_xor ^= pixel & 0x00ffffff;
++		}
++	}
++	osd_ticks_t conversion_ticks = osd_ticks() - conversion_start;
++
++	int target_orientation = m_snap_target->orientation();
++	int rotated_orientation = orientation_add(ROT90, target_orientation);
++	m_snap_target->set_orientation(rotated_orientation);
++	create_snapshot_bitmap(screen);
++	UINT32 rotated_width = m_snap_bitmap.width();
++	UINT32 rotated_height = m_snap_bitmap.height();
++	UINT64 rotated_red_sum = 0;
++	UINT64 rotated_green_sum = 0;
++	UINT64 rotated_blue_sum = 0;
++	UINT32 rotated_xor = 0;
++	for (UINT32 y = 0; y < rotated_height; y++)
++	{
++		const UINT32 *source = &m_snap_bitmap.pix32(y);
++		for (UINT32 x = 0; x < rotated_width; x++)
++		{
++			UINT32 pixel = source[x];
++			rotated_red_sum += (pixel >> 16) & 0xff;
++			rotated_green_sum += (pixel >> 8) & 0xff;
++			rotated_blue_sum += pixel & 0xff;
++			rotated_xor ^= pixel & 0x00ffffff;
++		}
++	}
++	m_snap_target->set_orientation(target_orientation);
++	bool rotation_preserves_pixels = rotated_width == height
++		&& rotated_height == width
++		&& rotated_red_sum == source_red_sum
++		&& rotated_green_sum == source_green_sum
++		&& rotated_blue_sum == source_blue_sum
++		&& rotated_xor == source_xor;
++
++	const rectangle &visible = screen->visible_area();
++	osd_ticks_t ticks_per_second = osd_ticks_per_second();
++	UINT32 raster_us = (UINT32)((raster_ticks * 1000000) / ticks_per_second);
++	UINT32 conversion_us = (UINT32)((conversion_ticks * 1000000) / ticks_per_second);
++
++	EM_ASM_ARGS({
++		if (typeof JSMESS === "undefined") return;
++		var rgbaPointer = $0 >>> 0;
++		var width = $1 >>> 0;
++		var height = $2 >>> 0;
++		var byteLength = width * height * 4;
++		var checksum = 2166136261;
++		var opaqueAlpha = true;
++		var nonBlackPixels = 0;
++		for (var y = 0; y < height; y++) {
++			for (var x = 0; x < width; x++) {
++				var pixelIndex = y * width + x;
++				var byteIndex = rgbaPointer + pixelIndex * 4;
++				var red = HEAPU8[byteIndex];
++				var green = HEAPU8[byteIndex + 1];
++				var blue = HEAPU8[byteIndex + 2];
++				var alpha = HEAPU8[byteIndex + 3];
++				opaqueAlpha = opaqueAlpha && alpha === 255;
++				if ((red | green | blue) !== 0) nonBlackPixels++;
++				checksum ^= red;
++				checksum = Math.imul(checksum, 16777619) >>> 0;
++				checksum ^= green;
++				checksum = Math.imul(checksum, 16777619) >>> 0;
++				checksum ^= blue;
++				checksum = Math.imul(checksum, 16777619) >>> 0;
++				checksum ^= alpha;
++				checksum = Math.imul(checksum, 16777619) >>> 0;
++			}
++		}
++		var frame = {};
++		frame.sourceFormat = "RGB32";
++		frame.sourceMemoryOrder = "BGRX";
++		frame.outputFormat = "RGBA8888";
++		frame.width = width;
++		frame.height = height;
++		frame.byteLength = byteLength;
++		frame.sourceWidth = $3 >>> 0;
++		frame.sourceHeight = $4 >>> 0;
++		frame.systemOrientation = $5 >>> 0;
++		frame.targetOrientation = $6 >>> 0;
++		frame.rasterUs = $7 >>> 0;
++		frame.conversionUs = $8 >>> 0;
++		frame.rotatedWidth = $9 >>> 0;
++		frame.rotatedHeight = $10 >>> 0;
++		frame.rotatedTargetOrientation = $11 >>> 0;
++		frame.rotationPreservesPixels = $12 !== 0;
++		frame.checksum = ("00000000" + checksum.toString(16)).slice(-8);
++		frame.opaqueAlpha = opaqueAlpha;
++		frame.nonBlackPixels = nonBlackPixels;
++		JSMESS.videoProbeFrames = JSMESS.videoProbeFrames || [];
++		JSMESS.videoProbeFrames.push(frame);
++		JSMESS.videoProbeFrameCount = (JSMESS.videoProbeFrameCount || 0) + 1;
++		JSMESS.videoProbeLastFrame = frame;
++	}, &rgba[0], width, height, visible.width(), visible.height(),
++		machine().system().flags & ORIENTATION_MASK, target_orientation,
++		raster_us, conversion_us, rotated_width, rotated_height,
++		rotated_orientation, rotation_preserves_pixels);
++}
++#endif
+--- a/src/emu/machine.c
++++ b/src/emu/machine.c
+@@ -1454,0 +1455 @@
++		case 8: jsmess_machine->video().probe_render_rgba(); hook_result = 0; break;

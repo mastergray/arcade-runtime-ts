@@ -1,8 +1,9 @@
 # P7–P11: 0.161 bridge-hook findings
 
-Status: P7 and P8 passed. The runtime boundaries, stock browser-loop gaps and
-mid-run persistence behavior are measured. P9–P11 retain the source findings
-below and still need their dedicated runtime probes.
+Status: P7–P9 passed. The runtime boundaries, stock browser-loop gaps,
+mid-run persistence behavior and upright RGBA render path are measured.
+P10–P11 retain the source findings below and still need their dedicated
+runtime probes.
 
 ## Lifecycle and control (P7)
 
@@ -79,9 +80,42 @@ allocate a `render_target`, set its output bounds, and consume the resulting
 pixel-aspect and target-orientation APIs.
 
 This is sufficient to implement a software RGBA target without SDL owning the
-page canvas. It does not yet decide whether the lowest-cost implementation is
-primitive rasterization or copying a screen bitmap before composition. P9 must
-measure the chosen conversion and verify upright output for rotated games.
+page canvas.
+
+The dedicated browser probe ran on 2026-10-19 with the pinned Emscripten
+1.38.31 toolchain and headless Chromium. The private fixture identity and ROM
+inputs remain local. The game-only
+[`0007-emscripten-video-probe.patch`](../../../mame/patches/0007-emscripten-video-probe.patch)
+uses `video_manager`'s existing hidden native snapshot target and software
+primitive rasterizer. This avoids SDL canvas readback and exercises the same
+path selected for the production web video module.
+
+[`08-mame-video-probe.test.ts`](../../../tests/browser/08-mame-video-probe.test.ts)
+confirmed these boundaries:
+
+| Observation | Result | Bridge consequence |
+| ----------- | ------ | ------------------ |
+| Core buffer | `bitmap_rgb32`: numeric `0x00RRGGBB`, BGRX byte order in little-endian Wasm memory | Convert channels explicitly; do not expose the source bytes as browser RGBA. |
+| Browser buffer | Reused C++ storage containing opaque `RGBA8888`; byte length was exactly width × height × 4 and the stable sample contained non-black pixels. | `onFrame(ptr, width, height)` can expose a temporary heap view for the adapter to copy. |
+| Native geometry | The output dimensions matched the visible area after combining the system and target orientation flags. | `MachineInfo.width`/`height` come from the upright target, not deployment configuration. |
+| Quarter turn | A forced `ROT90` target transposed the dimensions and preserved per-channel sums and the RGB XOR across the entire frame. | The core render target owns rotation; JavaScript does not rotate pixels. |
+
+Each timing sample contained 71,680 pixels and used 30 warmed captures under a
+390×844 Chromium viewport with 4× CPU throttling. The dedicated P9 run and
+the later combined P7–P9 regression produced these ranges:
+
+| Work | p50 range | p95 range |
+| ---- | ---------: | ---------: |
+| RGB32 → opaque RGBA8888 | 0.800–1.000 ms | 1.200–3.400 ms |
+| Software primitive rasterization | 3.100–3.500 ms | 4.799–5.900 ms |
+| Rasterization + conversion | 3.600–4.500 ms | 5.799–7.200 ms |
+
+The worst observed combined p95 is below one 16.667 ms frame budget, so P9
+selects direct primitive rasterization plus explicit RGBA conversion. The
+extra forced-rotation render is probe-only and excluded from those production
+path timings. CPU throttling is an engineering proxy, not a physical handset
+measurement; P12 still requires an actual mid-range-phone run and sustained
+full-speed evidence.
 
 ## Sound (P10)
 
@@ -176,6 +210,7 @@ specification. The minimum patch shape is:
 
 P7 accepts the scheduled state boundary and its save/load round trip for the
 probe fixture. P8 accepts the NVRAM/IDBFS round trip and excludes the unsafe
-config-save call. The final adapter still needs the same assertions against
-its public Promise API. Rendering, audio cadence and audit behavior remain
-P9–P11 measurements.
+config-save call. P9 accepts core primitive rasterization, core-owned
+orientation and explicit RGB32-to-RGBA conversion. The final adapter still
+needs the same assertions against its public Promise API. Audio cadence and
+audit behavior remain P10–P11 measurements.

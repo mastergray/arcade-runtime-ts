@@ -21,6 +21,7 @@ const LIFECYCLE_PATCH_URL = new URL("../../mame/patches/0002-emscripten-lifecycl
 const PACING_PATCH_URL = new URL("../../mame/patches/0003-emscripten-pacing-probe.patch", import.meta.url);
 const BRIDGE_HOOKS_PATCH_URL = new URL("../../mame/patches/0004-emscripten-bridge-hooks-probe.patch", import.meta.url);
 const PERSISTENCE_PATCH_URL = new URL("../../mame/patches/0006-emscripten-persistence-probe.patch", import.meta.url);
+const VIDEO_PATCH_URL = new URL("../../mame/patches/0007-emscripten-video-probe.patch", import.meta.url);
 
 const readText = (url: URL): string => readFileSync(url, "utf8");
 
@@ -187,7 +188,40 @@ const testFile: TestFile = {
                             && preJs.includes("FS.syncfs(true")
                             && preJs.includes("syncPersistence")
                             && build.includes("-lidbfs.js")
+                            && build.includes("persistence_probe_is_applied")
                             && build.includes('apply_source_patch "${persistence_probe_patch}"');
+                    },
+                    P.equals(true),
+                )
+                .start(undefined),
+        },
+        {
+            label: "measures a production-shaped upright RGBA video path",
+            run: () => CTGTest.init("private video probe contract")
+                .assert(
+                    "the core rasterizes its native target before explicit RGBA conversion",
+                    () => {
+                        const patch = readText(VIDEO_PATCH_URL);
+                        return patch.includes("create_snapshot_bitmap(screen)")
+                            && patch.includes("sourceFormat = \"RGB32\"")
+                            && patch.includes("sourceMemoryOrder = \"BGRX\"")
+                            && patch.includes("outputFormat = \"RGBA8888\"")
+                            && patch.includes("rotationPreservesPixels")
+                            && patch.includes("conversionUs")
+                            && patch.includes("rasterUs");
+                    },
+                    P.equals(true),
+                )
+                .assert(
+                    "the browser bridge exposes only a generic capture command",
+                    () => {
+                        const preJs = readText(PRE_JS_URL);
+                        const build = readText(PROBE_SCRIPT_URL);
+                        return preJs.includes("captureVideo: 8")
+                            && preJs.includes("resetVideoProbe")
+                            && build.includes("video_probe_is_applied")
+                            && build.includes('apply_source_patch "${video_probe_patch}"')
+                            && build.includes('remove_source_patch "${video_probe_patch}"');
                     },
                     P.equals(true),
                 )
