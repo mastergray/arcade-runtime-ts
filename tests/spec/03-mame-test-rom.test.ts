@@ -23,6 +23,7 @@ const BRIDGE_HOOKS_PATCH_URL = new URL("../../mame/patches/0004-emscripten-bridg
 const PERSISTENCE_PATCH_URL = new URL("../../mame/patches/0006-emscripten-persistence-probe.patch", import.meta.url);
 const VIDEO_PATCH_URL = new URL("../../mame/patches/0007-emscripten-video-probe.patch", import.meta.url);
 const AUDIO_PATCH_URL = new URL("../../mame/patches/0008-emscripten-audio-probe.patch", import.meta.url);
+const AUDIT_PATCH_URL = new URL("../../mame/patches/0009-emscripten-audit-output-probe.patch", import.meta.url);
 
 const readText = (url: URL): string => readFileSync(url, "utf8");
 
@@ -254,6 +255,39 @@ const testFile: TestFile = {
                             && build.includes("audio_probe_is_applied")
                             && build.includes('apply_source_patch "${audio_probe_patch}"')
                             && build.includes('remove_source_patch "${audio_probe_patch}"');
+                    },
+                    P.equals(true),
+                )
+                .start(undefined),
+        },
+        {
+            label: "captures startup audit failures before frontend return",
+            run: () => CTGTest.init("private audit-output probe contract")
+                .assert(
+                    "the OSD delegate records formatted channel messages without replacing output",
+                    () => {
+                        const patch = readText(AUDIT_PATCH_URL);
+                        return patch.includes("vsnprintf")
+                            && patch.includes("auditOutputMessages")
+                            && patch.includes('channelName = $0 === 0 ? "error"')
+                            && patch.includes("vfprintf") === false;
+                    },
+                    P.equals(true),
+                )
+                .assert(
+                    "the generic bridge can omit its configured dependency after preload",
+                    () => {
+                        const preJs = readText(PRE_JS_URL);
+                        const build = readText(PROBE_SCRIPT_URL);
+                        const patch = readText(AUDIT_PATCH_URL);
+                        return preJs.includes('mame_probe_omit')
+                            && preJs.includes('"/roms/" + MAME_PROBE_PARENT + ".zip"')
+                            && patch.includes("auditOutputCountAtFrontendReturn")
+                            && patch.includes("frontendResult = $0")
+                            && build.includes("MAME_PROBE_PARENT")
+                            && build.includes("audit_output_probe_is_applied")
+                            && build.includes('apply_source_patch "${audit_output_probe_patch}"')
+                            && build.includes('remove_source_patch "${audit_output_probe_patch}"');
                     },
                     P.equals(true),
                 )

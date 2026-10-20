@@ -1,0 +1,57 @@
+From: mastergray <mastergray@users.noreply.github.com>
+Subject: [PATCH] record OSD output for the browser audit probe
+
+Copy each formatted OSD message into a structured JavaScript record before the
+normal SDL output callback prints it.  This keeps MAME's audit and fatal-error
+paths unchanged while allowing the browser probe to verify channel, ordering
+and terminal status without scraping the generated shell.
+
+--- a/src/osd/modules/lib/osdobj_common.c
++++ b/src/osd/modules/lib/osdobj_common.c
+@@ -14,0 +15,4 @@
++#if defined(SDLMAME_EMSCRIPTEN)
++#include <emscripten.h>
++#endif
++
+@@ -271,0 +276,25 @@
++#if defined(SDLMAME_EMSCRIPTEN)
++	va_list length_args;
++	va_copy(length_args, args);
++	int message_length = vsnprintf(NULL, 0, msg, length_args);
++	va_end(length_args);
++	if (message_length >= 0)
++	{
++		std::vector<char> formatted(message_length + 1);
++		va_list format_args;
++		va_copy(format_args, args);
++		vsnprintf(&formatted[0], formatted.size(), msg, format_args);
++		va_end(format_args);
++		EM_ASM_ARGS({
++			if (typeof JSMESS === "undefined") return;
++			var channelName = $0 === 0 ? "error" : ($0 === 1 ? "warning" : ($0 === 2 ? "info" : ($0 === 3 ? "debug" : ($0 === 4 ? "verbose" : ($0 === 5 ? "log" : "unknown")))));
++			JSMESS.auditOutputMessages = JSMESS.auditOutputMessages || [];
++			var record = {};
++			record.sequence = JSMESS.auditOutputMessages.length;
++			record.channel = channelName;
++			record.text = UTF8ToString($1);
++			JSMESS.auditOutputMessages.push(record);
++		}, channel, &formatted[0]);
++	}
++#endif
++
+--- a/src/emu/clifront.c
++++ b/src/emu/clifront.c
+@@ -30,0 +31,4 @@
++#if defined(EMSCRIPTEN)
++#include <emscripten.h>
++#endif
++
+@@ -272,0 +277,8 @@
++#if defined(EMSCRIPTEN)
++	EM_ASM_ARGS({
++		if (typeof JSMESS === "undefined") return;
++		JSMESS.frontendResult = $0;
++		JSMESS.auditOutputCountAtFrontendReturn = (JSMESS.auditOutputMessages || []).length;
++		JSMESS.running = false;
++	}, m_result);
++#endif

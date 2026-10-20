@@ -136,6 +136,13 @@ the native 48 kHz sample-rate report, signed interleaved left/right samples,
 exact 960-frame mixer chunks and browser-visible callback cadence. The probe
 uses the fixed `-samplerate 48000` runtime setting selected by the architecture.
 
+P11 uses two complete private artifacts with the generic basenames
+`mameaudit-parent-probe` and `mameaudit-bios-probe`. Set
+`MAME_AUDIT_PROBE_BASE_URL` to their served directory. The CTG browser cases
+remove only the configured dependency from MEMFS after preload, then verify
+ordered OSD error records and `MAMERR_MISSING_FILES` before the main loop. ROM
+and machine identities remain solely in ignored local JSON build configs.
+
 The repository does not redistribute prebuilt executables from `res/`, and it
 does not vendor ROMs, SDK files, generated emulator artifacts or a MAME source
 checkout.

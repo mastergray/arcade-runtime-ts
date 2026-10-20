@@ -1,9 +1,8 @@
 # P7–P11: 0.161 bridge-hook findings
 
-Status: P7–P10 passed. The runtime boundaries, stock browser-loop gaps,
-mid-run persistence behavior, upright RGBA render path and mixer boundary are
-measured. P11 retains the source findings below and still needs its dedicated
-runtime probe.
+Status: P7–P11 passed. The runtime boundaries, stock browser-loop gaps,
+mid-run persistence behavior, upright RGBA render path, mixer boundary and ROM
+audit failure path are measured.
 
 ## Lifecycle and control (P7)
 
@@ -102,13 +101,13 @@ confirmed these boundaries:
 
 Each timing sample contained 71,680 pixels and used 30 warmed captures under a
 390×844 Chromium viewport with 4× CPU throttling. The dedicated P9 run and
-the later combined P7–P9 regression produced these ranges:
+later combined regressions produced these ranges across four executions:
 
 | Work | p50 range | p95 range |
 | ---- | ---------: | ---------: |
-| RGB32 → opaque RGBA8888 | 0.700–1.000 ms | 1.200–3.400 ms |
-| Software primitive rasterization | 3.000–3.500 ms | 4.799–5.900 ms |
-| Rasterization + conversion | 3.600–4.500 ms | 5.799–7.200 ms |
+| RGB32 → opaque RGBA8888 | 0.600–1.000 ms | 1.100–3.400 ms |
+| Software primitive rasterization | 2.900–3.500 ms | 4.000–5.900 ms |
+| Rasterization + conversion | 3.500–4.500 ms | 5.100–7.200 ms |
 
 The worst observed combined p95 is below one 16.667 ms frame budget, so P9
 selects direct primitive rasterization plus explicit RGBA conversion. The
@@ -142,15 +141,15 @@ signed `HEAP16` view; it did not derive the format or rate from wall time.
 
 [`09-mame-audio-probe.test.ts`](../../../tests/browser/09-mame-audio-probe.test.ts)
 discarded 25 startup callbacks, then measured 150 callbacks. Dedicated P10 and
-combined P7–P10 regression runs produced these ranges across three executions:
+combined regression runs produced these ranges across four executions:
 
 | Observation | Result | Bridge consequence |
 | ----------- | -----: | ------------------ |
 | Mixer format | `S16LE`, two interleaved channels, left then right | De-interleave `HEAP16` pairs and normalize each signed value to Web Audio float channels. |
 | Native rate | 48,000 stereo frames/s reported on every callback | Set `ArcadeSession.sampleRate` from the native boundary; do not infer it from browser cadence. |
 | Native chunk | Exactly 960 stereo frames, or 20 ms, on every callback | Forward one native mixer update as one audio batch; the 16 ms minimum chunk does not need extra accumulation. |
-| Browser delivery | 49.90–49.92 callbacks/s; 18.1–18.2 ms interval p50 and 29.2–30.2 ms p95 | Expect main-loop quantization around the 50 Hz average and schedule by accumulated audio duration, not individual arrival intervals. |
-| Sustained delivery | 47,904–47,921 stereo frames/s over the measured window | The stock throttled loop remained within 0.20% of the configured rate during this short probe. |
+| Browser delivery | 49.90–49.97 callbacks/s; 17.9–18.2 ms interval p50 and 29.1–30.2 ms p95 | Expect main-loop quantization around the 50 Hz average and schedule by accumulated audio duration, not individual arrival intervals. |
+| Sustained delivery | 47,904–47,971 stereo frames/s over the measured window | The stock throttled loop remained within 0.20% of the configured rate during this short probe. |
 
 Both channel positions contained live, in-range signed values, and all 150
 callbacks reported the throttled state. The 120 ms queue cap therefore holds
@@ -216,10 +215,34 @@ The CLI sends these summaries and terminal set status through
 log channels. A web delegate can therefore capture audit text before exit
 without scraping browser console output.
 
-The browser probe must still confirm ordering and identify missing parent and
-BIOS zips on actual clone/BIOS cases. `-listxml` supplies `cloneof`/`romof`
-relationships, so `pack-roms` should combine machine metadata with the audit
-records rather than depend on human-readable text alone.
+The dedicated browser probe ran on 2026-10-20 with the pinned Emscripten
+1.38.31 toolchain, headless Chromium and separate private parent-dependent and
+BIOS-dependent fixtures. Their identities and ROM inputs remain local.
+[`0009-emscripten-audit-output-probe.patch`](../../../mame/patches/0009-emscripten-audit-output-probe.patch)
+copies each formatted OSD message into a `{ sequence, channel, text }` record
+before the existing SDL callback prints it. It also reports the authoritative
+`cli_frontend::execute()` result without changing the audit or error path.
+
+[`10-mame-audit-probe.test.ts`](../../../tests/browser/10-mame-audit-probe.test.ts)
+removed the configured dependency archive from MEMFS after preload and before
+`main()`. Each otherwise-complete artifact produced the same ordered shape:
+
+| Fixture | Detailed record | Terminal record | Frontend result | Main-loop ticks |
+| ------- | --------------- | --------------- | --------------: | --------------: |
+| Missing parent | Error-channel record contained missing-file lines and named the configured dependency among the searched sets. | A later error-channel record reported that required files were missing. | `2` (`MAMERR_MISSING_FILES`) | 0 |
+| Missing BIOS | Error-channel record contained missing-file lines and named the configured dependency among the searched sets. | A later error-channel record reported that required files were missing. | `2` (`MAMERR_MISSING_FILES`) | 0 |
+
+Both cases had exactly two output records, both records were captured before
+the frontend result, and no generated-shell or console scraping was required.
+The pinned Emscripten runtime did not invoke `Module.onExit` after the frontend
+returned, so the production bridge needs an explicit frontend-result callback.
+Result `2` before the first frame maps to `ROM_SET_INVALID`; its ordered error
+records become the error's `data` without using text to classify the failure.
+
+The missing-file details themselves remain pinned-MAME text. Build-time
+`pack-roms` should continue using the auditor's structured records plus
+`-listxml` `cloneof`/`romof` relationships to identify parent and BIOS archives,
+rather than trying to infer dependency roles from those lines.
 
 ## Patch implications
 
@@ -242,5 +265,6 @@ config-save call. P9 accepts core primitive rasterization, core-owned
 orientation and explicit RGB32-to-RGBA conversion. P10 accepts 48 kHz,
 interleaved signed-16 left/right audio in 20 ms native chunks and
 duration-based browser scheduling. The final adapter still needs the same
-assertions against its public Promise API. Audit behavior remains the P11
-measurement.
+assertions against its public Promise API. P11 accepts ordered OSD records plus
+an explicit frontend result for `ROM_SET_INVALID`, with structured build-time
+dependency validation remaining the responsibility of `pack-roms`.

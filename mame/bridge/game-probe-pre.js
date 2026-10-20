@@ -8,6 +8,7 @@ if (typeof window !== "undefined") {
 var probeParams = typeof window === "undefined"
     ? null
     : new URL(window.location.href).searchParams;
+var auditOmission = probeParams && probeParams.get("mame_probe_omit");
 var persistenceProbeToken = probeParams && probeParams.get("mame_probe_persistence");
 var persistenceProbeEnabled = typeof persistenceProbeToken === "string"
     && persistenceProbeToken.length > 0;
@@ -179,6 +180,9 @@ function jsmess_set_mastervolume(attenuation) {
 if (typeof MAME_PROBE_MACHINE !== "string" || MAME_PROBE_MACHINE.length === 0) {
     throw new Error("Missing local MAME probe machine");
 }
+if (typeof MAME_PROBE_PARENT !== "string") {
+    throw new Error("Missing local MAME parent probe configuration");
+}
 if (typeof MAME_PROBE_SECOND_MACHINE !== "string") {
     throw new Error("Missing local MAME second probe machine configuration");
 }
@@ -194,6 +198,7 @@ if (MAME_PROBE_SECOND_MACHINE.length > 0 && typeof window !== "undefined") {
 }
 
 JSMESS.initialMachine = MAME_PROBE_MACHINE;
+JSMESS.expectedDependency = MAME_PROBE_PARENT;
 JSMESS.secondMachine = MAME_PROBE_SECOND_MACHINE;
 JSMESS.configuredMachine = selectedProbeMachine;
 JSMESS.currentMachine = function() {
@@ -252,9 +257,18 @@ JSMESS.requestHook = function(name) {
 };
 
 Module["onRuntimeInitialized"] = function() {
+    if (auditOmission === "dependency") {
+        if (MAME_PROBE_PARENT.length === 0) {
+            throw new Error("The audit omission probe requires a dependency archive");
+        }
+        var dependencyPath = "/roms/" + MAME_PROBE_PARENT + ".zip";
+        var dependencyExisted = FS.analyzePath(dependencyPath).exists;
+        if (dependencyExisted) FS.unlink(dependencyPath);
+        JSMESS.auditOmissionApplied = dependencyExisted
+            && !FS.analyzePath(dependencyPath).exists;
+    }
     JSMESS.running = true;
 };
-
 Module["arguments"] = [
     selectedProbeMachine,
     "-rompath", "/roms",

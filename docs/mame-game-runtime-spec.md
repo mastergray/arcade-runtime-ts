@@ -604,20 +604,30 @@ C++ buffer converts them to opaque `RGBA8888`. Native orientation produced
 the expected visible dimensions, and forcing a further quarter turn
 transposed the dimensions while preserving the complete pixel aggregates.
 For a 71,680-pixel frame under Chromium's 4× CPU-throttled, 390×844 mobile
-proxy, three 30-sample runs measured RGBA conversion at 0.7–1.0 ms p50 /
-1.2–3.4 ms p95 and rasterization plus conversion at 3.6–4.5 ms p50 /
-5.8–7.2 ms p95. This selects the primitive-rasterization design; P12 still
+proxy, four 30-sample runs measured RGBA conversion at 0.6–1.0 ms p50 /
+1.1–3.4 ms p95 and rasterization plus conversion at 3.5–4.5 ms p50 /
+5.1–7.2 ms p95. This selects the primitive-rasterization design; P12 still
 owns confirmation on an actual mid-range phone and the sustained full-speed
 gate.
 
 P10 confirmed the sound design at the stock mixer boundary. With the runtime
 fixed to 48 kHz, MAME supplied two interleaved signed-16 channels in left/right
-order as exact 960-frame (20 ms) chunks. Three warmed 150-callback Chromium
-runs averaged 49.90–49.92 callbacks/s and 47,904–47,921 stereo frames/s; their
-18.1–18.2 ms p50 and 29.2–30.2 ms p95 delivery intervals reflect the 50 Hz
+order as exact 960-frame (20 ms) chunks. Four warmed 150-callback Chromium runs
+averaged 49.90–49.97 callbacks/s and 47,904–47,971 stereo frames/s; their
+17.9–18.2 ms p50 and 29.1–30.2 ms p95 delivery intervals reflect the 50 Hz
 mixer crossing the stock near-60 Hz outer loop. `ArcadeAudio` therefore
 schedules by buffer duration, retains the 16 ms minimum and 120 ms cap, and
 does not infer rate from callback arrival time.
+
+P11 confirmed the startup-audit design with separate missing-parent and
+missing-BIOS browser runs. Each produced one detailed error-channel record,
+then one terminal error-channel record, then returned
+`MAMERR_MISSING_FILES` (`2`) before the first main-loop tick. The pinned
+Emscripten runtime did not subsequently call `Module.onExit`, so the bridge
+reports `cli_frontend::execute()` completion directly. Runtime classification
+uses the numeric result and carries ordered log records as error data;
+build-time `pack-roms` uses structured auditor records and `cloneof`/`romof`
+metadata rather than inferring dependency roles from message text.
 
 ### 4.3 Bridge exports (`0002-web-bridge-exports.patch`)
 
@@ -635,8 +645,9 @@ through `cwrap`:
 | `web_machine_info(out)` | Fills a struct for `MachineInfo` |
 
 Callbacks into JS (`EM_JS`): `onTick`, `onFrame`, `onSound`,
-`onStateDone(ok)`, `onExit`, `onLog(level, text)`. `onTick` fires once
-per emulated frame even when frameskip suppresses video.
+`onStateDone(ok)`, `onExit`, `onFrontendDone(result)`,
+`onLog(level, text)`. `onTick` fires once per emulated frame even when
+frameskip suppresses video.
 
 P7 confirmed that scheduled state work can be serviced at an explicit
 between-timeslice boundary: save, continued execution, load, time rewind and
@@ -723,9 +734,9 @@ must agree before module JavaScript is imported.
    files are excluded.
 5. Calls `callMain([machine, ...options])`.
 6. Resolves once the first `onFrame` arrives and `web_machine_info`
-   succeeds. If MAME exits before the first frame, parses the `onLog`
-   output for the ROM audit and rejects with `ROM_SET_INVALID`
-   (`data`: the missing/bad file list), otherwise `ADAPTER_FAILED`.
+   succeeds. If the frontend returns `MAMERR_MISSING_FILES` before the first
+   frame, rejects with `ROM_SET_INVALID` and attaches the ordered error-channel
+   `onLog` records as `data`; another pre-frame result is `ADAPTER_FAILED`.
 
 Session behavior:
 

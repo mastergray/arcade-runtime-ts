@@ -12,6 +12,7 @@ bridge_hooks_probe_patch="${project_root}/mame/patches/0004-emscripten-bridge-ho
 persistence_probe_patch="${project_root}/mame/patches/0006-emscripten-persistence-probe.patch"
 video_probe_patch="${project_root}/mame/patches/0007-emscripten-video-probe.patch"
 audio_probe_patch="${project_root}/mame/patches/0008-emscripten-audio-probe.patch"
+audit_output_probe_patch="${project_root}/mame/patches/0009-emscripten-audit-output-probe.patch"
 expected_emsdk="$(tr -d '[:space:]' < "${project_root}/mame/EMSDK_VERSION")"
 probe_kind="${MAME_PROBE_KIND:-list}"
 pre_js="${project_root}/mame/bridge/tiny-probe-pre.js"
@@ -179,6 +180,7 @@ case "${probe_kind}" in
 
         generated_pre_js="$(mktemp)"
         printf 'var MAME_PROBE_MACHINE = "%s";\n' "${machine}" > "${generated_pre_js}"
+        printf 'var MAME_PROBE_PARENT = "%s";\n' "${parent}" >> "${generated_pre_js}"
         printf 'var MAME_PROBE_SECOND_MACHINE = "%s";\n' "${second_machine}" >> "${generated_pre_js}"
         printf 'var MAME_PROBE_SOUND = "%s";\n' "${sound}" >> "${generated_pre_js}"
         pre_js="${project_root}/mame/bridge/game-probe-pre.js"
@@ -236,6 +238,12 @@ audio_probe_is_applied() {
         "${source_dir}/src/osd/modules/sound/js_sound.c"
 }
 
+audit_output_probe_is_applied() {
+    grep -Fq 'JSMESS.auditOutputMessages' \
+        "${source_dir}/src/osd/modules/lib/osdobj_common.c" \
+        && grep -Fq 'JSMESS.frontendResult' "${source_dir}/src/emu/clifront.c"
+}
+
 apply_source_patch "${compatibility_patch}"
 if [[ "${probe_kind}" == "game" ]]; then
     # The pacing probe is layered on the lifecycle probe and overlaps its
@@ -257,7 +265,11 @@ if [[ "${probe_kind}" == "game" ]]; then
     if ! audio_probe_is_applied; then
         apply_source_patch "${audio_probe_patch}"
     fi
+    if ! audit_output_probe_is_applied; then
+        apply_source_patch "${audit_output_probe_patch}"
+    fi
 else
+    remove_source_patch "${audit_output_probe_patch}"
     remove_source_patch "${audio_probe_patch}"
     remove_source_patch "${video_probe_patch}"
     remove_source_patch "${persistence_probe_patch}"
