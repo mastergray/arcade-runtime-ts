@@ -153,10 +153,12 @@ mame-game-runtime-ts/
     mame/
         VERSION                 # initial pinned MAME tag: mame0161
         EMSDK_VERSION           # pinned emsdk version for that tag
-        patches/                # bridge patch set, applied in order
+        patches/                # production bridge patch set, applied in order
             0001-web-osd-modules.patch
             0002-web-bridge-exports.patch
             0003-nvram-flush.patch
+        probes/
+            patches/            # archived M0 diagnostics; never applied to production builds
         bridge/                 # C++ sources the patches add (kept here for review)
             web_video.cpp
             web_sound.cpp
@@ -558,6 +560,14 @@ A build file:
 
 The source path above reflects the expected 0.161-era tree; P1/P2
 replace it with the exact audited path if the matching source differs.
+
+The production builder applies only `mame/patches/*.patch`. Diagnostic
+patches retained as M0 evidence live under `mame/probes/patches/` and are
+applied only by the probe scripts that name them explicitly. Neither build
+path recursively globs both directories. M1A performs the one-time relocation
+of the existing P1–P12 patch archive before adding production patch 0001, so a
+production artifact cannot accidentally ship probe telemetry or fixture-only
+compatibility changes.
 
 `sources` comes from the pinned source-built binary's `-listsource <machine>`
 output or the equivalent source-tree data for that release.
@@ -1505,6 +1515,34 @@ critical path to the first usable release.
 | M12 | **Optional `LibretroAdapter`.** Build only the approved optional core(s) through the common adapter contract. | One optional-core manifest runs through the unchanged shell, controls and storage APIs and is clearly labeled non-MAME where applicable |
 | M13 | **Pinned MAME upgrade probe.** Evaluate a newer MAME source tag through the direct bridge without changing the 0.161 build. | Side-by-side build plus documented ROM, save-state, size and performance migration costs |
 | M14 | **Broader verification matrix.** Expand direct-MAME coverage across CPS-1/2, Neo Geo, System 16/18/32, Irem, Konami, Data East and Taito. | `metadata.status.verified` filled for every tested deployment |
+
+### 12.1 M1 implementation slices
+
+M1 is delivered as four separately reviewed increments. These names define
+implementation and commit boundaries; they do not create additional product
+milestones or relax the M1 acceptance row above.
+
+1. **M1A — contracts and build boundary.** Implement the shared runtime types,
+   structural predicates and `ArcadeRuntimeError`. Relocate the M0 diagnostic
+   patches to `mame/probes/patches/`, reserve `mame/patches/` for production,
+   and implement the pinned `build-mame.ts` recipe. Its first integration test
+   must produce a deterministic `build.json` and a modularized, ROM-free
+   JavaScript/WebAssembly factory, inject ROM archives into MEMFS, and invoke
+   MAME through `callMain()` with `noInitialRun: true`.
+2. **M1B — production web bridge.** Implement the production web video, sound
+   and input OSD modules, narrow bridge exports, frontend-result/log callbacks,
+   NVRAM wrapper and non-blocking screen-period accumulator. Preserve the M0
+   decisions: single-threaded hosting, upright core rendering, scheduled state
+   operations and explicit terminal control.
+3. **M1C — TypeScript adapter.** Implement `MameEmulatorAdapter` and its fresh
+   per-start session: validate build metadata and machine membership, create
+   MEMFS inputs, classify audit failures, copy heap-backed frame and sound
+   data, map controls, expose lifecycle/state/persistence operations, and
+   release all callbacks and module references on failure or exit.
+4. **M1D — display and acceptance.** Implement `ArcadeDisplay`, including
+   native-size/aspect layout and frame presentation, then run the real-build
+   browser acceptance at controlled 60 and 120 Hz display cadences. M1 closes
+   only when an upright native-size game remains at correct speed in both.
 
 ---
 
