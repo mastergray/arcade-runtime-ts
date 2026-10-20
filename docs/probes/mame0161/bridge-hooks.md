@@ -1,8 +1,8 @@
 # P7–P11: 0.161 bridge-hook findings
 
-Status: P7 passed. The runtime boundaries and the stock browser-loop gaps are
-now measured. P8–P11 retain the source findings below and still need their
-dedicated runtime probes.
+Status: P7 and P8 passed. The runtime boundaries, stock browser-loop gaps and
+mid-run persistence behavior are measured. P9–P11 retain the source findings
+below and still need their dedicated runtime probes.
 
 ## Lifecycle and control (P7)
 
@@ -49,7 +49,7 @@ runs each terminal or stateful observation in a fresh module through
 | Pause/resume | Both notifications and the paused flag changed, but machine time still advanced by more than 250 ms over 20 browser callbacks while paused. | The replacement outer loop must branch on `paused()` and must not advance the device scheduler while paused. |
 | Soft reset | `schedule_soft_reset()` produced a second reset notification without a shell exception. | The narrow soft-reset export can use the existing scheduler API. |
 | State load | A scheduled load with no state file reported a file-open error, no save-format error and no shell exception. | The bridge can distinguish file and serialization failures and report completion rather than scraping UI text. |
-| State round trip | A scheduled save succeeded, machine time advanced, a scheduled load rewound to the saved time, and another 30 callbacks advanced without an exception. Two legacy-toolchain accommodations were required: pre-create the missing MEMFS state node before native `open(O_CREAT)`, and suppress the scheduler's diagnostic-only timer dumps under Emscripten. | Use scheduled operations at a dedicated between-timeslice boundary; do not expose `immediate_save()`/`immediate_load()`. Preserve both Emscripten accommodations in the production patch. |
+| State round trip | A scheduled save succeeded, machine time advanced, a scheduled load rewound to the saved time, and another 30 callbacks advanced without an exception. Two legacy-toolchain accommodations were required: pre-create the missing MEMFS state node before native `open(O_CREAT)`, and suppress both the pre-save and post-load `dump_timers()` diagnostics under Emscripten. A P8 regression run caught and corrected a guard that had ended before the post-load call. | Use scheduled operations at a dedicated between-timeslice boundary; do not expose `immediate_save()`/`immediate_load()`. Preserve both Emscripten accommodations in the production patch. |
 | Exit | `schedule_exit()` set `exit_pending`, but 20 more callbacks ran and no exit notifier fired. | Stop the browser loop and discard the module explicitly; do not wait for the abandoned native `run()` stack to perform cleanup. |
 
 P4 already established the same terminal behavior for hard reset and a
@@ -106,11 +106,38 @@ Normal shutdown in `running_machine::run()` performs this sequence:
 
 `nvram_save()` iterates every `device_nvram_interface`, opens its calculated
 path with create/write flags, calls the device's `nvram_save(file)`, and closes
-the file. There is no public mid-run wrapper. Therefore patch 0003 from the
-runtime specification is required: add one narrow operation that calls NVRAM
-and configuration saves while the machine is alive, then lets JavaScript sync
-the virtual filesystem. The patch must be tested on a real NVRAM title; source
-shape alone cannot establish that every device tolerates a mid-run write.
+the file. There is no public mid-run wrapper, so patch 0003 from the runtime
+specification is required.
+
+The dedicated runtime probe ran on 2026-10-19 with the pinned Emscripten
+1.38.31 toolchain, headless Chromium and a private NVRAM-capable fixture.
+[`0006-emscripten-persistence-probe.patch`](../../../mame/patches/0006-emscripten-persistence-probe.patch)
+adds a narrow `probe_flush_nvram()` wrapper. It counts live NVRAM interfaces,
+uses MAME's own `nvram_filename()` result, retains the pinned toolchain's
+missing-file pre-creation accommodation, and then delegates serialization to
+the existing private `nvram_save()` method.
+
+[`07-mame-persistence-probe.test.ts`](../../../tests/browser/07-mame-persistence-probe.test.ts)
+mounted a fresh IDBFS root, hydrated it before MAME startup, requested the
+flush while the machine was running, and synced the result. The fixture
+reported a live NVRAM interface and wrote a non-empty 65,536-byte device file.
+The loop advanced at least 20 further callbacks after the flush. Reloading the
+page at the same origin hydrated a file with the exact same relative path,
+size and checksum before the second machine started.
+
+The same probe also ruled out calling `config_save_settings()` at this
+boundary. A temporary stage trace showed every registered default/game
+serializer, both XML writes and all final callbacks completing, after which
+the Chromium renderer crashed as the function returned. Pausing first,
+explicitly closing both files and guarding the optional UI render target did
+not make the call safe. No version of that diagnostic patch is retained.
+
+The production bridge therefore exposes only `web_flush_nvram()`. Controller
+and launch configuration under `cfg/` is adapter-owned and written before
+startup; it is still included in the cumulative overlay and dirty hashes, but
+MAME's shutdown-oriented configuration serializer is never invoked mid-run.
+If a later feature allows MAME itself to mutate configuration, it needs a new
+safe serializer and a new probe rather than widening the NVRAM export.
 
 ## Audit and output capture (P11)
 
@@ -143,10 +170,12 @@ specification. The minimum patch shape is:
 3. replace the stock outer loop so pause does not run the scheduler, pending
    state work is serviced at a controlled boundary, and terminal operations
    stop callbacks rather than waiting on an abandoned stack;
-4. expose a safe mid-run NVRAM/config flush; and
+4. expose a safe mid-run NVRAM flush without invoking the shutdown-oriented
+   configuration serializer; and
 5. register an OSD output delegate for structured audit/error delivery.
 
 P7 accepts the scheduled state boundary and its save/load round trip for the
-probe fixture. The final adapter still needs the same assertions against its
-public Promise API. Rendering, audio cadence, persistence and audit behavior
-remain P8–P11 measurements.
+probe fixture. P8 accepts the NVRAM/IDBFS round trip and excludes the unsafe
+config-save call. The final adapter still needs the same assertions against
+its public Promise API. Rendering, audio cadence and audit behavior remain
+P9–P11 measurements.

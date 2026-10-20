@@ -20,6 +20,7 @@ const PRE_JS_URL = new URL("../../mame/bridge/game-probe-pre.js", import.meta.ur
 const LIFECYCLE_PATCH_URL = new URL("../../mame/patches/0002-emscripten-lifecycle-probe.patch", import.meta.url);
 const PACING_PATCH_URL = new URL("../../mame/patches/0003-emscripten-pacing-probe.patch", import.meta.url);
 const BRIDGE_HOOKS_PATCH_URL = new URL("../../mame/patches/0004-emscripten-bridge-hooks-probe.patch", import.meta.url);
+const PERSISTENCE_PATCH_URL = new URL("../../mame/patches/0006-emscripten-persistence-probe.patch", import.meta.url);
 
 const readText = (url: URL): string => readFileSync(url, "utf8");
 
@@ -145,6 +146,7 @@ const testFile: TestFile = {
                             && patch.includes("probe_service_saveload")
                             && patch.includes("schedule_exit")
                             && patch.includes("type_pressed")
+                            && patch.includes("@@ -690,0 +694 @@\n+#endif")
                             && !patch.includes("emscripten_set_main_loop");
                     },
                     P.equals(true),
@@ -156,6 +158,36 @@ const testFile: TestFile = {
                         return preJs.includes("requestHook")
                             && preJs.includes("audioCallbackCount")
                             && preJs.includes("MAME_PROBE_SOUND");
+                    },
+                    P.equals(true),
+                )
+                .start(undefined),
+        },
+        {
+            label: "exposes a generic mid-run persistence probe",
+            run: () => CTGTest.init("private persistence probe contract")
+                .assert(
+                    "the core owns NVRAM filename selection and serialization",
+                    () => {
+                        const patch = readText(PERSISTENCE_PATCH_URL);
+                        return patch.includes("probe_flush_nvram")
+                            && patch.includes("nvram_save()")
+                            && patch.includes("persistenceNvramDeviceCount")
+                            && !patch.includes("config_save_settings(*this)");
+                    },
+                    P.equals(true),
+                )
+                .assert(
+                    "the browser bridge hydrates and syncs an IDBFS mount",
+                    () => {
+                        const preJs = readText(PRE_JS_URL);
+                        const build = readText(PROBE_SCRIPT_URL);
+                        return preJs.includes("mame_probe_persistence")
+                            && preJs.includes("FS.mount(IDBFS")
+                            && preJs.includes("FS.syncfs(true")
+                            && preJs.includes("syncPersistence")
+                            && build.includes("-lidbfs.js")
+                            && build.includes('apply_source_patch "${persistence_probe_patch}"');
                     },
                     P.equals(true),
                 )

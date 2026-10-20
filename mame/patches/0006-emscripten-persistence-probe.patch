@@ -1,0 +1,55 @@
+From: mastergray <mastergray@users.noreply.github.com>
+Subject: [PATCH] expose mid-run persistence flush for the browser probe
+
+Exercise the production-shaped NVRAM boundary while the machine remains alive.
+The narrow public wrapper retains serialization and filename selection inside
+the core and reports only generic probe observations to JavaScript.  The full
+configuration saver is deliberately excluded: P8 found that it completes its
+writes but corrupts the pinned browser build on return.
+
+--- a/src/emu/machine.h
++++ b/src/emu/machine.h
+@@ -222,0 +223 @@
++	void probe_flush_nvram();
+--- a/src/emu/machine.c
++++ b/src/emu/machine.c
+@@ -1308,0 +1309,37 @@ void running_machine::nvram_save()
++#if defined(EMSCRIPTEN)
++static void probe_prepare_persistence_file(const std::string &path)
++{
++	EM_ASM_ARGS({
++		var path = UTF8ToString($0);
++		var directory = path.slice(0, path.lastIndexOf("/"));
++		FS.mkdirTree(directory);
++		if (!FS.analyzePath(path).exists) {
++			FS.writeFile(path, new Uint8Array(0));
++		}
++	}, path.c_str());
++}
++
++void running_machine::probe_flush_nvram()
++{
++	int nvram_devices = 0;
++	nvram_interface_iterator iter(root_device());
++	for (device_nvram_interface *nvram = iter.first(); nvram != NULL; nvram = iter.next())
++	{
++		std::string filename;
++		std::string path(options().nvram_directory());
++		path.append(PATH_SEPARATOR).append(nvram_filename(filename, nvram->device()));
++		probe_prepare_persistence_file(path);
++		nvram_devices++;
++	}
++
++	nvram_save();
++
++	EM_ASM_ARGS({
++		if (typeof JSMESS !== "undefined") {
++			JSMESS.persistenceFlushCount = (JSMESS.persistenceFlushCount || 0) + 1;
++			JSMESS.persistenceNvramDeviceCount = $0;
++		}
++	}, nvram_devices);
++}
++#endif
++
+@@ -1416,0 +1454 @@ void js_main_loop() {
++		case 7: jsmess_machine->probe_flush_nvram(); hook_result = 0; break;

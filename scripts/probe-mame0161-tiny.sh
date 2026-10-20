@@ -9,6 +9,7 @@ no_mongoose_patch="${project_root}/mame/patches/0005-emscripten-disable-mongoose
 lifecycle_probe_patch="${project_root}/mame/patches/0002-emscripten-lifecycle-probe.patch"
 pacing_probe_patch="${project_root}/mame/patches/0003-emscripten-pacing-probe.patch"
 bridge_hooks_probe_patch="${project_root}/mame/patches/0004-emscripten-bridge-hooks-probe.patch"
+persistence_probe_patch="${project_root}/mame/patches/0006-emscripten-persistence-probe.patch"
 expected_emsdk="$(tr -d '[:space:]' < "${project_root}/mame/EMSDK_VERSION")"
 probe_kind="${MAME_PROBE_KIND:-list}"
 pre_js="${project_root}/mame/bridge/tiny-probe-pre.js"
@@ -181,7 +182,7 @@ case "${probe_kind}" in
         pre_js="${project_root}/mame/bridge/game-probe-pre.js"
         subtarget="runtimeprobe"
         bitcode_name="mameruntimeprobe.bc"
-        link_options=(--pre-js "${generated_pre_js}" "${link_options[@]}")
+        link_options=(--pre-js "${generated_pre_js}" -lidbfs.js "${link_options[@]}")
         ;;
     *)
         echo "Unknown MAME_PROBE_KIND: ${probe_kind} (expected list, family or game)" >&2
@@ -232,7 +233,9 @@ if [[ "${probe_kind}" == "game" ]]; then
         apply_source_patch "${pacing_probe_patch}"
         apply_source_patch "${bridge_hooks_probe_patch}"
     fi
+    apply_source_patch "${persistence_probe_patch}"
 else
+    remove_source_patch "${persistence_probe_patch}"
     remove_source_patch "${bridge_hooks_probe_patch}"
     remove_source_patch "${pacing_probe_patch}"
     remove_source_patch "${lifecycle_probe_patch}"

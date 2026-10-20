@@ -8,6 +8,74 @@ if (typeof window !== "undefined") {
 var probeParams = typeof window === "undefined"
     ? null
     : new URL(window.location.href).searchParams;
+var persistenceProbeToken = probeParams && probeParams.get("mame_probe_persistence");
+var persistenceProbeEnabled = typeof persistenceProbeToken === "string"
+    && persistenceProbeToken.length > 0;
+var persistenceRoot = persistenceProbeEnabled
+    ? "/persistence-" + persistenceProbeToken.replace(/[^A-Za-z0-9_-]/g, "")
+    : "";
+
+JSMESS.persistenceSnapshot = function() {
+    var files = [];
+    if (!persistenceProbeEnabled || !JSMESS.persistenceReady) {
+        return files;
+    }
+    var pending = [persistenceRoot];
+    while (pending.length > 0) {
+        var directory = pending.pop();
+        FS.readdir(directory).forEach(function(name) {
+            if (name === "." || name === "..") return;
+            var path = directory + "/" + name;
+            var stat = FS.stat(path);
+            if (FS.isDir(stat.mode)) {
+                pending.push(path);
+                return;
+            }
+            var bytes = FS.readFile(path);
+            var checksum = 2166136261;
+            for (var index = 0; index < bytes.length; index++) {
+                checksum ^= bytes[index];
+                checksum = Math.imul(checksum, 16777619) >>> 0;
+            }
+            files.push({
+                path: path.slice(persistenceRoot.length + 1),
+                size: bytes.length,
+                checksum: checksum.toString(16).padStart(8, "0"),
+            });
+        });
+    }
+    return files.sort(function(left, right) {
+        return left.path < right.path ? -1 : left.path > right.path ? 1 : 0;
+    });
+};
+JSMESS.syncPersistence = function() {
+    return new Promise(function(resolve, reject) {
+        FS.syncfs(false, function(error) {
+            JSMESS.persistenceSyncError = error ? String(error) : "";
+            if (error) reject(error);
+            else resolve(JSMESS.persistenceSnapshot());
+        });
+    });
+};
+
+if (persistenceProbeEnabled) {
+    Module["preRun"] = Module["preRun"] || [];
+    Module["preRun"].push(function() {
+        FS.mkdir(persistenceRoot);
+        FS.mount(IDBFS, {}, persistenceRoot);
+        addRunDependency("p8-persistence-hydration");
+        FS.syncfs(true, function(error) {
+            JSMESS.persistenceHydrationError = error ? String(error) : "";
+            if (!error) {
+                FS.mkdirTree(persistenceRoot + "/nvram");
+                FS.mkdirTree(persistenceRoot + "/cfg");
+                JSMESS.persistenceReady = true;
+                JSMESS.persistenceHydratedFiles = JSMESS.persistenceSnapshot();
+            }
+            removeRunDependency("p8-persistence-hydration");
+        });
+    });
+}
 var pacingCadenceHz = Number(probeParams && probeParams.get("mame_probe_hz"));
 if (typeof window !== "undefined"
     && Number.isFinite(pacingCadenceHz)
@@ -98,6 +166,7 @@ JSMESS.requestHook = function(name) {
         save: 4,
         load: 5,
         exit: 6,
+        flushPersistence: 7,
     };
     if (name === "save") {
         // Emscripten 1.38.31's libc path crashes when open(O_CREAT) creates
@@ -126,3 +195,9 @@ Module["arguments"] = [
     "-nomaximize",
     "-skip_gameinfo",
 ];
+if (persistenceProbeEnabled) {
+    Module["arguments"].push(
+        "-nvram_directory", persistenceRoot + "/nvram",
+        "-cfg_directory", persistenceRoot + "/cfg"
+    );
+}

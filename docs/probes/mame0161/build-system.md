@@ -92,6 +92,11 @@ browser startup/static-hosting cases both pass against the resulting module.
 
 The generated GNU Make project does not retain the stock post-build command,
 so the reproducible probe script performs the final `emcc` link explicitly.
+Real-game probe links also include Emscripten's `idbfs.js` library for the P8
+persistence round trip. The game-only
+[`0006-emscripten-persistence-probe.patch`](../../../mame/patches/0006-emscripten-persistence-probe.patch)
+is applied after the P7 bridge-hook layer and removed before ROM-free list or
+family builds.
 
 ## Clean build result
 

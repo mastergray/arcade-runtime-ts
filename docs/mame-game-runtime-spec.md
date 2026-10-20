@@ -623,6 +623,15 @@ the missing MEMFS state node to be created before MAME opens it and requires
 the scheduler's diagnostic-only timer dumps to be suppressed. The bridge
 never calls `immediate_save` or `immediate_load`.
 
+P8 confirmed that a narrow wrapper around `running_machine::nvram_save()` can
+flush a live NVRAM device without exiting: the browser synced the resulting
+non-empty file to IDBFS and a fresh module hydrated the identical file before
+startup. It also ruled out calling the stock `config_save_settings()` at this
+boundary; that shutdown-oriented path completes its XML writes but corrupts
+the pinned browser build on return. The adapter therefore owns cfg inputs at
+startup and includes them in overlay hashing, while `web_flush_nvram()` is the
+only mid-run core persistence export.
+
 ### 4.4 Generated controller config
 
 At start, the adapter writes `/mame/ctrlr/web.cfg` mapping each MAME

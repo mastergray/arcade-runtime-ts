@@ -116,6 +116,13 @@ pause/exit behavior. It also verifies save, continued execution, load, time
 rewind and continued execution. These probe-only hooks do not define the
 production web bridge API.
 
+P8 reuses that generic artifact. Set `MAME_PERSISTENCE_PROBE_URL` to its served
+HTML path. The browser test selects a fresh private IDBFS database, flushes a
+live NVRAM device without exiting, syncs it, reloads the module and verifies
+the exact file was hydrated before startup. The probe intentionally does not
+call MAME's shutdown-oriented configuration saver; adapter-owned cfg files
+remain part of the runtime's cumulative persistence overlay.
+
 The repository does not redistribute prebuilt executables from `res/`, and it
 does not vendor ROMs, SDK files, generated emulator artifacts or a MAME source
 checkout.

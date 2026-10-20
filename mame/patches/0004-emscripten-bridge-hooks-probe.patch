@@ -100,5 +100,5 @@ Emscripten because the timer-dump path crashes the Fastcomp output.
 +#endif
 @@ -686,0 +689 @@
 +#if !defined(EMSCRIPTEN)
-@@ -689,0 +693 @@
+@@ -690,0 +694 @@
 +#endif
