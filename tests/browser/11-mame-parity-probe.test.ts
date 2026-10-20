@@ -1,4 +1,4 @@
-// realizes: docs/mame-game-runtime-spec.md > §13.1 P12 native/browser parity
+// realizes: docs/parent/mame-game-runtime-spec.md > §13.1 P12 native/browser parity
 
 // Dependencies:
 import { readFileSync } from "node:fs";                          // Reads the one ignored local parity config/result

@@ -3,7 +3,7 @@
 Status: complete. Decision: **go** with direct MAME 0.161 for M1.
 
 This directory holds the M0 evidence and decision described in
-[§13.1 of the runtime specification](../../mame-game-runtime-spec.md#131-direct-mame-0161-source-m0).
+[§13.1 of the runtime specification](../parent/mame-game-runtime-spec.md#131-direct-mame-0161-source-m0).
 It records exact environments, source identities, commands, patches, logs and
 measurements needed to answer P1–P12. Local ROMs, native binaries, source
 caches and generated emulator artifacts must not be copied here.

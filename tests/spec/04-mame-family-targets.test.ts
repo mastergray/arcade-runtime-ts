@@ -1,4 +1,4 @@
-// realizes: docs/mame-game-runtime-spec.md > §13.1 P3 family subsets
+// realizes: docs/parent/mame-game-runtime-spec.md > §13.1 P3 family subsets
 
 // Dependencies:
 import { readFileSync } from "node:fs";                          // Reads the tracked family target definitions

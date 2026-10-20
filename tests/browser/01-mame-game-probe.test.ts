@@ -1,4 +1,4 @@
-// realizes: docs/mame-game-runtime-spec.md > §13.1 P12 real-game browser startup
+// realizes: docs/parent/mame-game-runtime-spec.md > §13.1 P12 real-game browser startup
 
 // Dependencies:
 import CTGBrowserTest from "ctg-js-browser-test";                // Browser pipeline over Playwright

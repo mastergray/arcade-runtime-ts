@@ -1,4 +1,4 @@
-// realizes: docs/mame-game-runtime-spec.md > §13.1 P7 bridge hooks
+// realizes: docs/parent/mame-game-runtime-spec.md > §13.1 P7 bridge hooks
 
 // Dependencies:
 import CTGBrowserTest from "ctg-js-browser-test";                // Browser pipeline over Playwright

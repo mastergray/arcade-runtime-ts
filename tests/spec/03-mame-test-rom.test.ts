@@ -1,4 +1,4 @@
-// realizes: docs/mame-game-runtime-spec.md > §13.1 P12 private local fixture
+// realizes: docs/parent/mame-game-runtime-spec.md > §13.1 P12 private local fixture
 
 // Dependencies:
 import { readFileSync } from "node:fs";                          // Reads the generic local-probe contracts

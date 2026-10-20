@@ -1,7 +1,7 @@
 {
-  "name": "mame-game-runtime-ts",
+  "name": "arcade-runtime-ts",
   "version": "0.0.0",
-  "description": "Run MAME arcade games in the browser through a headless TypeScript runtime",
+  "description": "Headless TypeScript runtime for playing arcade games in the browser from user-supplied ROMs",
   "private": true,
   "type": "module",
   "main": "./dist/index.js",
@@ -41,10 +41,10 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mastergray/mame-game-runtime-ts.git"
+    "url": "git+https://github.com/mastergray/arcade-runtime-ts.git"
   },
-  "homepage": "https://github.com/mastergray/mame-game-runtime-ts#readme",
-  "bugs": "https://github.com/mastergray/mame-game-runtime-ts/issues",
+  "homepage": "https://github.com/mastergray/arcade-runtime-ts#readme",
+  "bugs": "https://github.com/mastergray/arcade-runtime-ts/issues",
   "engines": {
     "node": ">=22.13"
   },

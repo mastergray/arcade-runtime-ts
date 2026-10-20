@@ -1,4 +1,4 @@
-// realizes: docs/mame-game-runtime-spec.md > §13.1 P1 source identity
+// realizes: docs/parent/mame-game-runtime-spec.md > §13.1 P1 source identity
 
 // Dependencies:
 import { readFileSync } from "node:fs";                          // Reads the committed source pin

@@ -1,4 +1,4 @@
-// realizes: docs/mame-game-runtime-spec.md > §13.1 P6 pthread requirement
+// realizes: docs/parent/mame-game-runtime-spec.md > §13.1 P6 pthread requirement
 
 // Dependencies:
 import CTGTest, { CTGTestPredicates as P } from "ctg-js-test";   // Pipeline API and predicate builders

@@ -1,4 +1,4 @@
-// realizes: docs/mame-game-runtime-spec.md > §13.1 P2 browser toolchain
+// realizes: docs/parent/mame-game-runtime-spec.md > §13.1 P2 browser toolchain
 
 // Dependencies:
 import { readFileSync } from "node:fs";                          // Reads the committed SDK and patch inputs

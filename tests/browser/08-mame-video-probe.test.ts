@@ -1,4 +1,4 @@
-// realizes: docs/mame-game-runtime-spec.md > §13.1 P9 video format and orientation
+// realizes: docs/parent/mame-game-runtime-spec.md > §13.1 P9 video format and orientation
 
 // Dependencies:
 import CTGBrowserTest from "ctg-js-browser-test";                // Browser pipeline over Playwright
