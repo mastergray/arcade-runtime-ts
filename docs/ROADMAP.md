@@ -57,7 +57,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 | W9 | `ArcadeStorage`, `ArcadeRomStore` | T | M6, M7 | merged | `wp/w9-storage` | 2026-10-20 (merge of `aefb07c`) |
 | W10 | `RomSetAudit`, `arcade-audit-roms` | T | M7 | merged | `wp/w10-romset-audit` | 2026-10-20 (merge of `5859c88`) |
 | W11 | `ArcadePlayer` | T | M1–M4 | merged | `wp/w11-arcade-player` | 2026-10-20 (merge of `aa9c9b0`) |
-| W12 | `ArcadeCabinet` | T | M7 | in progress | `wp/w12-arcade-cabinet` | |
+| W12 | `ArcadeCabinet` | T | M7 | merged | `wp/w12-arcade-cabinet` | 2026-10-20 (merge of `07caa9a`) |
 | W13a | Harness: minimal preload page | T | M1 | merged | `wp/w13a-harness-preload` | 2026-10-20 (merge of `2dab339`) |
 | W13b | Harness: cabinet page | T | M7 | todo | | |
 | W14a | Family `cps2` | N | M2 | merged (F4–F6 pending private set) | `wp/w14a-cps2` | 2026-10-20 (merge of `d0c0c05`) |
@@ -74,6 +74,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 
 Newest first. One line per merge, milestone close, or contract amendment.
 
+- 2026-10-20 — W12 merged: `ArcadeCabinet`. Audit gained a CRC-and-size fallback (older naming generations load as MAME does); `build-mame` records applied patch sets per tree.
 - 2026-10-20 — W14f merged: `taito-16` family (189 machines, 6.9 MB wasm). All eight required families now build; M2 awaits F4–F6 with lawful sets. W15 brief written.
 - 2026-10-20 — W14e merged: `taito-classic` family (151 machines, 6.0 MB wasm); §4.6 row extended with the M6809/MCS51 and sound cores the link needs.
 - 2026-10-20 — **M1 closed.** `30-m1-acceptance.test.ts` against the pipeline-built Neo Geo artifact: 59.34 fps on a 60 Hz cadence and 59.13 fps on 120 Hz against 59.186 Hz native, upright at native size (evidence in docs/probes/families/neogeo.md).
