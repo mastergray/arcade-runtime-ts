@@ -18,6 +18,9 @@
     "src",
     "manifests/shell"
   ],
+  "bin": {
+    "arcade-audit-roms": "./scripts/audit-roms.ts"
+  },
   "scripts": {
     "check": "run-s check:src check:tests",
     "check:src": "tsc --noEmit",

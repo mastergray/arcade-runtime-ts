@@ -8,6 +8,7 @@ export { default as ArcadeRuntimeError } from "./ArcadeRuntimeError/ArcadeRuntim
 export { default as ArcadeDisplay } from "./ArcadeDisplay/ArcadeDisplay.js";                 // Canvas sizing, drawing, placeholder and fullscreen
 export { default as ArcadeInput } from "./ArcadeInput/ArcadeInput.js";                       // Channelled, reference-counted control holds
 export { DEFAULT_KEYBOARD_MAP, default as KeyboardSource } from "./KeyboardSource/KeyboardSource.js";   // Physical keyboard to ArcadeInput
+export { default as RomSetAudit } from "./RomSetAudit/RomSetAudit.js";                       // Pre-start audit of user zips against romsets metadata
 
 // Shared helpers:
 export {
@@ -128,3 +129,9 @@ export {
     type KeyboardSourceInitConfig,                                 // init() config with optional browser targets
     type KeyboardVisibilityTargetLike,                             // Injected visibility boundary
 } from "./KeyboardSource/types.js";
+export {
+    isRomSetMetadata,                                              // Guard for RomSetMetadata
+    isRomSetReport,                                                // Guard for RomSetReport
+    type RomSetMetadata,                                           // Per-machine romsets/<machine>.json shape
+    type RomSetReport,                                             // Byte-free audit result
+} from "./RomSetAudit/types.js";

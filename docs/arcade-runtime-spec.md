@@ -1168,8 +1168,16 @@ interface RomSetReport {
         readonly status: "ok" | "missing" | "wrong-size" | "wrong-crc" | "optional-missing";
     }>;
     readonly unexpected: ReadonlyArray<{ readonly archive: string; readonly name: string }>;   // informational
+    readonly problems: ReadonlyArray<{ readonly archive: string; readonly reason: string }>;    // archives that could not be inspected
 }
 ```
+
+A supplied archive that is not a zip, has a corrupt central directory or
+exceeds 4,096 entries is reported under `problems` with every ROM it was
+expected to hold marked `missing`; bad user input never throws.
+`INVALID_CONFIG` is reserved for metadata or `RomFile` values that fail
+their predicates. In the metadata, `bios` is an array of BIOS option
+names, and `cloneof`, `romof` and `sampleof` are names or `null`.
 
 `status` is `ok` only when every required file is present with the right
 size and CRC in a present archive; `incomplete` when only missing archives
@@ -1179,7 +1187,7 @@ audit remains authoritative; this pre-check exists so users get an
 actionable message in milliseconds, and its results are compared with
 MAME's verdict in the browser suite.
 
-The Node bin `arcade-audit-roms <family-build-dir> <machine> <zip>…` runs
+The Node bin `arcade-audit-roms [--json] <romsets-dir> <machine> <zip>…` runs
 the same code over local files and prints the report. It is a developer
 convenience for the private compatibility matrix (M13) and is the only
 ROM-touching script in the repository.
