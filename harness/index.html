@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Arcade Runtime Harness</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      background: #101317;
+      color: #e8edf2;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; }
+    main { width: min(1120px, calc(100% - 32px)); margin: 0 auto; padding: 28px 0 48px; }
+    h1 { margin: 0 0 20px; font-size: clamp(1.35rem, 3vw, 2rem); letter-spacing: .04em; }
+    .controls { display: grid; grid-template-columns: 1fr 1.3fr 1fr auto; gap: 12px; align-items: end; }
+    label { display: grid; gap: 6px; color: #aeb9c4; font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; }
+    select, input, button { min-height: 40px; border: 1px solid #39434e; border-radius: 4px; background: #181e24; color: #f5f8fa; font: inherit; padding: 8px 10px; }
+    button { border-color: #3d8d73; background: #195b48; cursor: pointer; font-weight: 700; }
+    button:disabled { border-color: #39434e; background: #252b31; color: #77818b; cursor: not-allowed; }
+    #preload-note { margin: 12px 0; color: #aeb9c4; }
+    #status { margin: 14px 0; min-height: 1.4em; color: #7ee0bd; }
+    #player-container { display: grid; place-items: center; width: 100%; min-height: 480px; overflow: hidden; border: 1px solid #303943; border-radius: 6px; background: #050607; }
+    canvas { display: block; max-width: 100%; max-height: 72vh; image-rendering: pixelated; }
+    .panels { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+    section { min-width: 0; border: 1px solid #303943; border-radius: 6px; background: #151a20; padding: 14px; }
+    h2 { margin: 0 0 10px; color: #aeb9c4; font-size: .82rem; text-transform: uppercase; letter-spacing: .08em; }
+    pre { min-height: 92px; max-height: 280px; overflow: auto; margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; font-size: .8rem; line-height: 1.5; }
+    @media (max-width: 760px) {
+      .controls, .panels { grid-template-columns: 1fr; }
+      #player-container { min-height: 300px; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Arcade Runtime Harness</h1>
+    <div class="controls">
+      <label>Family build<select id="family" aria-label="Family build"></select></label>
+      <label>Machine<input id="machine" autocomplete="off" placeholder="machine short name"></label>
+      <label>BIOS<input id="bios" autocomplete="off" placeholder="optional"></label>
+      <button id="start" type="button" disabled>Start</button>
+    </div>
+    <p id="preload-note">Loading local harness configuration…</p>
+    <p id="status" role="status" aria-live="polite" data-state="loading">Loading…</p>
+    <div id="player-container"><canvas id="canvas" width="0" height="0"></canvas></div>
+    <div class="panels">
+      <section>
+        <h2>ROM audit</h2>
+        <pre id="audit" data-status="unavailable">No audit has run.</pre>
+      </section>
+      <section>
+        <h2>Log</h2>
+        <pre id="log">Harness loading.</pre>
+      </section>
+    </div>
+  </main>
+  <script type="module" src="/harness.js"></script>
+</body>
+</html>

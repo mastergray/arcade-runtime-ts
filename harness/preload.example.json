@@ -1,0 +1,14 @@
+{
+  "family": "example-family",
+  "machine": "example_machine",
+  "bios": "example-bios",
+  "roms": [
+    "../local-roms/example_bios.zip",
+    "../local-roms/example_machine.zip"
+  ],
+  "samples": [
+    "../local-roms/example_samples.zip"
+  ],
+  "dipswitches": {},
+  "autostart": true
+}
