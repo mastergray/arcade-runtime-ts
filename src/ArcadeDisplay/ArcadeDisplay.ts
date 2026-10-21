@@ -80,6 +80,7 @@ export default class ArcadeDisplay {
     private readonly _layoutListeners = new Set<Listener<LayoutEvent>>();     // onLayout subscribers
     private _unwatchFullscreen: Unsubscribe | null = null;         // Removes the current fullscreenchange listener
     private _placeholder: HTMLElement | null = null;               // Page-supplied starting placeholder currently shown
+    private _image: ImageData | null = null;                       // Reused ImageData matching the current frame size
     private _destroyed = false;                                    // Whether destroy() completed
 
     // CONSTRUCTOR :: arcadeDisplayConfig -> this
@@ -336,7 +337,7 @@ export default class ArcadeDisplay {
     }
 
     // PRIVATE :: frameEvent -> VOID
-    // Updates native dimensions and the canvas backing store when needed, then draws a copied ImageData object
+    // Updates native dimensions and the canvas backing store when needed, then copies the frame into a reused ImageData and draws it
     private draw(frame: FrameEvent): void {
         if (frame.width !== this._frameSize.width || frame.height !== this._frameSize.height
             || this._canvas.width !== frame.width || this._canvas.height !== frame.height) {
@@ -347,9 +348,11 @@ export default class ArcadeDisplay {
         }
         const context = this._canvas.getContext("2d");
         if (context === null) return;
-        const image = context.createImageData(frame.width, frame.height);
-        image.data.set(frame.rgba);
-        context.putImageData(image, 0, 0);
+        if (this._image === null || this._image.width !== frame.width || this._image.height !== frame.height) {
+            this._image = context.createImageData(frame.width, frame.height);
+        }
+        this._image.data.set(frame.rgba);
+        context.putImageData(this._image, 0, 0);
     }
 
     // PRIVATE :: VOID -> VOID

@@ -2,14 +2,14 @@
 
 // Dependencies:
 import CTGTest, { CTGTestPredicates as P } from "ctg-js-test";   // Pipeline API and predicate builders
-import ArcadeDisplay from "../../src/ArcadeDisplay/ArcadeDisplay.ts";   // Class under test, direct until the integrator adds the root export
 import {
+    ArcadeDisplay,                                                // Class under test, via the public surface
     isArcadeDisplayConfig,                                        // Construction config predicate under test
     isLayoutEvent,                                                // Layout event predicate under test
-} from "../../src/ArcadeDisplay/types.ts";
+} from "../../src/index.ts";
 
 // Type dependencies:
-import type { Rect, ScalingMode } from "../../src/shared.types.ts";   // layoutFor arguments and result
+import type { Rect, ScalingMode } from "../../src/index.ts";   // layoutFor arguments and result
 import type { TestCase, TestFile } from "../run.ts";              // Manifest contract consumed by the runner
 
 /**

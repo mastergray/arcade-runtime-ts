@@ -5,6 +5,7 @@
 
 // Classes:
 export { default as ArcadeRuntimeError } from "./ArcadeRuntimeError/ArcadeRuntimeError.js";   // Base typed error and code registry
+export { default as ArcadeDisplay } from "./ArcadeDisplay/ArcadeDisplay.js";                 // Canvas sizing, drawing, placeholder and fullscreen
 
 // Shared helpers:
 export {
@@ -94,3 +95,16 @@ export type {
 
 // Class-owned types and predicates:
 export { isArcadeRuntimeErrorConfig, type ArcadeRuntimeErrorConfig } from "./ArcadeRuntimeError/types.js";   // Error construction config
+export {
+    isArcadeDisplayConfig,                                         // Guard for ArcadeDisplayConfig
+    isDisplayDocumentLike,                                         // Guard for DisplayDocumentLike
+    isLayoutEvent,                                                 // Guard for LayoutEvent
+    isResizeObserverConstructorLike,                               // Guard for ResizeObserverConstructorLike
+    type ArcadeDisplayConfig,                                      // Display construction config
+    type DisplayDocumentLike,                                      // Injected fullscreen document boundary
+    type ExitFullscreen,                                           // Injected fullscreen exit operation
+    type LayoutEvent,                                              // Applied rectangle plus scale
+    type RequestFullscreen,                                        // Injected fullscreen entry operation
+    type ResizeObserverConstructorLike,                            // Injected ResizeObserver constructor
+    type ResizeObserverLike,                                       // Observer the display drives
+} from "./ArcadeDisplay/types.js";
