@@ -103,3 +103,30 @@ continuous 60-second interval after startup and report
 again with Chromium's 4× CPU-throttled mobile proxy. Record CPU, OS, Chromium
 version, native refresh and both ratios; desktop full speed is the family
 gate, while the throttled result is informational.
+
+## F8 — EEPROM flush coverage
+
+Runtime verification of a CPS-2 setting is **pending a private CPS-2 set**;
+the available ignored preload configuration covers Neo Geo only. No private
+identity was added to obtain substitute evidence.
+
+Pinned-source inspection nevertheless confirms the bridge path. CPS-2 uses an
+`eeprom_serial_93cxx_device`; through `eeprom_serial_base_device` and
+`eeprom_base_device`, it implements `device_nvram_interface`. Its
+`nvram_write()` copies every EEPROM byte to the supplied `emu_file`.
+`running_machine::web_flush_nvram()` iterates that interface, pre-creates the
+calculated file below the configured `nvram_directory`, then delegates to the
+stock `nvram_save()` loop. No CPS-2-specific widening is required.
+
+The source evidence was checked after the fresh W15 build with:
+
+```sh
+rg -n "eeprom_serial_93cxx_device|device_nvram_interface|nvram_write" \
+  .cache/mame/mame0161/src/emu/machine/eeprom{,ser}.{c,h}
+```
+
+The W15 browser case independently confirmed the same generic mid-run NVRAM
+path with a Neo Geo BIOS-side file under the overlay's `nvram/` root. The M6
+CPS-2 acceptance step still needs an ignored lawful CPS-2 preload: change an
+EEPROM-backed setting, call `persist()`, start a fresh module with that overlay,
+and verify the setting and EEPROM bytes survive.
