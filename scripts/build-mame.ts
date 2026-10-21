@@ -57,6 +57,7 @@ interface Options {
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");   // Repository root
 const USAGE = "Usage: build-mame (--all | <family>...) [--source <dir>] [--archive <zip>] [--emsdk <dir>] [--out <dir>] [--jobs <n>] [--skip-build] [--skip-romsets] [--fresh]";
+const SDL2_NOTICE_PATH = ".ports/sdl2/SDL2-version_17/COPYING.txt";   // Pinned Emscripten 1.38.31 SDL2 port notice (P1)
 
 /**
  *
@@ -197,6 +198,11 @@ const copyNotices = (options: Options, outDirectory: string): BuildLicense[] => 
         copyFileSync(from, join(notices, target));
         entries.push({ id: notice.id, notice: `notices/${target}` });
     }
+    const sdl2 = join(options.emsdk, SDL2_NOTICE_PATH);
+    if (!existsSync(sdl2)) throw new Error(`Licence notice SDL2 missing at ${sdl2}; build once with USE_SDL=2 so the pinned port source is present`);
+    const sdl2Target = "SDL2-COPYING.txt";
+    copyFileSync(sdl2, join(notices, sdl2Target));
+    entries.push({ id: "SDL2", notice: `notices/${sdl2Target}` });
     return entries;
 };
 
