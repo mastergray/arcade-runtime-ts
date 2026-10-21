@@ -64,7 +64,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 | W14b | Family `namco-classic` | N | M2 | merged (F4–F6 pending private set) | `wp/w14b-namco-classic` | 2026-10-20 (merge of `5653b31`) |
 | W14c | Family `namco-s1` | N | M2 | merged (F4–F6 pending private set) | `wp/w14c-namco-s1` | 2026-10-20 (merge of `a2c9046`) |
 | W14d | Family `namco-s2` | N | M2 | in progress | `wp/w14d-namco-s2` | |
-| W14e | Family `taito-classic` | N | M2 | in progress | `wp/w14e-taito-classic` | |
+| W14e | Family `taito-classic` | N | M2 | merged (F4–F6 pending private set) | `wp/w14e-taito-classic` | 2026-10-20 (merge of `79aea64`) |
 | W14f | Family `taito-16` | N | M2 | ready | `wp/w14f-taito-16` | |
 | W15 | Saves bridge (memcard, EEPROM, F8) | N | M6 | todo | | |
 | W16 | BIOS and DIP switches | N+T | M8 | todo | | |
@@ -74,6 +74,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 
 Newest first. One line per merge, milestone close, or contract amendment.
 
+- 2026-10-20 — W14e merged: `taito-classic` family (151 machines, 6.0 MB wasm); §4.6 row extended with the M6809/MCS51 and sound cores the link needs.
 - 2026-10-20 — **M1 closed.** `30-m1-acceptance.test.ts` against the pipeline-built Neo Geo artifact: 59.34 fps on a 60 Hz cadence and 59.13 fps on 120 Hz against 59.186 Hz native, upright at native size (evidence in docs/probes/families/neogeo.md).
 - 2026-10-20 — W13a merged: `serve-harness --preload` and the preload harness page; the gated real-build case starts a machine and renders its first frame.
 - 2026-10-20 — W14c merged: `namco-s1` family (47 machines, 5.0 MB wasm, no target corrections). W14e started.
