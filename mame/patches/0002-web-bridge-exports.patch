@@ -1,0 +1,763 @@
+From 549d651b8b1a3b459aab4be7e72a215f729d3813 Mon Sep 17 00:00:00 2001
+From: Arcade Runtime <arcade-runtime@example.invalid>
+Date: Tue, 20 Oct 2026 19:57:41 -0500
+Subject: [PATCH 2/3] Add JavaScript web bridge
+
+Expose deterministic scheduler stepping, callbacks, controls, state operations, lifecycle handling, output capture, and machine metadata without installing a native main loop.
+---
+ scripts/src/osd/modules.lua         |   1 +
+ src/emu/clifront.c                  |  13 +-
+ src/emu/machine.c                   |  63 ++---
+ src/emu/machine.h                   |   4 +
+ src/emu/mame.c                      |  30 ++-
+ src/emu/schedule.c                  |   4 +
+ src/osd/modules/lib/osdobj_common.c |  20 ++
+ src/osd/modules/web/web_bridge.cpp  | 361 ++++++++++++++++++++++++++++
+ src/osd/modules/web/web_bridge.h    |  21 ++
+ src/osd/sdl/sdlmain.c               |  17 ++
+ 10 files changed, 479 insertions(+), 55 deletions(-)
+ create mode 100644 src/osd/modules/web/web_bridge.cpp
+ create mode 100644 src/osd/modules/web/web_bridge.h
+
+diff --git a/scripts/src/osd/modules.lua b/scripts/src/osd/modules.lua
+index 84527c97..0659b8ca 100644
+--- a/scripts/src/osd/modules.lua
++++ b/scripts/src/osd/modules.lua
+@@ -54,6 +54,7 @@ function osdmodulesbuild()
+ 		MAME_DIR .. "src/osd/modules/web/web_sound.cpp",
+ 		MAME_DIR .. "src/osd/modules/web/web_video.cpp",
+ 		MAME_DIR .. "src/osd/modules/web/web_input.cpp",
++		MAME_DIR .. "src/osd/modules/web/web_bridge.cpp",
+ 		MAME_DIR .. "src/osd/modules/sound/direct_sound.c",
+ 		MAME_DIR .. "src/osd/modules/sound/coreaudio_sound.c",
+ 		MAME_DIR .. "src/osd/modules/sound/sdl_sound.c",
+diff --git a/src/emu/clifront.c b/src/emu/clifront.c
+index bdb6988c..d088e24b 100644
+--- a/src/emu/clifront.c
++++ b/src/emu/clifront.c
+@@ -26,6 +26,10 @@
+ 
+ #include "osdepend.h"
+ 
++#if defined(EMSCRIPTEN)
++#include "modules/web/web_bridge.h"
++#endif
++
+ #include <new>
+ #include <ctype.h>
+ 
+@@ -218,7 +222,10 @@ int cli_frontend::execute(int argc, char **argv)
+ 			// otherwise just run the game
+ 			machine_manager *manager = machine_manager::instance(m_options, m_osd);
+ 			m_result = manager->execute();
+-			global_free(manager);
++#if defined(EMSCRIPTEN)
++			if (!web_bridge_machine_started())
++#endif
++				global_free(manager);
+ 		}
+ 	}
+ 
+@@ -270,6 +277,10 @@ int cli_frontend::execute(int argc, char **argv)
+ 
+ 	_7z_file_cache_clear();
+ 
++#if defined(EMSCRIPTEN)
++	web_bridge_frontend_done(m_result);
++#endif
++
+ 	return m_result;
+ }
+ 
+diff --git a/src/emu/machine.c b/src/emu/machine.c
+index d225dda1..4757cfda 100644
+--- a/src/emu/machine.c
++++ b/src/emu/machine.c
+@@ -87,8 +87,7 @@
+ 
+ #if defined(EMSCRIPTEN)
+ #include <emscripten.h>
+-
+-void js_set_main_loop(running_machine * machine);
++#include "modules/web/web_bridge.h"
+ #endif
+ 
+ 
+@@ -381,15 +380,15 @@ int running_machine::run(bool firstrun)
+ 
+ 		// run the CPUs until a reset or exit
+ 		m_hard_reset_pending = false;
++#if defined(EMSCRIPTEN)
++		// JavaScript owns scheduling after startup; retain the initialized machine.
++		web_bridge_start(this);
++		return MAMERR_NONE;
++#endif
+ 		while ((!m_hard_reset_pending && !m_exit_pending) || m_saveload_schedule != SLS_NONE)
+ 		{
+ 			g_profiler.start(PROFILER_EXTRA);
+ 
+-#if defined(EMSCRIPTEN)
+-			//break out to our async javascript loop and halt
+-			js_set_main_loop(this);
+-#endif
+-
+ 			manager().web()->serve();
+ 
+ 			// execute CPUs if not paused
+@@ -889,6 +888,9 @@ void running_machine::handle_saveload()
+ 	const char *opnamed = (m_saveload_schedule == SLS_LOAD) ? "loaded" : "saved";
+ 	const char *opname = (m_saveload_schedule == SLS_LOAD) ? "load" : "save";
+ 	file_error filerr = FILERR_NONE;
++#if defined(EMSCRIPTEN)
++	bool web_saveload_success = false;
++#endif
+ 
+ 	// if no name, bail
+ 	emu_file file(m_saveload_searchpath, openflags);
+@@ -914,6 +916,9 @@ void running_machine::handle_saveload()
+ 	{
+ 		// read/write the save state
+ 		save_error saverr = (m_saveload_schedule == SLS_LOAD) ? m_save.read_file(file) : m_save.write_file(file);
++#if defined(EMSCRIPTEN)
++		web_saveload_success = saverr == STATERR_NONE;
++#endif
+ 
+ 		// handle the result
+ 		switch (saverr)
+@@ -958,6 +963,9 @@ cancel:
+ 	m_saveload_pending_file.clear();
+ 	m_saveload_searchpath = NULL;
+ 	m_saveload_schedule = SLS_NONE;
++#if defined(EMSCRIPTEN)
++	web_bridge_state_done(web_saveload_success);
++#endif
+ }
+ 
+ 
+@@ -1338,44 +1346,3 @@ void system_time::full_time::set(struct tm &t)
+ 	day     = t.tm_yday;
+ 	is_dst  = t.tm_isdst;
+ }
+-
+-
+-
+-//**************************************************************************
+-//  JAVASCRIPT PORT-SPECIFIC
+-//**************************************************************************
+-
+-#if defined(EMSCRIPTEN)
+-
+-static running_machine * jsmess_machine;
+-
+-void js_main_loop() {
+-	device_scheduler * scheduler;
+-	scheduler = &(jsmess_machine->scheduler());
+-	attotime stoptime = scheduler->time() + attotime(0,HZ_TO_ATTOSECONDS(60));
+-	while (scheduler->time() < stoptime) {
+-		scheduler->timeslice();
+-	}
+-}
+-
+-void js_set_main_loop(running_machine * machine) {
+-	jsmess_machine = machine;
+-	EM_ASM (
+-		JSMESS.running = true;
+-	);
+-	emscripten_set_main_loop(&js_main_loop, 0, 1);
+-}
+-
+-running_machine * js_get_machine() {
+-	return jsmess_machine;
+-}
+-
+-ui_manager * js_get_ui() {
+-	return &(jsmess_machine->ui());
+-}
+-
+-sound_manager * js_get_sound() {
+-	return &(jsmess_machine->sound());
+-}
+-
+-#endif /* defined(EMSCRIPTEN) */
+diff --git a/src/emu/machine.h b/src/emu/machine.h
+index a989ba2c..14978263 100644
+--- a/src/emu/machine.h
++++ b/src/emu/machine.h
+@@ -219,6 +219,10 @@ public:
+ 	void schedule_save(const char *filename);
+ 	void schedule_load(const char *filename);
+ 
++#if defined(EMSCRIPTEN)
++	void web_service_saveload() { handle_saveload(); }
++#endif
++
+ 	// date & time
+ 	void base_datetime(system_time &systime);
+ 	void current_datetime(system_time &systime);
+diff --git a/src/emu/mame.c b/src/emu/mame.c
+index 1af6ccff..43a3ae66 100644
+--- a/src/emu/mame.c
++++ b/src/emu/mame.c
+@@ -84,6 +84,9 @@
+ #include "crsshair.h"
+ #include "validity.h"
+ #include "debug/debugcon.h"
++#if defined(EMSCRIPTEN)
++#include "modules/web/web_bridge.h"
++#endif
+ #include <time.h>
+ 
+ //**************************************************************************
+@@ -211,17 +214,28 @@ int machine_manager::execute()
+ 		}
+ 
+ 		// create the machine configuration
++		// The web bridge retains these objects after execute() returns.
++#if defined(EMSCRIPTEN)
++		machine_config *config = global_alloc(machine_config(*system, m_options));
++		running_machine *machine = global_alloc(running_machine(*config, *this));
++		running_machine &active_machine = *machine;
++#else
+ 		machine_config config(*system, m_options);
+-
+-		// create the machine structure and driver
+ 		running_machine machine(config, *this);
++		running_machine &active_machine = machine;
++#endif
+ 
+-		set_machine(&machine);
++		set_machine(&active_machine);
+ 
+ 		// run the machine
+-		error = machine.run(firstrun);
++		error = active_machine.run(firstrun);
+ 		firstrun = false;
+ 
++#if defined(EMSCRIPTEN)
++		if (web_bridge_machine_started())
++			return error;
++#endif
++
+ 		// check the state of the machine
+ 		if (m_new_driver_pending)
+ 		{
+@@ -243,14 +257,18 @@ int machine_manager::execute()
+ 		}
+ 		else
+ 		{
+-			if (machine.exit_pending()) m_options.set_system_name("");
++			if (active_machine.exit_pending()) m_options.set_system_name("");
+ 		}
+ 
+-		if (machine.exit_pending() && (!started_empty || (system == &GAME_NAME(___empty))))
++		if (active_machine.exit_pending() && (!started_empty || (system == &GAME_NAME(___empty))))
+ 			exit_pending = true;
+ 
+ 		// machine will go away when we exit scope
+ 		set_machine(NULL);
++#if defined(EMSCRIPTEN)
++		global_free(machine);
++		global_free(config);
++#endif
+ 	}
+ 	// return an error
+ 	return error;
+diff --git a/src/emu/schedule.c b/src/emu/schedule.c
+index 1695936f..96ebc5d4 100644
+--- a/src/emu/schedule.c
++++ b/src/emu/schedule.c
+@@ -652,7 +652,9 @@ void device_scheduler::presave()
+ {
+ 	// report the timer state after a log
+ 	logerror("Prior to saving state:\n");
++#if !defined(EMSCRIPTEN)
+ 	dump_timers();
++#endif
+ }
+ 
+ 
+@@ -687,7 +689,9 @@ void device_scheduler::postload()
+ 
+ 	// report the timer state after a log
+ 	logerror("After resetting/reordering timers:\n");
++#if !defined(EMSCRIPTEN)
+ 	dump_timers();
++#endif
+ }
+ 
+ 
+diff --git a/src/osd/modules/lib/osdobj_common.c b/src/osd/modules/lib/osdobj_common.c
+index d78da735..36a7d376 100644
+--- a/src/osd/modules/lib/osdobj_common.c
++++ b/src/osd/modules/lib/osdobj_common.c
+@@ -13,6 +13,10 @@
+ #include "osdepend.h"
+ #include "modules/lib/osdobj_common.h"
+ 
++#if defined(SDLMAME_EMSCRIPTEN)
++#include "modules/web/web_bridge.h"
++#endif
++
+ extern bool g_print_verbose;
+ 
+ const options_entry osd_options::s_option_entries[] =
+@@ -270,6 +274,22 @@ void osd_common_t::update_option(const char * key, std::vector<const char *> &va
+ //-------------------------------------------------
+ void osd_common_t::output_callback(osd_output_channel channel, const char *msg, va_list args)
+ {
++#if defined(SDLMAME_EMSCRIPTEN)
++	va_list length_args;
++	va_copy(length_args, args);
++	int message_length = vsnprintf(NULL, 0, msg, length_args);
++	va_end(length_args);
++	if (message_length >= 0)
++	{
++		std::vector<char> formatted(message_length + 1);
++		va_list format_args;
++		va_copy(format_args, args);
++		vsnprintf(&formatted[0], formatted.size(), msg, format_args);
++		va_end(format_args);
++		web_bridge_log(channel, &formatted[0]);
++	}
++#endif
++
+ 	switch (channel)
+ 	{
+ 		case OSD_OUTPUT_CHANNEL_ERROR:
+diff --git a/src/osd/modules/web/web_bridge.cpp b/src/osd/modules/web/web_bridge.cpp
+new file mode 100644
+index 00000000..fbbe8c0d
+--- /dev/null
++++ b/src/osd/modules/web/web_bridge.cpp
+@@ -0,0 +1,361 @@
++// license:BSD-3-Clause
++// copyright-holders:Arcade Runtime contributors
++
++#include "emu.h"
++#include "web_bridge.h"
++
++#include "diimage.h"
++#include "dinvram.h"
++#include "romload.h"
++#include "osdepend.h"
++
++#include <emscripten.h>
++#include <sstream>
++#include <string>
++
++#if defined(EMSCRIPTEN)
++
++extern void web_input_set_control(int pad, int item, int pressed);
++extern int web_video_width();
++extern int web_video_height();
++extern void web_video_render();
++extern "C" int web_flush_nvram();
++
++static running_machine *s_machine;
++static bool s_machine_started;
++static bool s_stopped;
++static bool s_exit_reported;
++static bool s_frontend_reported;
++static bool s_state_pending;
++static bool s_state_loading;
++static std::string s_machine_info;
++
++EM_JS(void, web_js_tick, (), {
++	var web = Module['web'];
++	if (web && typeof web['onTick'] === 'function') web['onTick']();
++});
++
++EM_JS(void, web_js_frame, (const UINT8 *pixels, int width, int height), {
++	var web = Module['web'];
++	if (web && typeof web['onFrame'] === 'function') web['onFrame'](pixels, width, height);
++});
++
++EM_JS(void, web_js_sound, (const float *samples, int frames), {
++	var web = Module['web'];
++	if (web && typeof web['onSound'] === 'function') web['onSound'](samples, frames);
++});
++
++EM_JS(void, web_js_state_done, (int success), {
++	var web = Module['web'];
++	if (web && typeof web['onStateDone'] === 'function') web['onStateDone'](success);
++});
++
++EM_JS(void, web_js_exit, (), {
++	var web = Module['web'];
++	if (web && typeof web['onExit'] === 'function') web['onExit']();
++});
++
++EM_JS(void, web_js_frontend_done, (int result), {
++	var web = Module['web'];
++	if (web && typeof web['onFrontendDone'] === 'function') web['onFrontendDone'](result);
++});
++
++EM_JS(void, web_js_log, (int level, const char *text), {
++	var web = Module['web'];
++	if (web && typeof web['onLog'] === 'function') web['onLog'](level, text);
++});
++
++EM_JS(void, web_js_prepare_state_file, (const char *path), {
++	var name = UTF8ToString(path);
++	FS.mkdirTree('/mame/sta');
++	if (!FS.analyzePath(name).exists) FS.writeFile(name, new Uint8Array(0));
++});
++
++static std::string json_string(const char *source)
++{
++	std::ostringstream result;
++	result << '"';
++	for (const unsigned char *cursor = reinterpret_cast<const unsigned char *>(source == NULL ? "" : source); *cursor != 0; cursor++)
++	{
++		switch (*cursor)
++		{
++			case '"': result << "\\\""; break;
++			case '\\': result << "\\\\"; break;
++			case '\b': result << "\\b"; break;
++			case '\f': result << "\\f"; break;
++			case '\n': result << "\\n"; break;
++			case '\r': result << "\\r"; break;
++			case '\t': result << "\\t"; break;
++			default:
++				if (*cursor < 0x20)
++				{
++					static const char digits[] = "0123456789abcdef";
++					result << "\\u00" << digits[*cursor >> 4] << digits[*cursor & 0x0f];
++				}
++				else
++					result << char(*cursor);
++				break;
++		}
++	}
++	result << '"';
++	return result.str();
++}
++
++static bool valid_state_name(const char *name)
++{
++	if (name == NULL || name[0] == 0 || strstr(name, "..") != NULL)
++		return false;
++	for (const unsigned char *cursor = reinterpret_cast<const unsigned char *>(name); *cursor != 0; cursor++)
++		if (!(isalnum(*cursor) || *cursor == '-' || *cursor == '_'))
++			return false;
++	return true;
++}
++
++static void schedule_state(const char *name, bool save)
++{
++	if (s_machine == NULL || s_stopped || s_state_pending || !valid_state_name(name))
++	{
++		web_js_state_done(0);
++		return;
++	}
++
++	std::string path("/mame/sta/");
++	path.append(name).append(".sta");
++	if (save)
++		web_js_prepare_state_file(path.c_str());
++	s_state_pending = true;
++	s_state_loading = !save;
++	if (save)
++		s_machine->schedule_save(path.c_str());
++	else
++		s_machine->schedule_load(path.c_str());
++}
++
++void web_bridge_start(running_machine *machine)
++{
++	if (s_machine_started)
++		throw emu_fatalerror(MAMERR_FATALERROR, "A web module cannot start a second machine");
++
++	s_machine = machine;
++	s_machine_started = true;
++	s_stopped = false;
++	machine->video().set_throttled(false);
++	machine->video().set_frameskip(0);
++}
++
++bool web_bridge_machine_started()
++{
++	return s_machine_started;
++}
++
++void web_bridge_frame(const UINT8 *pixels, int width, int height)
++{
++	if (!s_stopped)
++		web_js_frame(pixels, width, height);
++}
++
++void web_bridge_sound(const float *samples, int frames)
++{
++	if (!s_stopped)
++		web_js_sound(samples, frames);
++}
++
++void web_bridge_state_done(bool success)
++{
++	if (!s_state_pending)
++		return;
++	s_state_pending = false;
++	s_state_loading = false;
++	web_js_state_done(success ? 1 : 0);
++}
++
++void web_bridge_frontend_done(int result)
++{
++	if (s_machine_started || s_frontend_reported)
++		return;
++	s_frontend_reported = true;
++	web_js_frontend_done(result);
++}
++
++void web_bridge_log(osd_output_channel channel, const char *text)
++{
++	int level = channel == OSD_OUTPUT_CHANNEL_ERROR ? 0
++		: channel == OSD_OUTPUT_CHANNEL_WARNING ? 1
++		: channel == OSD_OUTPUT_CHANNEL_INFO ? 2 : 3;
++	const char *start = text;
++	for (const char *cursor = text; ; cursor++)
++	{
++		if (*cursor == '\n' || *cursor == 0)
++		{
++			if (cursor != start)
++			{
++				std::string line(start, cursor - start);
++				web_js_log(level, line.c_str());
++			}
++			if (*cursor == 0)
++				break;
++			start = cursor + 1;
++		}
++	}
++}
++
++extern "C" EMSCRIPTEN_KEEPALIVE int web_run_frames(int count)
++{
++	if (s_machine == NULL || s_stopped || s_machine->paused() || count <= 0)
++		return 0;
++
++	bool loaded_state = s_state_pending && s_state_loading;
++	if (s_machine->save_or_load_pending())
++		s_machine->web_service_saveload();
++
++	screen_device *screen = s_machine->first_screen();
++	if (screen == NULL)
++		return 0;
++
++	int advanced = 0;
++	while (advanced < count && !s_machine->exit_pending())
++	{
++		UINT64 frame = screen->frame_number();
++		do
++		{
++			s_machine->scheduler().timeslice();
++		} while (screen->frame_number() == frame && !s_machine->exit_pending());
++
++		if (screen->frame_number() != frame)
++		{
++			if (!loaded_state)
++				web_video_render();
++			loaded_state = false;
++			advanced++;
++			web_js_tick();
++		}
++	}
++	return advanced;
++}
++
++extern "C" EMSCRIPTEN_KEEPALIVE void web_pump()
++{
++	if (s_machine != NULL && !s_stopped)
++	{
++		s_machine->osd().update(false);
++		web_video_render();
++	}
++}
++
++extern "C" EMSCRIPTEN_KEEPALIVE void web_set_control(int pad, int item, int pressed)
++{
++	web_input_set_control(pad, item, pressed);
++}
++
++extern "C" EMSCRIPTEN_KEEPALIVE void web_pause()
++{
++	if (s_machine != NULL && !s_stopped)
++		s_machine->pause();
++}
++
++extern "C" EMSCRIPTEN_KEEPALIVE void web_resume()
++{
++	if (s_machine != NULL && !s_stopped)
++		s_machine->resume();
++}
++
++extern "C" EMSCRIPTEN_KEEPALIVE void web_reset(int hard)
++{
++	if (s_machine != NULL && !s_stopped)
++		s_machine->schedule_soft_reset();
++}
++
++extern "C" EMSCRIPTEN_KEEPALIVE void web_save_state(const char *name)
++{
++	schedule_state(name, true);
++}
++
++extern "C" EMSCRIPTEN_KEEPALIVE void web_load_state(const char *name)
++{
++	schedule_state(name, false);
++}
++
++extern "C" EMSCRIPTEN_KEEPALIVE void web_exit()
++{
++	if (s_machine == NULL || s_stopped)
++		return;
++	s_stopped = true;
++	s_machine->schedule_exit();
++	web_flush_nvram();
++	if (!s_exit_reported)
++	{
++		s_exit_reported = true;
++		web_js_exit();
++	}
++}
++
++extern "C" EMSCRIPTEN_KEEPALIVE const char *web_machine_info()
++{
++	if (s_machine == NULL)
++	{
++		s_machine_info = "{}";
++		return s_machine_info.c_str();
++	}
++
++	int players = 0;
++	int buttons = 0;
++	for (ioport_port *port = s_machine->ioport().first_port(); port != NULL; port = port->next())
++		for (ioport_field *field = port->first_field(); field != NULL; field = field->next())
++		{
++			players = MAX(players, field->player() + 1);
++			if (field->type() >= IPT_BUTTON1 && field->type() <= IPT_BUTTON6)
++				buttons = MAX(buttons, int(field->type() - IPT_BUTTON1 + 1));
++		}
++	players = MIN(4, MAX(1, players));
++
++	bool has_nvram = nvram_interface_iterator(s_machine->root_device()).count() != 0;
++	if (!has_nvram)
++	{
++		image_interface_iterator images(s_machine->root_device());
++		for (device_image_interface *image = images.first(); image != NULL; image = images.next())
++			if (image->image_type() == IO_MEMCARD)
++			{
++				has_nvram = true;
++				break;
++			}
++	}
++
++	screen_device *screen = s_machine->first_screen();
++	double refresh = screen == NULL ? 60.0 : ATTOSECONDS_TO_HZ(screen->frame_period().attoseconds);
++	bool vertical = (s_machine->system().flags & ORIENTATION_SWAP_XY) != 0;
++
++	std::ostringstream json;
++	json.precision(12);
++	json << "{\"name\":" << json_string(s_machine->system().name)
++		<< ",\"description\":" << json_string(s_machine->system().description)
++		<< ",\"width\":" << web_video_width()
++		<< ",\"height\":" << web_video_height()
++		<< ",\"refreshHz\":" << refresh
++		<< ",\"orientation\":\"" << (vertical ? "vertical" : "horizontal") << "\""
++		<< ",\"aspectRatio\":" << (vertical ? 0.75 : (4.0 / 3.0))
++		<< ",\"players\":" << players
++		<< ",\"buttons\":" << buttons
++		<< ",\"bios\":[";
++
++	bool first_bios = true;
++	const rom_entry *rom = s_machine->root_device().rom_region();
++	if (rom != NULL)
++		for ( ; !ROMENTRY_ISEND(rom); rom++)
++			if (ROMENTRY_ISSYSTEM_BIOS(rom))
++			{
++				if (!first_bios)
++					json << ',';
++				first_bios = false;
++				json << "{\"name\":" << json_string(ROM_GETNAME(rom))
++					<< ",\"description\":" << json_string(ROM_GETHASHDATA(rom))
++					<< ",\"isDefault\":"
++					<< (ROM_GETBIOSFLAGS(rom) == s_machine->root_device().default_bios() ? "true" : "false")
++					<< '}';
++			}
++
++	json << "],\"hasNvram\":" << (has_nvram ? "true" : "false") << '}';
++	s_machine_info = json.str();
++	return s_machine_info.c_str();
++}
++
++#endif
+diff --git a/src/osd/modules/web/web_bridge.h b/src/osd/modules/web/web_bridge.h
+new file mode 100644
+index 00000000..b2d911a3
+--- /dev/null
++++ b/src/osd/modules/web/web_bridge.h
+@@ -0,0 +1,21 @@
++// license:BSD-3-Clause
++// copyright-holders:Arcade Runtime contributors
++
++#ifndef MAME_OSD_MODULES_WEB_WEB_BRIDGE_H
++#define MAME_OSD_MODULES_WEB_WEB_BRIDGE_H
++
++#include "osdcore.h"
++
++class running_machine;
++
++#if defined(EMSCRIPTEN)
++void web_bridge_start(running_machine *machine);
++bool web_bridge_machine_started();
++void web_bridge_frame(const UINT8 *pixels, int width, int height);
++void web_bridge_sound(const float *samples, int frames);
++void web_bridge_state_done(bool success);
++void web_bridge_frontend_done(int result);
++void web_bridge_log(osd_output_channel channel, const char *text);
++#endif
++
++#endif
+diff --git a/src/osd/sdl/sdlmain.c b/src/osd/sdl/sdlmain.c
+index 77bcc3f1..0627d6bb 100644
+--- a/src/osd/sdl/sdlmain.c
++++ b/src/osd/sdl/sdlmain.c
+@@ -52,6 +52,9 @@
+ #include "input.h"
+ #include "osdsdl.h"
+ #include "modules/lib/osdlib.h"
++#if defined(EMSCRIPTEN)
++#include "modules/web/web_bridge.h"
++#endif
+ 
+ // we override SDL's normal startup on Win32
+ // please see sdlprefix.h as well
+@@ -283,11 +286,25 @@ int main(int argc, char *argv[])
+ #endif
+ 
+ 	{
++#if defined(EMSCRIPTEN)
++		sdl_options *options = global_alloc(sdl_options);
++		sdl_osd_interface *osd = global_alloc(sdl_osd_interface(*options));
++		osd->register_options();
++		cli_frontend *frontend = global_alloc(cli_frontend(*options, *osd));
++		res = frontend->execute(argc, argv);
++		if (!web_bridge_machine_started())
++		{
++			global_free(frontend);
++			global_free(osd);
++			global_free(options);
++		}
++#else
+ 		sdl_options options;
+ 		sdl_osd_interface osd(options);
+ 		osd.register_options();
+ 		cli_frontend frontend(options, osd);
+ 		res = frontend.execute(argc, argv);
++#endif
+ 	}
+ 
+ #ifdef SDLMAME_UNIX
+-- 
+2.25.1
+
