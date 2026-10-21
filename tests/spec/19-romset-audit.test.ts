@@ -267,6 +267,20 @@ const testFile: TestFile = {
             problems: [{ archive: "fakeclone.zip", reason: "archive exceeds 4,096 entries" }],
         })),
         {
+            label: "an entry under another name but the same CRC and size is accepted as MAME's loader would, and is not unexpected",
+            run: () => CTGTest.init("crc fallback")
+                .stage("rename the game entry inside its zip", () => {
+                    const base = metadata();
+                    const gameRom = base.roms.find((rom) => rom.archive === "fakegame.zip" && !rom.optional)!;
+                    const renamedZip = { name: "fakegame.zip", bytes: zip({ [`old_${gameRom.name}`]: ENTRY_BYTES[gameRom.name as keyof typeof ENTRY_BYTES]! }) };
+                    const roms = complete.map((rom) => rom.name === "fakegame.zip" ? renamedZip : rom);
+                    const report = RomSetAudit.audit(base, roms);
+                    return { status: report.status, file: report.files.find((file) => file.name === gameRom.name)?.status, unexpected: report.unexpected.filter((entry) => entry.archive === "fakegame.zip").length };
+                })
+                .assert("ok by CRC with no unexpected entry", (state) => state.subject, P.equals<{ status: string; file: string | undefined; unexpected: number }>({ status: "ok", file: "ok", unexpected: 0 }))
+                .start(undefined),
+        },
+        {
             label: "a ROM tagged with a BIOS option is required only when that option is selected or is the default",
             run: () => CTGTest.init("bios-tagged roms")
                 .stage("audit with the default and with another option", () => {

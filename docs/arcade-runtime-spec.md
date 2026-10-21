@@ -1196,7 +1196,10 @@ expected to hold marked `missing`; bad user input never throws.
 their predicates. In the metadata, `bios` is an array of BIOS option
 names, and `cloneof`, `romof` and `sampleof` are names or `null`.
 
-`status` is `ok` only when every required file is present with the right
+An expected file is located by name, or, when the name is absent, by an
+entry with the same CRC32 and size, because MAME's loader falls back to a
+CRC match inside the archive and sets from another naming generation load
+unchanged. `status` is `ok` only when every required file is present with the right
 size and CRC in a present archive; `incomplete` when only missing archives
 or files remain; `bad` when a present file has the wrong CRC or size. The
 report names files and archives but never carries bytes. MAME's own startup

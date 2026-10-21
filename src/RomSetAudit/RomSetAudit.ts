@@ -179,6 +179,15 @@ const isRomFileList = (value: unknown): value is RomFile[] => Array.isArray(valu
 const entryIn = (inspection: ArchiveInspection | undefined, name: string): ArchiveEntry | undefined =>
     inspection !== undefined && "entries" in inspection ? inspection.byName.get(name.toLowerCase()) : undefined;
 
+// HELPER :: archiveInspection?, STRING, STRING, NUMBER -> archiveEntry?
+// Finds the expected entry by name, or by exact CRC32 and size when the name is absent. MAME's own loader
+// falls back to a CRC match inside the archive, so a set from another naming generation still loads.
+const locateEntry = (inspection: ArchiveInspection | undefined, name: string, crc: string, size: number): ArchiveEntry | undefined => {
+    const byName = entryIn(inspection, name);
+    if (byName !== undefined || inspection === undefined || !("entries" in inspection)) return byName;
+    return inspection.entries.find((entry) => entry.crc === crc && entry.size === size);
+};
+
 /**
  *
  * Class
@@ -228,8 +237,17 @@ export default class RomSetAudit {
             required: requiredArchives.has(romNameKey(archive.name)),
         }));
 
+        const matched = new Map<string, Set<string>>();           // archive key → entry names claimed by name or CRC
+        const claim = (archive: string, entry: ArchiveEntry | undefined): void => {
+            if (entry === undefined) return;
+            const key = romNameKey(archive);
+            const names = matched.get(key) ?? new Set<string>();
+            names.add(entry.name.toLowerCase());
+            matched.set(key, names);
+        };
         const files: Array<RomSetReport["files"][number]> = metadata.roms.map((rom) => {
-            const entry = entryIn(inspections.get(romNameKey(rom.archive)), rom.name);
+            const entry = locateEntry(inspections.get(romNameKey(rom.archive)), rom.name, rom.crc, rom.size);
+            claim(rom.archive, entry);
             let status: RomSetReport["files"][number]["status"];
             if (entry === undefined) status = isRequired(rom) ? "missing" : "optional-missing";
             else if (entry.size !== rom.size) status = "wrong-size";
@@ -238,26 +256,21 @@ export default class RomSetAudit {
             return { name: rom.name, archive: rom.archive, status };
         });
         for (const sample of metadata.samples) {
+            const entry = entryIn(inspections.get(romNameKey(sample.archive)), sample.name);
+            claim(sample.archive, entry);
             files.push({
                 name: sample.name,
                 archive: sample.archive,
-                status: entryIn(inspections.get(romNameKey(sample.archive)), sample.name) === undefined ? "optional-missing" : "ok",
+                status: entry === undefined ? "optional-missing" : "ok",
             });
         }
 
-        const claims = new Map<string, Set<string>>();
-        for (const file of [...metadata.roms, ...metadata.samples]) {
-            const archiveKey = romNameKey(file.archive);
-            const archiveClaims = claims.get(archiveKey) ?? new Set<string>();
-            archiveClaims.add(file.name.toLowerCase());
-            claims.set(archiveKey, archiveClaims);
-        }
         const unexpected: Array<RomSetReport["unexpected"][number]> = [];
         for (const archive of metadata.archives) {
             const key = romNameKey(archive.name);
             const inspection = inspections.get(key);
             if (inspection === undefined || !("entries" in inspection)) continue;
-            const archiveClaims = claims.get(key) ?? new Set<string>();
+            const archiveClaims = matched.get(key) ?? new Set<string>();
             for (const entry of inspection.entries) {
                 if (!archiveClaims.has(entry.name.toLowerCase())) unexpected.push({ archive: archive.name, name: entry.name });
             }
