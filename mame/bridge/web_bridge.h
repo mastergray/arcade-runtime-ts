@@ -10,6 +10,7 @@ class running_machine;
 
 #if defined(EMSCRIPTEN)
 void web_bridge_start(running_machine *machine);
+bool web_bridge_machine_started();
 void web_bridge_frame(const UINT8 *pixels, int width, int height);
 void web_bridge_sound(const float *samples, int frames);
 void web_bridge_state_done(bool success);

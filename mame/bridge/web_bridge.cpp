@@ -18,6 +18,7 @@
 extern void web_input_set_control(int pad, int item, int pressed);
 extern int web_video_width();
 extern int web_video_height();
+extern void web_video_render();
 extern "C" int web_flush_nvram();
 
 static running_machine *s_machine;
@@ -26,6 +27,7 @@ static bool s_stopped;
 static bool s_exit_reported;
 static bool s_frontend_reported;
 static bool s_state_pending;
+static bool s_state_loading;
 static std::string s_machine_info;
 
 EM_JS(void, web_js_tick, (), {
@@ -122,6 +124,7 @@ static void schedule_state(const char *name, bool save)
 	if (save)
 		web_js_prepare_state_file(path.c_str());
 	s_state_pending = true;
+	s_state_loading = !save;
 	if (save)
 		s_machine->schedule_save(path.c_str());
 	else
@@ -138,8 +141,11 @@ void web_bridge_start(running_machine *machine)
 	s_stopped = false;
 	machine->video().set_throttled(false);
 	machine->video().set_frameskip(0);
+}
 
-	EM_ASM({ throw 'SimulateInfiniteLoop'; });
+bool web_bridge_machine_started()
+{
+	return s_machine_started;
 }
 
 void web_bridge_frame(const UINT8 *pixels, int width, int height)
@@ -159,6 +165,7 @@ void web_bridge_state_done(bool success)
 	if (!s_state_pending)
 		return;
 	s_state_pending = false;
+	s_state_loading = false;
 	web_js_state_done(success ? 1 : 0);
 }
 
@@ -197,6 +204,7 @@ extern "C" EMSCRIPTEN_KEEPALIVE int web_run_frames(int count)
 	if (s_machine == NULL || s_stopped || s_machine->paused() || count <= 0)
 		return 0;
 
+	bool loaded_state = s_state_pending && s_state_loading;
 	if (s_machine->save_or_load_pending())
 		s_machine->web_service_saveload();
 
@@ -215,6 +223,9 @@ extern "C" EMSCRIPTEN_KEEPALIVE int web_run_frames(int count)
 
 		if (screen->frame_number() != frame)
 		{
+			if (!loaded_state)
+				web_video_render();
+			loaded_state = false;
 			advanced++;
 			web_js_tick();
 		}
@@ -225,7 +236,10 @@ extern "C" EMSCRIPTEN_KEEPALIVE int web_run_frames(int count)
 extern "C" EMSCRIPTEN_KEEPALIVE void web_pump()
 {
 	if (s_machine != NULL && !s_stopped)
+	{
 		s_machine->osd().update(false);
+		web_video_render();
+	}
 }
 
 extern "C" EMSCRIPTEN_KEEPALIVE void web_set_control(int pad, int item, int pressed)

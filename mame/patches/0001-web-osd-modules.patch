@@ -1,20 +1,19 @@
-From 0225411a9b9f1285971fe731d2167f8881a0efa3 Mon Sep 17 00:00:00 2001
+From adc96a6cf33ddb93ad657cca1e602ea6fec9338b Mon Sep 17 00:00:00 2001
 From: Arcade Runtime <arcade-runtime@example.invalid>
 Date: Tue, 20 Oct 2026 19:54:43 -0500
 Subject: [PATCH 1/3] Add web OSD modules
 
 Register the native software frame, float audio, and four-pad input providers while bypassing SDL video and input for web sessions.
 ---
- scripts/src/osd/modules.lua         |  3 +
- src/emu/video.h                     |  3 +
- src/osd/modules/lib/osdobj_common.c |  1 +
- src/osd/modules/web/web_input.cpp   | 76 ++++++++++++++++++++++++
- src/osd/modules/web/web_sound.cpp   | 43 ++++++++++++++
- src/osd/modules/web/web_video.cpp   | 92 +++++++++++++++++++++++++++++
- src/osd/sdl/input.c                 | 21 +++++++
- src/osd/sdl/sdlmain.c               | 16 ++++-
- src/osd/sdl/video.c                 | 27 +++++++++
- 9 files changed, 281 insertions(+), 1 deletion(-)
+ scripts/src/osd/modules.lua         |   3 +
+ src/osd/modules/lib/osdobj_common.c |   1 +
+ src/osd/modules/web/web_input.cpp   |  76 +++++++++++++++++++
+ src/osd/modules/web/web_sound.cpp   |  43 +++++++++++
+ src/osd/modules/web/web_video.cpp   | 112 ++++++++++++++++++++++++++++
+ src/osd/sdl/input.c                 |  21 ++++++
+ src/osd/sdl/sdlmain.c               |  16 +++-
+ src/osd/sdl/video.c                 |  27 +++++++
+ 8 files changed, 298 insertions(+), 1 deletion(-)
  create mode 100644 src/osd/modules/web/web_input.cpp
  create mode 100644 src/osd/modules/web/web_sound.cpp
  create mode 100644 src/osd/modules/web/web_video.cpp
@@ -33,20 +32,6 @@ index 9bfdfb20..84527c97 100644
  		MAME_DIR .. "src/osd/modules/sound/direct_sound.c",
  		MAME_DIR .. "src/osd/modules/sound/coreaudio_sound.c",
  		MAME_DIR .. "src/osd/modules/sound/sdl_sound.c",
-diff --git a/src/emu/video.h b/src/emu/video.h
-index 4286f774..48c9f1c1 100644
---- a/src/emu/video.h
-+++ b/src/emu/video.h
-@@ -87,6 +87,9 @@ public:
- 	// snapshots
- 	void save_snapshot(screen_device *screen, emu_file &file);
- 	void save_active_screen_snapshots();
-+#if defined(EMSCRIPTEN)
-+	render_target *web_snapshot_target() const { return m_snap_target; }
-+#endif
- 
- 	// movies
- 	void begin_recording(const char *name, movie_format format);
 diff --git a/src/osd/modules/lib/osdobj_common.c b/src/osd/modules/lib/osdobj_common.c
 index 903ee072..d78da735 100644
 --- a/src/osd/modules/lib/osdobj_common.c
@@ -192,10 +177,10 @@ index 00000000..c9dcd875
 +MODULE_DEFINITION(SOUND_WEB, sound_web)
 diff --git a/src/osd/modules/web/web_video.cpp b/src/osd/modules/web/web_video.cpp
 new file mode 100644
-index 00000000..0644bc26
+index 00000000..d17e7d73
 --- /dev/null
 +++ b/src/osd/modules/web/web_video.cpp
-@@ -0,0 +1,92 @@
+@@ -0,0 +1,112 @@
 +// license:BSD-3-Clause
 +// copyright-holders:Arcade Runtime contributors
 +
@@ -210,43 +195,58 @@ index 00000000..0644bc26
 +
 +typedef software_renderer<UINT32, 0,0,0, 16,8,0, false, false> web_renderer;
 +
-+static render_target *s_target;
++static running_machine *s_machine;
++static render_target *s_live_target;
 +static bitmap_rgb32 s_bitmap;
 +static std::vector<UINT8> s_rgba;
 +static int s_width;
 +static int s_height;
++static bool s_render_pending;
++static bool s_live_target_ready;
 +
 +bool web_video_init(running_machine &machine)
 +{
-+	s_target = machine.video().web_snapshot_target();
-+	if (s_target == NULL)
-+		return false;
-+
-+	s_target->compute_minimum_size(s_width, s_height);
-+	s_target->set_bounds(s_width, s_height);
-+	s_bitmap.allocate(s_width, s_height);
-+	s_rgba.resize(s_width * s_height * 4);
++	s_machine = &machine;
++	s_live_target = machine.render().target_alloc();
++	s_live_target_ready = false;
++	s_width = 0;
++	s_height = 0;
++	s_render_pending = false;
 +	return true;
 +}
 +
 +void web_video_update(bool skip_redraw)
 +{
-+	if (skip_redraw || s_target == NULL || s_width <= 0 || s_height <= 0)
-+		return;
++	if (!skip_redraw)
++		s_render_pending = true;
++}
 +
++void web_video_render()
++{
++	if (s_machine == NULL)
++		return;
++	s_render_pending = false;
++	screen_device *screen = s_machine->first_screen();
++	if (screen == NULL)
++		return;
++	if (!s_live_target_ready)
++	{
++		s_live_target->set_view(s_live_target->configured_view("auto", 0, 1));
++		s_live_target_ready = true;
++	}
 +	INT32 width;
 +	INT32 height;
-+	s_target->compute_minimum_size(width, height);
++	s_live_target->compute_minimum_size(width, height);
 +	if (width != s_width || height != s_height)
 +	{
 +		s_width = width;
 +		s_height = height;
-+		s_target->set_bounds(width, height);
++		s_live_target->set_bounds(width, height);
 +		s_bitmap.allocate(width, height);
 +		s_rgba.resize(width * height * 4);
 +	}
 +
-+	render_primitive_list &primlist = s_target->get_primitives();
++	render_primitive_list &primlist = s_live_target->get_primitives();
 +	primlist.acquire_lock();
 +	web_renderer::draw_primitives(primlist, &s_bitmap.pix32(0), s_width, s_height, s_bitmap.rowpixels());
 +	primlist.release_lock();
@@ -270,10 +270,15 @@ index 00000000..0644bc26
 +
 +void web_video_exit()
 +{
-+	s_target = NULL;
++	if (s_machine != NULL && s_live_target != NULL)
++		s_machine->render().target_free(s_live_target);
++	s_machine = NULL;
++	s_live_target = NULL;
++	s_live_target_ready = false;
++	s_bitmap.reset();
 +	s_width = 0;
 +	s_height = 0;
-+	s_bitmap.reset();
++	s_render_pending = false;
 +	s_rgba.clear();
 +}
 +

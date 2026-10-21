@@ -27,8 +27,9 @@ exact settings (in addition to the family preload arguments):
 `TOTAL_MEMORY` is fixed at 256 MiB and memory growth is disabled. Pthreads are
 disabled explicitly; the output must use an unshared `WebAssembly.Memory`.
 Exception catching remains enabled because MAME uses C++ exceptions for its
-frontend error path. `NO_EXIT_RUNTIME` preserves the retained running-machine
-stack after `callMain` returns.
+frontend error path. The Emscripten path heap-retains the active frontend,
+manager, configuration and machine after `callMain` returns; `NO_EXIT_RUNTIME`
+keeps that module usable by the exported bridge functions.
 
 Start MAME with `-video web -sound web -nothrottle -noautoframeskip
 -joystick`. No SDL input provider is registered in that mode. The host owns

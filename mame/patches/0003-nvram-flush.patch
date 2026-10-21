@@ -1,4 +1,4 @@
-From 2e2ccae0688a37a91e5b771d9ce8ef9d6af3acfc Mon Sep 17 00:00:00 2001
+From 13423005c2bd25557cc60133bde31b95627fa907 Mon Sep 17 00:00:00 2001
 From: Arcade Runtime <arcade-runtime@example.invalid>
 Date: Tue, 20 Oct 2026 19:58:00 -0500
 Subject: [PATCH 3/3] Add narrow NVRAM flush
@@ -11,7 +11,7 @@ Pre-create each device path for the pinned MEMFS implementation and delegate ser
  3 files changed, 32 insertions(+)
 
 diff --git a/src/emu/machine.c b/src/emu/machine.c
-index 04f175d0..a457901b 100644
+index 4757cfda..58141624 100644
 --- a/src/emu/machine.c
 +++ b/src/emu/machine.c
 @@ -1276,6 +1276,32 @@ void running_machine::nvram_save()
@@ -60,10 +60,10 @@ index 14978263..111834dc 100644
  
  	// date & time
 diff --git a/src/osd/modules/web/web_bridge.cpp b/src/osd/modules/web/web_bridge.cpp
-index 05ece08f..1d763d40 100644
+index fbbe8c0d..a31a2940 100644
 --- a/src/osd/modules/web/web_bridge.cpp
 +++ b/src/osd/modules/web/web_bridge.cpp
-@@ -275,6 +275,11 @@ extern "C" EMSCRIPTEN_KEEPALIVE void web_exit()
+@@ -289,6 +289,11 @@ extern "C" EMSCRIPTEN_KEEPALIVE void web_exit()
  	}
  }
  
