@@ -60,6 +60,7 @@ export interface HarnessServerConfig {
     readonly port?: number;                                        // Defaults to 8787; zero requests an ephemeral test port
     readonly buildRoot?: string;                                   // Defaults to dist/mame from the invoking directory
     readonly preload?: string;                                     // Optional private preload config
+    readonly pages?: ReadonlyArray<string>;                        // Optional extra local HTML pages, served at /<basename without .html>
 }
 
 // INTERFACE :: listening server and its browser URL
@@ -121,6 +122,33 @@ export function isPreloadConfig(value: unknown): value is PreloadConfig {
 // HELPER :: STRING -> STRING
 // Maps one archive basename to its only public preload URL.
 const preloadUrl = (name: string): string => `/preload/${encodeURIComponent(name)}`;
+
+// Routes the server reserves for itself; an extra page may not shadow any of them.
+const RESERVED_PAGE_ROUTES = new Set(["/", "/builds.json", "/preload.json", "/harness.js", "/src", "/mame", "/preload", "/-"]);
+
+// PUBLIC :: [STRING] -> MAP(STRING, STRING)
+// Resolves each explicitly named local HTML page to its one public route, /<basename without extension>. Only these
+// files are reachable; the directory holding them is never listed or served, and folded route collisions are rejected.
+export const loadPages = (arguments_: ReadonlyArray<string>): Map<string, string> => {
+    const routes = new Map<string, string>();
+    const folded = new Set<string>();
+    for (const argument of arguments_) {
+        if (!isText(argument)) throw new Error("--page requires a file path.");
+        const path = resolve(argument);
+        if (!existsSync(path) || !statSync(path).isFile()) throw new Error(`Page ${basename(path)} is not a readable file.`);
+        const extension = extname(path);
+        if (![".html", ".htm"].includes(extension.toLowerCase())) throw new Error(`Page ${basename(path)} is not an HTML file.`);
+        const name = basename(path, extension);
+        if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(name)) throw new Error(`Page name ${name} must use letters, digits, dot, underscore or hyphen.`);
+        const route = `/${name}`;
+        if (RESERVED_PAGE_ROUTES.has(route)) throw new Error(`Page route ${route} is reserved by the harness.`);
+        const key = route.toLowerCase();
+        if (folded.has(key)) throw new Error(`Page route ${route} is duplicated after case folding.`);
+        folded.add(key);
+        routes.set(route, path);
+    }
+    return routes;
+};
 
 // PUBLIC :: STRING -> resolvedPreloadConfig
 // Parses one explicit config, resolves its paths relative to that file, rejects folded basename collisions,
@@ -265,6 +293,7 @@ export const startHarnessServer = async (config: HarnessServerConfig = {}): Prom
     const buildRoot = resolve(config.buildRoot ?? DEFAULT_BUILD_ROOT);
     const preload = config.preload === undefined ? null : loadPreloadConfig(config.preload);
     const preloadFiles = new Map(preload?.files.map((file) => [file.url, file.path]));
+    const pageFiles = loadPages(config.pages ?? []);
 
     const server = createServer((request, response) => {
         void (async () => {
@@ -292,6 +321,11 @@ export const startHarnessServer = async (config: HarnessServerConfig = {}): Prom
             const preloadPath = preloadFiles.get(pathname);
             if (preloadPath !== undefined) {
                 send(response, 200, contentTypeFor(preloadPath), await readFile(preloadPath), head);
+                return;
+            }
+            const pagePath = pageFiles.get(pathname);
+            if (pagePath !== undefined) {
+                send(response, 200, contentTypeFor(pagePath), await readFile(pagePath), head);
                 return;
             }
             if (pathname === "/-/fflate.js") {
@@ -334,9 +368,10 @@ export const startHarnessServer = async (config: HarnessServerConfig = {}): Prom
 };
 
 // HELPER :: [STRING] -> harnessServerConfig
-// Parses the four documented command-line options without accepting positional or unknown arguments.
+// Parses the five documented command-line options without accepting positional or unknown arguments.
 const parseArguments = (args: string[]): HarnessServerConfig => {
     const config: { -readonly [K in keyof HarnessServerConfig]: HarnessServerConfig[K] } = {};
+    const pages: string[] = [];
     for (let index = 0; index < args.length; index++) {
         const option = args[index]!;
         const value = args[++index];
@@ -347,8 +382,10 @@ const parseArguments = (args: string[]): HarnessServerConfig => {
             config.port = Number(value);
         } else if (option === "--build-root") config.buildRoot = value;
         else if (option === "--preload") config.preload = value;
+        else if (option === "--page") pages.push(value);
         else throw new Error(`Unknown option ${option}.`);
     }
+    if (pages.length > 0) config.pages = pages;
     return config;
 };
 
@@ -358,6 +395,7 @@ const main = async (args: string[]): Promise<void> => {
     try {
         const harness = await startHarnessServer(parseArguments(args));
         console.log(`Arcade harness listening at ${harness.url}`);
+        for (const route of loadPages(parseArguments(args).pages ?? []).keys()) console.log(`Extra page at ${harness.url}${route.slice(1)}`);
     } catch (error) {
         console.error(`serve-harness: ${error instanceof Error ? error.message : "startup failed"}`);
         process.exitCode = 1;

@@ -40,7 +40,14 @@ Available server options are:
 --port <port>       listener port (default 8787)
 --build-root <dir>  family build root served under /mame/ (default dist/mame)
 --preload <file>    private preload JSON
+--page <file>       extra local HTML page served at /<name> (repeatable)
 ```
+
+`--page res/device-test.html` serves exactly that file at `/device-test` and
+nothing beside it, so a device-capability page kept under the ignored `res/` tree
+can be opened from another device on the LAN together with `--host 0.0.0.0`.
+Nothing under `res/` is reachable otherwise, and a page may not shadow a harness
+route.
 
 Archive paths are resolved relative to the config file. The browser receives
 only their basenames and `/preload/<basename>` URLs; duplicate basenames after

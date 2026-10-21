@@ -7,7 +7,9 @@ import { join, relative } from "node:path";                        // Builds con
 import CTGTest, { CTGTestPredicates as P } from "ctg-js-test";     // Pipeline API and predicate builders
 import {
     isPreloadConfig,                                               // Public structural predicate under test
+    loadPages,                                                     // Extra-page allowlist resolver under test
     loadPreloadConfig,                                             // Path resolver and sanitizer under test
+    startHarnessServer,                                            // Serves exactly the allowlisted extra pages
 } from "../../scripts/serve-harness.ts";
 
 // Type dependencies:
@@ -100,6 +102,34 @@ const duplicateMessage = (): string => {
     }
 };
 
+// HELPER :: VOID -> PROMISE(RECORD)
+// Serves one explicitly named page and checks that only its route, not its neighbour or a reserved route, is reachable.
+const pageServing = async (): Promise<Record<string, unknown>> => {
+    const directory = mkdtempSync(join(tmpdir(), "arcade-harness-pages-"));
+    try {
+        writeFileSync(join(directory, "device-test.html"), "<!doctype html><title>Device Test</title>");
+        writeFileSync(join(directory, "neighbour.html"), "<!doctype html><title>neighbour</title>");
+        writeFileSync(join(directory, "NEIGHBOUR.html"), "<!doctype html><title>neighbour</title>");
+        writeFileSync(join(directory, "mame.html"), "<!doctype html><title>reserved</title>");
+        const routes = [...loadPages([join(directory, "device-test.html")]).keys()];
+        const failures: string[] = [];
+        for (const names of [["neighbour.html", "NEIGHBOUR.html"], ["mame.html"]]) {
+            try { loadPages(names.map((name) => join(directory, name))); failures.push("no error"); }
+            catch (error) { failures.push(error instanceof Error ? error.message : String(error)); }
+        }
+        const harness = await startHarnessServer({ port: 0, buildRoot: directory, pages: [join(directory, "device-test.html")] });
+        try {
+            const served = await fetch(new URL("/device-test", harness.url));
+            const neighbour = await fetch(new URL("/neighbour", harness.url));
+            return { routes, failures, status: served.status, type: served.headers.get("content-type"), body: await served.text(), neighbour: neighbour.status };
+        } finally {
+            await new Promise<void>((done) => harness.server.close(() => done()));
+        }
+    } finally {
+        rmSync(directory, { recursive: true, force: true });
+    }
+};
+
 const testFile: TestFile = {
     label: "harness preload config",
     cases: [
@@ -154,6 +184,19 @@ const testFile: TestFile = {
                     ],
                 }))
                 .assert("folded duplicate message", duplicateMessage, P.equals("The preload config contains duplicate basename SAME.ZIP after case folding."))
+                .start(undefined),
+        },
+        {
+            label: "--page serves exactly the named HTML file at /<name>, rejects reserved and folded-duplicate routes, and serves nothing beside it",
+            run: () => CTGTest.init("extra pages")
+                .assert("served page", pageServing, P.equals<Record<string, unknown>>({
+                    routes: ["/device-test"],
+                    failures: ["Page route /NEIGHBOUR is duplicated after case folding.", "Page route /mame is reserved by the harness."],
+                    status: 200,
+                    type: "text/html; charset=utf-8",
+                    body: "<!doctype html><title>Device Test</title>",
+                    neighbour: 404,
+                }))
                 .start(undefined),
         },
     ],
