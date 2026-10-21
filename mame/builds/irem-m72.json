@@ -1,0 +1,12 @@
+{
+    "family": "irem-m72",
+    "target": "mame/targets/irem-m72.lua",
+    "list": "mame/targets/irem-m72.lst",
+    "memoryPages": 4096,
+    "sources": [
+        "src/mame/drivers/m72.c",
+        "src/mame/audio/m72.c",
+        "src/mame/video/m72.c",
+        "src/mame/machine/irem_cpu.c"
+    ]
+}

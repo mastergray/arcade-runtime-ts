@@ -1,0 +1,16 @@
+{
+    "family": "neogeo",
+    "target": "mame/targets/neogeo.lua",
+    "list": "mame/targets/neogeo.lst",
+    "memoryPages": 4096,
+    "sources": [
+        "src/mame/drivers/neogeo.c",
+        "src/mame/drivers/neogeo_noslot.c",
+        "src/mame/video/neogeo.c",
+        "src/mame/video/neogeo_spr.c",
+        "src/mame/machine/neoboot.c",
+        "src/mame/machine/neocrypt.c",
+        "src/mame/machine/neoprot.c",
+        "src/mame/machine/ng_memcard.c"
+    ]
+}

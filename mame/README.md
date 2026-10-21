@@ -1,5 +1,32 @@
 # Direct MAME build inputs
 
+## Production family builds
+
+`scripts/build-mame.ts` builds one or every family from its committed
+`targets/<family>.{lua,lst}` pair and `builds/<family>.json`:
+
+```sh
+EMSDK_DIR="$PWD/res/emsdk" node --import tsx scripts/build-mame.ts neogeo cps1
+node --import tsx scripts/build-mame.ts --all --jobs 4
+```
+
+It unpacks `res/mame0161s.zip` into `.cache/mame/mame0161/` when no
+`--source` tree is given, applies the two toolchain patches from
+`probes/patches/` and then every `patches/*.patch`, runs the P2 make recipe,
+links a modularized `createMame` pair into `dist/mame/<family>/`, runs
+`-listfull` and `-listxml` under Node for `build.json` and `romsets/`, copies
+the P1 licence notices under `notices/`, and fails if the threading inspector
+finds shared memory. `--skip-build` regenerates metadata from existing
+artifacts; `--skip-romsets` leaves `romsets/` alone.
+
+The link flags live in `scripts/mame-build/buildInfo.ts` and are the P2
+recipe plus `MODULARIZE`/`EXPORT_NAME`/`EXTRA_EXPORTED_RUNTIME_METHODS` per
+§4.3.1. They are reconciled with the production bridge's requirements when
+W3 merges.
+
+## Probe inputs
+
+
 This directory owns the reproducible direct-MAME WebAssembly build. `VERSION`
 pins the initial source release to `mame0161` so it can be compared with the
 source-built native baseline.

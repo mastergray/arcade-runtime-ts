@@ -235,6 +235,7 @@ arcade-runtime-ts/
     scripts/
         build-mame.ts           # checkout, patch, build one or all families, copy artifacts
         extract-romsets.ts      # -listxml of a family build → romsets/<machine>.json metadata
+        mame-build/             # pure helpers behind the two scripts: build identity, romsets conversion, Node runner
         audit-roms.ts           # Node-side audit of local zips against a family's romsets (local use only)
         serve-harness.ts        # serves harness/ and dist/mame/; --preload <config> adds the private files it names (§11.1)
         inspect-mame-threading.ts   # inherited build gate
@@ -543,8 +544,13 @@ predicate and `ArcadeRuntimeError.is()`.
    `res/emsdk` convention or `EMSDK_DIR`).
 3. Fetch the official source archive, verify the identity recorded by P1,
    and unpack it into `.cache/mame/<version>/` (reused across builds).
-4. Apply `mame/patches/*.patch` in order; fail on any reject. Production
-   never applies `mame/probes/patches/`.
+4. Apply the two **toolchain patches** the pinned release needs for any
+   browser build (`0001-emscripten-1.38.31-compatibility` and
+   `0005-emscripten-disable-mongoose`, named by `TOOLCHAIN_PATCHES` in
+   `scripts/mame-build/buildInfo.ts` and kept with the M0 evidence under
+   `mame/probes/patches/`), then `mame/patches/*.patch` in name order; fail
+   on any reject. No other probe patch is ever applied to a production
+   build.
 5. For each requested `mame/builds/<family>.json`, copy that family's
    `mame/targets/<family>.lua` and `<family>.lst` into the source tree's
    `scripts/target/mame/` and `src/mame/`, then run the recipe P2 recorded:
@@ -555,10 +561,13 @@ predicate and `ArcadeRuntimeError.is()`.
    a target Lua selects CPU/sound/machine/bus cores and compilation units
    and a `.lst` exposes driver names. The modern `SOURCES=` form does not
    apply to this release.
-6. Copy `mame<family>.js` and `mame<family>.wasm` to `dist/mame/<family>/`
-   with `build.json`, the licence notices named in P1, and the
-   `romsets/` metadata directory produced by `extract-romsets.ts` (§10.5).
-   `machines` is what the fresh build reports to `-listfull` under Node.
+6. Link `mame<family>.js` and `mame<family>.wasm` into `dist/mame/<family>/`
+   with `build.json`, the licence notices named in P1 under `notices/`, and
+   the `romsets/` metadata directory produced by `extract-romsets.ts`
+   (§10.5). `machines` is what the fresh build reports to `-listfull`
+   under Node, and `romsets/` is converted from the same build's
+   `-listxml`; both run the modularized factory under Node through
+   `scripts/mame-build/nodeRunner.ts`.
 7. Run `inspect-mame-threading.ts` over every generated pair; fail if any
    artifact requires shared memory or a worker (inherited P6 gate).
 
