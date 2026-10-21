@@ -66,6 +66,11 @@ const FAMILY_TARGETS: readonly FamilyTarget[] = [
         ],
         expectedMachines: 378,
     },
+    {
+        id: "namco-s2",
+        sources: ["src/mame/drivers/namcos2.c"],
+        expectedMachines: 54,
+    },
 ] as const;
 
 const PRIVATE_MARKERS = [

@@ -1,0 +1,13 @@
+{
+    "family": "namco-s2",
+    "target": "mame/targets/namco-s2.lua",
+    "list": "mame/targets/namco-s2.lst",
+    "memoryPages": 4096,
+    "sources": [
+        "src/mame/drivers/namcos2.c",
+        "src/mame/machine/namcos2.c",
+        "src/mame/drivers/namcoic.c",
+        "src/mame/video/namcos2.c",
+        "src/mame/video/c45.c"
+    ]
+}
