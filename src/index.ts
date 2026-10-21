@@ -6,6 +6,8 @@
 // Classes:
 export { default as ArcadeRuntimeError } from "./ArcadeRuntimeError/ArcadeRuntimeError.js";   // Base typed error and code registry
 export { default as ArcadeDisplay } from "./ArcadeDisplay/ArcadeDisplay.js";                 // Canvas sizing, drawing, placeholder and fullscreen
+export { default as ArcadeInput } from "./ArcadeInput/ArcadeInput.js";                       // Channelled, reference-counted control holds
+export { DEFAULT_KEYBOARD_MAP, default as KeyboardSource } from "./KeyboardSource/KeyboardSource.js";   // Physical keyboard to ArcadeInput
 
 // Shared helpers:
 export {
@@ -108,3 +110,21 @@ export {
     type ResizeObserverConstructorLike,                            // Injected ResizeObserver constructor
     type ResizeObserverLike,                                       // Observer the display drives
 } from "./ArcadeDisplay/types.js";
+export {
+    isArcadeInputChannel,                                          // Guard for ArcadeInputChannel
+    isArcadeInputConfig,                                           // Guard for ArcadeInputConfig
+    type ArcadeInputChannel,                                       // Independently releasable source channel
+    type ArcadeInputConfig,                                        // ArcadeInput construction config
+} from "./ArcadeInput/types.js";
+export {
+    isKeyboardEventTargetLike,                                     // Guard for KeyboardEventTargetLike
+    isKeyboardMap,                                                 // Guard for KeyboardMap
+    isKeyboardSourceConfig,                                        // Guard for KeyboardSourceConfig
+    isKeyboardSourceInitConfig,                                    // Guard for KeyboardSourceInitConfig
+    isKeyboardVisibilityTargetLike,                                // Guard for KeyboardVisibilityTargetLike
+    type KeyboardEventTargetLike,                                  // Injected keyboard event boundary
+    type KeyboardMap,                                              // KeyCode to ArcadeControl map
+    type KeyboardSourceConfig,                                     // Direct construction config
+    type KeyboardSourceInitConfig,                                 // init() config with optional browser targets
+    type KeyboardVisibilityTargetLike,                             // Injected visibility boundary
+} from "./KeyboardSource/types.js";
