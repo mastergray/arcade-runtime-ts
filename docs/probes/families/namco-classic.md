@@ -108,3 +108,22 @@ desktop and report `emulated seconds / wall seconds`; repeat under Chromium's
 4× CPU-throttled mobile proxy and report the same ratio as informational
 evidence. Record browser version, CPU and whether frameskip was disabled.
 
+
+
+## F4–F6 measured — two titles: a vertical 224×288 one and the family's heaviest, a 256×224 horizontal one (both 60.606 Hz)
+
+Observed 2026-10-20 with the `build-mame` production artifact, headless
+Chromium on the desktop host, the real adapter driven through
+`tests/browser/33-family-measurements.test.ts` (injected scheduler at a
+controlled cadence against a real clock; identities stay in the ignored
+preload configs). Measurements overlapped a native build in another
+worktree, so they are if anything conservative.
+
+| Probe | Result |
+| ----- | ------ |
+| F4 startup to first valid frame | F4 start 335 ms (vertical title) and 476 ms (heaviest title); geometry ok for both |
+| F5 emulated rate against native refresh, per cadence | vertical: 60 Hz → 60.66 fps (+0.09 %), 90 → 60.50 (−0.18 %), 120 → 60.48 (−0.21 %), 144 → 60.55 (−0.09 %); heaviest: 60 → 60.66 (+0.10 %), 90 → 60.61 (0.00 %), 120 → 60.66 (+0.09 %), 144 → 60.59 (−0.02 %); every frame at the machine's native size and orientation |
+| F6 sixty-second emulated-time ratio at the 60 Hz cadence (desktop) | 1.0000 (vertical) and 1.0003 (heaviest) |
+
+Desktop full speed holds for this family; the 4× CPU-throttled mobile proxy
+is deferred to M10 as §0.2 allows.

@@ -35,3 +35,22 @@ private preload title is not recorded.
 
 Both cadences hold the machine's native rate within 0.3 % over a six-second
 window after a 1.5-second warm-up, which closes the M1 acceptance row.
+
+
+## F4–F6 measured — a Neo Geo title
+
+Observed 2026-10-20 with the `build-mame` production artifact, headless
+Chromium on the desktop host, the real adapter driven through
+`tests/browser/33-family-measurements.test.ts` (injected scheduler at a
+controlled cadence against a real clock; identities stay in the ignored
+preload configs). Measurements overlapped a native build in another
+worktree, so they are if anything conservative.
+
+| Probe | Result |
+| ----- | ------ |
+| F4 startup to first valid frame | F4 start 1142 ms; 320×224 horizontal at 59.186 Hz |
+| F5 emulated rate against native refresh, per cadence | 60 Hz → 59.00 fps (−0.31 %), 90 Hz → 59.17 fps (−0.03 %), 120 Hz → 59.23 fps (+0.08 %), 144 Hz → 59.20 fps (+0.02 %); every frame at the machine's native size and orientation |
+| F6 sixty-second emulated-time ratio at the 60 Hz cadence (desktop) | 1.0000 |
+
+Desktop full speed holds for this family; the 4× CPU-throttled mobile proxy
+is deferred to M10 as §0.2 allows.
