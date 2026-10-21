@@ -1,0 +1,80 @@
+From 2e2ccae0688a37a91e5b771d9ce8ef9d6af3acfc Mon Sep 17 00:00:00 2001
+From: Arcade Runtime <arcade-runtime@example.invalid>
+Date: Tue, 20 Oct 2026 19:58:00 -0500
+Subject: [PATCH 3/3] Add narrow NVRAM flush
+
+Pre-create each device path for the pinned MEMFS implementation and delegate serialization to MAME private NVRAM save routine.
+---
+ src/emu/machine.c                  | 26 ++++++++++++++++++++++++++
+ src/emu/machine.h                  |  1 +
+ src/osd/modules/web/web_bridge.cpp |  5 +++++
+ 3 files changed, 32 insertions(+)
+
+diff --git a/src/emu/machine.c b/src/emu/machine.c
+index 04f175d0..a457901b 100644
+--- a/src/emu/machine.c
++++ b/src/emu/machine.c
+@@ -1276,6 +1276,32 @@ void running_machine::nvram_save()
+ 	}
+ }
+ 
++#if defined(EMSCRIPTEN)
++static void web_prepare_nvram_file(const std::string &path)
++{
++	EM_ASM_ARGS({
++		var name = UTF8ToString($0);
++		var slash = name.lastIndexOf('/');
++		if (slash >= 0) FS.mkdirTree(name.slice(0, slash));
++		if (!FS.analyzePath(name).exists) FS.writeFile(name, new Uint8Array(0));
++	}, path.c_str());
++}
++
++int running_machine::web_flush_nvram()
++{
++	nvram_interface_iterator iter(root_device());
++	for (device_nvram_interface *nvram = iter.first(); nvram != NULL; nvram = iter.next())
++	{
++		std::string filename;
++		std::string path(options().nvram_directory());
++		path.append(PATH_SEPARATOR).append(nvram_filename(filename, nvram->device()));
++		web_prepare_nvram_file(path);
++	}
++	nvram_save();
++	return 0;
++}
++#endif
++
+ //**************************************************************************
+ //  CALLBACK ITEMS
+ //**************************************************************************
+diff --git a/src/emu/machine.h b/src/emu/machine.h
+index 14978263..111834dc 100644
+--- a/src/emu/machine.h
++++ b/src/emu/machine.h
+@@ -221,6 +221,7 @@ public:
+ 
+ #if defined(EMSCRIPTEN)
+ 	void web_service_saveload() { handle_saveload(); }
++	int web_flush_nvram();
+ #endif
+ 
+ 	// date & time
+diff --git a/src/osd/modules/web/web_bridge.cpp b/src/osd/modules/web/web_bridge.cpp
+index 05ece08f..1d763d40 100644
+--- a/src/osd/modules/web/web_bridge.cpp
++++ b/src/osd/modules/web/web_bridge.cpp
+@@ -275,6 +275,11 @@ extern "C" EMSCRIPTEN_KEEPALIVE void web_exit()
+ 	}
+ }
+ 
++extern "C" EMSCRIPTEN_KEEPALIVE int web_flush_nvram()
++{
++	return s_machine == NULL ? 1 : s_machine->web_flush_nvram();
++}
++
+ extern "C" EMSCRIPTEN_KEEPALIVE const char *web_machine_info()
+ {
+ 	if (s_machine == NULL)
+-- 
+2.25.1
+
