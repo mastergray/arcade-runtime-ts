@@ -49,6 +49,23 @@ const FAMILY_TARGETS: readonly FamilyTarget[] = [
         sources: ["src/mame/drivers/neogeo.c", "src/mame/drivers/neogeo_noslot.c"],
         expectedMachines: 256,
     },
+    {
+        id: "namco-classic",
+        sources: [
+            "src/mame/drivers/pacman.c",
+            "src/mame/drivers/galaga.c",
+            "src/mame/drivers/galaxian.c",
+            "src/mame/drivers/rallyx.c",
+            "src/mame/drivers/mappy.c",
+            "src/mame/drivers/toypop.c",
+            "src/mame/drivers/gaplus.c",
+            "src/mame/drivers/skykid.c",
+            "src/mame/drivers/baraduke.c",
+            "src/mame/drivers/pacland.c",
+            "src/mame/drivers/polepos.c",
+        ],
+        expectedMachines: 378,
+    },
 ] as const;
 
 const PRIVATE_MARKERS = [
