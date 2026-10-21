@@ -47,7 +47,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 | -- | ------- | :--: | --------- | ------ | ------ | ------ |
 | W0 | Contracts and doubles | T | M1 | merged | (integrator, on `main`) | 2026-10-20 `327a7a5` |
 | W1 | Patch relocation and family target pairs | N | M1 | merged | `wp/w1-targets` | 2026-10-20 (merge of `7f99a0d`) |
-| W2 | Build pipeline and romsets extraction | N | M1, M7 | todo | | |
+| W2 | Build pipeline and romsets extraction | N | M1, M7 | merged (link flags to reconcile with W3) | `wp/w2-build-pipeline` | 2026-10-20 |
 | W3 | Production web bridge | N | M1 | in progress | `wp/w3-bridge` | |
 | W4 | `MameEmulatorAdapter` | N | M1, M6 | ready (after W3) | `wp/w4-mame-adapter` | |
 | W5 | `ArcadeDisplay` | T | M1 | merged | `wp/w5-arcade-display` | 2026-10-20 `5f8ae09` |
@@ -74,6 +74,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 
 Newest first. One line per merge, milestone close, or contract amendment.
 
+- 2026-10-20 — W2 merged (integrator): `build-mame.ts`, `extract-romsets.ts`, `scripts/mame-build/`, family build files; neogeo built end to end with 256 romsets. §4.1 amended for the two toolchain patches.
 - 2026-10-20 — W8 merged: `GamepadSource`; §10.4 clarified that pause release is the player's job.
 - 2026-10-20 — W9 merged: `ArcadeStorage`, `ArcadeRomStore`; §10.7 snippet amended to show injected dependencies.
 - 2026-10-20 — W6 merged: `ArcadeAudio`. W8 started.
