@@ -23,7 +23,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 | M3 Audio | W6 | merged, acceptance pending real build | |
 | M4 Input and keyboard | W7 | todo | |
 | M5 Gamepads | W8 | todo | |
-| M6 Saves | W9 (storage half), W15 | todo | |
+| M6 Saves | W9 (storage half), W15 | merged; memory card verified, states persist, CPS-2 EEPROM runtime check pending a set | |
 | M7 ROM supply and cabinet | W2 (romsets half), W9 (ROM store half), W10, W12, W13b | todo | |
 | M8 BIOS and DIP switches | W16 | todo | |
 | M9 v1.0.0 release gate | W17 | todo | |
@@ -66,14 +66,15 @@ Status values: `todo`, `ready` (brief written, can be started),
 | W14d | Family `namco-s2` | N | M2 | in progress | `wp/w14d-namco-s2` | |
 | W14e | Family `taito-classic` | N | M2 | merged (F4–F6 pending private set) | `wp/w14e-taito-classic` | 2026-10-20 (merge of `79aea64`) |
 | W14f | Family `taito-16` | N | M2 | ready | `wp/w14f-taito-16` | |
-| W15 | Saves bridge (memcard, EEPROM, F8) | N | M6 | in progress | `wp/w15-saves-bridge` | |
-| W16 | BIOS and DIP switches | N+T | M8 | todo | | |
+| W15 | Saves bridge (memcard, EEPROM, F8) | N | M6 | merged (CPS-2 EEPROM runtime check pending a set) | `wp/w15-saves-bridge` | 2026-10-20 (merge of `6f0a252`) |
+| W16 | BIOS and DIP switches | N+T | M8 | ready | `wp/w16-bios-dip` | |
 | W17 | Release gate | T | M9 | todo | | |
 
 ## Log
 
 Newest first. One line per merge, milestone close, or contract amendment.
 
+- 2026-10-20 — W15 merged: memory-card mount and flush, F8 recorded (0.161 screen bitmaps are not state, so next-frame identity after a restore is a core limitation). W16 brief written.
 - 2026-10-20 — F4–F6 measured on desktop for neogeo, namco-classic (vertical and heaviest titles) and irem-m72: pacing within 0.35 % at 60–144 Hz cadences, 60 s ratios 0.9999–1.0003, startup 0.3–1.1 s. W13b started.
 - 2026-10-20 — Device ROM sets modelled (`device` role); the user's lawful sets audit ok for neogeo, namco-classic and irem-m72. `33-family-measurements.test.ts` added for F4–F6. W15 started; W13b brief written.
 - 2026-10-20 — W12 merged: `ArcadeCabinet`. Audit gained a CRC-and-size fallback (older naming generations load as MAME does); `build-mame` records applied patch sets per tree.
