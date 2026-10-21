@@ -74,6 +74,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 
 Newest first. One line per merge, milestone close, or contract amendment.
 
+- 2026-10-20 — Integration: `build-mame neogeo` from a clean unpack with the production patches (2m10s, 256 machines, 256 romsets); the W3 browser cases pass against that artifact.
 - 2026-10-20 — W3 merged: production web bridge (patches 0001–0003, `mame/bridge/`), link contract recorded in `mame/bridge/README.md`; `build-mame` link flags reconciled. Observed: Neo Geo memory card writes nothing through the narrow NVRAM flush (F8 item for W15). W4 started.
 - 2026-10-20 — W2 merged (integrator): `build-mame.ts`, `extract-romsets.ts`, `scripts/mame-build/`, family build files; neogeo built end to end with 256 romsets. §4.1 amended for the two toolchain patches.
 - 2026-10-20 — W8 merged: `GamepadSource`; §10.4 clarified that pause release is the player's job.
