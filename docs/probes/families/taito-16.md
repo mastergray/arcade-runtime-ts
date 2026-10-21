@@ -94,3 +94,24 @@ startup and a warm-up interval, measure exactly 60 seconds of wall time on
 desktop and report `emulated seconds / wall seconds`; repeat under Chromium's
 4× CPU-throttled mobile proxy and report the same ratio as informational
 evidence. Record browser version, CPU and whether frameskip was disabled.
+
+## F4–F6 measured — a 320×240 horizontal title at 60.000 Hz
+
+Observed 2026-10-21 with the fresh `build-mame --all --fresh` artifact,
+headless Chromium on the desktop host, the real adapter driven through
+`tests/browser/33-family-measurements.test.ts` (injected scheduler at a
+controlled cadence against a real clock; the identity stays in the ignored
+preload config). The audit reports the set complete from its single game
+archive.
+
+| Probe | Result |
+| ----- | ------ |
+| F4 startup to first valid frame | 351 ms; geometry ok |
+| F5 emulated rate against native refresh, per cadence | 60 Hz → 59.81 fps (−0.32 %), 90 → 59.97 (−0.05 %), 120 → 60.12 (+0.21 %), 144 → 59.87 (−0.21 %); every frame at the machine's native size and orientation |
+| F6 sixty-second emulated-time ratio at the 60 Hz cadence (desktop) | 0.9999 |
+
+M3–M5 acceptance (`36-input-audio-acceptance.test.ts`) on the same set:
+audio unlocked and under the cap for 60 s (queued max 58.7 ms), keyboard
+coin/start changed the picture, two scripted pads took players 1 and 2 and a
+held direction released on unplug. The family's heaviest title (F6 strictly)
+remains pending a lawful set.
