@@ -38,7 +38,8 @@
     "test": "node --import tsx tests/run.ts spec",
     "test:spec": "node --import tsx tests/run.ts spec",
     "test:browser": "node --import tsx tests/run.ts browser",
-    "test:all": "node --import tsx tests/run.ts spec browser"
+    "test:all": "node --import tsx tests/run.ts spec browser",
+    "harness": "node --import tsx scripts/serve-harness.ts"
   },
   "author": "mastergray",
   "license": "MIT",

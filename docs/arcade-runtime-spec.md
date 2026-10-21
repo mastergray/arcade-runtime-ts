@@ -1368,8 +1368,8 @@ preload config does that from locally configured files:
 - The harness page fetches `/preload.json` when present, builds
   `ArcadeGameConfig` from it with URL sources, fills the family/machine/BIOS
   selectors, renders the audit report, and starts automatically when
-  `autostart` is true. Without a preload config it falls back to the file
-  picker.
+  `autostart` is true. Without a preload config it lists the available
+  family builds; the file picker arrives with the cabinet page (W13b, M7).
 - The browser suite reads the same config through one environment variable
   (`ARCADE_PRELOAD_CONFIG`) and skips real-machine cases when it is absent,
   as the inherited probe tests already do.
