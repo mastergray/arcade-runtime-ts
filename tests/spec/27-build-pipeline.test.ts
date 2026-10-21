@@ -81,17 +81,19 @@ const testFile: TestFile = {
                 .start(undefined),
         },
         {
-            label: "link flags modularize as createMame, fix memory from memoryPages and export every §4.3.1 runtime method",
+            label: "link flags follow the bridge README: modularized createMame, fixed memory, no growth, no exit, no pthreads, every §4.3.1 runtime method and export",
             run: () => CTGTest.init("link flags")
                 .stage("flags for 4096 pages", () => linkFlagsFor(4096))
                 .assert("expected switches present", (state) => ({
                     modularize: state.subject.includes("MODULARIZE=1"),
-                    name: state.subject.includes("EXPORT_NAME=createMame"),
+                    name: state.subject.includes("EXPORT_NAME=\"createMame\""),
                     memory: state.subject.includes("TOTAL_MEMORY=268435456"),
-                    methods: ["FS", "callMain", "cwrap", "ccall", "UTF8ToString"].every((method) => EXPORTED_RUNTIME_METHODS.includes(method)
+                    methods: ["FS", "callMain", "cwrap", "ccall", "UTF8ToString", "HEAPU8", "HEAPF32"].every((method) => EXPORTED_RUNTIME_METHODS.includes(method)
                         && state.subject.some((flag) => flag.includes(`"${method}"`))),
-                    noPthreads: !state.subject.some((flag) => flag.includes("USE_PTHREADS")),
-                }), P.equals<{ modularize: boolean; name: boolean; memory: boolean; methods: boolean; noPthreads: boolean }>({ modularize: true, name: true, memory: true, methods: true, noPthreads: true }))
+                    exports: ["_web_run_frames", "_web_pump", "_web_set_control", "_web_pause", "_web_resume", "_web_reset", "_web_save_state", "_web_load_state", "_web_flush_nvram", "_web_exit", "_web_machine_info"]
+                        .every((name) => state.subject.some((flag) => flag.startsWith("EXPORTED_FUNCTIONS=") && flag.includes(`"${name}"`))),
+                    noPthreads: state.subject.includes("USE_PTHREADS=0") && state.subject.includes("NO_EXIT_RUNTIME=1") && state.subject.includes("ALLOW_MEMORY_GROWTH=0"),
+                }), P.equals<{ modularize: boolean; name: boolean; memory: boolean; methods: boolean; exports: boolean; noPthreads: boolean }>({ modularize: true, name: true, memory: true, methods: true, exports: true, noPthreads: true }))
                 .start(undefined),
         },
         {

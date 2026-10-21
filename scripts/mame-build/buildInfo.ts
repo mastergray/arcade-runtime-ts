@@ -51,9 +51,14 @@ export interface ListFullEntry {
 
 export const FAMILY_ID_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;        // Lower-case words joined by single hyphens
 
-// Runtime methods the adapter calls through the module (§4.3.1). HEAPU8 and HEAPF32 are
-// assigned onto the module object by the pinned runtime without being listed here.
-export const EXPORTED_RUNTIME_METHODS: ReadonlyArray<string> = ["FS", "callMain", "cwrap", "ccall", "UTF8ToString"];
+// Runtime methods the adapter calls through the module (§4.3.1), exactly as mame/bridge/README.md links them.
+export const EXPORTED_RUNTIME_METHODS: ReadonlyArray<string> = ["FS", "callMain", "cwrap", "ccall", "UTF8ToString", "HEAPU8", "HEAPF32"];
+
+// C exports the bridge keeps alive (§4.3.1), exactly as mame/bridge/README.md links them.
+export const EXPORTED_FUNCTIONS: ReadonlyArray<string> = [
+    "_main", "_web_run_frames", "_web_pump", "_web_set_control", "_web_pause", "_web_resume", "_web_reset",
+    "_web_save_state", "_web_load_state", "_web_flush_nvram", "_web_exit", "_web_machine_info",
+];
 
 // make variables the P2 recipe established for the release's asmjs path; jobs are added by the caller.
 export const MAKE_FLAGS: ReadonlyArray<string> = [
@@ -97,16 +102,20 @@ const LISTFULL_LINE = /^(\S+)\s+"(.*)"\s*$/;                        // name "des
 export const sha256 = (input: Uint8Array | string): string => createHash("sha256").update(input).digest("hex");
 
 // HELPER :: NUMBER -> [STRING]
-// The emcc arguments for a family link at the given fixed memory, in a stable order.
-// NOTE: Provisional until W3's merge note confirms the production bridge's flags; see mame/README.md.
+// The emcc arguments for a family link at the given fixed memory: the mame/bridge/README.md link contract, in order.
 export const linkFlagsFor = (memoryPages: number): string[] => [
     "-O2",
+    "-s", "WASM=1",
     "-s", "USE_SDL=2",
-    "-s", `TOTAL_MEMORY=${memoryPages * 65536}`,
-    "-s", "DISABLE_EXCEPTION_CATCHING=0",
     "-s", "MODULARIZE=1",
-    "-s", "EXPORT_NAME=createMame",
+    "-s", "EXPORT_NAME=\"createMame\"",
+    "-s", `TOTAL_MEMORY=${memoryPages * 65536}`,
+    "-s", "ALLOW_MEMORY_GROWTH=0",
+    "-s", "NO_EXIT_RUNTIME=1",
+    "-s", "DISABLE_EXCEPTION_CATCHING=0",
+    "-s", "USE_PTHREADS=0",
     "-s", `EXTRA_EXPORTED_RUNTIME_METHODS=${JSON.stringify(EXPORTED_RUNTIME_METHODS)}`,
+    "-s", `EXPORTED_FUNCTIONS=${JSON.stringify(EXPORTED_FUNCTIONS)}`,
 ];
 
 // HELPER :: buildIdentity -> STRING

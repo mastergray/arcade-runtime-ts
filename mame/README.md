@@ -19,10 +19,8 @@ the P1 licence notices under `notices/`, and fails if the threading inspector
 finds shared memory. `--skip-build` regenerates metadata from existing
 artifacts; `--skip-romsets` leaves `romsets/` alone.
 
-The link flags live in `scripts/mame-build/buildInfo.ts` and are the P2
-recipe plus `MODULARIZE`/`EXPORT_NAME`/`EXTRA_EXPORTED_RUNTIME_METHODS` per
-§4.3.1. They are reconciled with the production bridge's requirements when
-W3 merges.
+The link flags live in `scripts/mame-build/buildInfo.ts` and are exactly
+the link contract in `bridge/README.md`; a spec test holds the two in step.
 
 ## Probe inputs
 
