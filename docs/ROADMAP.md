@@ -20,7 +20,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 | M0 Feasibility probe | inherited | closed | 2026-10-20 (parent project) |
 | M1 Bridge, adapter, display, preload | W0, W1, W2, W3, W4, W5, W13a | in progress | |
 | M2 Family build matrix | W14a–f | todo | |
-| M3 Audio | W6 | todo | |
+| M3 Audio | W6 | merged, acceptance pending real build | |
 | M4 Input and keyboard | W7 | todo | |
 | M5 Gamepads | W8 | todo | |
 | M6 Saves | W9 (storage half), W15 | todo | |
@@ -51,9 +51,9 @@ Status values: `todo`, `ready` (brief written, can be started),
 | W3 | Production web bridge | N | M1 | in progress | `wp/w3-bridge` | |
 | W4 | `MameEmulatorAdapter` | N | M1, M6 | ready (after W3) | `wp/w4-mame-adapter` | |
 | W5 | `ArcadeDisplay` | T | M1 | merged | `wp/w5-arcade-display` | 2026-10-20 `5f8ae09` |
-| W6 | `ArcadeAudio` | T | M3 | in progress | `wp/w6-arcade-audio` | |
+| W6 | `ArcadeAudio` | T | M3 | merged | `wp/w6-arcade-audio` | 2026-10-20 (merge of `d6ce5f4`) |
 | W7 | `ArcadeInput`, `KeyboardSource`, controller config | T | M4 | merged | `wp/w7-arcade-input` | 2026-10-20 (merge of `6cecda2`) |
-| W8 | `GamepadSource` | T | M5 | ready | `wp/w8-gamepad-source` | |
+| W8 | `GamepadSource` | T | M5 | in progress | `wp/w8-gamepad-source` | |
 | W9 | `ArcadeStorage`, `ArcadeRomStore` | T | M6, M7 | in progress | `wp/w9-storage` | |
 | W10 | `RomSetAudit`, `arcade-audit-roms` | T | M7 | merged | `wp/w10-romset-audit` | 2026-10-20 (merge of `5859c88`) |
 | W11 | `ArcadePlayer` | T | M1–M4 | todo | | |
@@ -74,6 +74,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 
 Newest first. One line per merge, milestone close, or contract amendment.
 
+- 2026-10-20 — W6 merged: `ArcadeAudio`. W8 started.
 - 2026-10-20 — Integration fix: browser test pages now use the shared `tests/support/TestPageServer.ts`, which resolves `fflate` for pages that import the root index (W10 exposed the gap).
 - 2026-10-20 — W10 merged: `RomSetAudit`, `arcade-audit-roms`; §10.5 amended with `problems` and metadata shapes. W9 started.
 - 2026-10-20 — W7 merged: `ArcadeInput`, `KeyboardSource`, `DEFAULT_KEYBOARD_MAP`, internal controller-config generator. W6 started.
