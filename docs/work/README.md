@@ -15,6 +15,8 @@ An agent handed a brief works from the brief and the spec alone.
 | [W8 — `GamepadSource`](W8-gamepad-source.md) | TypeScript |
 | [W9 — `ArcadeStorage`, `ArcadeRomStore`](W9-storage.md) | TypeScript |
 | [W10 — `RomSetAudit`, `arcade-audit-roms`](W10-romset-audit.md) | TypeScript |
+| [W11 — `ArcadePlayer`](W11-arcade-player.md) | TypeScript |
+| [W13a — harness preload page and `serve-harness`](W13a-harness-preload.md) | TypeScript |
 
 Package and milestone status is tracked in one place,
 [`docs/ROADMAP.md`](../ROADMAP.md); this list only links the briefs.

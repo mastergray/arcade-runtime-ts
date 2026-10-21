@@ -56,9 +56,9 @@ Status values: `todo`, `ready` (brief written, can be started),
 | W8 | `GamepadSource` | T | M5 | in progress | `wp/w8-gamepad-source` | |
 | W9 | `ArcadeStorage`, `ArcadeRomStore` | T | M6, M7 | merged | `wp/w9-storage` | 2026-10-20 (merge of `aefb07c`) |
 | W10 | `RomSetAudit`, `arcade-audit-roms` | T | M7 | merged | `wp/w10-romset-audit` | 2026-10-20 (merge of `5859c88`) |
-| W11 | `ArcadePlayer` | T | M1–M4 | todo | | |
+| W11 | `ArcadePlayer` | T | M1–M4 | ready (after W4) | `wp/w11-arcade-player` | |
 | W12 | `ArcadeCabinet` | T | M7 | todo | | |
-| W13a | Harness: minimal preload page | T | M1 | todo | | |
+| W13a | Harness: minimal preload page | T | M1 | ready (after W11) | `wp/w13a-harness-preload` | |
 | W13b | Harness: cabinet page | T | M7 | todo | | |
 | W14a | Family `cps2` | N | M2 | todo | | |
 | W14b | Family `namco-classic` | N | M2 | todo | | |
