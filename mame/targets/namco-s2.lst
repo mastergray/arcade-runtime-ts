@@ -1,0 +1,59 @@
+// Derived from pinned MAME 0.161 source (run at the source root):
+// comm -12 \
+//   <(sed -nE 's/^[[:space:]]*(GAME|GAMEL|GAME_CUSTOM)[[:space:]]*[(][^,]+,[[:space:]]*([a-z0-9_]+).*/\2/p' src/mame/drivers/namcos2.c | LC_ALL=C sort -u) \
+//   <(sed -nE 's/^([a-z0-9_]+)([[:space:]]*\/\/.*)?$/\1/p' src/mame/mame.lst | LC_ALL=C sort -u)
+
+assault // src/mame/drivers/namcos2.c
+assaultj // src/mame/drivers/namcos2.c
+assaultp // src/mame/drivers/namcos2.c
+bubbletr // src/mame/drivers/namcos2.c
+burnforc // src/mame/drivers/namcos2.c
+burnforco // src/mame/drivers/namcos2.c
+cosmogng // src/mame/drivers/namcos2.c
+cosmogngj // src/mame/drivers/namcos2.c
+dirtfoxj // src/mame/drivers/namcos2.c
+dsaber // src/mame/drivers/namcos2.c
+dsaberj // src/mame/drivers/namcos2.c
+finalap2 // src/mame/drivers/namcos2.c
+finalap2j // src/mame/drivers/namcos2.c
+finalap3 // src/mame/drivers/namcos2.c
+finalap3a // src/mame/drivers/namcos2.c
+finalap3bl // src/mame/drivers/namcos2.c
+finalap3j // src/mame/drivers/namcos2.c
+finalap3jc // src/mame/drivers/namcos2.c
+finallap // src/mame/drivers/namcos2.c
+finallapc // src/mame/drivers/namcos2.c
+finallapd // src/mame/drivers/namcos2.c
+finallapjb // src/mame/drivers/namcos2.c
+finallapjc // src/mame/drivers/namcos2.c
+finehour // src/mame/drivers/namcos2.c
+fourtrax // src/mame/drivers/namcos2.c
+gollygho // src/mame/drivers/namcos2.c
+kyukaidk // src/mame/drivers/namcos2.c
+kyukaidko // src/mame/drivers/namcos2.c
+luckywld // src/mame/drivers/namcos2.c
+luckywldj // src/mame/drivers/namcos2.c
+marvland // src/mame/drivers/namcos2.c
+marvlandj // src/mame/drivers/namcos2.c
+metlhawk // src/mame/drivers/namcos2.c
+metlhawkj // src/mame/drivers/namcos2.c
+mirninja // src/mame/drivers/namcos2.c
+ordyne // src/mame/drivers/namcos2.c
+ordynej // src/mame/drivers/namcos2.c
+phelios // src/mame/drivers/namcos2.c
+pheliosj // src/mame/drivers/namcos2.c
+rthun2 // src/mame/drivers/namcos2.c
+rthun2j // src/mame/drivers/namcos2.c
+sgunner // src/mame/drivers/namcos2.c
+sgunner2 // src/mame/drivers/namcos2.c
+sgunner2j // src/mame/drivers/namcos2.c
+sgunnerj // src/mame/drivers/namcos2.c
+suzuk8h2 // src/mame/drivers/namcos2.c
+suzuk8h2j // src/mame/drivers/namcos2.c
+suzuka8h // src/mame/drivers/namcos2.c
+suzuka8hj // src/mame/drivers/namcos2.c
+sws // src/mame/drivers/namcos2.c
+sws92 // src/mame/drivers/namcos2.c
+sws92g // src/mame/drivers/namcos2.c
+sws93 // src/mame/drivers/namcos2.c
+valkyrie // src/mame/drivers/namcos2.c
