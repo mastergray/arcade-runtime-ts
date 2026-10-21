@@ -632,6 +632,58 @@ bridge reports `cli_frontend::execute()` completion directly because the
 pinned runtime does not call `Module.onExit` after an early frontend return
 (P11).
 
+#### 4.3.1 JavaScript-facing module shape
+
+This is the **cross-package contract** between the bridge (W3) and the
+adapter (W4). The adapter is tested against a `FakeModuleLoader` module of
+this shape; the bridge is tested by driving a real build through it.
+
+**Instantiation.** The build's JavaScript is a 1.38.31 `MODULARIZE` factory
+named `createMame`. The adapter calls it with
+`{ noInitialRun: true, print, printErr, locateFile, web }`, where `web` is
+the callback object below, then writes MEMFS inputs, then calls
+`Module.callMain(argv)`. `callMain` returns after `cli_frontend::execute()`
+has either (a) failed before the machine ran, in which case
+`web.onFrontendDone(result)` has already fired with the numeric `MAMERR_*`
+result, or (b) handed the running machine to the bridge, in which case the
+native stack has been unwound in the way the probe patches established and
+the machine is advanced only by `web_run_frames`.
+
+**Runtime methods** the build must export (`EXTRA_EXPORTED_RUNTIME_METHODS`):
+`FS`, `callMain`, `cwrap`, `ccall`, `UTF8ToString`, `HEAPU8`, `HEAPF32`.
+
+**Exports** (`EMSCRIPTEN_KEEPALIVE`, called through `cwrap`):
+
+| Export | Signature | Does |
+| ------ | --------- | ---- |
+| `web_run_frames` | `(count: i32) → i32` | Advances the device scheduler until `count` emulated screen frames have elapsed, or fewer if exit became pending; services at most one pending scheduled state operation at the between-timeslice boundary before the first frame. Returns frames actually run. A no-op returning 0 while paused. |
+| `web_pump` | `() → void` | Runs the video/OSD boundary once without advancing the scheduler (used while paused so the last frame can be redrawn). |
+| `web_set_control` | `(pad: i32, item: i32, pressed: i32) → void` | Writes virtual device state. `pad` is 0–3; `item` is the §4.4 row order: 0–3 hat up/down/left/right, 4–9 buttons 1–6, 10 coin, 11 start, 12 select, 13 service, 14 test, 15 tilt. |
+| `web_pause` / `web_resume` | `() → void` | `machine().pause()` / `resume()`. |
+| `web_reset` | `(hard: i32) → void` | Schedules a soft reset; `hard` is accepted and ignored because a hard reset is a fresh module (§5). |
+| `web_save_state` / `web_load_state` | `(name: char*) → void` | Schedules save/load of `/mame/sta/<name>.sta`; completion arrives on `onStateDone`. |
+| `web_flush_nvram` | `() → i32` | Flushes NVRAM (and memory card, F8) to MEMFS without exiting; returns 0 on success. |
+| `web_exit` | `() → void` | Schedules exit; `onExit` fires once the bridge has stopped and flushed. |
+| `web_machine_info` | `() → char*` | Returns a NUL-terminated JSON string owned by the bridge, valid until the next call: `{ name, description, width, height, refreshHz, orientation, aspectRatio, players, buttons, bios: [{name, description, isDefault}], hasNvram }`. The adapter adds `family` from `build.json`. |
+
+**Callbacks** read from `Module.web` at the moment each fires:
+
+| Callback | Arguments | Fires |
+| -------- | --------- | ----- |
+| `onTick` | `()` | Once per emulated screen frame, including skipped video. |
+| `onFrame` | `(ptr: i32, width: i32, height: i32)` | Once per rendered frame; `HEAPU8` at `ptr` holds `width × height × 4` RGBA bytes, valid only during the callback. |
+| `onSound` | `(ptr: i32, frames: i32)` | Per mixer chunk; `HEAPF32` at `ptr / 4` holds `frames × 2` interleaved floats, valid only during the callback. |
+| `onStateDone` | `(ok: i32)` | After a scheduled save or load completes or fails. |
+| `onExit` | `()` | After `web_exit` has stopped the machine and flushed persistence. |
+| `onFrontendDone` | `(result: i32)` | When `cli_frontend::execute()` returns before the machine ran. |
+| `onLog` | `(level: i32, ptr: i32)` | For every OSD output line; `level` is 0 error, 1 warning, 2 info, 3 debug/verbose; `UTF8ToString(ptr)` is the text. |
+
+A missing callback is a no-op, not an error. The accumulator that turns
+elapsed wall time into a frame count lives in the adapter (§5), which is
+why `web_run_frames` takes a count: pacing is then testable in `spec`
+with `FakeFrameScheduler` and a fake clock, and the bridge stays free of
+timing policy.
+
 ### 4.4 Generated controller config
 
 At start, the adapter writes `/mame/ctrlr/web.cfg` mapping each MAME port to

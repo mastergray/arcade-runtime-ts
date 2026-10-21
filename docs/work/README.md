@@ -7,6 +7,7 @@ An agent handed a brief works from the brief and the spec alone.
 | Brief | Lane |
 | ----- | ---- |
 | [W1 — patch relocation and family target pairs](W1-targets.md) | Native |
+| [W3 — production web bridge](W3-bridge.md) | Native |
 | [W5 — `ArcadeDisplay`](W5-arcade-display.md) | TypeScript |
 | [W7 — `ArcadeInput`, `KeyboardSource`, controller config](W7-arcade-input.md) | TypeScript |
 
