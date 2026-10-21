@@ -46,13 +46,13 @@ Status values: `todo`, `ready` (brief written, can be started),
 | ID | Package | Lane | Milestone | Status | Branch | Merged |
 | -- | ------- | :--: | --------- | ------ | ------ | ------ |
 | W0 | Contracts and doubles | T | M1 | merged | (integrator, on `main`) | 2026-10-20 `327a7a5` |
-| W1 | Patch relocation and family target pairs | N | M1 | ready | `wp/w1-targets` | |
+| W1 | Patch relocation and family target pairs | N | M1 | in progress | `wp/w1-targets` | |
 | W2 | Build pipeline and romsets extraction | N | M1, M7 | todo | | |
 | W3 | Production web bridge | N | M1 | todo | | |
 | W4 | `MameEmulatorAdapter` | N | M1, M6 | todo | | |
-| W5 | `ArcadeDisplay` | T | M1 | ready | `wp/w5-arcade-display` | |
+| W5 | `ArcadeDisplay` | T | M1 | merged | `wp/w5-arcade-display` | 2026-10-20 `5f8ae09` |
 | W6 | `ArcadeAudio` | T | M3 | todo | | |
-| W7 | `ArcadeInput`, `KeyboardSource`, controller config | T | M4 | ready | `wp/w7-arcade-input` | |
+| W7 | `ArcadeInput`, `KeyboardSource`, controller config | T | M4 | in progress | `wp/w7-arcade-input` | |
 | W8 | `GamepadSource` | T | M5 | todo | | |
 | W9 | `ArcadeStorage`, `ArcadeRomStore` | T | M6, M7 | todo | | |
 | W10 | `RomSetAudit`, `arcade-audit-roms` | T | M7 | todo | | |
@@ -73,6 +73,9 @@ Status values: `todo`, `ready` (brief written, can be started),
 ## Log
 
 Newest first. One line per merge, milestone close, or contract amendment.
+
+- 2026-10-20 — W5 merged: `ArcadeDisplay` (`5f8ae09`); integrator follow-up added root exports and ImageData reuse.
+- 2026-10-20 — W1 and W7 started on their branches by Codex agents.
 
 - 2026-10-20 — §4.4 contract amendment: controller-config token table pinned for W3 and W7 (`153a821`).
 - 2026-10-20 — W0 merged: shared contracts, `ArcadeRuntimeError`, test doubles (`327a7a5`).
