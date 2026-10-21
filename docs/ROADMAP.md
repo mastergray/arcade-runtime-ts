@@ -53,7 +53,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 | W5 | `ArcadeDisplay` | T | M1 | merged | `wp/w5-arcade-display` | 2026-10-20 `5f8ae09` |
 | W6 | `ArcadeAudio` | T | M3 | merged | `wp/w6-arcade-audio` | 2026-10-20 (merge of `d6ce5f4`) |
 | W7 | `ArcadeInput`, `KeyboardSource`, controller config | T | M4 | merged | `wp/w7-arcade-input` | 2026-10-20 (merge of `6cecda2`) |
-| W8 | `GamepadSource` | T | M5 | in progress | `wp/w8-gamepad-source` | |
+| W8 | `GamepadSource` | T | M5 | merged | `wp/w8-gamepad-source` | 2026-10-20 (merge of `e0d67ff`) |
 | W9 | `ArcadeStorage`, `ArcadeRomStore` | T | M6, M7 | merged | `wp/w9-storage` | 2026-10-20 (merge of `aefb07c`) |
 | W10 | `RomSetAudit`, `arcade-audit-roms` | T | M7 | merged | `wp/w10-romset-audit` | 2026-10-20 (merge of `5859c88`) |
 | W11 | `ArcadePlayer` | T | M1–M4 | ready (after W4) | `wp/w11-arcade-player` | |
@@ -74,6 +74,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 
 Newest first. One line per merge, milestone close, or contract amendment.
 
+- 2026-10-20 — W8 merged: `GamepadSource`; §10.4 clarified that pause release is the player's job.
 - 2026-10-20 — W9 merged: `ArcadeStorage`, `ArcadeRomStore`; §10.7 snippet amended to show injected dependencies.
 - 2026-10-20 — W6 merged: `ArcadeAudio`. W8 started.
 - 2026-10-20 — Integration fix: browser test pages now use the shared `tests/support/TestPageServer.ts`, which resolves `fflate` for pages that import the root index (W10 exposed the gap).
