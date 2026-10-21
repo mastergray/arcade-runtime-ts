@@ -62,9 +62,9 @@ Status values: `todo`, `ready` (brief written, can be started),
 | W13b | Harness: cabinet page | T | M7 | todo | | |
 | W14a | Family `cps2` | N | M2 | merged (F4–F6 pending private set) | `wp/w14a-cps2` | 2026-10-20 (merge of `d0c0c05`) |
 | W14b | Family `namco-classic` | N | M2 | merged (F4–F6 pending private set) | `wp/w14b-namco-classic` | 2026-10-20 (merge of `5653b31`) |
-| W14c | Family `namco-s1` | N | M2 | in progress | `wp/w14c-namco-s1` | |
+| W14c | Family `namco-s1` | N | M2 | merged (F4–F6 pending private set) | `wp/w14c-namco-s1` | 2026-10-20 (merge of `a2c9046`) |
 | W14d | Family `namco-s2` | N | M2 | in progress | `wp/w14d-namco-s2` | |
-| W14e | Family `taito-classic` | N | M2 | ready | `wp/w14e-taito-classic` | |
+| W14e | Family `taito-classic` | N | M2 | in progress | `wp/w14e-taito-classic` | |
 | W14f | Family `taito-16` | N | M2 | ready | `wp/w14f-taito-16` | |
 | W15 | Saves bridge (memcard, EEPROM, F8) | N | M6 | todo | | |
 | W16 | BIOS and DIP switches | N+T | M8 | todo | | |
@@ -74,6 +74,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 
 Newest first. One line per merge, milestone close, or contract amendment.
 
+- 2026-10-20 — W14c merged: `namco-s1` family (47 machines, 5.0 MB wasm, no target corrections). W14e started.
 - 2026-10-20 — W11 merged: `ArcadePlayer`; its production case exposed and fixed BIOS-option audit handling and the 1.38 thenable-Module hang. W13a, W14c, W14d started.
 - 2026-10-20 — W14b merged: `namco-classic` family (378 machines, 7.4 MB wasm); galaxian.c adds 85 KiB Brotli so `galaxian-misc` stays folded in.
 - 2026-10-20 — W14a merged: `cps2` family (293 machines, 6.1 MB wasm, 137 s clean build); §4.6 row corrected for the CPS-1 unit coupling.
