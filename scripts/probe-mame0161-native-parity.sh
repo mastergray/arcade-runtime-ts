@@ -84,7 +84,7 @@ apply_unless_marked() {
     local marker_file="$2"
     local marker="$3"
     if ! grep -Fq "${marker}" "${source_dir}/${marker_file}"; then
-        apply_source_patch "${project_root}/mame/patches/${patch_name}"
+        apply_source_patch "${project_root}/mame/probes/patches/${patch_name}"
     fi
 }
 
@@ -109,7 +109,7 @@ if ! grep -Fq 'probe_parity_frame' "${source_dir}/src/emu/video.c" \
         "${source_dir}/src/osd/osdmini/osdmini.h" \
     || ! grep -Fq 'm_samples = samples == NULL ? NULL : samples->base();' \
         "${source_dir}/src/mame/audio/m72.c"; then
-    apply_source_patch "${project_root}/mame/patches/0010-native-browser-parity-probe.patch"
+    apply_source_patch "${project_root}/mame/probes/patches/0010-native-browser-parity-probe.patch"
 fi
 apply_unless_marked 0005-emscripten-disable-mongoose.patch \
     src/emu/webengine.c 'void web_engine::push_message(const char *message) { (void)message; }'

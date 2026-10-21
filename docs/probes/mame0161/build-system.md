@@ -63,7 +63,7 @@ audited pair before the remaining P3 size measurements are meaningful.
 
 ## Required compatibility patch
 
-[`0001-emscripten-1.38.31-compatibility.patch`](../../../mame/patches/0001-emscripten-1.38.31-compatibility.patch)
+[`0001-emscripten-1.38.31-compatibility.patch`](../../../mame/probes/patches/0001-emscripten-1.38.31-compatibility.patch)
 contains the pinned-toolchain compatibility changes. It:
 
 - removes hard-coded legacy system include paths that override 1.38.31's
@@ -79,7 +79,7 @@ contains the pinned-toolchain compatibility changes. It:
   its explicit allocation paths untracked. This prevents Fastcomp from mixing
   inline tracked deletes with libc++ allocations.
 
-[`0005-emscripten-disable-mongoose.patch`](../../../mame/patches/0005-emscripten-disable-mongoose.patch)
+[`0005-emscripten-disable-mongoose.patch`](../../../mame/probes/patches/0005-emscripten-disable-mongoose.patch)
 then removes MAME's unused internal HTTP/WebSocket server from browser builds.
 It substitutes a no-op `web_engine`, omits the Mongoose archive from the asmjs
 link and leaves native builds unchanged. The browser runtime owns its own
@@ -94,12 +94,12 @@ The generated GNU Make project does not retain the stock post-build command,
 so the reproducible probe script performs the final `emcc` link explicitly.
 Real-game probe links also include Emscripten's `idbfs.js` library for the P8
 persistence round trip. The game-only
-[`0006-emscripten-persistence-probe.patch`](../../../mame/patches/0006-emscripten-persistence-probe.patch)
+[`0006-emscripten-persistence-probe.patch`](../../../mame/probes/patches/0006-emscripten-persistence-probe.patch)
 is applied after the P7 bridge-hook layer and removed before ROM-free list or
 family builds.
 
 The game-only
-[`0007-emscripten-video-probe.patch`](../../../mame/patches/0007-emscripten-video-probe.patch)
+[`0007-emscripten-video-probe.patch`](../../../mame/probes/patches/0007-emscripten-video-probe.patch)
 is then applied for P9. Because the P8 and P9 probe patches use minimal
 context to keep the tracked patch artifacts whitespace-clean, the build script
 checks their unique declarations before applying them; consecutive builds do

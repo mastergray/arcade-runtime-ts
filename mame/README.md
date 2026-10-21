@@ -5,9 +5,10 @@ pins the initial source release to `mame0161` so it can be compared with the
 source-built native baseline.
 
 M0 records the exact source identity, licence files, compatible Emscripten SDK,
-build commands and required patches here. `EMSDK_VERSION` pins the first SDK
-that completed a clean `tiny` WebAssembly build and browser smoke run. The
-ordered files in `patches/` adapt the pinned source without vendoring it.
+build commands and required probe patches here. `EMSDK_VERSION` pins the first
+SDK that completed a clean `tiny` WebAssembly build and browser smoke run. The
+inherited diagnostic files in `probes/patches/` adapt the pinned source only
+for probes; `patches/` is reserved for the production bridge.
 
 The reproducible smoke command is:
 

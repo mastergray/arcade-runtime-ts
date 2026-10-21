@@ -30,7 +30,7 @@ can occupy the browser main thread until emulated and real time agree.
 
 ## Reproducible probe
 
-[`0003-emscripten-pacing-probe.patch`](../../../mame/patches/0003-emscripten-pacing-probe.patch)
+[`0003-emscripten-pacing-probe.patch`](../../../mame/probes/patches/0003-emscripten-pacing-probe.patch)
 wraps the unchanged stock callback with observational telemetry:
 
 - scheduler time and advance;
