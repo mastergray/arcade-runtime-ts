@@ -54,8 +54,8 @@ Status values: `todo`, `ready` (brief written, can be started),
 | W6 | `ArcadeAudio` | T | M3 | in progress | `wp/w6-arcade-audio` | |
 | W7 | `ArcadeInput`, `KeyboardSource`, controller config | T | M4 | merged | `wp/w7-arcade-input` | 2026-10-20 (merge of `6cecda2`) |
 | W8 | `GamepadSource` | T | M5 | ready | `wp/w8-gamepad-source` | |
-| W9 | `ArcadeStorage`, `ArcadeRomStore` | T | M6, M7 | ready | `wp/w9-storage` | |
-| W10 | `RomSetAudit`, `arcade-audit-roms` | T | M7 | in progress | `wp/w10-romset-audit` | |
+| W9 | `ArcadeStorage`, `ArcadeRomStore` | T | M6, M7 | in progress | `wp/w9-storage` | |
+| W10 | `RomSetAudit`, `arcade-audit-roms` | T | M7 | merged | `wp/w10-romset-audit` | 2026-10-20 (merge of `5859c88`) |
 | W11 | `ArcadePlayer` | T | M1–M4 | todo | | |
 | W12 | `ArcadeCabinet` | T | M7 | todo | | |
 | W13a | Harness: minimal preload page | T | M1 | todo | | |
@@ -74,6 +74,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 
 Newest first. One line per merge, milestone close, or contract amendment.
 
+- 2026-10-20 — W10 merged: `RomSetAudit`, `arcade-audit-roms`; §10.5 amended with `problems` and metadata shapes. W9 started.
 - 2026-10-20 — W7 merged: `ArcadeInput`, `KeyboardSource`, `DEFAULT_KEYBOARD_MAP`, internal controller-config generator. W6 started.
 - 2026-10-20 — W1 merged: probe patches relocated, neogeo/cps1/irem-m72 target pairs with complete lists, family-pair build mode; integrator follow-up repointed inherited tests and moved probe pre-JS. W3 started.
 - 2026-10-20 — §4.3.1 contract amendment: JavaScript-facing module shape pinned for W3 and W4; W3 brief written.
