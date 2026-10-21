@@ -6,6 +6,7 @@
 // Classes:
 export { default as ArcadeRuntimeError } from "./ArcadeRuntimeError/ArcadeRuntimeError.js";   // Base typed error and code registry
 export { default as ArcadeDisplay } from "./ArcadeDisplay/ArcadeDisplay.js";                 // Canvas sizing, drawing, placeholder and fullscreen
+export { default as ArcadeAudio } from "./ArcadeAudio/ArcadeAudio.js";                       // Stereo Web Audio playback, gesture unlock and bounded latency
 export { default as ArcadeInput } from "./ArcadeInput/ArcadeInput.js";                       // Channelled, reference-counted control holds
 export { DEFAULT_KEYBOARD_MAP, default as KeyboardSource } from "./KeyboardSource/KeyboardSource.js";   // Physical keyboard to ArcadeInput
 export { default as RomSetAudit } from "./RomSetAudit/RomSetAudit.js";                       // Pre-start audit of user zips against romsets metadata
@@ -111,6 +112,14 @@ export {
     type ResizeObserverConstructorLike,                            // Injected ResizeObserver constructor
     type ResizeObserverLike,                                       // Observer the display drives
 } from "./ArcadeDisplay/types.js";
+export {
+    isArcadeAudioConfig,                                           // Guard for ArcadeAudioConfig
+    isAudioContextLike,                                            // Guard for the injected Web Audio context
+    isGestureSourceLike,                                           // Guard for the gesture listener target
+    type ArcadeAudioConfig,                                        // ArcadeAudio construction config
+    type AudioContextLike,                                         // Injected Web Audio context subset
+    type GestureSourceLike,                                        // Gesture listener target subset
+} from "./ArcadeAudio/types.js";
 export {
     isArcadeInputChannel,                                          // Guard for ArcadeInputChannel
     isArcadeInputConfig,                                           // Guard for ArcadeInputConfig
