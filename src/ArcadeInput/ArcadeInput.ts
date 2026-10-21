@@ -49,7 +49,7 @@ interface HeldControl {
 export default class ArcadeInput {
 
     /* Static Fields */
-    static readonly DEFAULT_HOLD_FRAMES = 3;                       // Tap duration when the caller omits it
+    private static readonly DEFAULT_HOLD_FRAMES = 3;               // Tap duration when the caller omits it
 
     /* Instance Fields */
     private readonly _session: ArcadeSession;                      // Session receiving first presses and last releases
