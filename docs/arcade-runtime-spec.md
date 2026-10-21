@@ -635,13 +635,51 @@ pinned runtime does not call `Module.onExit` after an early frontend return
 ### 4.4 Generated controller config
 
 At start, the adapter writes `/mame/ctrlr/web.cfg` mapping each MAME port to
-the web devices (`P1_JOYSTICK_UP` → Web Pad 1 up, `P1_BUTTON1` → Web Pad 1
-button 1, `COIN1`, `START1`, `SELECT1`, `SERVICE`, `TEST`, `TILT`, …) and
-starts MAME with `-ctrlr web`. Keyboard defaults and the MAME UI are never in
-the input path. Probe F10 records how each family names its ports (for
-example two-player alternating boards that share one physical stick, and
-Neo Geo AES `SELECT`) so the generator covers every family without
-per-machine code.
+the web devices and starts MAME with `-ctrlr web`. Keyboard defaults and
+the MAME UI are never in the input path. Probe F10 records how each family
+names its ports (for example two-player alternating boards that share one
+physical stick, and Neo Geo AES `SELECT`) so the generator covers every
+family without per-machine code.
+
+The file is the 0.161 controller-config shape (`config.c`, `ioport.c`):
+
+```xml
+<?xml version="1.0"?>
+<mameconfig version="10">
+    <system name="default">
+        <input>
+            <port type="P1_JOYSTICK_UP"><newseq type="standard">JOYCODE_1_HAT1UP</newseq></port>
+            <port type="COIN1"><newseq type="standard">JOYCODE_1_BUTTON7</newseq></port>
+            …
+        </input>
+    </system>
+</mameconfig>
+```
+
+The token vocabulary below is a **cross-lane contract**: the web input
+module (W3) registers exactly these items on each pad, and the generator
+(W7) emits exactly these tokens. Web Pad *n* is joystick device index
+*n − 1*, so its codes print as `JOYCODE_n_…` (`code_to_token` adds one).
+Every item is digital; directions use the hat-switch item ids so no axis
+emulation is needed.
+
+| `ArcadeControl` | MAME port token (player *n*) | Web Pad *n* item | Joystick code |
+| --------------- | ---------------------------- | ---------------- | ------------- |
+| direction up/down/left/right | `Pn_JOYSTICK_UP` / `_DOWN` / `_LEFT` / `_RIGHT` | `ITEM_ID_HAT1UP` / `HAT1DOWN` / `HAT1LEFT` / `HAT1RIGHT` | `JOYCODE_n_HAT1UP` … |
+| button 1–6 | `Pn_BUTTON1` … `Pn_BUTTON6` | `ITEM_ID_BUTTON1` … `BUTTON6` | `JOYCODE_n_BUTTON1` … |
+| coin | `COINn` | `ITEM_ID_BUTTON7` | `JOYCODE_n_BUTTON7` |
+| start | `STARTn` | `ITEM_ID_BUTTON8` | `JOYCODE_n_BUTTON8` |
+| select | `Pn_SELECT` | `ITEM_ID_BUTTON9` | `JOYCODE_n_BUTTON9` |
+| service (pad 1 only) | `SERVICE1` (the service button, default key 9) | `ITEM_ID_BUTTON10` | `JOYCODE_1_BUTTON10` |
+| test (pad 1 only) | `SERVICE` (the service-mode toggle, default key F2) | `ITEM_ID_BUTTON11` | `JOYCODE_1_BUTTON11` |
+| tilt (pad 1 only) | `TILT` and `TILT1` | `ITEM_ID_BUTTON12` | `JOYCODE_1_BUTTON12` |
+
+In 0.161 `SERVICE` is the test-mode toggle and `SERVICE1` the service button, so the two are distinct ports, not aliases. Where the table lists two port tokens, the generator emits both lines;
+0.161 ignores a `port type` it cannot resolve for the running machine, so
+the extra line is harmless and covers drivers that declare either form.
+The generator emits ports for players 1 through the requested count only,
+and omits `Pn_SELECT` lines unless the machine reports a select port
+(F10). Analog items (M11) extend this table rather than replacing it.
 
 ### 4.5 Start options
 
