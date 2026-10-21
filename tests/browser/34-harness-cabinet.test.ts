@@ -25,6 +25,8 @@ interface SyntheticResult {
     readonly pickedVisible: boolean;
     readonly storedVisible: boolean;
     readonly auditRolesVisible: boolean;
+    readonly overlayChoiceVisible: boolean;
+    readonly explicitRetry: boolean;
     readonly running: boolean;
     readonly firstFrame: boolean;
     readonly resolvedFromStore: boolean;
@@ -48,6 +50,8 @@ interface SyntheticBrowserState {
     pickedVisible?: boolean;
     storedVisible?: boolean;
     auditRolesVisible?: boolean;
+    overlayChoiceVisible?: boolean;
+    startChanges?: boolean[];
     running?: boolean;
     removedOne?: boolean;
     startedRoms?: ReadonlyArray<{ readonly name: string; readonly byteLength: number }>;
@@ -71,7 +75,14 @@ const TIMEOUT = 90_000;
 const SCRIPTED_ADAPTER = `
 (() => {
     const browser = window;
-    browser.__arcadeHarnessSynthetic = {};
+    browser.__arcadeHarnessSynthetic = { startChanges: [] };
+    let RuntimeError;
+    import("/src/index.js").then(async (runtime) => {
+        RuntimeError = runtime.ArcadeRuntimeError;
+        const storage = runtime.ArcadeStorage.init({ key: "example-family/example_machine" });
+        await storage.save(new Uint8Array([9, 8, 7]));
+        browser.__arcadeHarnessAdapterReady = true;
+    });
     browser.__arcadeHarnessAdapter = {
         type: "scripted-harness",
         buildUrl: "/mame/example-family/",
@@ -90,6 +101,14 @@ const SCRIPTED_ADAPTER = `
             pthreads: false
         },
         start: async (config) => {
+            browser.__arcadeHarnessSynthetic.startChanges.push(config.changes !== undefined);
+            if (config.changes !== undefined) {
+                throw new RuntimeError({
+                    code: RuntimeError.CODE.OVERLAY_INCOMPATIBLE,
+                    message: "Synthetic overlay is incompatible.",
+                    data: null
+                });
+            }
             browser.__arcadeHarnessSynthetic.startedRoms = config.roms.map((rom) => ({ name: rom.name, byteLength: rom.bytes.length }));
             const tick = new Set();
             const frame = new Set();
@@ -244,6 +263,7 @@ const cases: TestCase[] = [
             .interact("install a scripted public adapter and pick two generated zips", async ({ page }) => {
                 await page.waitForFunction(() => document.querySelector<HTMLElement>("#status")?.dataset.state === "no-preload");
                 await page.addScriptTag({ content: SCRIPTED_ADAPTER });
+                await page.waitForFunction(() => (window as unknown as { __arcadeHarnessAdapterReady?: boolean }).__arcadeHarnessAdapterReady === true);
                 await page.locator("#machine").fill(MACHINE);
                 await page.locator("#rom-picker").setInputFiles([
                     { name: GAME_ARCHIVE, mimeType: "application/zip", buffer: Buffer.from(gameArchive) },
@@ -269,8 +289,14 @@ const cases: TestCase[] = [
                         && audit.includes("parent  example_parent.zip");
                 });
             })
-            .interact("start, observe a frame, remove one archive and clear the store", async ({ page }) => {
+            .interact("choose incompatible-save recovery, start, observe a frame, remove one archive and clear the store", async ({ page }) => {
                 await page.locator("#start").click();
+                await page.waitForFunction(() => document.querySelector<HTMLElement>("#status")?.dataset.state === "overlay-incompatible"
+                    && document.querySelector<HTMLButtonElement>("#clear-saves-retry")?.hidden === false);
+                await page.evaluate(() => {
+                    (window as unknown as Window & { __arcadeHarnessSynthetic: SyntheticBrowserState }).__arcadeHarnessSynthetic.overlayChoiceVisible = true;
+                });
+                await page.locator("#clear-saves-retry").click();
                 await page.waitForFunction(() => document.querySelector<HTMLElement>("#status")?.dataset.state === "running"
                     && (document.querySelector<HTMLCanvasElement>("#canvas")?.width ?? 0) > 0);
                 await page.evaluate(() => {
@@ -293,6 +319,8 @@ const cases: TestCase[] = [
                     pickedVisible: state.pickedVisible === true,
                     storedVisible: state.storedVisible === true,
                     auditRolesVisible: state.auditRolesVisible === true,
+                    overlayChoiceVisible: state.overlayChoiceVisible === true,
+                    explicitRetry: state.startChanges?.length === 2 && state.startChanges[0] === true && state.startChanges[1] === false,
                     running: state.running === true,
                     firstFrame: canvas?.width === 2 && canvas.height === 2,
                     resolvedFromStore: state.startedRoms?.length === 2 && state.startedRoms.every((rom) => rom.byteLength > 0),
@@ -303,6 +331,8 @@ const cases: TestCase[] = [
                 pickedVisible: true,
                 storedVisible: true,
                 auditRolesVisible: true,
+                overlayChoiceVisible: true,
+                explicitRetry: true,
                 running: true,
                 firstFrame: true,
                 resolvedFromStore: true,

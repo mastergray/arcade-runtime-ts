@@ -97,6 +97,7 @@ const loadStateButton = element<HTMLButtonElement>("#load-state");
 const persistButton = element<HTMLButtonElement>("#persist");
 const clearSavesButton = element<HTMLButtonElement>("#clear-saves");
 const clearSavesRetryButton = element<HTMLButtonElement>("#clear-saves-retry");
+const cornerMenu = element<HTMLDetailsElement>("#corner-menu");
 const keyboardEnabledInput = element<HTMLInputElement>("#keyboard-enabled");
 const gamepadsEnabledInput = element<HTMLInputElement>("#gamepads-enabled");
 const gamepadsLine = element<HTMLParagraphElement>("#gamepads");
@@ -447,6 +448,7 @@ const startSelected = async (): Promise<void> => {
         } catch (error) {
             if (ArcadeRuntimeError.is(error) && error.code === ArcadeRuntimeError.CODE.OVERLAY_INCOMPATIBLE) {
                 clearSavesRetryButton.hidden = false;
+                cornerMenu.open = true;
                 setStatus("Stored saves are incompatible. Clear saves and retry only if you choose to.", "overlay-incompatible");
                 log("Start stopped because the stored overlay is incompatible; no saves were cleared.");
             } else {
