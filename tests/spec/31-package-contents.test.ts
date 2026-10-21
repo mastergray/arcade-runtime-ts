@@ -44,6 +44,7 @@ interface PackageInspection {
     readonly files: ReadonlyArray<string>;
     readonly manifest: PackageManifest;
     readonly binStatus: number | null;
+    readonly binShebang: boolean;
     readonly binStdout: string;
     readonly binStderr: string;
 }
@@ -201,7 +202,7 @@ const inspectPackage = async (): Promise<PackageInspection> => {
         if (!binPath.startsWith(`${packageRoot}/`) || !existsSync(binPath)) throw new Error(`Packed bin target is missing or escapes the package: ${binTarget}`);
 
         const synthetic = writeSyntheticRomset(temporary);
-        const bin = spawnSync(binPath, ["--json", synthetic.romsets, SYNTHETIC_MACHINE, synthetic.archive], {
+        const bin = spawnSync(process.execPath, ["--import", "tsx", binPath, "--json", synthetic.romsets, SYNTHETIC_MACHINE, synthetic.archive], {
             cwd: packageRoot,
             env: process.env,
             encoding: "utf8",
@@ -211,6 +212,7 @@ const inspectPackage = async (): Promise<PackageInspection> => {
             files: result.files.map((file) => file.path).sort((a, b) => a.localeCompare(b)),
             manifest: packedManifest,
             binStatus: bin.status,
+            binShebang: readFileSync(binPath, "utf8").startsWith("#!/usr/bin/env -S node --import tsx"),
             binStdout: bin.stdout.trim(),
             binStderr: bin.stderr.trim(),
         };
@@ -261,15 +263,17 @@ const testFile: TestFile = {
                         private: state.subject.manifest.private,
                         bin: state.subject.manifest.bin?.[BIN_NAME],
                         tsxRuntime: typeof state.subject.manifest.dependencies?.tsx === "string",
+                        shebang: state.subject.binShebang,
                         status: state.subject.binStatus,
                         stderr: state.subject.binStderr,
                         verdict: report?.status,
                     };
-                }, P.equals<{ version: string | undefined; private: boolean | undefined; bin: string | undefined; tsxRuntime: boolean; status: number | null; stderr: string; verdict: unknown }>({
+                }, P.equals<{ version: string | undefined; private: boolean | undefined; bin: string | undefined; tsxRuntime: boolean; shebang: boolean; status: number | null; stderr: string; verdict: unknown }>({
                     version: "1.0.0",
                     private: undefined,
                     bin: "./scripts/audit-roms.ts",
                     tsxRuntime: true,
+                    shebang: true,
                     status: 0,
                     stderr: "",
                     verdict: "ok",
