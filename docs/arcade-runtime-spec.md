@@ -469,7 +469,7 @@ Sample-set zips (§4.6, Namco classics) are ordinary `RomFile`s; the adapter
 places them under the sample path by their role in the audit metadata.
 
 Each type has a structural predicate (`isArcadeControl`, `isMachineInfo`,
-`isArcadeSession`, …) tested in `spec/01-shared-types.test.ts`: one passing
+`isArcadeSession`, …) tested in `spec/10-shared-types.test.ts`: one passing
 input, then one input per violated condition.
 
 ### 2.4 Save-overlay wire format
@@ -857,7 +857,7 @@ class ArcadeInput {
 - `releaseAll` on blur, visibility loss, pause and destroy, as in the DOS
   runtime.
 
-Tests (`spec/03-arcade-input.test.ts`) against `FakeArcadeSession`:
+Tests (`spec/13-arcade-input.test.ts`) against `FakeArcadeSession`:
 per-channel idempotency and reference counting, channel destruction, `tap`
 timing driven by fake frames, cross-channel SOCD, `releaseAll` order,
 `DESTROYED`.
@@ -1523,7 +1523,7 @@ cut and landed.
    integrator adds it at merge time. Two packages never own the same path.
 3. **Doubles over dependencies.** A package above the adapter is developed
    and tested against the W0 doubles (`FakeArcadeSession`,
-   `FakeArcadeAdapter`, `FakeModuleFactory`), never against another
+   `FakeArcadeAdapter`, `FakeModuleLoader`, `FakeTimer`, `FakeFrameScheduler`), never against another
    package's branch. A package that composes others (`ArcadePlayer`,
    `ArcadeCabinet`) starts only when the packages it composes have merged.
 4. **Lanes follow toolchains.** Work that needs emsdk and the MAME source
