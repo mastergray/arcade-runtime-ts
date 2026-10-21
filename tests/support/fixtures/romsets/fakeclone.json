@@ -1,0 +1,69 @@
+{
+  "machine": "fakeclone",
+  "family": "fake-family",
+  "description": "Synthetic Clone Machine",
+  "cloneof": "fakegame",
+  "romof": "fakegame",
+  "bios": [
+    "fakebios"
+  ],
+  "sampleof": "fakesamples",
+  "archives": [
+    {
+      "name": "fakeclone.zip",
+      "role": "game"
+    },
+    {
+      "name": "fakegame.zip",
+      "role": "parent"
+    },
+    {
+      "name": "fakebios.zip",
+      "role": "bios"
+    },
+    {
+      "name": "fakesamples.zip",
+      "role": "samples"
+    }
+  ],
+  "roms": [
+    {
+      "name": "clone.bin",
+      "size": 16,
+      "crc": "00000000",
+      "sha1": "1111111111111111111111111111111111111111",
+      "archive": "fakeclone.zip",
+      "optional": false
+    },
+    {
+      "name": "optional.bin",
+      "size": 8,
+      "crc": "00000000",
+      "sha1": "2222222222222222222222222222222222222222",
+      "archive": "fakeclone.zip",
+      "optional": true
+    },
+    {
+      "name": "parent.bin",
+      "size": 24,
+      "crc": "00000000",
+      "sha1": "3333333333333333333333333333333333333333",
+      "archive": "fakegame.zip",
+      "optional": false
+    },
+    {
+      "name": "bios.bin",
+      "size": 12,
+      "crc": "00000000",
+      "sha1": "4444444444444444444444444444444444444444",
+      "archive": "fakebios.zip",
+      "optional": false
+    }
+  ],
+  "samples": [
+    {
+      "name": "voice.wav",
+      "archive": "fakesamples.zip"
+    }
+  ]
+}
