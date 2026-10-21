@@ -46,6 +46,16 @@ export interface RomSetMetadata {
         readonly device?: NonEmptyString | null;                    // Device short name when this is a device ROM; also accepted from the game archive
     }>;
     readonly defaultBios?: NonEmptyString | null;                    // Option selected when a start config names none
+    readonly dipswitches?: ReadonlyArray<{
+        readonly name: NonEmptyString;                               // Unique human-readable selection key
+        readonly tag: NonEmptyString;                                // -listxml input-port tag (without cfg's root colon)
+        readonly mask: number;                                       // Unsigned 32-bit field mask
+        readonly values: ReadonlyArray<{
+            readonly name: NonEmptyString;                           // Human-readable setting key
+            readonly value: number;                                 // Unsigned 32-bit value contained by mask
+            readonly default: boolean;                              // Exactly one setting per switch
+        }>;
+    }>;                                                             // Optional for metadata generated before M8
     readonly samples: ReadonlyArray<{
         readonly name: NonEmptyString;                              // Sample entry name inside archive
         readonly archive: RomName;                                  // Optional sample archive containing it
@@ -87,6 +97,7 @@ export interface RomSetReport {
 const CRC_PATTERN = /^[0-9a-f]{8}$/;                               // Canonical CRC32 text
 const SHA1_PATTERN = /^[0-9a-f]{40}$/;                             // Canonical SHA-1 text
 const FILE_STATUSES = ["ok", "missing", "wrong-size", "wrong-crc", "optional-missing"] as const;
+const MAX_IOPORT_VALUE = 0xffff_ffff;                             // ioport_value is UINT32 in pinned MAME
 
 /**
  *
@@ -129,6 +140,27 @@ const isMetadataRom = (value: unknown): value is RomSetMetadata["roms"][number] 
 const isMetadataSample = (value: unknown): value is RomSetMetadata["samples"][number] => isObject(value)
     && isNonEmptyString(value.name)
     && isRomName(value.archive);
+
+// PREDICATE :: UNKNOWN -> BOOLEAN
+// True when value is one named DIP setting contained by its field mask.
+const isDipValue = (value: unknown, mask: number): value is NonNullable<RomSetMetadata["dipswitches"]>[number]["values"][number] => isObject(value)
+    && isNonEmptyString(value.name)
+    && typeof value.value === "number" && Number.isInteger(value.value) && value.value >= 0 && value.value <= MAX_IOPORT_VALUE
+    && (BigInt(value.value) & BigInt(mask)) === BigInt(value.value)
+    && typeof value.default === "boolean";
+
+// PREDICATE :: UNKNOWN -> BOOLEAN
+// True when value is one DIP field with exactly one default setting.
+const isDipSwitch = (value: unknown): value is NonNullable<RomSetMetadata["dipswitches"]>[number] => {
+    if (!isObject(value)
+        || !isNonEmptyString(value.name)
+        || !isNonEmptyString(value.tag)
+        || typeof value.mask !== "number" || !Number.isInteger(value.mask) || value.mask <= 0 || value.mask > MAX_IOPORT_VALUE
+        || !Array.isArray(value.values)
+        || !(value.values as unknown[]).every((setting) => isDipValue(setting, value.mask as number))) return false;
+    const values = value.values as NonNullable<RomSetMetadata["dipswitches"]>[number]["values"];
+    return values.filter((setting) => setting.default).length === 1;
+};
 
 // PREDICATE :: UNKNOWN -> BOOLEAN
 // True when value is one archive row in a report.
@@ -175,6 +207,7 @@ export function isRomSetMetadata(value: unknown): value is RomSetMetadata {
         || !(value.romof === null || isNonEmptyString(value.romof))
         || !(value.sampleof === null || isNonEmptyString(value.sampleof))
         || !(value.defaultBios === undefined || value.defaultBios === null || isNonEmptyString(value.defaultBios))
+        || !(value.dipswitches === undefined || isArrayOf(value.dipswitches, isDipSwitch))
         || !isArrayOf(value.archives, isMetadataArchive)
         || !isArrayOf(value.roms, isMetadataRom)
         || !isArrayOf(value.samples, isMetadataSample)) return false;
@@ -183,7 +216,10 @@ export function isRomSetMetadata(value: unknown): value is RomSetMetadata {
     const archives = value.archives as RomSetMetadata["archives"];
     const roms = value.roms as RomSetMetadata["roms"];
     const samples = value.samples as RomSetMetadata["samples"];
-    if (!uniqueCaseFolded(bios) || !uniqueCaseFolded(archives.map((archive) => archive.name))) return false;
+    const dipswitches = (value.dipswitches ?? []) as NonNullable<RomSetMetadata["dipswitches"]>;
+    if (!uniqueCaseFolded(bios)
+        || !uniqueCaseFolded(archives.map((archive) => archive.name))
+        || !uniqueCaseFolded(dipswitches.map((dipswitch) => dipswitch.name))) return false;
 
     const roles = new Map(archives.map((archive) => [romNameKey(archive.name), archive.role]));
     return roms.every((rom) => {

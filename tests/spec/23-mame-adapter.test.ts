@@ -7,6 +7,7 @@ import MameEmulatorAdapter, { MAME_FIXED_ARGUMENTS } from "../../src/MameEmulato
 import OverlayCodec, { type OverlayHeader } from "../../src/MameEmulatorAdapter/OverlayCodec.ts";   // Persisted overlay inspection
 import { isMameEmulatorAdapterConfig, isMameEmulatorAdapterInitConfig } from "../../src/MameEmulatorAdapter/types.ts";
 import controllerConfigFor from "../../src/ControllerConfig/controllerConfigFor.ts";   // Exact expected web.cfg
+import dipConfigFor from "../../src/DipConfig/dipConfigFor.ts";   // Exact expected machine cfg
 import FakeFrameScheduler from "../support/FakeFrameScheduler.ts"; // Deterministic 60/120 Hz host ticks
 import FakeModuleLoader from "../support/FakeModuleLoader.ts";     // Required W0 loader double
 import { errorSnapshot, rejectedBy, thrownBy, validBuildInfo, validMachineInfo, type ErrorSnapshot } from "../support/fixtures.ts";
@@ -184,6 +185,15 @@ const metadata = (): RomSetMetadata => ({
         { name: "audio.zip", role: "samples" },
     ],
     roms: [{ name: "program.bin", size: 1_024, crc: "00000000", sha1: null, archive: "fake.zip", optional: true }],
+    dipswitches: [{
+        name: "Difficulty",
+        tag: "DSWA",
+        mask: 3,
+        values: [
+            { name: "Easy", value: 3, default: true },
+            { name: "Medium", value: 0, default: false },
+        ],
+    }],
     samples: [{ name: "voice.wav", archive: "audio.zip" }],
 });
 
@@ -339,6 +349,79 @@ const testFile: TestFile = {
                     copied: true,
                     controller: controllerConfigFor({ players: 2, select: false }),
                     argv: ["fake", ...MAME_FIXED_ARGUMENTS.map((value, index, all) => all[index - 1] === "-samplerate" ? "44100" : value), "-bios", "default", "-frameskip", "2"],
+                }))
+                .start(undefined),
+        },
+        {
+            label: "DIP selections overwrite restored machine cfg before callMain and remain excluded from persistence snapshots",
+            run: () => CTGTest.init("MAME DIP cfg")
+                .stage("start with a restored cfg and selected DIP", async () => {
+                    const module = new FakeMameModule();
+                    const setup = adapterWith(module, { fetch: metadataFetch() });
+                    const header: OverlayHeader = {
+                        format: "arcade-runtime-overlay", version: 1, adapter: "mame",
+                        engine: "fake-family", buildId: setup.adapter.build.buildId, machine: "fake",
+                    };
+                    const changes = OverlayCodec.encode({ "cfg/fake.cfg": new TextEncoder().encode("restored") }, header);
+                    const { session } = await startAndFrame(module, {
+                        adapter: setup.adapter,
+                        loader: setup.loader,
+                        scheduler: setup.scheduler,
+                        start: startConfig({ changes, dipswitches: { Difficulty: "Medium" } }),
+                    });
+                    const generated = new TextDecoder().decode(module.FS.files.get("/mame/cfg/fake.cfg"));
+                    const bootPersist = await session.persist();
+                    module.FS.writeFile("/mame/cfg/fake.cfg", new TextEncoder().encode("changed by MAME"));
+                    const generatedOnlyPersist = await session.persist();
+                    module.FS.writeFile("/mame/cfg/operator.cfg", new Uint8Array([7]));
+                    const withOperator = await session.persist();
+                    const tree = withOperator === null ? {} : OverlayCodec.decode(withOperator, header);
+                    return {
+                        generated,
+                        expected: dipConfigFor("fake", metadata().dipswitches, { Difficulty: "Medium" }),
+                        bootPersist,
+                        generatedOnlyPersist,
+                        persistedPaths: Object.keys(tree),
+                    };
+                })
+                .assert("generated cfg and dirty exclusions", (state) => state.subject, P.equals<unknown>({
+                    generated: dipConfigFor("fake", metadata().dipswitches, { Difficulty: "Medium" }),
+                    expected: dipConfigFor("fake", metadata().dipswitches, { Difficulty: "Medium" }),
+                    bootPersist: null,
+                    generatedOnlyPersist: null,
+                    persistedPaths: ["cfg/operator.cfg"],
+                }))
+                .start(undefined),
+        },
+        {
+            label: "unknown DIP names reject before module load and unreachable metadata rejects as UNSUPPORTED",
+            run: () => CTGTest.init("MAME DIP validation")
+                .stage("collect validation failures", async () => {
+                    const unknownSwitch = adapterWith(new FakeMameModule(), { fetch: metadataFetch() });
+                    const unknownSetting = adapterWith(new FakeMameModule(), { fetch: metadataFetch() });
+                    const unreachable = adapterWith(new FakeMameModule(), {
+                        fetch: async () => ({ ok: false, status: 404, arrayBuffer: async () => new ArrayBuffer(0) }),
+                    });
+                    const errors = await Promise.all([
+                        rejectedBy(unknownSwitch.adapter.start(startConfig({ dipswitches: { Cabinet: "Upright" } }))),
+                        rejectedBy(unknownSetting.adapter.start(startConfig({ dipswitches: { Difficulty: "Impossible" } }))),
+                        rejectedBy(unreachable.adapter.start(startConfig({ dipswitches: { Difficulty: "Medium" } }))),
+                    ]);
+                    return {
+                        errors: errors.map((error) => ({
+                            ...errorSnapshot(error, ArcadeRuntimeError),
+                            message: error instanceof Error ? error.message : "",
+                        })),
+                        loads: unknownSwitch.loader.loadCalls.length + unknownSetting.loader.loadCalls.length + unreachable.loader.loadCalls.length,
+                    };
+                })
+                .assert("typed pre-load failures", (state) => state.subject, P.equals<unknown>({
+                    errors: [
+                        { isRuntimeError: true, code: 1, label: "INVALID_CONFIG", message: "Unknown DIP switch \"Cabinet\"." },
+                        { isRuntimeError: true, code: 1, label: "INVALID_CONFIG", message: "Unknown setting \"Impossible\" for DIP switch \"Difficulty\"." },
+                        { isRuntimeError: true, code: 15, label: "UNSUPPORTED", message: "DIP switch names cannot be validated because the machine's romset metadata is unavailable." },
+                    ],
+                    loads: 0,
                 }))
                 .start(undefined),
         },

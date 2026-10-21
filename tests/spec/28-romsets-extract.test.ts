@@ -35,6 +35,14 @@ const LISTXML = `<?xml version="1.0"?>
 		<rom name="game-p1.rom" size="524288" crc="aaaaaaaa" sha1="${"a".repeat(40)}" region="maincpu" offset="0"/>
 		<rom name="game-v1.rom" size="1048576" crc="bbbbbbbb" sha1="${"b".repeat(40)}" region="ymsnd" offset="0"/>
 		<rom name="undumped.rom" size="1024" status="nodump" region="extra" offset="0"/>
+		<dipswitch name="Difficulty" tag="DSWA" mask="3">
+			<dipvalue name="Easy" value="3" default="yes"/>
+			<dipvalue name="Hard" value="1"/>
+		</dipswitch>
+		<dipswitch name="Lives" tag="DSWB" mask="192">
+			<dipvalue name="3" value="128" default="yes"/>
+			<dipvalue name="5" value="192"/>
+		</dipswitch>
 	</machine>
 	<machine name="fakeclone" sourcefile="fake.c" cloneof="fakegame" romof="fakegame">
 		<description>Fake Game &amp; Friends (Japan)</description>
@@ -70,7 +78,7 @@ const testFile: TestFile = {
     label: "romsets extraction",
     cases: [
         {
-            label: "parseListXml reads machines, attributes, bios sets, roms and samples and skips devices",
+            label: "parseListXml reads machines, attributes, BIOS sets, ROMs, samples and DIP switches",
             run: () => CTGTest.init("parse")
                 .stage("parse", () => parseListXml(LISTXML))
                 .assert("shape", (state) => ({
@@ -80,13 +88,18 @@ const testFile: TestFile = {
                     romCount: state.subject[1]?.roms.length,
                     samples: state.subject[3]?.samples,
                     nodump: state.subject[1]?.roms.find((rom) => rom.name === "undumped.rom")?.nodump,
-                }), P.equals<{ names: string[]; description: string | undefined; bios: ReadonlyArray<string> | undefined; romCount: number | undefined; samples: ReadonlyArray<string> | undefined; nodump: boolean | undefined }>({
+                    dipswitches: state.subject[1]?.dipswitches,
+                }), P.equals<{ names: string[]; description: string | undefined; bios: ReadonlyArray<string> | undefined; romCount: number | undefined; samples: ReadonlyArray<string> | undefined; nodump: boolean | undefined; dipswitches: unknown }>({
                     names: ["fakebios", "fakegame", "fakeclone", "fakeold", "fakedev", "fakemcu", "fakemcugame"],
                     description: "Fake Game & Friends (World)",
                     bios: ["euro", "japan"],
                     romCount: 5,
                     samples: ["boom", "zap"],
                     nodump: true,
+                    dipswitches: [
+                        { name: "Difficulty", tag: "DSWA", mask: 3, values: [{ name: "Easy", value: 3, default: true }, { name: "Hard", value: 1, default: false }] },
+                        { name: "Lives", tag: "DSWB", mask: 192, values: [{ name: "3", value: 128, default: true }, { name: "5", value: 192, default: false }] },
+                    ],
                 }))
                 .start(undefined),
         },
@@ -102,6 +115,22 @@ const testFile: TestFile = {
             run: () => CTGTest.init("validity")
                 .stage("convert", () => [...romsetsFromListXml("fake-family", LISTXML).values()])
                 .assert("all valid", (state) => state.subject.length === 5 && state.subject.every((metadata) => isRomSetMetadata(metadata) && metadata.family === "fake-family"), P.equals(true))
+                .start(undefined),
+        },
+        {
+            label: "converted metadata carries two validated DIP switches with their tags, masks, values and defaults",
+            run: () => CTGTest.init("DIP metadata")
+                .stage("convert", () => romsetsFromListXml("fake-family", LISTXML).get("fakegame")!)
+                .assert("DIP fields", (state) => ({
+                    valid: isRomSetMetadata(state.subject),
+                    dipswitches: state.subject.dipswitches,
+                }), P.equals<unknown>({
+                    valid: true,
+                    dipswitches: [
+                        { name: "Difficulty", tag: "DSWA", mask: 3, values: [{ name: "Easy", value: 3, default: true }, { name: "Hard", value: 1, default: false }] },
+                        { name: "Lives", tag: "DSWB", mask: 192, values: [{ name: "3", value: 128, default: true }, { name: "5", value: 192, default: false }] },
+                    ],
+                }))
                 .start(undefined),
         },
         {

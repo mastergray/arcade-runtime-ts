@@ -23,6 +23,7 @@ interface ListXmlMachine {
     readonly samples: ReadonlyArray<string>;                       // Sample names
     readonly isdevice: boolean;                                    // isdevice="yes": a device with its own ROM set
     readonly deviceRefs: ReadonlyArray<string>;                    // <device_ref name=…/> short names
+    readonly dipswitches: ReadonlyArray<ListXmlDipSwitch>;         // DIP fields and their named settings
 }
 
 // INTERFACE :: one <rom> element
@@ -35,6 +36,21 @@ interface ListXmlRom {
     readonly bios: string | null;                                  // BIOS option the ROM belongs to
     readonly nodump: boolean;                                      // status="nodump"
     readonly optional: boolean;                                    // optional="yes"
+}
+
+// INTERFACE :: one <dipswitch> element
+interface ListXmlDipSwitch {
+    readonly name: string;                                         // Human-readable field name
+    readonly tag: string;                                          // -listxml port tag without the root-device colon
+    readonly mask: number;                                         // ioport_value field mask
+    readonly values: ReadonlyArray<ListXmlDipValue>;               // Settings in driver declaration order
+}
+
+// INTERFACE :: one <dipvalue> child
+interface ListXmlDipValue {
+    readonly name: string;                                         // Human-readable setting name
+    readonly value: number;                                        // Masked ioport value
+    readonly default: boolean;                                     // Matches the field's default value
 }
 
 /**
@@ -50,6 +66,8 @@ const BIOSSET_PATTERN = /<biosset\b([^>]*)\/>/g;                      // Self-cl
 const ROM_PATTERN = /<rom\b([^>]*)\/>/g;                              // Self-closing rom
 const SAMPLE_PATTERN = /<sample\b([^>]*)\/>/g;                        // Self-closing sample
 const DEVICE_REF_PATTERN = /<device_ref\b([^>]*)\/>/g;                // Self-closing device reference
+const DIPSWITCH_PATTERN = /<dipswitch\b([^>]*)>([\s\S]*?)<\/dipswitch>/g;   // DIP field and child values
+const DIPVALUE_PATTERN = /<dipvalue\b([^>]*)\/>/g;                    // Self-closing DIP setting
 const NODUMP_CRC = "00000000";                                        // Placeholder CRC for undumped ROMs, always optional
 
 /**
@@ -106,6 +124,22 @@ export const parseListXml = (xml: string): ListXmlMachine[] => {
             samples: [...body.matchAll(SAMPLE_PATTERN)].map((sample) => attributesOf(sample[1]!).name ?? "").filter((name) => name !== ""),
             isdevice: attributes.isdevice === "yes",
             deviceRefs: [...new Set([...body.matchAll(DEVICE_REF_PATTERN)].map((ref) => attributesOf(ref[1]!).name ?? "").filter((name) => name !== ""))],
+            dipswitches: [...body.matchAll(DIPSWITCH_PATTERN)].map((dipswitch) => {
+                const a = attributesOf(dipswitch[1]!);
+                return {
+                    name: a.name ?? "",
+                    tag: a.tag ?? "",
+                    mask: Number.parseInt(a.mask ?? "0", 10),
+                    values: [...dipswitch[2]!.matchAll(DIPVALUE_PATTERN)].map((dipvalue) => {
+                        const setting = attributesOf(dipvalue[1]!);
+                        return {
+                            name: setting.name ?? "",
+                            value: Number.parseInt(setting.value ?? "0", 10),
+                            default: setting.default === "yes",
+                        };
+                    }).filter((setting) => setting.name !== ""),
+                };
+            }).filter((dipswitch) => dipswitch.name !== "" && dipswitch.tag !== ""),
         });
     }
     return machines;
@@ -138,6 +172,52 @@ const ancestorsOf = (machines: Map<string, ListXmlMachine>, machine: ListXmlMach
         current = current.romof === null ? undefined : machines.get(current.romof);
     }
     return chain;
+};
+
+// HELPER :: [listXmlDipSwitch] -> romSetMetadata.dipswitches
+// Makes the human selection keys unique and collapses condition-dependent duplicate numeric settings. Pinned
+// -listxml omits setting conditions, so repeated rows for one value carry no additional cfg information.
+const normalizedDipSwitches = (dipswitches: ReadonlyArray<ListXmlDipSwitch>): NonNullable<RomSetMetadata["dipswitches"]> => {
+    const switchCounts = new Map<string, number>();
+    for (const dipswitch of dipswitches) {
+        const key = dipswitch.name.toLowerCase();
+        switchCounts.set(key, (switchCounts.get(key) ?? 0) + 1);
+    }
+    const usedSwitchNames = new Set<string>();
+    return dipswitches.map((dipswitch) => {
+        const baseName = switchCounts.get(dipswitch.name.toLowerCase()) === 1
+            ? dipswitch.name
+            : `${dipswitch.name} (${dipswitch.tag} mask ${dipswitch.mask})`;
+        let name = baseName;
+        for (let ordinal = 2; usedSwitchNames.has(name.toLowerCase()); ordinal++) name = `${baseName} #${ordinal}`;
+        usedSwitchNames.add(name.toLowerCase());
+
+        const grouped = new Map<number, ListXmlDipValue[]>();
+        for (const setting of dipswitch.values) {
+            const group = grouped.get(setting.value) ?? [];
+            group.push(setting);
+            grouped.set(setting.value, group);
+        }
+        const collapsed = [...grouped.entries()].map(([value, settings]) => ({
+            name: settings[0]!.name,
+            value,
+            default: settings.some((setting) => setting.default),
+        }));
+        const settingCounts = new Map<string, number>();
+        for (const setting of collapsed) {
+            const key = setting.name.toLowerCase();
+            settingCounts.set(key, (settingCounts.get(key) ?? 0) + 1);
+        }
+        return {
+            name,
+            tag: dipswitch.tag,
+            mask: dipswitch.mask,
+            values: collapsed.map((setting) => ({
+                ...setting,
+                name: settingCounts.get(setting.name.toLowerCase()) === 1 ? setting.name : `${setting.name} (value ${setting.value})`,
+            })),
+        };
+    });
 };
 
 // HELPER :: STRING, [listXmlMachine] -> Map<STRING,romSetMetadata>
@@ -175,6 +255,7 @@ export const romsetsFromListXml = (family: string, xml: string): Map<string, Rom
             romof: machine.romof,
             bios: [...machine.biossets],
             defaultBios: machine.defaultBios,
+            dipswitches: normalizedDipSwitches(machine.dipswitches),
             sampleof: machine.sampleof,
             archives,
             roms: [
