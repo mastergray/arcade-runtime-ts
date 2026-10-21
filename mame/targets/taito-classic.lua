@@ -23,6 +23,8 @@ SOUNDS["MSM5205"] = true
 SOUNDS["MSM5232"] = true
 SOUNDS["SN76496"] = true
 
+VIDEOS["BUFSPRITE"] = true
+
 MACHINES["BANKDEV"] = true
 
 -- The release-era generated project always archives the bus library, and its
