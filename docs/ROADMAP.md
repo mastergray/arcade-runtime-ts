@@ -46,9 +46,9 @@ Status values: `todo`, `ready` (brief written, can be started),
 | ID | Package | Lane | Milestone | Status | Branch | Merged |
 | -- | ------- | :--: | --------- | ------ | ------ | ------ |
 | W0 | Contracts and doubles | T | M1 | merged | (integrator, on `main`) | 2026-10-20 `327a7a5` |
-| W1 | Patch relocation and family target pairs | N | M1 | in progress | `wp/w1-targets` | |
+| W1 | Patch relocation and family target pairs | N | M1 | merged | `wp/w1-targets` | 2026-10-20 (merge of `7f99a0d`) |
 | W2 | Build pipeline and romsets extraction | N | M1, M7 | todo | | |
-| W3 | Production web bridge | N | M1 | ready (after W1) | `wp/w3-bridge` | |
+| W3 | Production web bridge | N | M1 | in progress | `wp/w3-bridge` | |
 | W4 | `MameEmulatorAdapter` | N | M1, M6 | todo | | |
 | W5 | `ArcadeDisplay` | T | M1 | merged | `wp/w5-arcade-display` | 2026-10-20 `5f8ae09` |
 | W6 | `ArcadeAudio` | T | M3 | todo | | |
@@ -74,6 +74,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 
 Newest first. One line per merge, milestone close, or contract amendment.
 
+- 2026-10-20 — W1 merged: probe patches relocated, neogeo/cps1/irem-m72 target pairs with complete lists, family-pair build mode; integrator follow-up repointed inherited tests and moved probe pre-JS. W3 started.
 - 2026-10-20 — §4.3.1 contract amendment: JavaScript-facing module shape pinned for W3 and W4; W3 brief written.
 - 2026-10-20 — W5 merged: `ArcadeDisplay` (`5f8ae09`); integrator follow-up added root exports and ImageData reuse.
 - 2026-10-20 — W1 and W7 started on their branches by Codex agents.
