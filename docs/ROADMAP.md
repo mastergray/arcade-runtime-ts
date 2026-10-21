@@ -67,6 +67,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 | W14e | Family `taito-classic` | N | M2 | merged (F4–F6 pending private set) | `wp/w14e-taito-classic` | 2026-10-20 (merge of `79aea64`) |
 | W14f | Family `taito-16` | N | M2 | ready | `wp/w14f-taito-16` | |
 | W15 | Saves bridge (memcard, EEPROM, F8) | N | M6 | merged (CPS-2 EEPROM runtime check pending a set) | `wp/w15-saves-bridge` | 2026-10-20 (merge of `6f0a252`) |
+| W13c | Harness: BIOS and DIP selectors | T | M8 | in progress | `wp/w13c-harness-selectors` | |
 | W16 | BIOS and DIP switches | N+T | M8 | merged | `wp/w16-bios-dip` | `d5446ad` |
 | W17 | Release gate | T | M9 | in progress | `wp/w17-release-gate` | |
 
@@ -75,7 +76,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 Newest first. One line per merge, milestone close, or contract amendment.
 
 - 2026-10-20 — **M3, M4, M5 closed** by `36-input-audio-acceptance.test.ts` on the Neo Geo and Namco sets (audio peak 68–71 ms under the 120 ms cap over 60 s; keyboard and two-pad flows verified; unplug release verified).
-- 2026-10-21 — W16 merged: generated per-machine DIP cfg, BIOS selection, `ArcadeStartConfig` DIP/BIOS fields. Integrator fix: the visual DIP check compared frames inside the Namco classic title's 13-second self test, which is DIP-independent; checkpoints moved to 15–20 emulated seconds. **M8 closed.** W17 started.
+- 2026-10-21 — W16 merged: generated per-machine DIP cfg, BIOS selection, `ArcadeStartConfig` DIP/BIOS fields. Integrator fix: the visual DIP check compared frames inside the Namco classic title's 13-second self test, which is DIP-independent; checkpoints moved to 15–20 emulated seconds. **M8 closed** for the library; W13c (harness selectors §11) and W17 started.
 - 2026-10-20 — W13b merged: cabinet harness page (picker, ROM store, saves, corner menu). **M7 closed.** W16 started.
 - 2026-10-20 — W15 merged: memory-card mount and flush, F8 recorded (0.161 screen bitmaps are not state, so next-frame identity after a restore is a core limitation). W16 brief written.
 - 2026-10-20 — F4–F6 measured on desktop for neogeo, namco-classic (vertical and heaviest titles) and irem-m72: pacing within 0.35 % at 60–144 Hz cadences, 60 s ratios 0.9999–1.0003, startup 0.3–1.1 s. W13b started.
