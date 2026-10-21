@@ -22,7 +22,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 | M2 Family build matrix | W14a–f | closed for v1.0.0 (2026-10-21): all six merged; F4–F6 measured for neogeo, namco-classic, irem-m72, taito-16; cps1 and cps2 measured after the QSound placeholder ROM patch 0004; namco-s1, namco-s2 and taito-classic deferred from v1.0.0 on 2026-10-21 (built and gated, no lawful set to measure) | |
 | M3 Audio | W6 | closed (Neo Geo and Namco WSG titles; a CPS title awaits the 0.161 qsound.zip) | 2026-10-20 |
 | M4 Input and keyboard | W7 | closed (one title per measured family; a zero-button title awaits a lawful set, the vocabulary and generator cover it in spec tests) | 2026-10-20 |
-| M5 Gamepads | W8 | closed (Neo Geo four-button title with scripted standard pads; CPS-1/CPS-2 two- and three-button titles pass; a six-button CPS-2 title still awaits a lawful parent set) | 2026-10-20 |
+| M5 Gamepads | W8 | closed (Neo Geo four-button title with scripted standard pads; CPS-1/CPS-2 two- and three-button titles pass; a six-button CPS-2 title is deferred to M18) | 2026-10-20 |
 | M6 Saves | W9 (storage half), W15 | closed (2026-10-21): memory card verified, states persist, CPS-2 EEPROM written mid-run by `web_flush_nvram` | 2026-10-21 |
 | M7 ROM supply and cabinet | W2 (romsets half), W9 (ROM store half), W10, W12, W13b | closed (picker path with synthetic archives and the real cabinet; preload path with the real build; audit agrees with MAME on every lawful local set) | 2026-10-20 |
 | M8 BIOS and DIP switches | W16 | done | 2026-10-21: `35-dip-switches.test.ts` against the namco-classic build; a BIOS option is exercised by the Neo Geo acceptance (`-bios`). |
@@ -39,7 +39,8 @@ Status values: `todo`, `ready` (brief written, can be started),
 | M14 Optional FBNeo probe | not yet cut | todo |
 | M15 Optional `LibretroAdapter` | not yet cut | todo |
 | M16 Pinned MAME upgrade probe | not yet cut | todo |
-| M17 Deferred families | not yet cut | todo |
+| M17 Deferred families | not yet cut | todo: namco-s1, namco-s2, taito-classic F4–F6 once a lawful set exists (§4.6) |
+| M18 Six-button CPS-2 acceptance | not yet cut | todo: keyboard binds P1 buttons 1–6 and `GamepadSource` forwards six action buttons, so such titles are expected to play; the measured §14.1 flow-4 run awaits a lawful six-button parent set (deferred 2026-10-21) |
 
 ## Work packages
 
