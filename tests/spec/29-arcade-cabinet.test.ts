@@ -424,8 +424,10 @@ const testFile: TestFile = {
             run: () => CTGTest.init("ArcadeCabinet overlay persistence")
                 .stage("exercise explicit, quick, hidden and unsupported persistence paths", () => withAudioContext(async () => {
                     const saves = storage("cabinet-saves");
+                    const localRoms = romStore();
+                    await localRoms.put({ name: "kept-fixture.zip", bytes: new Uint8Array([1]) });
                     const session = new FakeArcadeSession().script("persist", "resolve", new Uint8Array([7, 8]));
-                    const setup = rig(undefined, { session, storage: saves, autosave: true });
+                    const setup = rig(undefined, { session, storage: saves, romStore: localRoms, autosave: true });
                     await setup.cabinet.start();
                     const saved = await setup.cabinet.save();
                     const first = Array.from((await saves.load()) ?? []);
@@ -442,6 +444,7 @@ const testFile: TestFile = {
                     const automatic = Array.from((await saves.load()) ?? []);
                     await setup.cabinet.clearSaves();
                     const cleared = await saves.load();
+                    const romsAfterClear = (await localRoms.list()).map((entry) => entry.name);
                     const calls = session.calls.map((call) => [call.method, ...call.args]);
                     await setup.cabinet.destroy();
 
@@ -450,7 +453,7 @@ const testFile: TestFile = {
                     const noSave = errorOf(await rejectedBy(without.cabinet.save()));
                     const noClear = errorOf(await rejectedBy(without.cabinet.clearSaves()));
                     await without.cabinet.destroy();
-                    return { saved, first, unchanged, stillFirst, quick, automatic, cleared, calls, noSave, noClear };
+                    return { saved, first, unchanged, stillFirst, quick, automatic, cleared, romsAfterClear, calls, noSave, noClear };
                 }))
                 .assert("only non-null overlays replace storage and unsupported paths are typed", (state) => state.subject, P.equals<unknown>({
                     saved: true,
@@ -460,6 +463,7 @@ const testFile: TestFile = {
                     quick: [9],
                     automatic: [4, 5],
                     cleared: null,
+                    romsAfterClear: ["kept-fixture.zip"],
                     calls: [
                         ["persist"], ["persist"], ["saveState", "slot-a"], ["persist"], ["persist"],
                     ],
@@ -569,13 +573,28 @@ const testFile: TestFile = {
                     const setup = rig();
                     const keyboard = errorOf(thrownBy(() => { setup.cabinet.keyboardEnabled = "yes" as unknown as boolean; }));
                     const gamepads = errorOf(thrownBy(() => { setup.cabinet.gamepadsEnabled = 1 as unknown as boolean; }));
+                    let fullscreenCalls = 0;
+                    let exitFullscreenCalls = 0;
+                    setup.player.fullscreen = async () => { fullscreenCalls++; };
+                    setup.player.display.exitFullscreen = async () => { exitFullscreenCalls++; };
+                    await setup.cabinet.fullscreen();
+                    await setup.cabinet.exitFullscreen();
+                    const getters = {
+                        player: setup.cabinet.player === setup.player,
+                        storage: setup.cabinet.storage === null,
+                        romStore: setup.cabinet.romStore === null,
+                        mapper: setup.cabinet.mapper === null,
+                    };
                     await setup.cabinet.destroy();
                     const destroyed = errorOf(await rejectedBy(setup.cabinet.audit()));
-                    return { keyboard, gamepads, destroyed };
+                    return { keyboard, gamepads, fullscreenCalls, exitFullscreenCalls, getters, destroyed };
                 })
                 .assert("setter values and terminal use are typed", (state) => state.subject, P.equals<unknown>({
                     keyboard: INVALID_CONFIG,
                     gamepads: INVALID_CONFIG,
+                    fullscreenCalls: 1,
+                    exitFullscreenCalls: 1,
+                    getters: { player: true, storage: true, romStore: true, mapper: true },
                     destroyed: { isRuntimeError: true, code: 10, label: "DESTROYED" },
                 }))
                 .start(undefined),
