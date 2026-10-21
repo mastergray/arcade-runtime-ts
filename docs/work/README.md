@@ -22,6 +22,7 @@ An agent handed a brief works from the brief and the spec alone.
 | [W14a–f — one family build each](W14-family.md) | Native |
 | [W15 — saves bridge: memory card, EEPROM, F8](W15-saves-bridge.md) | Native |
 | [W16 — DIP switches end to end](W16-bios-dip.md) | TypeScript (+ metadata regeneration) |
+| [W17 — v1.0.0 release gate](W17-release-gate.md) | TypeScript |
 
 Package and milestone status is tracked in one place,
 [`docs/ROADMAP.md`](../ROADMAP.md); this list only links the briefs.

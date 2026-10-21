@@ -68,7 +68,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 | W14f | Family `taito-16` | N | M2 | ready | `wp/w14f-taito-16` | |
 | W15 | Saves bridge (memcard, EEPROM, F8) | N | M6 | merged (CPS-2 EEPROM runtime check pending a set) | `wp/w15-saves-bridge` | 2026-10-20 (merge of `6f0a252`) |
 | W16 | BIOS and DIP switches | N+T | M8 | in progress | `wp/w16-bios-dip` | |
-| W17 | Release gate | T | M9 | todo | | |
+| W17 | Release gate | T | M9 | ready (after W16) | `wp/w17-release-gate` | |
 
 ## Log
 
