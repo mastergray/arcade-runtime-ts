@@ -30,7 +30,7 @@ type TableRow = ReadonlyArray<string>;
  *
  */
 
-const USAGE = "Usage: arcade-audit-roms [--json] <romsets-dir> <machine> <zip>...";
+const USAGE = "Usage: arcade-audit-roms [--json] [--bios <option>] <romsets-dir> <machine> <zip>...";
 
 /**
  *
@@ -82,7 +82,9 @@ const reportExitCode = (report: RomSetReport): number => report.status === "ok" 
 // Reads one metadata file and the explicitly named zips, then prints exactly one report.
 const main = (args: string[]): void => {
     const json = args.includes("--json");
-    const positional = args.filter((arg) => arg !== "--json");
+    const biosIndex = args.indexOf("--bios");
+    const bios = biosIndex >= 0 ? args[biosIndex + 1] : undefined;
+    const positional = args.filter((arg, index) => arg !== "--json" && (biosIndex < 0 || (index !== biosIndex && index !== biosIndex + 1)));
     if (positional.length < 3 || positional.some((arg) => arg.startsWith("--"))) {
         console.error(USAGE);
         process.exitCode = 1;
@@ -99,7 +101,7 @@ const main = (args: string[]): void => {
             name: basename(path),
             bytes: new Uint8Array(readFileSync(path)),
         }));
-        const report = RomSetAudit.audit(parsed, roms);
+        const report = RomSetAudit.audit(parsed, roms, bios === undefined ? {} : { bios });
         console.log(json ? JSON.stringify(report, null, 2) : renderReport(report));
         process.exitCode = reportExitCode(report);
     } catch (error) {

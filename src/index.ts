@@ -9,6 +9,7 @@ export { default as MameEmulatorAdapter } from "./MameEmulatorAdapter/MameEmulat
 export { default as ArcadeDisplay } from "./ArcadeDisplay/ArcadeDisplay.js";                 // Canvas sizing, drawing, placeholder and fullscreen
 export { default as ArcadeAudio } from "./ArcadeAudio/ArcadeAudio.js";                       // Stereo Web Audio playback, gesture unlock and bounded latency
 export { default as ArcadeInput } from "./ArcadeInput/ArcadeInput.js";                       // Channelled, reference-counted control holds
+export { default as ArcadePlayer } from "./ArcadePlayer/ArcadePlayer.js";                     // Composition root for one running machine
 export { DEFAULT_KEYBOARD_MAP, default as KeyboardSource } from "./KeyboardSource/KeyboardSource.js";   // Physical keyboard to ArcadeInput
 export { default as GamepadSource } from "./GamepadSource/GamepadSource.js";                 // Polled Gamepad API to per-player ArcadeInput channels
 export { default as ArcadeStorage } from "./ArcadeStorage/ArcadeStorage.js";                 // Browser-local save-overlay persistence
@@ -137,6 +138,18 @@ export {
     type ArcadeInputChannel,                                       // Independently releasable source channel
     type ArcadeInputConfig,                                        // ArcadeInput construction config
 } from "./ArcadeInput/types.js";
+export {
+    isArcadeAdapterSelection,                                      // Guard for ArcadeAdapterSelection
+    isArcadeGameConfig,                                            // Guard for ArcadeGameConfig
+    isArcadePlayerConfig,                                          // Guard for ArcadePlayerConfig
+    isArcadePlayerEvents,                                          // Guard for ArcadePlayerEvents
+    isArcadePlayerStatus,                                          // Guard for ArcadePlayerStatus
+    type ArcadeAdapterSelection,                                   // Which adapter build to resolve
+    type ArcadeGameConfig,                                         // Machine, ROM sources and options
+    type ArcadePlayerConfig,                                       // Direct construction config
+    type ArcadePlayerEvents,                                       // status, exit and error event map
+    type ArcadePlayerStatus,                                       // Lifecycle status literal
+} from "./ArcadePlayer/types.js";
 export {
     isKeyboardEventTargetLike,                                     // Guard for KeyboardEventTargetLike
     isKeyboardMap,                                                 // Guard for KeyboardMap

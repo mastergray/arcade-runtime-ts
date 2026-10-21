@@ -104,13 +104,17 @@ const testFile: TestFile = {
                     cloneof: state.subject.cloneof,
                     romof: state.subject.romof,
                     undumped: state.subject.roms.find((rom) => rom.name === "undumped.rom"),
-                }), P.equals<{ archives: string[]; placement: Record<string, string>; bios: string[]; cloneof: string | null; romof: string | null; undumped: unknown }>({
+                    defaultBios: state.subject.defaultBios,
+                    euroTag: state.subject.roms.find((rom) => rom.name === "bios-e.rom")?.bios,
+                }), P.equals<{ archives: string[]; placement: Record<string, string>; bios: string[]; cloneof: string | null; romof: string | null; undumped: unknown; defaultBios: string | null | undefined; euroTag: string | null | undefined }>({
                     archives: ["fakegame.zip:game", "fakebios.zip:bios"],
                     placement: { "bios-e.rom": "fakebios.zip", "common.rom": "fakebios.zip", "game-p1.rom": "fakegame.zip", "game-v1.rom": "fakegame.zip", "undumped.rom": "fakegame.zip" },
                     bios: ["euro", "japan"],
                     cloneof: null,
                     romof: "fakebios",
-                    undumped: { name: "undumped.rom", size: 1024, crc: "00000000", sha1: null, archive: "fakegame.zip", optional: true },
+                    undumped: { name: "undumped.rom", size: 1024, crc: "00000000", sha1: null, archive: "fakegame.zip", optional: true, bios: null },
+                    defaultBios: "euro",
+                    euroTag: "euro",
                 }))
                 .start(undefined),
         },

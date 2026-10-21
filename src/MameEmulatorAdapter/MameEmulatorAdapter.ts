@@ -218,6 +218,49 @@ const loadClassicScript: ModuleLoader = (url) => {
     return pending;
 };
 
+// HELPER :: emscriptenModuleFactory, {[STRING]:UNKNOWN} -> PROMISE(OBJECT)
+// Instantiates a build and resolves once its runtime is initialized. The 1.38.31 MODULARIZE factory returns the
+// Module object itself, which carries a `then` method; awaiting it directly resolves to a thenable that resolves to
+// itself and spins the microtask queue forever. The module is therefore awaited through onRuntimeInitialized and
+// its `then` is removed before anything else can await it. A loader that already returns a real Promise still works.
+const instantiateModule = (factory: Awaited<ReturnType<ModuleLoader>>, options: Readonly<Record<string, unknown>>): Promise<object> =>
+    new Promise<object>((resolve, reject) => {
+        let instance: Record<string, unknown> | null = null;
+        let settled = false;
+        const finish = (value: object): void => {
+            if (settled) return;
+            settled = true;
+            if (Object.prototype.hasOwnProperty.call(value, "then")) delete (value as Record<string, unknown>)["then"];
+            resolve(value);
+        };
+        const fail = (reason: unknown): void => {
+            if (settled) return;
+            settled = true;
+            reject(reason instanceof Error ? reason : new Error(String(reason)));
+        };
+        let produced: unknown;
+        try {
+            produced = factory({
+                ...options,
+                onRuntimeInitialized: () => { if (instance !== null) finish(instance); },
+                onAbort: (reason: unknown) => fail(reason),
+            });
+        } catch (error) {
+            fail(error);
+            return;
+        }
+        if (produced instanceof Promise) {
+            produced.then((value) => finish(value as object), fail);
+            return;
+        }
+        if (typeof produced !== "object" || produced === null) {
+            fail(new Error("The build factory did not return a module."));
+            return;
+        }
+        instance = produced as Record<string, unknown>;
+        if (instance["calledRun"] === true) finish(instance);
+    });
+
 // HELPER :: UNKNOWN -> STRING
 // Serializes a fetched byte body as UTF-8 text.
 const utf8 = (bytes: ArrayBuffer): string => new TextDecoder("utf-8", { fatal: true }).decode(bytes);
@@ -318,7 +361,7 @@ export default class MameEmulatorAdapter implements ArcadeAdapter {
 
         try {
             const factory = await this._loadModule(moduleUrl);
-            const created = await factory({
+            const created = await instantiateModule(factory, {
                 noInitialRun: true,
                 print: (): void => {},
                 printErr: (): void => {},

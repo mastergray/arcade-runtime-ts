@@ -420,7 +420,7 @@ export default class ArcadePlayer {
         } catch {
             return this.metadataUnavailableReport(roms);
         }
-        return RomSetAudit.audit(metadata, roms);
+        return RomSetAudit.audit(metadata, roms, this._game.bios === undefined ? {} : { bios: this._game.bios });
     }
 
     // PRIVATE :: VOID -> PROMISE([romFile])

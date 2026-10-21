@@ -42,7 +42,9 @@ export interface RomSetMetadata {
         readonly sha1: string | null;                               // Forty lower-case hex digits; null for nodump
         readonly archive: RomName;                                  // Archive containing this entry
         readonly optional: boolean;                                 // Missing entry does not invalidate the set
+        readonly bios?: NonEmptyString | null;                      // BIOS option this entry belongs to; required only when that option is selected
     }>;
+    readonly defaultBios?: NonEmptyString | null;                    // Option selected when a start config names none
     readonly samples: ReadonlyArray<{
         readonly name: NonEmptyString;                              // Sample entry name inside archive
         readonly archive: RomName;                                  // Optional sample archive containing it
@@ -117,7 +119,8 @@ const isMetadataRom = (value: unknown): value is RomSetMetadata["roms"][number] 
     && typeof value.crc === "string" && CRC_PATTERN.test(value.crc)
     && (value.sha1 === null || (typeof value.sha1 === "string" && SHA1_PATTERN.test(value.sha1)))
     && isRomName(value.archive)
-    && typeof value.optional === "boolean";
+    && typeof value.optional === "boolean"
+    && (value.bios === undefined || value.bios === null || isNonEmptyString(value.bios));
 
 // PREDICATE :: UNKNOWN -> BOOLEAN
 // True when value is one expected sample declaration.
@@ -169,6 +172,7 @@ export function isRomSetMetadata(value: unknown): value is RomSetMetadata {
         || !isArrayOf(value.bios, isNonEmptyString)
         || !(value.romof === null || isNonEmptyString(value.romof))
         || !(value.sampleof === null || isNonEmptyString(value.sampleof))
+        || !(value.defaultBios === undefined || value.defaultBios === null || isNonEmptyString(value.defaultBios))
         || !isArrayOf(value.archives, isMetadataArchive)
         || !isArrayOf(value.roms, isMetadataRom)
         || !isArrayOf(value.samples, isMetadataSample)) return false;

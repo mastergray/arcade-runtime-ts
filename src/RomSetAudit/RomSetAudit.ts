@@ -201,9 +201,14 @@ export default class RomSetAudit {
     // Inspects only expected archives and returns an actionable, byte-free report.
     // NOTE: Throws ArcadeRuntimeError INVALID_CONFIG only when metadata or roms fail their predicates.
     // NOTE: Invalid, corrupt and over-limit zip bytes become problems and missing file rows; they never throw.
-    static audit(metadata: RomSetMetadata, roms: RomFile[]): RomSetReport {
+    // NOTE: A ROM tagged with a BIOS option is required only when that option is the selected one (options.bios,
+    // else the metadata default); MAME audits the same way, so other options' ROMs report optional-missing.
+    static audit(metadata: RomSetMetadata, roms: RomFile[], options: { readonly bios?: string } = {}): RomSetReport {
         if (!isRomSetMetadata(metadata)) throw RomSetAudit.invalidConfig("RomSetAudit metadata is invalid.", "metadata");
         if (!isRomFileList(roms)) throw RomSetAudit.invalidConfig("RomSetAudit ROM files are invalid.", "roms");
+        if (options.bios !== undefined && typeof options.bios !== "string") throw RomSetAudit.invalidConfig("RomSetAudit bios must be a string.", "bios");
+        const selectedBios = options.bios ?? metadata.defaultBios ?? null;
+        const isRequired = (rom: RomSetMetadata["roms"][number]): boolean => !rom.optional && (rom.bios === undefined || rom.bios === null || rom.bios === selectedBios);
 
         const supplied = new Map(roms.map((rom) => [romNameKey(rom.name), rom]));
         const inspections = new Map<string, ArchiveInspection>();
@@ -214,7 +219,7 @@ export default class RomSetAudit {
         }
 
         const requiredArchives = new Set(metadata.roms
-            .filter((rom) => !rom.optional)
+            .filter(isRequired)
             .map((rom) => romNameKey(rom.archive)));
         const archives: RomSetReport["archives"] = metadata.archives.map((archive) => ({
             name: archive.name,
@@ -226,7 +231,7 @@ export default class RomSetAudit {
         const files: Array<RomSetReport["files"][number]> = metadata.roms.map((rom) => {
             const entry = entryIn(inspections.get(romNameKey(rom.archive)), rom.name);
             let status: RomSetReport["files"][number]["status"];
-            if (entry === undefined) status = rom.optional ? "optional-missing" : "missing";
+            if (entry === undefined) status = isRequired(rom) ? "missing" : "optional-missing";
             else if (entry.size !== rom.size) status = "wrong-size";
             else if (entry.crc !== rom.crc) status = "wrong-crc";
             else status = "ok";
@@ -264,7 +269,7 @@ export default class RomSetAudit {
             if (inspection !== undefined && "reason" in inspection) problems.push({ archive: archive.name, reason: inspection.reason });
         }
 
-        const requiredFiles = files.slice(0, metadata.roms.length).filter((_, index) => !metadata.roms[index]!.optional);
+        const requiredFiles = files.slice(0, metadata.roms.length).filter((_, index) => isRequired(metadata.roms[index]!));
         const status = requiredFiles.some((file) => file.status === "wrong-size" || file.status === "wrong-crc")
             ? "bad"
             : requiredFiles.some((file) => file.status === "missing") ? "incomplete" : "ok";

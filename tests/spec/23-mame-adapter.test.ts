@@ -220,6 +220,9 @@ const webFrom = async (loader: FakeModuleLoader): Promise<FakeWeb> => {
     for (let turn = 0; turn < 20 && loader.factoryCalls.length === 0; turn++) await Promise.resolve();
     const web = loader.factoryCalls[0]?.["web"];
     if (typeof web !== "object" || web === null) throw new Error("factory was not called with Module.web");
+    // The adapter installs its first-frame handler a few microtasks after instantiation; wait for it rather than
+    // assuming a hop count, so a frame emitted by the test is never dropped as "before start".
+    for (let turn = 0; turn < 200 && (web as { firstFrame?: unknown }).firstFrame == null; turn++) await Promise.resolve();
     return web as FakeWeb;
 };
 

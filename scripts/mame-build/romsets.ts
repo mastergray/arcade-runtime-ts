@@ -18,6 +18,7 @@ interface ListXmlMachine {
     readonly sampleof: string | null;                              // Machine whose samples are inherited
     readonly isbios: boolean;                                      // BIOS root
     readonly biossets: ReadonlyArray<string>;                      // BIOS option names
+    readonly defaultBios: string | null;                           // biosset default="yes" 
     readonly roms: ReadonlyArray<ListXmlRom>;                      // ROM declarations
     readonly samples: ReadonlyArray<string>;                       // Sample names
 }
@@ -85,6 +86,7 @@ export const parseListXml = (xml: string): ListXmlMachine[] => {
             sampleof: attributes.sampleof ?? null,
             isbios: attributes.isbios === "yes",
             biossets: [...body.matchAll(BIOSSET_PATTERN)].map((bios) => attributesOf(bios[1]!).name ?? "").filter((name) => name !== ""),
+            defaultBios: [...body.matchAll(BIOSSET_PATTERN)].map((bios) => attributesOf(bios[1]!)).find((a) => a.default === "yes")?.name ?? null,
             roms: [...body.matchAll(ROM_PATTERN)].map((rom) => {
                 const a = attributesOf(rom[1]!);
                 return {
@@ -156,6 +158,7 @@ export const romsetsFromListXml = (family: string, xml: string): Map<string, Rom
             cloneof: machine.cloneof,
             romof: machine.romof,
             bios: [...machine.biossets],
+            defaultBios: machine.defaultBios,
             sampleof: machine.sampleof,
             archives,
             roms: machine.roms.map((rom) => ({
@@ -165,6 +168,7 @@ export const romsetsFromListXml = (family: string, xml: string): Map<string, Rom
                 sha1: rom.nodump ? null : rom.sha1,
                 archive: `${locateRom(machines, machine, rom.name)}.zip`,
                 optional: rom.optional || rom.nodump,
+                bios: rom.bios,
             })),
             samples: sampleArchive === null ? [] : machine.samples.map((name) => ({ name, archive: sampleArchive })),
         });

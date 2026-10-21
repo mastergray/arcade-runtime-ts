@@ -267,6 +267,34 @@ const testFile: TestFile = {
             problems: [{ archive: "fakeclone.zip", reason: "archive exceeds 4,096 entries" }],
         })),
         {
+            label: "a ROM tagged with a BIOS option is required only when that option is selected or is the default",
+            run: () => CTGTest.init("bios-tagged roms")
+                .stage("audit with the default and with another option", () => {
+                    const base = metadata();
+                    const tagged = {
+                        ...base,
+                        defaultBios: "euro",
+                        roms: [
+                            ...base.roms.map((rom) => rom.name === "bios.bin" ? { ...rom, bios: "euro" } : rom),
+                            { name: "asia.bin", size: 1, crc: "00000001", sha1: null, archive: "fakebios.zip", optional: false, bios: "asia" },
+                        ],
+                    };
+                    const byDefault = RomSetAudit.audit(tagged, complete);
+                    const asia = RomSetAudit.audit(tagged, complete, { bios: "asia" });
+                    return {
+                        defaultStatus: byDefault.status,
+                        asiaFileByDefault: byDefault.files.find((file) => file.name === "asia.bin")?.status,
+                        asiaStatus: asia.status,
+                        asiaFile: asia.files.find((file) => file.name === "asia.bin")?.status,
+                        euroFileUnderAsia: asia.files.find((file) => file.name === "bios.bin")?.status,
+                    };
+                })
+                .assert("only the selected option's ROMs are required", (state) => state.subject, P.equals<{ defaultStatus: string; asiaFileByDefault: string | undefined; asiaStatus: string; asiaFile: string | undefined; euroFileUnderAsia: string | undefined }>({
+                    defaultStatus: "ok", asiaFileByDefault: "optional-missing", asiaStatus: "incomplete", asiaFile: "missing", euroFileUnderAsia: "ok",
+                }))
+                .start(undefined),
+        },
+        {
             label: "invalid metadata and RomFile values throw only INVALID_CONFIG",
             run: () => CTGTest.init("invalid audit values")
                 .assert("invalid metadata", () => errorSnapshot(
@@ -311,7 +339,7 @@ const testFile: TestFile = {
                     usageError: {
                         status: 1,
                         stdout: "",
-                        stderr: "Usage: arcade-audit-roms [--json] <romsets-dir> <machine> <zip>...\n",
+                        stderr: "Usage: arcade-audit-roms [--json] [--bios <option>] <romsets-dir> <machine> <zip>...\n",
                     },
                 }))
                 .start(undefined),
