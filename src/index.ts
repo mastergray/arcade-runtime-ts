@@ -9,6 +9,7 @@ export { default as ArcadeDisplay } from "./ArcadeDisplay/ArcadeDisplay.js";    
 export { default as ArcadeAudio } from "./ArcadeAudio/ArcadeAudio.js";                       // Stereo Web Audio playback, gesture unlock and bounded latency
 export { default as ArcadeInput } from "./ArcadeInput/ArcadeInput.js";                       // Channelled, reference-counted control holds
 export { DEFAULT_KEYBOARD_MAP, default as KeyboardSource } from "./KeyboardSource/KeyboardSource.js";   // Physical keyboard to ArcadeInput
+export { default as GamepadSource } from "./GamepadSource/GamepadSource.js";                 // Polled Gamepad API to per-player ArcadeInput channels
 export { default as ArcadeStorage } from "./ArcadeStorage/ArcadeStorage.js";                 // Browser-local save-overlay persistence
 export { default as RomSetAudit } from "./RomSetAudit/RomSetAudit.js";                       // Pre-start audit of user zips against romsets metadata
 export { default as ArcadeRomStore } from "./ArcadeRomStore/ArcadeRomStore.js";              // Browser-local user ROM archives
@@ -140,6 +141,18 @@ export {
     type KeyboardSourceInitConfig,                                 // init() config with optional browser targets
     type KeyboardVisibilityTargetLike,                             // Injected visibility boundary
 } from "./KeyboardSource/types.js";
+export {
+    isGamepadLike,                                                 // Guard for GamepadLike
+    isGamepadMapping,                                              // Guard for GamepadMapping
+    isGamepadProviderLike,                                         // Guard for GamepadProviderLike
+    isGamepadSourceConfig,                                         // Guard for GamepadSourceConfig
+    isGamepadSourceInitConfig,                                     // Guard for GamepadSourceInitConfig
+    type GamepadLike,                                              // Gamepad subset the source reads
+    type GamepadMapping,                                           // Button and axis index overrides
+    type GamepadProviderLike,                                      // Injected navigator.getGamepads boundary
+    type GamepadSourceConfig,                                      // Direct construction config
+    type GamepadSourceInitConfig,                                  // init() config with optional browser dependencies
+} from "./GamepadSource/types.js";
 export {
     isArcadeStorageConfig,                                         // Guard for ArcadeStorageConfig
     isArcadeStorageInitConfig,                                     // Guard for ArcadeStorageInitConfig
