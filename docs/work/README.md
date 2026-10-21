@@ -70,7 +70,19 @@ cd ../arcade-runtime-ts.<id>
 npm install
 ```
 
-The TypeScript lane needs nothing else. The native lane additionally
+The TypeScript lane needs nothing else.
+
+When the agent is a sandboxed Codex run, the worktree's `.git` is a file
+pointing into the main checkout's `.git/worktrees/`, which is outside the
+sandbox's writable workspace. Launch with that directory writable, cut the
+branch from current `main` immediately before launching so no rebase is
+needed, and tell the agent never to rebase and never to stop on a refused
+git command:
+
+```sh
+codex exec -s workspace-write -c 'approval_policy="never"' \
+  -c 'sandbox_workspace_write.writable_roots=["/home/mastergray/dev/arcade-runtime-ts/.git"]' - < brief-prompt.md
+``` The native lane additionally
 recreates the two ignored links:
 
 ```sh
