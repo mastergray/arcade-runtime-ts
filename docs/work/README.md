@@ -16,6 +16,7 @@ An agent handed a brief works from the brief and the spec alone.
 | [W9 — `ArcadeStorage`, `ArcadeRomStore`](W9-storage.md) | TypeScript |
 | [W10 — `RomSetAudit`, `arcade-audit-roms`](W10-romset-audit.md) | TypeScript |
 | [W11 — `ArcadePlayer`](W11-arcade-player.md) | TypeScript |
+| [W12 — `ArcadeCabinet`](W12-arcade-cabinet.md) | TypeScript |
 | [W13a — harness preload page and `serve-harness`](W13a-harness-preload.md) | TypeScript |
 | [W14a–f — one family build each](W14-family.md) | Native |
 

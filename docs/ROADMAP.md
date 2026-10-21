@@ -57,7 +57,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 | W9 | `ArcadeStorage`, `ArcadeRomStore` | T | M6, M7 | merged | `wp/w9-storage` | 2026-10-20 (merge of `aefb07c`) |
 | W10 | `RomSetAudit`, `arcade-audit-roms` | T | M7 | merged | `wp/w10-romset-audit` | 2026-10-20 (merge of `5859c88`) |
 | W11 | `ArcadePlayer` | T | M1–M4 | merged | `wp/w11-arcade-player` | 2026-10-20 (merge of `aa9c9b0`) |
-| W12 | `ArcadeCabinet` | T | M7 | todo | | |
+| W12 | `ArcadeCabinet` | T | M7 | in progress | `wp/w12-arcade-cabinet` | |
 | W13a | Harness: minimal preload page | T | M1 | merged | `wp/w13a-harness-preload` | 2026-10-20 (merge of `2dab339`) |
 | W13b | Harness: cabinet page | T | M7 | todo | | |
 | W14a | Family `cps2` | N | M2 | merged (F4–F6 pending private set) | `wp/w14a-cps2` | 2026-10-20 (merge of `d0c0c05`) |
