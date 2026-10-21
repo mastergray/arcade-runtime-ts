@@ -113,6 +113,8 @@ export const MAME_FIXED_ARGUMENTS: readonly string[] = Object.freeze([
 const MEMFS_DIRECTORIES = [
     "/mame/roms", "/mame/samples", "/mame/nvram", "/mame/cfg", "/mame/sta", "/mame/ctrlr", "/mame/memcard",
 ] as const;                                                       // Mounted before any input file is written
+const NEOGEO_FAMILY = "neogeo";                                  // The 0.161 family exposing the memcard image device
+const MEMORY_CARD_BYTES = 0x800;                                 // ng_memcard_device::call_load exact image size
 const MISSING_FILES_RESULT = 2;                                   // MAMERR_MISSING_FILES in MAME 0.161
 const DEFAULT_SAMPLE_RATE = 48_000;                               // §4.5 mixer default
 
@@ -384,11 +386,18 @@ export default class MameEmulatorAdapter implements ArcadeAdapter {
                 machine: config.machine,
             };
             if (config.changes !== undefined) restoreOverlayTree(module, OverlayCodec.decode(config.changes.slice(), overlayHeader));
+            const memoryCardPath = this.prepareMemoryCard(module, config.machine);
             const ignoredPaths = ["cfg/web.cfg"];
 
             let mainError: unknown = undefined;
             try {
-                module.callMain([config.machine, ...fixedArguments, ...(config.bios === undefined ? [] : ["-bios", config.bios]), ...optionArguments]);
+                module.callMain([
+                    config.machine,
+                    ...fixedArguments,
+                    ...(memoryCardPath === null ? [] : ["-memcard", memoryCardPath]),
+                    ...(config.bios === undefined ? [] : ["-bios", config.bios]),
+                    ...optionArguments,
+                ]);
             } catch (error) {
                 mainError = error;
             }
@@ -523,6 +532,19 @@ export default class MameEmulatorAdapter implements ArcadeAdapter {
             optionArguments.push("-frameskip", String(frameskip));
         }
         return { sampleRate: samplerate, fixedArguments, optionArguments };
+    }
+
+    // PRIVATE :: startupModule, STRING -> STRING?
+    // Restores an incoming Neo Geo card first, or materializes the exact-size blank image required by call_load().
+    private prepareMemoryCard(module: StartupModule, machine: string): string | null {
+        if (this._build.engine !== NEOGEO_FAMILY) return null;
+        const path = `/mame/memcard/${machine}.bin`;
+        try {
+            module.FS.stat(path);
+        } catch {
+            module.FS.writeFile(path, new Uint8Array(MEMORY_CARD_BYTES));
+        }
+        return path;
     }
 
     // PRIVATE :: STRING -> PROMISE(romSetMetadata?)

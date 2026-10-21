@@ -343,6 +343,61 @@ const testFile: TestFile = {
                 .start(undefined),
         },
         {
+            label: "Neo Geo start restores or creates an exact-size memory card and mounts it through the memcard image option",
+            run: () => CTGTest.init("MAME memory-card mount")
+                .stage("start fresh and restored cards", async () => {
+                    const build: BuildInfo = {
+                        ...adapterBuild(),
+                        engine: "neogeo",
+                        artifacts: ["mameneogeo.js", "mameneogeo.wasm"],
+                    };
+                    const header: OverlayHeader = {
+                        format: "arcade-runtime-overlay", version: 1, adapter: "mame",
+                        engine: "neogeo", buildId: build.buildId, machine: "fake",
+                    };
+                    const restoredCard = new Uint8Array(0x800).fill(0x5a);
+                    const changes = OverlayCodec.encode({ "memcard/fake.bin": restoredCard }, header);
+
+                    const freshModule = new FakeMameModule();
+                    const freshSetup = adapterWith(freshModule, { build });
+                    await startAndFrame(freshModule, { adapter: freshSetup.adapter, loader: freshSetup.loader });
+
+                    const restoredModule = new FakeMameModule();
+                    const restoredSetup = adapterWith(restoredModule, { build });
+                    await startAndFrame(restoredModule, {
+                        adapter: restoredSetup.adapter,
+                        loader: restoredSetup.loader,
+                        start: startConfig({ changes }),
+                    });
+
+                    return {
+                        freshBytes: Array.from(freshModule.FS.files.get("/mame/memcard/fake.bin") ?? []),
+                        freshArgv: freshModule.mainCalls[0],
+                        restoredBytes: Array.from(restoredModule.FS.files.get("/mame/memcard/fake.bin") ?? []),
+                        restoredWrites: restoredModule.FS.writes.filter((write) => write.path === "/mame/memcard/fake.bin").length,
+                        restoredArgv: restoredModule.mainCalls[0],
+                    };
+                })
+                .assert("card bytes and image arguments", (state) => ({
+                    freshLength: state.subject.freshBytes.length,
+                    freshZeroed: state.subject.freshBytes.every((byte) => byte === 0),
+                    freshTail: state.subject.freshArgv?.slice(-2),
+                    restoredLength: state.subject.restoredBytes.length,
+                    restoredPattern: state.subject.restoredBytes.every((byte) => byte === 0x5a),
+                    restoredWrites: state.subject.restoredWrites,
+                    restoredTail: state.subject.restoredArgv?.slice(-2),
+                }), P.equals<unknown>({
+                    freshLength: 0x800,
+                    freshZeroed: true,
+                    freshTail: ["-memcard", "/mame/memcard/fake.bin"],
+                    restoredLength: 0x800,
+                    restoredPattern: true,
+                    restoredWrites: 1,
+                    restoredTail: ["-memcard", "/mame/memcard/fake.bin"],
+                }))
+                .start(undefined),
+        },
+        {
             label: "memory rejection uses metadata sizes or the 2x-ROM fallback and happens before module loading",
             run: () => CTGTest.init("MAME memory budget")
                 .stage("reject both estimates", async () => {
@@ -550,6 +605,7 @@ const testFile: TestFile = {
                     const first = await session.persist();
                     module.FS.writeFile("/mame/nvram/device.nv", new Uint8Array([1, 2, 3]));
                     module.FS.writeFile("/mame/sta/slot.sta", new Uint8Array([4, 5]));
+                    module.FS.writeFile("/mame/memcard/fake.bin", new Uint8Array([6, 7]));
                     const second = await session.persist();
                     const third = await session.persist();
                     const header: OverlayHeader = {
@@ -565,7 +621,7 @@ const testFile: TestFile = {
                 })
                 .assert("dirty detection and cumulative roots", (state) => state.subject, P.equals<unknown>({
                     first: null,
-                    second: { "nvram/device.nv": [1, 2, 3], "states/slot.sta": [4, 5] },
+                    second: { "memcard/fake.bin": [6, 7], "nvram/device.nv": [1, 2, 3], "states/slot.sta": [4, 5] },
                     third: null,
                 }))
                 .start(undefined),
