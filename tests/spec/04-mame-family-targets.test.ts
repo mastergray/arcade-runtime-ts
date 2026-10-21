@@ -67,15 +67,14 @@ const FAMILY_TARGETS: readonly FamilyTarget[] = [
         expectedMachines: 378,
     },
     {
-<<<<<<< HEAD
         id: "namco-s1",
         sources: ["src/mame/drivers/namcos1.c", "src/mame/drivers/namcos86.c"],
         expectedMachines: 47,
-=======
+    },
+    {
         id: "namco-s2",
         sources: ["src/mame/drivers/namcos2.c"],
         expectedMachines: 54,
->>>>>>> wp/w14d-namco-s2
     },
 ] as const;
 
