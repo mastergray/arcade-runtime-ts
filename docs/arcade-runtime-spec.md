@@ -1717,10 +1717,10 @@ TypeScript).
 | W10 | `RomSetAudit` and the `arcade-audit-roms` bin | `src/RomSetAudit/`, `scripts/audit-roms.ts` | W0 | §10.5 | T | M7 |
 | W11 | `ArcadePlayer` | `src/ArcadePlayer/` | W4, W5, W6, W7 | §9 | T | M1–M4 |
 | W12 | `ArcadeCabinet` | `src/ArcadeCabinet/` | W8, W9, W10, W11 | §10.6 | T | M7 |
-| W13 | Harness and preload: `serve-harness.ts --preload`, `harness/` | `scripts/serve-harness.ts`, `harness/` | W11 (minimal page), W12 (cabinet page) | §11 | T | M1, M7 |
+| W13 | Harness and preload: `serve-harness.ts --preload`, `harness/` | `scripts/serve-harness.ts`, `harness/` | W11 (minimal page, W13a), W12 (cabinet page, W13b), W16 (BIOS/DIP selectors, W13c) | §11 | T | M1, M7, M8 |
 | W14a–f | One package per remaining family: `cps2`, `namco-classic`, `namco-s1`, `namco-s2`, `taito-classic`, `taito-16`; target pair, build file, F1–F6 record | `mame/targets/<family>.*`, `mame/builds/<family>.json`, `docs/probes/families/<family>.md` | W2 | §4.6, §13.1 | N | M2 |
 | W15 | Saves bridge: memory card and EEPROM coverage in `web_flush_nvram`, F8 record | `mame/patches/0003-*`, `docs/probes/families/*` (F8 rows only) | W3, W4 | §4.3, §12 M6 | N | M6 |
-| W16 | BIOS and DIP: `web_machine_info` BIOS fields, generated DIP cfg, harness selectors | `mame/bridge/web_bridge.cpp` (BIOS struct only), `src/DipConfig/`, `harness/` (selectors only) | W4, W13 | §4.5, §12 M8 | N+T | M8 |
+| W16 | BIOS and DIP: `web_machine_info` BIOS fields, generated DIP cfg | `mame/bridge/web_bridge.cpp` (BIOS struct only), `src/DipConfig/` | W4, W13 | §4.5, §12 M8 | N+T | M8 |
 | W17 | Release gate: licence notices in build output, `npm pack` tests, hosted-harness policy | `scripts/build-mame.ts` (notice copy only), `tests/spec/*package*` | W2, W12 | §0.4, §14.1 | T | M9 |
 
 `src/ControllerConfig/` and `src/DipConfig/` are internal modules (pure
@@ -1738,7 +1738,7 @@ W0 ─┬─ W5 (display) ──────────────┐
     └─ W2 (build) ◄── W1 (targets)│
             │            └─ W3 (bridge) ─ W4 (adapter) ─┘
             │                              ├─ W15 (saves)
-            │                              └─ W16 (bios/dip)
+            │                              └─ W16 (bios/dip) ─ W13c (selectors)
             └─ W14a … W14f (families, each independent)
 ```
 
