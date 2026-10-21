@@ -1276,14 +1276,21 @@ idempotent, all failures are `STORAGE_FAILED`.
 page can offer "pick your ROM zips once":
 
 ```ts
+interface ArcadeRomStoreConfig {
+    readonly indexedDB: IDBFactoryLike;     // injected; init supplies globalThis.indexedDB
+    readonly subtle: SubtleCryptoLike;      // injected; init supplies crypto.subtle
+    readonly now: () => number;             // injected; init supplies Date.now
+    readonly name?: string;                 // database name override
+}
+
 class ArcadeRomStore {
-    constructor(config: { indexedDB: IDBFactory; name?: string });
+    constructor(config: ArcadeRomStoreConfig);
     list(): Promise<ReadonlyArray<{ readonly name: string; readonly size: number; readonly sha256: string; readonly addedAt: number }>>;
     put(file: RomFile): Promise<void>;
     get(name: string): Promise<RomFile | null>;
     remove(name: string): Promise<void>;
     clear(): Promise<void>;
-    static init(config?: { name?: string }): Promise<ArcadeRomStore>;
+    static init(config?: Partial<ArcadeRomStoreConfig>): Promise<ArcadeRomStore>;   // UNSUPPORTED when IndexedDB or Web Crypto is absent
 }
 ```
 

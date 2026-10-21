@@ -9,7 +9,9 @@ export { default as ArcadeDisplay } from "./ArcadeDisplay/ArcadeDisplay.js";    
 export { default as ArcadeAudio } from "./ArcadeAudio/ArcadeAudio.js";                       // Stereo Web Audio playback, gesture unlock and bounded latency
 export { default as ArcadeInput } from "./ArcadeInput/ArcadeInput.js";                       // Channelled, reference-counted control holds
 export { DEFAULT_KEYBOARD_MAP, default as KeyboardSource } from "./KeyboardSource/KeyboardSource.js";   // Physical keyboard to ArcadeInput
+export { default as ArcadeStorage } from "./ArcadeStorage/ArcadeStorage.js";                 // Browser-local save-overlay persistence
 export { default as RomSetAudit } from "./RomSetAudit/RomSetAudit.js";                       // Pre-start audit of user zips against romsets metadata
+export { default as ArcadeRomStore } from "./ArcadeRomStore/ArcadeRomStore.js";              // Browser-local user ROM archives
 
 // Shared helpers:
 export {
@@ -138,6 +140,24 @@ export {
     type KeyboardSourceInitConfig,                                 // init() config with optional browser targets
     type KeyboardVisibilityTargetLike,                             // Injected visibility boundary
 } from "./KeyboardSource/types.js";
+export {
+    isArcadeStorageConfig,                                         // Guard for ArcadeStorageConfig
+    isArcadeStorageInitConfig,                                     // Guard for ArcadeStorageInitConfig
+    isIDBFactoryLike,                                              // Guard for IDBFactoryLike
+    type ArcadeStorageConfig,                                      // Injected storage construction config
+    type ArcadeStorageInitConfig,                                  // init() config with optional factory
+    type IDBFactoryLike,                                           // Minimal IndexedDB factory
+} from "./ArcadeStorage/types.js";
+export {
+    isArcadeRomStoreConfig,                                        // Guard for ArcadeRomStoreConfig
+    isArcadeRomStoreInitConfig,                                    // Guard for ArcadeRomStoreInitConfig
+    isRomStoreEntry,                                               // Guard for RomStoreEntry
+    isSubtleCryptoLike,                                            // Guard for SubtleCryptoLike
+    type ArcadeRomStoreConfig,                                     // Injected ROM store construction config
+    type ArcadeRomStoreInitConfig,                                 // init() config with optional dependencies
+    type RomStoreEntry,                                            // Byte-free listing entry
+    type SubtleCryptoLike,                                         // SHA-256 digest dependency
+} from "./ArcadeRomStore/types.js";
 export {
     isRomSetMetadata,                                              // Guard for RomSetMetadata
     isRomSetReport,                                                // Guard for RomSetReport
