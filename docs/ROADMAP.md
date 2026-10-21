@@ -19,7 +19,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 | --------- | -------- | ------ | --------- |
 | M0 Feasibility probe | inherited | closed | 2026-10-20 (parent project) |
 | M1 Bridge, adapter, display, preload | W0, W1, W2, W3, W4, W5, W13a | closed | 2026-10-20 |
-| M2 Family build matrix | W14a–f | in progress | |
+| M2 Family build matrix | W14a–f | all six merged; F4–F6 measurements pending per family | |
 | M3 Audio | W6 | merged, acceptance pending real build | |
 | M4 Input and keyboard | W7 | todo | |
 | M5 Gamepads | W8 | todo | |
@@ -66,7 +66,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 | W14d | Family `namco-s2` | N | M2 | in progress | `wp/w14d-namco-s2` | |
 | W14e | Family `taito-classic` | N | M2 | merged (F4–F6 pending private set) | `wp/w14e-taito-classic` | 2026-10-20 (merge of `79aea64`) |
 | W14f | Family `taito-16` | N | M2 | ready | `wp/w14f-taito-16` | |
-| W15 | Saves bridge (memcard, EEPROM, F8) | N | M6 | todo | | |
+| W15 | Saves bridge (memcard, EEPROM, F8) | N | M6 | ready | `wp/w15-saves-bridge` | |
 | W16 | BIOS and DIP switches | N+T | M8 | todo | | |
 | W17 | Release gate | T | M9 | todo | | |
 
@@ -74,6 +74,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 
 Newest first. One line per merge, milestone close, or contract amendment.
 
+- 2026-10-20 — W14f merged: `taito-16` family (189 machines, 6.9 MB wasm). All eight required families now build; M2 awaits F4–F6 with lawful sets. W15 brief written.
 - 2026-10-20 — W14e merged: `taito-classic` family (151 machines, 6.0 MB wasm); §4.6 row extended with the M6809/MCS51 and sound cores the link needs.
 - 2026-10-20 — **M1 closed.** `30-m1-acceptance.test.ts` against the pipeline-built Neo Geo artifact: 59.34 fps on a 60 Hz cadence and 59.13 fps on 120 Hz against 59.186 Hz native, upright at native size (evidence in docs/probes/families/neogeo.md).
 - 2026-10-20 — W13a merged: `serve-harness --preload` and the preload harness page; the gated real-build case starts a machine and renders its first frame.
