@@ -1,14 +1,14 @@
 From 13423005c2bd25557cc60133bde31b95627fa907 Mon Sep 17 00:00:00 2001
 From: Arcade Runtime <arcade-runtime@example.invalid>
 Date: Tue, 20 Oct 2026 19:58:00 -0500
-Subject: [PATCH 3/3] Add narrow NVRAM flush
+Subject: [PATCH 3/3] Flush NVRAM and mounted memory cards
 
-Pre-create each device path for the pinned MEMFS implementation and delegate serialization to MAME private NVRAM save routine.
+Pre-create each device path for the pinned MEMFS implementation, delegate NVRAM serialization to MAME's private save routine, and write mounted memory-card images without unmounting them.
 ---
  src/emu/machine.c                  | 26 ++++++++++++++++++++++++++
  src/emu/machine.h                  |  1 +
- src/osd/modules/web/web_bridge.cpp |  5 +++++
- 3 files changed, 32 insertions(+)
+ src/osd/modules/web/web_bridge.cpp | 20 ++++++++++++++++++++
+ 3 files changed, 47 insertions(+)
 
 diff --git a/src/emu/machine.c b/src/emu/machine.c
 index 4757cfda..58141624 100644
@@ -60,16 +60,31 @@ index 14978263..111834dc 100644
  
  	// date & time
 diff --git a/src/osd/modules/web/web_bridge.cpp b/src/osd/modules/web/web_bridge.cpp
-index fbbe8c0d..a31a2940 100644
+index fbbe8c0d..68076e92 100644
 --- a/src/osd/modules/web/web_bridge.cpp
 +++ b/src/osd/modules/web/web_bridge.cpp
-@@ -289,6 +289,11 @@ extern "C" EMSCRIPTEN_KEEPALIVE void web_exit()
+@@ -289,6 +289,26 @@ extern "C" EMSCRIPTEN_KEEPALIVE void web_exit()
  	}
  }
  
 +extern "C" EMSCRIPTEN_KEEPALIVE int web_flush_nvram()
 +{
-+	return s_machine == NULL ? 1 : s_machine->web_flush_nvram();
++	if (s_machine == NULL || s_machine->web_flush_nvram() != 0)
++		return 1;
++
++	image_interface_iterator images(s_machine->root_device());
++	for (device_image_interface *image = images.first(); image != NULL; image = images.next())
++	{
++		if (image->image_type() != IO_MEMCARD || !image->exists())
++			continue;
++
++		if (image->is_readonly())
++			return 1;
++		image->call_unload();
++		if (image->ftell() != image->length())
++			return 1;
++	}
++	return 0;
 +}
 +
  extern "C" EMSCRIPTEN_KEEPALIVE const char *web_machine_info()
