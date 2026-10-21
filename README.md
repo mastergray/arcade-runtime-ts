@@ -35,7 +35,16 @@ criteria. The parent project's spec is kept for reference at
 The original TypeScript runtime and npm package use the
 [MIT licence](LICENSE). MAME is a separately built input: source patches and
 generated MAME 0.161 artifacts retain MAME's historical licence and all
-applicable third-party notices rather than being relicensed as MIT.
+applicable third-party notices rather than being relicensed as MIT. The
+historical MAME terms prohibit commercial distribution and require the
+copyright notice, conditions, disclaimer and complete corresponding source
+for a modified redistribution, subject to the licence's stated exception.
+
+The npm package contains no MAME build or emulator notice bundle. A consumer
+that builds and hosts a family artifact must keep its generated `notices/`
+directory beside the JavaScript and WebAssembly files and independently meet
+the historical MAME and third-party terms. The v1.0.0 review and distribution
+decision are recorded in the [release procedure](docs/release.md).
 
 ## Development
 
@@ -57,5 +66,13 @@ ROMs, BIOS sets, sample sets, native emulator binaries, locally compiled
 emulator artifacts and source caches are excluded from version control.
 Private probe and preload configs that name local ROM files live under the
 ignored `res/` directory and never enter source, packages or CI. Emulator and
-ROM licensing are separate release gates; no prebuilt MAME artifact or game
-content is distributed by default.
+ROM licensing are separate release gates. The npm package excludes `res/`,
+the developer harness, tests, caches and every locally built family artifact;
+no prebuilt MAME artifact, emulator notice bundle or game content is
+distributed through npm.
+
+The harness is a local development tool, not a deployment. It is never hosted
+publicly with ROMs, BIOS or sample content, and private preload configuration
+is never committed or attached to a release. A consumer-hosted page obtains
+lawful ROM files from its own user at run time and is responsible for what it
+loads.
