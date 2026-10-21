@@ -400,7 +400,7 @@ later persist them (§12.2).
 interface FrameEvent { readonly width: number; readonly height: number; readonly rgba: Uint8ClampedArray; }  // reused buffer; copy if kept
 interface SoundEvent { readonly samples: Float32Array; readonly frames: number; }                            // interleaved stereo
 
-type RomRole = "game" | "parent" | "bios" | "samples";
+type RomRole = "game" | "parent" | "bios" | "samples" | "device";   // device: a MAME device's own ROM set, e.g. a Namco MCU program
 
 interface RomFile {
     readonly name: string;              // unique basename, e.g. "sf2.zip", "neogeo.zip"
@@ -1185,7 +1185,15 @@ interface RomSetReport {
 }
 ```
 
-Each ROM may carry `bios`, the BIOS option it belongs to, and the metadata
+A sample set whose zip name equals the game, parent or BIOS archive (MAME
+keeps samples on a separate path, so this is common) is omitted from the
+metadata, because the flat archive model is keyed by basename and samples
+are optional. Devices with their own ROMs (the Namco 50xx–54xx MCU programs, the QSound
+DSP program) are listed by `-listxml` as `isdevice="yes"` elements and
+referenced from machines by `<device_ref>`; the extractor adds each such
+device as an archive of role `device` named `<device>.zip` and tags its
+ROMs with `device`. MAME loads a device ROM from that archive or from the
+game, parent or BIOS archives, and the audit accepts any of them. Each ROM may carry `bios`, the BIOS option it belongs to, and the metadata
 may carry `defaultBios`. A BIOS-tagged ROM is required only when its option
 is the one selected (`ArcadeStartConfig.bios`, else `defaultBios`), which is
 how MAME's own audit treats BIOS options; the other options' ROMs report

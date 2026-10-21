@@ -106,7 +106,7 @@ const testFile: TestFile = {
             { ...metadataLike().archives[0], name: "sets/fakeclone.zip" }, ...metadataLike().archives.slice(1),
         ]), false),
         predicateCase("isRomSetMetadata rejects an unknown archive role", isRomSetMetadata, metadataWith(metadataLike(), "archives", [
-            { ...metadataLike().archives[0], role: "device" }, ...metadataLike().archives.slice(1),
+            { ...metadataLike().archives[0], role: "firmware" }, ...metadataLike().archives.slice(1),
         ]), false),
         predicateCase("isRomSetMetadata rejects duplicate case-folded archive names", isRomSetMetadata, metadataWith(metadataLike(), "archives", [
             ...metadataLike().archives, { name: "FAKECLONE.ZIP", role: "parent" },

@@ -202,9 +202,9 @@ export interface SoundEvent {
     readonly frames: number;                                       // samples.length / 2
 }
 
-// TYPE :: "game" | "parent" | "bios" | "samples"
-// What part a ROM archive plays in a machine's set.
-export type RomRole = "game" | "parent" | "bios" | "samples";
+// TYPE :: "game" | "parent" | "bios" | "samples" | "device"
+// What part a ROM archive plays in a machine's set; "device" is a MAME device's own ROM set such as a Namco MCU program.
+export type RomRole = "game" | "parent" | "bios" | "samples" | "device";
 
 // TYPE :: STRING
 // A unique archive basename such as "sf2.zip"; isRomName is its meaning.
@@ -535,7 +535,7 @@ export function isSoundEvent(value: unknown): value is SoundEvent {
 // PREDICATE :: UNKNOWN -> BOOLEAN
 // True when value is one of the RomRole literals
 export function isRomRole(value: unknown): value is RomRole {
-    return value === "game" || value === "parent" || value === "bios" || value === "samples";
+    return value === "game" || value === "parent" || value === "bios" || value === "samples" || value === "device";
 }
 
 // PREDICATE :: UNKNOWN -> BOOLEAN

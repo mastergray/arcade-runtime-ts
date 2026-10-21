@@ -43,6 +43,7 @@ export interface RomSetMetadata {
         readonly archive: RomName;                                  // Archive containing this entry
         readonly optional: boolean;                                 // Missing entry does not invalidate the set
         readonly bios?: NonEmptyString | null;                      // BIOS option this entry belongs to; required only when that option is selected
+        readonly device?: NonEmptyString | null;                    // Device short name when this is a device ROM; also accepted from the game archive
     }>;
     readonly defaultBios?: NonEmptyString | null;                    // Option selected when a start config names none
     readonly samples: ReadonlyArray<{
@@ -120,7 +121,8 @@ const isMetadataRom = (value: unknown): value is RomSetMetadata["roms"][number] 
     && (value.sha1 === null || (typeof value.sha1 === "string" && SHA1_PATTERN.test(value.sha1)))
     && isRomName(value.archive)
     && typeof value.optional === "boolean"
-    && (value.bios === undefined || value.bios === null || isNonEmptyString(value.bios));
+    && (value.bios === undefined || value.bios === null || isNonEmptyString(value.bios))
+    && (value.device === undefined || value.device === null || isNonEmptyString(value.device));
 
 // PREDICATE :: UNKNOWN -> BOOLEAN
 // True when value is one expected sample declaration.

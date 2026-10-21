@@ -228,7 +228,7 @@ export default class RomSetAudit {
         }
 
         const requiredArchives = new Set(metadata.roms
-            .filter(isRequired)
+            .filter((rom) => isRequired(rom) && (rom.device === undefined || rom.device === null))
             .map((rom) => romNameKey(rom.archive)));
         const archives: RomSetReport["archives"] = metadata.archives.map((archive) => ({
             name: archive.name,
@@ -245,9 +245,19 @@ export default class RomSetAudit {
             names.add(entry.name.toLowerCase());
             matched.set(key, names);
         };
+        const setArchives = metadata.archives.filter((archive) => archive.role === "game" || archive.role === "parent" || archive.role === "bios").map((archive) => archive.name);
         const files: Array<RomSetReport["files"][number]> = metadata.roms.map((rom) => {
-            const entry = locateEntry(inspections.get(romNameKey(rom.archive)), rom.name, rom.crc, rom.size);
-            claim(rom.archive, entry);
+            // A device ROM is looked up in its device archive first, then in the game, parent and BIOS archives in that
+            // order, which is where MAME's loader also searches when <device>.zip is absent.
+            let entry = locateEntry(inspections.get(romNameKey(rom.archive)), rom.name, rom.crc, rom.size);
+            let foundIn = rom.archive;
+            if (entry === undefined && rom.device !== undefined && rom.device !== null) {
+                for (const archive of setArchives) {
+                    entry = locateEntry(inspections.get(romNameKey(archive)), rom.name, rom.crc, rom.size);
+                    if (entry !== undefined) { foundIn = archive; break; }
+                }
+            }
+            claim(foundIn, entry);
             let status: RomSetReport["files"][number]["status"];
             if (entry === undefined) status = isRequired(rom) ? "missing" : "optional-missing";
             else if (entry.size !== rom.size) status = "wrong-size";

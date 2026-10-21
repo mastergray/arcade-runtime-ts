@@ -52,6 +52,17 @@ const LISTXML = `<?xml version="1.0"?>
 	<machine name="fakedev" sourcefile="dev.c" isdevice="yes" runnable="no">
 		<description>Fake Device</description>
 	</machine>
+	<machine name="fakemcu" sourcefile="mcu.c" isdevice="yes" runnable="no">
+		<description>Fake MCU</description>
+		<rom name="mcu.bin" size="1024" crc="ffffffff" sha1="${"f".repeat(40)}" region="mcu" offset="0"/>
+	</machine>
+	<machine name="fakemcugame" sourcefile="old.c">
+		<description>Fake MCU Game</description>
+		<rom name="mcugame.rom" size="4096" crc="12121212" sha1="${"1".repeat(40)}" region="maincpu" offset="0"/>
+		<device_ref name="fakemcu"/>
+		<device_ref name="fakedev"/>
+		<device_ref name="z80"/>
+	</machine>
 </mame>
 `;
 
@@ -70,7 +81,7 @@ const testFile: TestFile = {
                     samples: state.subject[3]?.samples,
                     nodump: state.subject[1]?.roms.find((rom) => rom.name === "undumped.rom")?.nodump,
                 }), P.equals<{ names: string[]; description: string | undefined; bios: ReadonlyArray<string> | undefined; romCount: number | undefined; samples: ReadonlyArray<string> | undefined; nodump: boolean | undefined }>({
-                    names: ["fakebios", "fakegame", "fakeclone", "fakeold"],
+                    names: ["fakebios", "fakegame", "fakeclone", "fakeold", "fakedev", "fakemcu", "fakemcugame"],
                     description: "Fake Game & Friends (World)",
                     bios: ["euro", "japan"],
                     romCount: 5,
@@ -83,14 +94,14 @@ const testFile: TestFile = {
             label: "the pinned release's <game> element name is accepted exactly like <machine>",
             run: () => CTGTest.init("game elements")
                 .stage("convert a <game> document", () => romsetsFromListXml("fake-family", LISTXML.replace(/<machine\b/g, "<game").replace(/<\/machine>/g, "</game>")))
-                .assert("same machines", (state) => [...state.subject.keys()], P.equals<string[]>(["fakebios", "fakegame", "fakeclone", "fakeold"]))
+                .assert("same machines", (state) => [...state.subject.keys()], P.equals<string[]>(["fakebios", "fakegame", "fakeclone", "fakeold", "fakemcugame"]))
                 .start(undefined),
         },
         {
             label: "every produced record satisfies isRomSetMetadata and carries the family id",
             run: () => CTGTest.init("validity")
                 .stage("convert", () => [...romsetsFromListXml("fake-family", LISTXML).values()])
-                .assert("all valid", (state) => state.subject.length === 4 && state.subject.every((metadata) => isRomSetMetadata(metadata) && metadata.family === "fake-family"), P.equals(true))
+                .assert("all valid", (state) => state.subject.length === 5 && state.subject.every((metadata) => isRomSetMetadata(metadata) && metadata.family === "fake-family"), P.equals(true))
                 .start(undefined),
         },
         {
@@ -112,7 +123,7 @@ const testFile: TestFile = {
                     bios: ["euro", "japan"],
                     cloneof: null,
                     romof: "fakebios",
-                    undumped: { name: "undumped.rom", size: 1024, crc: "00000000", sha1: null, archive: "fakegame.zip", optional: true, bios: null },
+                    undumped: { name: "undumped.rom", size: 1024, crc: "00000000", sha1: null, archive: "fakegame.zip", optional: true, bios: null, device: null },
                     defaultBios: "euro",
                     euroTag: "euro",
                 }))
@@ -130,6 +141,19 @@ const testFile: TestFile = {
                     archives: ["fakeclone.zip:game", "fakegame.zip:parent", "fakebios.zip:bios"],
                     placement: { "common.rom": "fakebios.zip", "game-p1j.rom": "fakeclone.zip", "game-v1.rom": "fakegame.zip", "extra.rom": "fakeclone.zip" },
                     optional: true,
+                }))
+                .start(undefined),
+        },
+        {
+            label: "a machine referencing a device with its own ROMs lists <device>.zip as a device archive and tags those ROMs",
+            run: () => CTGTest.init("device roms")
+                .stage("convert", () => romsetsFromListXml("fake-family", LISTXML).get("fakemcugame")!)
+                .assert("device archive and tagged rom", (state) => ({
+                    archives: state.subject.archives.map((archive) => `${archive.name}:${archive.role}`),
+                    device: state.subject.roms.find((rom) => rom.name === "mcu.bin"),
+                }), P.equals<{ archives: string[]; device: unknown }>({
+                    archives: ["fakemcugame.zip:game", "fakemcu.zip:device"],
+                    device: { name: "mcu.bin", size: 1024, crc: "ffffffff", sha1: "f".repeat(40), archive: "fakemcu.zip", optional: false, bios: null, device: "fakemcu" },
                 }))
                 .start(undefined),
         },

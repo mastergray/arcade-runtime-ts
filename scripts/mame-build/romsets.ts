@@ -21,6 +21,8 @@ interface ListXmlMachine {
     readonly defaultBios: string | null;                           // biosset default="yes" 
     readonly roms: ReadonlyArray<ListXmlRom>;                      // ROM declarations
     readonly samples: ReadonlyArray<string>;                       // Sample names
+    readonly isdevice: boolean;                                    // isdevice="yes": a device with its own ROM set
+    readonly deviceRefs: ReadonlyArray<string>;                    // <device_ref name=…/> short names
 }
 
 // INTERFACE :: one <rom> element
@@ -47,6 +49,7 @@ const DESCRIPTION_PATTERN = /<description>([^<]*)<\/description>/;    // First d
 const BIOSSET_PATTERN = /<biosset\b([^>]*)\/>/g;                      // Self-closing biosset
 const ROM_PATTERN = /<rom\b([^>]*)\/>/g;                              // Self-closing rom
 const SAMPLE_PATTERN = /<sample\b([^>]*)\/>/g;                        // Self-closing sample
+const DEVICE_REF_PATTERN = /<device_ref\b([^>]*)\/>/g;                // Self-closing device reference
 const NODUMP_CRC = "00000000";                                        // Placeholder CRC for undumped ROMs, always optional
 
 /**
@@ -69,14 +72,14 @@ const attributesOf = (tag: string): Record<string, string> => {
 };
 
 // HELPER :: STRING -> [listXmlMachine]
-// Parses the subset of -listxml that romsets need; device elements and everything else are ignored.
+// Parses the subset of -listxml that romsets need, including device elements (isdevice="yes") and device references.
 // NOTE: 0.161 emits <game> elements under <mame>; later releases renamed them <machine>. Both are accepted.
 export const parseListXml = (xml: string): ListXmlMachine[] => {
     const machines: ListXmlMachine[] = [];
     for (const match of xml.matchAll(MACHINE_PATTERN)) {
         const attributes = attributesOf(match[1]!);
         const body = match[2]!;
-        if (attributes.name === undefined || attributes.isdevice === "yes") continue;
+        if (attributes.name === undefined) continue;
         const description = DESCRIPTION_PATTERN.exec(body);
         machines.push({
             name: attributes.name,
@@ -101,6 +104,8 @@ export const parseListXml = (xml: string): ListXmlMachine[] => {
                 };
             }).filter((rom) => rom.name !== ""),
             samples: [...body.matchAll(SAMPLE_PATTERN)].map((sample) => attributesOf(sample[1]!).name ?? "").filter((name) => name !== ""),
+            isdevice: attributes.isdevice === "yes",
+            deviceRefs: [...new Set([...body.matchAll(DEVICE_REF_PATTERN)].map((ref) => attributesOf(ref[1]!).name ?? "").filter((name) => name !== ""))],
         });
     }
     return machines;
@@ -144,13 +149,24 @@ export const romsetsFromListXml = (family: string, xml: string): Map<string, Rom
     const machines = new Map(parsed.map((machine) => [machine.name, machine]));
     const result = new Map<string, RomSetMetadata>();
     for (const machine of parsed) {
+        if (machine.isdevice) continue;
+        // Devices with their own ROMs (Namco MCU programs, the QSound DSP) are required too; MAME loads them from
+        // <device>.zip on the ROM path or from the game archive. Transitive references are followed one level.
+        const deviceSets = machine.deviceRefs
+            .map((name) => machines.get(name))
+            .filter((device): device is ListXmlMachine => device !== undefined && device.isdevice && device.roms.length > 0);
         const ancestors = ancestorsOf(machines, machine);
         const archives: Array<{ name: string; role: RomSetMetadata["archives"][number]["role"] }> = [
             { name: `${machine.name}.zip`, role: "game" },
             ...ancestors.map((ancestor) => ({ name: `${ancestor.name}.zip`, role: ancestor.isbios ? "bios" as const : "parent" as const })),
         ];
-        const sampleArchive = machine.samples.length === 0 ? null : `${machine.sampleof ?? machine.name}.zip`;
-        if (sampleArchive !== null && !archives.some((archive) => archive.name === sampleArchive)) archives.push({ name: sampleArchive, role: "samples" });
+        // A sample set lives under MAME's separate sample path and may share its zip name with the game or parent
+        // (sampleof pointing at the parent is common). The flat archive model keys by basename, so a colliding sample
+        // set is omitted: samples are optional and the game runs without them.
+        const sampleName = machine.samples.length === 0 ? null : `${machine.sampleof ?? machine.name}.zip`;
+        const sampleArchive = sampleName !== null && !archives.some((archive) => archive.name.toLowerCase() === sampleName.toLowerCase()) ? sampleName : null;
+        if (sampleArchive !== null) archives.push({ name: sampleArchive, role: "samples" });
+        for (const device of deviceSets) if (!archives.some((archive) => archive.name === `${device.name}.zip`)) archives.push({ name: `${device.name}.zip`, role: "device" });
         result.set(machine.name, {
             machine: machine.name,
             family,
@@ -161,15 +177,28 @@ export const romsetsFromListXml = (family: string, xml: string): Map<string, Rom
             defaultBios: machine.defaultBios,
             sampleof: machine.sampleof,
             archives,
-            roms: machine.roms.map((rom) => ({
-                name: rom.name,
-                size: rom.size,
-                crc: rom.nodump || rom.crc === null ? NODUMP_CRC : rom.crc,
-                sha1: rom.nodump ? null : rom.sha1,
-                archive: `${locateRom(machines, machine, rom.name)}.zip`,
-                optional: rom.optional || rom.nodump,
-                bios: rom.bios,
-            })),
+            roms: [
+                ...machine.roms.map((rom) => ({
+                    name: rom.name,
+                    size: rom.size,
+                    crc: rom.nodump || rom.crc === null ? NODUMP_CRC : rom.crc,
+                    sha1: rom.nodump ? null : rom.sha1,
+                    archive: `${locateRom(machines, machine, rom.name)}.zip`,
+                    optional: rom.optional || rom.nodump,
+                    bios: rom.bios,
+                    device: null,
+                })),
+                ...deviceSets.flatMap((device) => device.roms.map((rom) => ({
+                    name: rom.name,
+                    size: rom.size,
+                    crc: rom.nodump || rom.crc === null ? NODUMP_CRC : rom.crc,
+                    sha1: rom.nodump ? null : rom.sha1,
+                    archive: `${device.name}.zip`,
+                    optional: rom.optional || rom.nodump,
+                    bios: null,
+                    device: device.name,
+                }))),
+            ],
             samples: sampleArchive === null ? [] : machine.samples.map((name) => ({ name, archive: sampleArchive })),
         });
     }

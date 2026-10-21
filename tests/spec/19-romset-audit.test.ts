@@ -8,7 +8,7 @@ import { tmpdir } from "node:os";                                  // Parent for
 import { join } from "node:path";                                  // Builds disposable fixture paths
 import { fileURLToPath } from "node:url";                          // Converts the script URL for child_process
 import CTGTest, { CTGTestPredicates as P } from "ctg-js-test";     // Pipeline API and predicate builders
-import { zipSync } from "fflate";                                  // Builds synthetic archives in memory
+import { unzipSync, zipSync } from "fflate";                       // Builds and reads synthetic archives in memory
 import { renderReport } from "../../scripts/audit-roms.ts";        // Expected default CLI presentation
 import ArcadeRuntimeError from "../../src/ArcadeRuntimeError/ArcadeRuntimeError.ts";
 import RomSetAudit from "../../src/RomSetAudit/RomSetAudit.ts";
@@ -95,6 +95,11 @@ const metadata = (): RomSetMetadata => ({
 
 // HELPER :: zipEntries -> UINT8ARRAY
 // Builds one deterministic-shape zip; payload identities remain random per process.
+
+// HELPER :: Uint8Array -> {[STRING]:Uint8Array}
+// Entries of a synthetic zip, for rebuilding it with one more file.
+const unzipEntries = (bytes: Uint8Array): Record<string, Uint8Array> => unzipSync(bytes);
+
 const zip = (entries: ZipEntries): Uint8Array => zipSync(entries, { level: 6, mtime: new Date("2000-01-01T00:00:00Z") });
 
 // HELPER :: VOID -> [romFile]
@@ -278,6 +283,32 @@ const testFile: TestFile = {
                     return { status: report.status, file: report.files.find((file) => file.name === gameRom.name)?.status, unexpected: report.unexpected.filter((entry) => entry.archive === "fakegame.zip").length };
                 })
                 .assert("ok by CRC with no unexpected entry", (state) => state.subject, P.equals<{ status: string; file: string | undefined; unexpected: number }>({ status: "ok", file: "ok", unexpected: 0 }))
+                .start(undefined),
+        },
+        {
+            label: "a device ROM is accepted from its device archive or from a set archive (game, parent, BIOS), and is missing only when in none",
+            run: () => CTGTest.init("device roms")
+                .stage("audit three placements", () => {
+                    const base = metadata();
+                    const deviceBytes = new Uint8Array([9, 9, 9, 9]);
+                    const tagged = {
+                        ...base,
+                        archives: [...base.archives, { name: "fakemcu.zip", role: "device" as const }],
+                        roms: [...base.roms, { name: "mcu.bin", size: 4, crc: crc32(deviceBytes), sha1: null, archive: "fakemcu.zip", optional: false, bios: null, device: "fakemcu" }],
+                    };
+                    const gameZip = complete.find((rom) => rom.name === "fakegame.zip")!;
+                    const inDevice = RomSetAudit.audit(tagged, [...complete, { name: "fakemcu.zip", bytes: zip({ "mcu.bin": deviceBytes }) }]);
+                    const inGame = RomSetAudit.audit(tagged, complete.map((rom) => rom.name === "fakegame.zip" ? { name: rom.name, bytes: zip({ ...unzipEntries(gameZip.bytes), "mcu.bin": deviceBytes }) } : rom));
+                    const nowhere = RomSetAudit.audit(tagged, complete);
+                    return {
+                        inDevice: inDevice.status, inGame: inGame.status, nowhere: nowhere.status,
+                        unexpectedInGame: inGame.unexpected.filter((entry) => entry.name === "mcu.bin").length,
+                        deviceArchiveRequired: nowhere.archives.find((archive) => archive.name === "fakemcu.zip")?.required,
+                    };
+                })
+                .assert("placements", (state) => state.subject, P.equals<{ inDevice: string; inGame: string; nowhere: string; unexpectedInGame: number; deviceArchiveRequired: boolean | undefined }>({
+                    inDevice: "ok", inGame: "ok", nowhere: "incomplete", unexpectedInGame: 0, deviceArchiveRequired: false,
+                }))
                 .start(undefined),
         },
         {
