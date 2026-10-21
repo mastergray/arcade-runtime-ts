@@ -59,14 +59,14 @@ Status values: `todo`, `ready` (brief written, can be started),
 | W11 | `ArcadePlayer` | T | M1–M4 | merged | `wp/w11-arcade-player` | 2026-10-20 (merge of `aa9c9b0`) |
 | W12 | `ArcadeCabinet` | T | M7 | merged | `wp/w12-arcade-cabinet` | 2026-10-20 (merge of `07caa9a`) |
 | W13a | Harness: minimal preload page | T | M1 | merged | `wp/w13a-harness-preload` | 2026-10-20 (merge of `2dab339`) |
-| W13b | Harness: cabinet page | T | M7 | todo | | |
+| W13b | Harness: cabinet page | T | M7 | ready | `wp/w13b-harness-cabinet` | |
 | W14a | Family `cps2` | N | M2 | merged (F4–F6 pending private set) | `wp/w14a-cps2` | 2026-10-20 (merge of `d0c0c05`) |
 | W14b | Family `namco-classic` | N | M2 | merged (F4–F6 pending private set) | `wp/w14b-namco-classic` | 2026-10-20 (merge of `5653b31`) |
 | W14c | Family `namco-s1` | N | M2 | merged (F4–F6 pending private set) | `wp/w14c-namco-s1` | 2026-10-20 (merge of `a2c9046`) |
 | W14d | Family `namco-s2` | N | M2 | in progress | `wp/w14d-namco-s2` | |
 | W14e | Family `taito-classic` | N | M2 | merged (F4–F6 pending private set) | `wp/w14e-taito-classic` | 2026-10-20 (merge of `79aea64`) |
 | W14f | Family `taito-16` | N | M2 | ready | `wp/w14f-taito-16` | |
-| W15 | Saves bridge (memcard, EEPROM, F8) | N | M6 | ready | `wp/w15-saves-bridge` | |
+| W15 | Saves bridge (memcard, EEPROM, F8) | N | M6 | in progress | `wp/w15-saves-bridge` | |
 | W16 | BIOS and DIP switches | N+T | M8 | todo | | |
 | W17 | Release gate | T | M9 | todo | | |
 
@@ -74,6 +74,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 
 Newest first. One line per merge, milestone close, or contract amendment.
 
+- 2026-10-20 — Device ROM sets modelled (`device` role); the user's lawful sets audit ok for neogeo, namco-classic and irem-m72. `33-family-measurements.test.ts` added for F4–F6. W15 started; W13b brief written.
 - 2026-10-20 — W12 merged: `ArcadeCabinet`. Audit gained a CRC-and-size fallback (older naming generations load as MAME does); `build-mame` records applied patch sets per tree.
 - 2026-10-20 — W14f merged: `taito-16` family (189 machines, 6.9 MB wasm). All eight required families now build; M2 awaits F4–F6 with lawful sets. W15 brief written.
 - 2026-10-20 — W14e merged: `taito-classic` family (151 machines, 6.0 MB wasm); §4.6 row extended with the M6809/MCS51 and sound cores the link needs.
