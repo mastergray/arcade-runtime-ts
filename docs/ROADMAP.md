@@ -49,12 +49,12 @@ Status values: `todo`, `ready` (brief written, can be started),
 | W1 | Patch relocation and family target pairs | N | M1 | merged | `wp/w1-targets` | 2026-10-20 (merge of `7f99a0d`) |
 | W2 | Build pipeline and romsets extraction | N | M1, M7 | todo | | |
 | W3 | Production web bridge | N | M1 | in progress | `wp/w3-bridge` | |
-| W4 | `MameEmulatorAdapter` | N | M1, M6 | todo | | |
+| W4 | `MameEmulatorAdapter` | N | M1, M6 | ready (after W3) | `wp/w4-mame-adapter` | |
 | W5 | `ArcadeDisplay` | T | M1 | merged | `wp/w5-arcade-display` | 2026-10-20 `5f8ae09` |
 | W6 | `ArcadeAudio` | T | M3 | in progress | `wp/w6-arcade-audio` | |
 | W7 | `ArcadeInput`, `KeyboardSource`, controller config | T | M4 | merged | `wp/w7-arcade-input` | 2026-10-20 (merge of `6cecda2`) |
-| W8 | `GamepadSource` | T | M5 | todo | | |
-| W9 | `ArcadeStorage`, `ArcadeRomStore` | T | M6, M7 | todo | | |
+| W8 | `GamepadSource` | T | M5 | ready | `wp/w8-gamepad-source` | |
+| W9 | `ArcadeStorage`, `ArcadeRomStore` | T | M6, M7 | ready | `wp/w9-storage` | |
 | W10 | `RomSetAudit`, `arcade-audit-roms` | T | M7 | in progress | `wp/w10-romset-audit` | |
 | W11 | `ArcadePlayer` | T | M1–M4 | todo | | |
 | W12 | `ArcadeCabinet` | T | M7 | todo | | |
