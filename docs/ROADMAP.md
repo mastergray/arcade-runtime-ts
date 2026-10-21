@@ -26,7 +26,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 | M6 Saves | W9 (storage half), W15 | merged; memory card verified, states persist, CPS-2 EEPROM runtime check pending a set | |
 | M7 ROM supply and cabinet | W2 (romsets half), W9 (ROM store half), W10, W12, W13b | closed (picker path with synthetic archives and the real cabinet; preload path with the real build; audit agrees with MAME on every lawful local set) | 2026-10-20 |
 | M8 BIOS and DIP switches | W16 | done | 2026-10-21: `35-dip-switches.test.ts` against the namco-classic build; a BIOS option is exercised by the Neo Geo acceptance (`-bios`). |
-| M9 v1.0.0 release gate | W17 | in progress | |
+| M9 v1.0.0 release gate | W17 | gate in place | Package and build-output tests pass; closing needs `docs/release.md` run end to end: fresh `--all` rebuild (adds the SDL2 notice), remaining M2 family evidence, version bump and the licence review decision. |
 
 ## Post-1.0
 
@@ -69,13 +69,14 @@ Status values: `todo`, `ready` (brief written, can be started),
 | W15 | Saves bridge (memcard, EEPROM, F8) | N | M6 | merged (CPS-2 EEPROM runtime check pending a set) | `wp/w15-saves-bridge` | 2026-10-20 (merge of `6f0a252`) |
 | W13c | Harness: BIOS and DIP selectors | T | M8 | merged | `wp/w13c-harness-selectors` | `6cf1dea` |
 | W16 | BIOS and DIP switches | N+T | M8 | merged | `wp/w16-bios-dip` | `d5446ad` |
-| W17 | Release gate | T | M9 | in progress | `wp/w17-release-gate` | |
+| W17 | Release gate | T | M9 | merged | `wp/w17-release-gate` | 2026-10-21 |
 
 ## Log
 
 Newest first. One line per merge, milestone close, or contract amendment.
 
 - 2026-10-20 — **M3, M4, M5 closed** by `36-input-audio-acceptance.test.ts` on the Neo Geo and Namco sets (audio peak 68–71 ms under the 120 ms cap over 60 s; keyboard and two-pad flows verified; unplug release verified).
+- 2026-10-21 — W17 merged: isolated `npm pack` test with the packed bin run against a synthetic set, build-output gate over every built family, `docs/release.md`, SDL2 notice added to the P1 copy. Integrator applied the `package.json` `files` list and moved `tsx` to dependencies (the bin stays TypeScript); `version` stays 0.0.0 and `private` stays until the release itself.
 - 2026-10-21 — W13c merged: harness BIOS and DIP selectors from the served machine metadata, restart-with-switches; §16.3/§16.4 updated for the W13c split. M8 fully closed.
 - 2026-10-21 — W16 merged: generated per-machine DIP cfg, BIOS selection, `ArcadeStartConfig` DIP/BIOS fields. Integrator fix: the visual DIP check compared frames inside the Namco classic title's 13-second self test, which is DIP-independent; checkpoints moved to 15–20 emulated seconds. **M8 closed** for the library; W13c (harness selectors §11) and W17 started.
 - 2026-10-20 — W13b merged: cabinet harness page (picker, ROM store, saves, corner menu). **M7 closed.** W16 started.
