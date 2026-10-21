@@ -43,6 +43,9 @@ const LISTXML = `<?xml version="1.0"?>
 			<dipvalue name="3" value="128" default="yes"/>
 			<dipvalue name="5" value="192"/>
 		</dipswitch>
+		<dipswitch name="Bonus Life" tag="DSWB" mask="8">
+			<dipvalue name="Only at 100000" value="0"/>
+		</dipswitch>
 	</machine>
 	<machine name="fakeclone" sourcefile="fake.c" cloneof="fakegame" romof="fakegame">
 		<description>Fake Game &amp; Friends (Japan)</description>
@@ -99,6 +102,7 @@ const testFile: TestFile = {
                     dipswitches: [
                         { name: "Difficulty", tag: "DSWA", mask: 3, values: [{ name: "Easy", value: 3, default: true }, { name: "Hard", value: 1, default: false }] },
                         { name: "Lives", tag: "DSWB", mask: 192, values: [{ name: "3", value: 128, default: true }, { name: "5", value: 192, default: false }] },
+                        { name: "Bonus Life", tag: "DSWB", mask: 8, values: [{ name: "Only at 100000", value: 0, default: false }] },
                     ],
                 }))
                 .start(undefined),
@@ -129,7 +133,7 @@ const testFile: TestFile = {
                     dipswitches: [
                         { name: "Difficulty", tag: "DSWA", mask: 3, values: [{ name: "Easy", value: 3, default: true }, { name: "Hard", value: 1, default: false }] },
                         { name: "Lives", tag: "DSWB", mask: 192, values: [{ name: "3", value: 128, default: true }, { name: "5", value: 192, default: false }] },
-                    ],
+                    ],                                            // "Bonus Life" has no default row and is omitted
                 }))
                 .start(undefined),
         },

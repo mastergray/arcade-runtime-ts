@@ -177,14 +177,17 @@ const ancestorsOf = (machines: Map<string, ListXmlMachine>, machine: ListXmlMach
 // HELPER :: [listXmlDipSwitch] -> romSetMetadata.dipswitches
 // Makes the human selection keys unique and collapses condition-dependent duplicate numeric settings. Pinned
 // -listxml omits setting conditions, so repeated rows for one value carry no additional cfg information.
+// NOTE: A field whose default value has no named setting (a driver quirk: 0.161 emits no default="yes" row) is
+// omitted, because §4.5 needs the default's value to write a cfg entry and the page could never show it selected.
 const normalizedDipSwitches = (dipswitches: ReadonlyArray<ListXmlDipSwitch>): NonNullable<RomSetMetadata["dipswitches"]> => {
+    const selectable = dipswitches.filter((dipswitch) => dipswitch.values.some((setting) => setting.default));
     const switchCounts = new Map<string, number>();
-    for (const dipswitch of dipswitches) {
+    for (const dipswitch of selectable) {
         const key = dipswitch.name.toLowerCase();
         switchCounts.set(key, (switchCounts.get(key) ?? 0) + 1);
     }
     const usedSwitchNames = new Set<string>();
-    return dipswitches.map((dipswitch) => {
+    return selectable.map((dipswitch) => {
         const baseName = switchCounts.get(dipswitch.name.toLowerCase()) === 1
             ? dipswitch.name
             : `${dipswitch.name} (${dipswitch.tag} mask ${dipswitch.mask})`;
