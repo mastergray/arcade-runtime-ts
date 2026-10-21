@@ -19,8 +19,19 @@ npm run harness -- --preload res/preload.json
 ```
 
 Open the printed URL. An autostart config waits for one click anywhere before it
-starts, so that click can also serve as the browser audio gesture. Keyboard play
-uses `DEFAULT_KEYBOARD_MAP`.
+starts, so that click can also serve as the browser audio gesture.
+
+Without a preload, choose a family and machine, then pick or drop one or more zip
+files. The page shows each basename and size before copying anything. **Confirm
+and store** puts those files into `ArcadeRomStore` in this browser; the audit then
+runs against their bare basenames before Start is enabled. Store entries can be
+removed individually or cleared together. Clearing the ROM store does not clear
+save data, and clearing saves does not touch the ROM store.
+
+The corner menu provides fullscreen, sound, reset, quick-state, persistence,
+keyboard and gamepad controls. Autosave is off unless its checkbox is selected.
+If a saved overlay is incompatible, the page leaves it in place and offers a
+separate **Clear saves and retry** action.
 
 Available server options are:
 
@@ -36,5 +47,8 @@ only their basenames and `/preload/<basename>` URLs; duplicate basenames after
 case folding are rejected. Only the files named by that config are available
 under `/preload/`, and there is no route that serves `res/` itself.
 
-Without `--preload`, the page still lists family directories containing a
-`build.json`. Local file picking arrives with W13b.
+The page and its source show ROM basenames only. User-confirmed archives and save
+overlays stay in that browser's origin-local IndexedDB and are never uploaded,
+synced, linked or written into `dist/`. The harness contains no default ROM URL
+and serves no ROM unless the developer explicitly allowlists it through a
+private preload config.
