@@ -361,7 +361,7 @@ export default class ArcadePlayer {
         const config: { -readonly [K in keyof ArcadeStartConfig]: ArcadeStartConfig[K] } = {
             machine: this._game.machine,
             machineHints: this._game.machineHints,
-            roms,
+            roms: roms.map((rom) => ({ name: rom.name, bytes: rom.bytes.slice() })),
         };
         if (this._changes !== undefined) config.changes = this._changes.slice();
         if (this._game.bios !== undefined) config.bios = this._game.bios;
