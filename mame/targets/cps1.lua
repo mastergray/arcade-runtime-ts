@@ -2,7 +2,7 @@
 --
 --   cps1.lua
 --
---   MAME 0.161 CPS-1 family-size probe target.
+--   MAME 0.161 CPS-1 family target.
 --
 ---------------------------------------------------------------------------
 
@@ -22,11 +22,11 @@ MACHINES["TIMEKPR"] = true
 -- pinned llvm-ar cannot create an empty archive. Keep one harmless bus core.
 BUSES["CENTRONICS"] = true
 
-function createProjects_mame_runtimeprobe(_target, _subtarget)
-	project ("mame_runtimeprobe")
+function createProjects_mame_cps1(_target, _subtarget)
+	project ("mame_cps1")
 	targetsubdir(_target .. "_" .. _subtarget)
 	kind "StaticLib"
-	uuid (os.uuid("drv-mame-runtimeprobe"))
+	uuid (os.uuid("drv-mame-cps1"))
 
 	options {
 		"ForceCPP",
@@ -50,8 +50,8 @@ function createProjects_mame_runtimeprobe(_target, _subtarget)
 	}
 end
 
-function linkProjects_mame_runtimeprobe(_target, _subtarget)
+function linkProjects_mame_cps1(_target, _subtarget)
 	links {
-		"mame_runtimeprobe",
+		"mame_cps1",
 	}
 end

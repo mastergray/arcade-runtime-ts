@@ -34,7 +34,7 @@ cannot resume the abandoned `run()`/`execute()` frames.
 
 ## Reproducible probe
 
-[`0002-emscripten-lifecycle-probe.patch`](../../../mame/patches/0002-emscripten-lifecycle-probe.patch)
+[`0002-emscripten-lifecycle-probe.patch`](../../../mame/probes/patches/0002-emscripten-lifecycle-probe.patch)
 adds diagnostics without changing the lifecycle. On each browser callback it:
 
 - reports the active machine and whether a scheduled event is pending;

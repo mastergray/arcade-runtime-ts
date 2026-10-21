@@ -10,7 +10,7 @@ local inputs and are not recorded here.
 
 ## Deterministic checkpoint
 
-[`0010-native-browser-parity-probe.patch`](../../../mame/patches/0010-native-browser-parity-probe.patch)
+[`0010-native-browser-parity-probe.patch`](../../../mame/probes/patches/0010-native-browser-parity-probe.patch)
 runs the same checkpoint code in native and Emscripten builds. At emulated
 frame 180 it renders MAME's hidden native snapshot target, converts every
 pixel to RGBA byte order and computes a 32-bit FNV-1a checksum. It also records

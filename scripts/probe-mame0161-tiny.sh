@@ -4,16 +4,16 @@ set -euo pipefail
 project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source_dir=""
 emsdk_dir="${EMSDK_DIR:-${project_root}/res/emsdk}"
-compatibility_patch="${project_root}/mame/patches/0001-emscripten-1.38.31-compatibility.patch"
-no_mongoose_patch="${project_root}/mame/patches/0005-emscripten-disable-mongoose.patch"
-lifecycle_probe_patch="${project_root}/mame/patches/0002-emscripten-lifecycle-probe.patch"
-pacing_probe_patch="${project_root}/mame/patches/0003-emscripten-pacing-probe.patch"
-bridge_hooks_probe_patch="${project_root}/mame/patches/0004-emscripten-bridge-hooks-probe.patch"
-persistence_probe_patch="${project_root}/mame/patches/0006-emscripten-persistence-probe.patch"
-video_probe_patch="${project_root}/mame/patches/0007-emscripten-video-probe.patch"
-audio_probe_patch="${project_root}/mame/patches/0008-emscripten-audio-probe.patch"
-audit_output_probe_patch="${project_root}/mame/patches/0009-emscripten-audit-output-probe.patch"
-parity_probe_patch="${project_root}/mame/patches/0010-native-browser-parity-probe.patch"
+compatibility_patch="${project_root}/mame/probes/patches/0001-emscripten-1.38.31-compatibility.patch"
+no_mongoose_patch="${project_root}/mame/probes/patches/0005-emscripten-disable-mongoose.patch"
+lifecycle_probe_patch="${project_root}/mame/probes/patches/0002-emscripten-lifecycle-probe.patch"
+pacing_probe_patch="${project_root}/mame/probes/patches/0003-emscripten-pacing-probe.patch"
+bridge_hooks_probe_patch="${project_root}/mame/probes/patches/0004-emscripten-bridge-hooks-probe.patch"
+persistence_probe_patch="${project_root}/mame/probes/patches/0006-emscripten-persistence-probe.patch"
+video_probe_patch="${project_root}/mame/probes/patches/0007-emscripten-video-probe.patch"
+audio_probe_patch="${project_root}/mame/probes/patches/0008-emscripten-audio-probe.patch"
+audit_output_probe_patch="${project_root}/mame/probes/patches/0009-emscripten-audit-output-probe.patch"
+parity_probe_patch="${project_root}/mame/probes/patches/0010-native-browser-parity-probe.patch"
 expected_emsdk="$(tr -d '[:space:]' < "${project_root}/mame/EMSDK_VERSION")"
 probe_kind="${MAME_PROBE_KIND:-list}"
 pre_js="${project_root}/mame/bridge/tiny-probe-pre.js"
@@ -23,6 +23,7 @@ bitcode_name="mametiny.bc"
 link_options=()
 generated_pre_js=""
 config_output=""
+family_id=""
 
 cleanup() {
     if [[ -n "${generated_pre_js}" ]]; then
@@ -36,6 +37,13 @@ trap cleanup EXIT
 
 if [[ "${probe_kind}" == "list" ]]; then
     source_dir="${1:-}"
+elif [[ "${probe_kind}" == "family-pair" ]]; then
+    family_id="${1:-}"
+    if [[ ! "${family_id}" =~ ^[a-z0-9]+(-[a-z0-9]+)*$ || "$#" -ne 1 ]]; then
+        echo "Usage: MAME_PROBE_KIND=family-pair $0 <family>" >&2
+        exit 2
+    fi
+    source_dir="${MAME_SOURCE_DIR:-${project_root}/.cache/mame0161-source}"
 else
     config_file="${1:-}"
     if [[ -z "${config_file}" || "$#" -ne 1 ]]; then
@@ -102,6 +110,25 @@ case "${probe_kind}" in
         output_name="${output_name}"
         subtarget="runtimeprobe"
         bitcode_name="mameruntimeprobe.bc"
+        ;;
+    family-pair)
+        target_file="${project_root}/mame/targets/${family_id}.lua"
+        list_file="${project_root}/mame/targets/${family_id}.lst"
+        if [[ ! -f "${target_file}" || ! -f "${list_file}" ]]; then
+            echo "Missing committed target pair for family: ${family_id}" >&2
+            exit 2
+        fi
+
+        install -m 0644 \
+            "${target_file}" \
+            "${source_dir}/scripts/target/mame/${family_id}.lua"
+        install -m 0644 \
+            "${list_file}" \
+            "${source_dir}/src/mame/${family_id}.lst"
+
+        output_name="mamefamily-${family_id}"
+        subtarget="${family_id}"
+        bitcode_name="mame${family_id}.bc"
         ;;
     game)
         if [[ ! "${machine}" =~ ^[a-z0-9_]+$ ]]; then
@@ -190,7 +217,7 @@ case "${probe_kind}" in
         link_options=(--pre-js "${generated_pre_js}" -lidbfs.js "${link_options[@]}")
         ;;
     *)
-        echo "Unknown MAME_PROBE_KIND: ${probe_kind} (expected list, family or game)" >&2
+        echo "Unknown MAME_PROBE_KIND: ${probe_kind} (expected list, family, family-pair or game)" >&2
         exit 2
         ;;
 esac
@@ -200,16 +227,6 @@ apply_source_patch() {
     if patch --dry-run --silent --forward --batch -p1 -d "${source_dir}" < "${patch_file}" >/dev/null 2>&1; then
         patch --silent --forward --batch -p1 -d "${source_dir}" < "${patch_file}"
     elif ! patch --dry-run --silent --reverse --forward --batch -p1 -d "${source_dir}" < "${patch_file}" >/dev/null 2>&1; then
-        echo "MAME source does not accept $(basename "${patch_file}")" >&2
-        exit 2
-    fi
-}
-
-remove_source_patch() {
-    local patch_file="$1"
-    if patch --dry-run --silent --reverse --forward --batch -p1 -d "${source_dir}" < "${patch_file}" >/dev/null 2>&1; then
-        patch --silent --reverse --batch -p1 -d "${source_dir}" < "${patch_file}"
-    elif ! patch --dry-run --silent --forward --batch -p1 -d "${source_dir}" < "${patch_file}" >/dev/null 2>&1; then
         echo "MAME source does not accept $(basename "${patch_file}")" >&2
         exit 2
     fi
@@ -281,14 +298,18 @@ if [[ "${probe_kind}" == "game" ]]; then
         apply_source_patch "${parity_probe_patch}"
     fi
 else
-    remove_source_patch "${parity_probe_patch}"
-    remove_source_patch "${audit_output_probe_patch}"
-    remove_source_patch "${audio_probe_patch}"
-    remove_source_patch "${video_probe_patch}"
-    remove_source_patch "${persistence_probe_patch}"
-    remove_source_patch "${bridge_hooks_probe_patch}"
-    remove_source_patch "${pacing_probe_patch}"
-    remove_source_patch "${lifecycle_probe_patch}"
+    # Later probe patches are layered on earlier ones. Once the stack is
+    # absent, an upper patch cannot necessarily pass a forward dry run because
+    # its prerequisite context is absent too. Reverse only the layers that are
+    # currently applied, in dependency order.
+    remove_source_patch_if_applied "${parity_probe_patch}"
+    remove_source_patch_if_applied "${audit_output_probe_patch}"
+    remove_source_patch_if_applied "${audio_probe_patch}"
+    remove_source_patch_if_applied "${video_probe_patch}"
+    remove_source_patch_if_applied "${persistence_probe_patch}"
+    remove_source_patch_if_applied "${bridge_hooks_probe_patch}"
+    remove_source_patch_if_applied "${pacing_probe_patch}"
+    remove_source_patch_if_applied "${lifecycle_probe_patch}"
 fi
 apply_source_patch "${no_mongoose_patch}"
 
@@ -320,6 +341,14 @@ if [[ "${subtarget}" == "runtimeprobe" ]]; then
         "${source_dir}/build/asmjs/bin/mame_runtimeprobe/libdasm.a" \
         "${source_dir}/build/asmjs/bin/mame_runtimeprobe/libmame_runtimeprobe.a" \
         "${source_dir}/build/asmjs/bin/mame_runtimeprobe/liboptional.a" \
+        "${source_dir}/${bitcode_name}"
+elif [[ "${probe_kind}" == "family-pair" ]]; then
+    driver_project="mame_${family_id//-/_}"
+    rm -f \
+        "${source_dir}/build/asmjs/bin/mame_${family_id}/libbus.a" \
+        "${source_dir}/build/asmjs/bin/mame_${family_id}/libdasm.a" \
+        "${source_dir}/build/asmjs/bin/mame_${family_id}/lib${driver_project}.a" \
+        "${source_dir}/build/asmjs/bin/mame_${family_id}/liboptional.a" \
         "${source_dir}/${bitcode_name}"
 fi
 

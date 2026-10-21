@@ -31,7 +31,7 @@ Observed 2026-10-19 with the pinned Emscripten 1.38.31 toolchain and headless
 Chromium. The fixture, its machine names and its ROM archives remain private
 local inputs and are not recorded here.
 
-[`0004-emscripten-bridge-hooks-probe.patch`](../../../mame/patches/0004-emscripten-bridge-hooks-probe.patch)
+[`0004-emscripten-bridge-hooks-probe.patch`](../../../mame/probes/patches/0004-emscripten-bridge-hooks-probe.patch)
 counts machine notifications and exposes generic requests for pause, resume,
 soft reset, scheduled save/load and exit. It also reports one stock SDL input
 state and the native file/save error codes. The JavaScript shim counts the
@@ -84,7 +84,7 @@ page canvas.
 The dedicated browser probe ran on 2026-10-19 with the pinned Emscripten
 1.38.31 toolchain and headless Chromium. The private fixture identity and ROM
 inputs remain local. The game-only
-[`0007-emscripten-video-probe.patch`](../../../mame/patches/0007-emscripten-video-probe.patch)
+[`0007-emscripten-video-probe.patch`](../../../mame/probes/patches/0007-emscripten-video-probe.patch)
 uses `video_manager`'s existing hidden native snapshot target and software
 primitive rasterizer. This avoids SDL canvas readback and exercises the same
 path selected for the production web video module.
@@ -134,7 +134,7 @@ toolchain failure.
 The dedicated runtime probe ran on 2026-10-19 with the pinned Emscripten
 1.38.31 toolchain and headless Chromium. The private fixture identity and ROM
 inputs remain local. The command line fixed `-samplerate 48000`, while
-[`0008-emscripten-audio-probe.patch`](../../../mame/patches/0008-emscripten-audio-probe.patch)
+[`0008-emscripten-audio-probe.patch`](../../../mame/probes/patches/0008-emscripten-audio-probe.patch)
 forwarded the sound module's own `sample_rate()` and throttle state with each
 stock callback. The JavaScript probe read the two channel slots through the
 signed `HEAP16` view; it did not derive the format or rate from wall time.
@@ -172,7 +172,7 @@ specification is required.
 
 The dedicated runtime probe ran on 2026-10-19 with the pinned Emscripten
 1.38.31 toolchain, headless Chromium and a private NVRAM-capable fixture.
-[`0006-emscripten-persistence-probe.patch`](../../../mame/patches/0006-emscripten-persistence-probe.patch)
+[`0006-emscripten-persistence-probe.patch`](../../../mame/probes/patches/0006-emscripten-persistence-probe.patch)
 adds a narrow `probe_flush_nvram()` wrapper. It counts live NVRAM interfaces,
 uses MAME's own `nvram_filename()` result, retains the pinned toolchain's
 missing-file pre-creation accommodation, and then delegates serialization to
@@ -218,7 +218,7 @@ without scraping browser console output.
 The dedicated browser probe ran on 2026-10-20 with the pinned Emscripten
 1.38.31 toolchain, headless Chromium and separate private parent-dependent and
 BIOS-dependent fixtures. Their identities and ROM inputs remain local.
-[`0009-emscripten-audit-output-probe.patch`](../../../mame/patches/0009-emscripten-audit-output-probe.patch)
+[`0009-emscripten-audit-output-probe.patch`](../../../mame/probes/patches/0009-emscripten-audit-output-probe.patch)
 copies each formatted OSD message into a `{ sequence, channel, text }` record
 before the existing SDL callback prints it. It also reports the authoritative
 `cli_frontend::execute()` result without changing the audit or error path.

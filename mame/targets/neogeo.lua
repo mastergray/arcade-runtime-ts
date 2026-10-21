@@ -2,7 +2,7 @@
 --
 --   neogeo.lua
 --
---   MAME 0.161 Neo Geo family-size probe target.
+--   MAME 0.161 Neo Geo family target.
 --
 ---------------------------------------------------------------------------
 
@@ -15,11 +15,11 @@ MACHINES["UPD1990A"] = true
 
 BUSES["NEOGEO"] = true
 
-function createProjects_mame_runtimeprobe(_target, _subtarget)
-	project ("mame_runtimeprobe")
+function createProjects_mame_neogeo(_target, _subtarget)
+	project ("mame_neogeo")
 	targetsubdir(_target .. "_" .. _subtarget)
 	kind "StaticLib"
-	uuid (os.uuid("drv-mame-runtimeprobe"))
+	uuid (os.uuid("drv-mame-neogeo"))
 
 	options {
 		"ForceCPP",
@@ -48,8 +48,8 @@ function createProjects_mame_runtimeprobe(_target, _subtarget)
 	}
 end
 
-function linkProjects_mame_runtimeprobe(_target, _subtarget)
+function linkProjects_mame_neogeo(_target, _subtarget)
 	links {
-		"mame_runtimeprobe",
+		"mame_neogeo",
 	}
 end

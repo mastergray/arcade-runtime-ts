@@ -92,7 +92,7 @@ the notice set even if a later optimized build removes all of its code.
 | JsonCpp | Public domain or MIT | `3rdparty/jsoncpp/LICENSE` |
 
 Mongoose is present in the upstream tree but is not a browser-build input.
-[`0005-emscripten-disable-mongoose.patch`](../../../mame/patches/0005-emscripten-disable-mongoose.patch)
+[`0005-emscripten-disable-mongoose.patch`](../../../mame/probes/patches/0005-emscripten-disable-mongoose.patch)
 replaces the internal web server with no-op Emscripten stubs and removes the
 Mongoose archive from the asmjs link; the runtime does not support MAME's
 unneeded `-http` feature. A rebuilt `mametiny.bc` has no Mongoose archive

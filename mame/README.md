@@ -5,9 +5,10 @@ pins the initial source release to `mame0161` so it can be compared with the
 source-built native baseline.
 
 M0 records the exact source identity, licence files, compatible Emscripten SDK,
-build commands and required patches here. `EMSDK_VERSION` pins the first SDK
-that completed a clean `tiny` WebAssembly build and browser smoke run. The
-ordered files in `patches/` adapt the pinned source without vendoring it.
+build commands and required probe patches here. `EMSDK_VERSION` pins the first
+SDK that completed a clean `tiny` WebAssembly build and browser smoke run. The
+inherited diagnostic files in `probes/patches/` adapt the pinned source only
+for probes; `patches/` is reserved for the production bridge.
 
 The reproducible smoke command is:
 
@@ -69,6 +70,15 @@ For ROM-free driver-family size probes, choose one tracked definition under
 
 ```sh
 npm run probe:mame:family -- "$PWD/res/mame-family-probe.json"
+```
+
+The release-family pairs need no private config. The pair-mode probe copies a
+committed `<family>.lua` + `<family>.lst` into the cached source tree, builds
+that exact subtarget and links a ROM-free `-listfull` artifact:
+
+```sh
+EMSDK_DIR="$PWD/res/emsdk" MAME_PROBE_KIND=family-pair \
+  scripts/probe-mame0161-tiny.sh <family>
 ```
 
 The family probe runs `-listfull` and does not preload ROM content. Set

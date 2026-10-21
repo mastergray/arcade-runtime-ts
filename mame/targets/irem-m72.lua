@@ -2,7 +2,7 @@
 --
 --   irem-m72.lua
 --
---   MAME 0.161 Irem M72 family-size probe target.
+--   MAME 0.161 Irem M72 family target.
 --
 ---------------------------------------------------------------------------
 
@@ -18,11 +18,11 @@ SOUNDS["YM2151"] = true
 -- pinned llvm-ar cannot create an empty archive. Keep one harmless bus core.
 BUSES["CENTRONICS"] = true
 
-function createProjects_mame_runtimeprobe(_target, _subtarget)
-	project ("mame_runtimeprobe")
+_G["createProjects_mame_irem-m72"] = function(_target, _subtarget)
+	project ("mame_irem_m72")
 	targetsubdir(_target .. "_" .. _subtarget)
 	kind "StaticLib"
-	uuid (os.uuid("drv-mame-runtimeprobe"))
+	uuid (os.uuid("drv-mame-irem-m72"))
 
 	options {
 		"ForceCPP",
@@ -47,8 +47,8 @@ function createProjects_mame_runtimeprobe(_target, _subtarget)
 	}
 end
 
-function linkProjects_mame_runtimeprobe(_target, _subtarget)
+_G["linkProjects_mame_irem-m72"] = function(_target, _subtarget)
 	links {
-		"mame_runtimeprobe",
+		"mame_irem_m72",
 	}
 end
