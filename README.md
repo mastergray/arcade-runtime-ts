@@ -21,7 +21,8 @@ complete from the parent project: direct MAME 0.161 source, built with a
 pinned Emscripten 1.38.31 toolchain, is the implementation path, and the
 probe evidence lives under `docs/probes/mame0161/`.
 
-See the [implementation spec](docs/arcade-runtime-spec.md) for the
+See the [roadmap](docs/ROADMAP.md) for current status and the
+[implementation spec](docs/arcade-runtime-spec.md) for the
 architecture, family build matrix, milestones, probe plan and acceptance
 criteria. The parent project's spec is kept for reference at
 `docs/parent/mame-game-runtime-spec.md`.

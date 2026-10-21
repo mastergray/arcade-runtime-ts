@@ -4,15 +4,14 @@ One file per work package from §16.3 of
 [the runtime spec](../arcade-runtime-spec.md), in the shape §16.6 defines.
 An agent handed a brief works from the brief and the spec alone.
 
-| Brief | Lane | Status |
-| ----- | ---- | ------ |
-| [W1 — patch relocation and family target pairs](W1-targets.md) | Native | ready |
-| [W5 — `ArcadeDisplay`](W5-arcade-display.md) | TypeScript | ready |
-| [W7 — `ArcadeInput`, `KeyboardSource`, controller config](W7-arcade-input.md) | TypeScript | ready |
+| Brief | Lane |
+| ----- | ---- |
+| [W1 — patch relocation and family target pairs](W1-targets.md) | Native |
+| [W5 — `ArcadeDisplay`](W5-arcade-display.md) | TypeScript |
+| [W7 — `ArcadeInput`, `KeyboardSource`, controller config](W7-arcade-input.md) | TypeScript |
 
-Status values: `ready` (can be started), `in progress` (branch exists),
-`review` (merge requested), `merged`. The integrator updates this table at
-each transition.
+Package and milestone status is tracked in one place,
+[`docs/ROADMAP.md`](../ROADMAP.md); this list only links the briefs.
 
 ## Rules every brief shares
 
