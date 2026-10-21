@@ -16,15 +16,15 @@ import type { TestFile } from "../run.ts";                       // Manifest con
 const PACKAGE_URL = new URL("../../package.json", import.meta.url);
 const PROBE_SCRIPT_URL = new URL("../../scripts/probe-mame0161-tiny.sh", import.meta.url);
 const CONFIG_READER_URL = new URL("../../scripts/read-mame-probe-config.js", import.meta.url);
-const PRE_JS_URL = new URL("../../mame/bridge/game-probe-pre.js", import.meta.url);
-const LIFECYCLE_PATCH_URL = new URL("../../mame/patches/0002-emscripten-lifecycle-probe.patch", import.meta.url);
-const PACING_PATCH_URL = new URL("../../mame/patches/0003-emscripten-pacing-probe.patch", import.meta.url);
-const BRIDGE_HOOKS_PATCH_URL = new URL("../../mame/patches/0004-emscripten-bridge-hooks-probe.patch", import.meta.url);
-const PERSISTENCE_PATCH_URL = new URL("../../mame/patches/0006-emscripten-persistence-probe.patch", import.meta.url);
-const VIDEO_PATCH_URL = new URL("../../mame/patches/0007-emscripten-video-probe.patch", import.meta.url);
-const AUDIO_PATCH_URL = new URL("../../mame/patches/0008-emscripten-audio-probe.patch", import.meta.url);
-const AUDIT_PATCH_URL = new URL("../../mame/patches/0009-emscripten-audit-output-probe.patch", import.meta.url);
-const PARITY_PATCH_URL = new URL("../../mame/patches/0010-native-browser-parity-probe.patch", import.meta.url);
+const PRE_JS_URL = new URL("../../mame/probes/bridge/game-probe-pre.js", import.meta.url);
+const LIFECYCLE_PATCH_URL = new URL("../../mame/probes/patches/0002-emscripten-lifecycle-probe.patch", import.meta.url);
+const PACING_PATCH_URL = new URL("../../mame/probes/patches/0003-emscripten-pacing-probe.patch", import.meta.url);
+const BRIDGE_HOOKS_PATCH_URL = new URL("../../mame/probes/patches/0004-emscripten-bridge-hooks-probe.patch", import.meta.url);
+const PERSISTENCE_PATCH_URL = new URL("../../mame/probes/patches/0006-emscripten-persistence-probe.patch", import.meta.url);
+const VIDEO_PATCH_URL = new URL("../../mame/probes/patches/0007-emscripten-video-probe.patch", import.meta.url);
+const AUDIO_PATCH_URL = new URL("../../mame/probes/patches/0008-emscripten-audio-probe.patch", import.meta.url);
+const AUDIT_PATCH_URL = new URL("../../mame/probes/patches/0009-emscripten-audit-output-probe.patch", import.meta.url);
+const PARITY_PATCH_URL = new URL("../../mame/probes/patches/0010-native-browser-parity-probe.patch", import.meta.url);
 const NATIVE_PARITY_SCRIPT_URL = new URL("../../scripts/probe-mame0161-native-parity.sh", import.meta.url);
 const PARITY_RESULT_WRITER_URL = new URL("../../scripts/write-mame-parity-result.js", import.meta.url);
 const PARITY_BROWSER_TEST_URL = new URL("../browser/11-mame-parity-probe.test.ts", import.meta.url);
@@ -227,7 +227,7 @@ const testFile: TestFile = {
                             && preJs.includes("resetVideoProbe")
                             && build.includes("video_probe_is_applied")
                             && build.includes('apply_source_patch "${video_probe_patch}"')
-                            && build.includes('remove_source_patch "${video_probe_patch}"');
+                            && build.includes('remove_source_patch_if_applied "${video_probe_patch}"');
                     },
                     P.equals(true),
                 )
@@ -258,7 +258,7 @@ const testFile: TestFile = {
                             && preJs.includes("resetAudioProbe")
                             && build.includes("audio_probe_is_applied")
                             && build.includes('apply_source_patch "${audio_probe_patch}"')
-                            && build.includes('remove_source_patch "${audio_probe_patch}"');
+                            && build.includes('remove_source_patch_if_applied "${audio_probe_patch}"');
                     },
                     P.equals(true),
                 )
@@ -291,7 +291,7 @@ const testFile: TestFile = {
                             && build.includes("MAME_PROBE_PARENT")
                             && build.includes("audit_output_probe_is_applied")
                             && build.includes('apply_source_patch "${audit_output_probe_patch}"')
-                            && build.includes('remove_source_patch "${audit_output_probe_patch}"');
+                            && build.includes('remove_source_patch_if_applied "${audit_output_probe_patch}"');
                     },
                     P.equals(true),
                 )

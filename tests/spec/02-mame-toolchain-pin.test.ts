@@ -14,8 +14,8 @@ import type { TestFile } from "../run.ts";                       // Manifest con
  */
 
 const EMSDK_VERSION_URL = new URL("../../mame/EMSDK_VERSION", import.meta.url);
-const PATCH_URL = new URL("../../mame/patches/0001-emscripten-1.38.31-compatibility.patch", import.meta.url);
-const NO_MONGOOSE_PATCH_URL = new URL("../../mame/patches/0005-emscripten-disable-mongoose.patch", import.meta.url);
+const PATCH_URL = new URL("../../mame/probes/patches/0001-emscripten-1.38.31-compatibility.patch", import.meta.url);
+const NO_MONGOOSE_PATCH_URL = new URL("../../mame/probes/patches/0005-emscripten-disable-mongoose.patch", import.meta.url);
 const PROBE_SCRIPT_URL = new URL("../../scripts/probe-mame0161-tiny.sh", import.meta.url);
 
 /**

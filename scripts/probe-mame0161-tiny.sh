@@ -16,7 +16,7 @@ audit_output_probe_patch="${project_root}/mame/probes/patches/0009-emscripten-au
 parity_probe_patch="${project_root}/mame/probes/patches/0010-native-browser-parity-probe.patch"
 expected_emsdk="$(tr -d '[:space:]' < "${project_root}/mame/EMSDK_VERSION")"
 probe_kind="${MAME_PROBE_KIND:-list}"
-pre_js="${project_root}/mame/bridge/tiny-probe-pre.js"
+pre_js="${project_root}/mame/probes/bridge/tiny-probe-pre.js"
 output_name="mametiny-probe"
 subtarget="tiny"
 bitcode_name="mametiny.bc"
@@ -211,7 +211,7 @@ case "${probe_kind}" in
         printf 'var MAME_PROBE_PARENT = "%s";\n' "${parent}" >> "${generated_pre_js}"
         printf 'var MAME_PROBE_SECOND_MACHINE = "%s";\n' "${second_machine}" >> "${generated_pre_js}"
         printf 'var MAME_PROBE_SOUND = "%s";\n' "${sound}" >> "${generated_pre_js}"
-        pre_js="${project_root}/mame/bridge/game-probe-pre.js"
+        pre_js="${project_root}/mame/probes/bridge/game-probe-pre.js"
         subtarget="runtimeprobe"
         bitcode_name="mameruntimeprobe.bc"
         link_options=(--pre-js "${generated_pre_js}" -lidbfs.js "${link_options[@]}")
