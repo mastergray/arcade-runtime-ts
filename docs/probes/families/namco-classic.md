@@ -127,3 +127,17 @@ worktree, so they are if anything conservative.
 
 Desktop full speed holds for this family; the 4× CPU-throttled mobile proxy
 is deferred to M10 as §0.2 allows.
+
+
+## M3, M4 and M5 acceptance — 1-button Namco WSG title (the vertical title of the F4–F6 run)
+
+Observed 2026-10-20 with the `build-mame` production artifact in headless
+Chromium through `tests/browser/36-input-audio-acceptance.test.ts`
+(`ArcadePlayer` with a real `AudioContext`, `KeyboardSource` from real key
+events, `GamepadSource` with two scripted standard pads).
+
+| Row | Result |
+| --- | ------ |
+| M3 audio | context running after one pointer gesture; sound queued; `queuedMs` peaked at 70.7 ms across 120 samples over 60 s, under the 120 ms cap |
+| M4 keyboard | `Digit5` then `Digit1` through `DEFAULT_KEYBOARD_MAP` changed the picture; a held `ArrowLeft` appeared in the input snapshot and cleared on key up |
+| M5 gamepads | two standard pads took players 1 and 2 in connection order; pad-1 Select then Start changed the picture; unplugging pad 1 while it held right cleared the snapshot |

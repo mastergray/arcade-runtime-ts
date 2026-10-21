@@ -20,9 +20,9 @@ Status values: `todo`, `ready` (brief written, can be started),
 | M0 Feasibility probe | inherited | closed | 2026-10-20 (parent project) |
 | M1 Bridge, adapter, display, preload | W0, W1, W2, W3, W4, W5, W13a | closed | 2026-10-20 |
 | M2 Family build matrix | W14a–f | all six merged; F4–F6 measured for neogeo, namco-classic, irem-m72; pending lawful sets for cps2, namco-s1, namco-s2, taito-classic, taito-16 | |
-| M3 Audio | W6 | merged, acceptance pending real build | |
-| M4 Input and keyboard | W7 | todo | |
-| M5 Gamepads | W8 | todo | |
+| M3 Audio | W6 | closed (Neo Geo and Namco WSG titles; a CPS title awaits the 0.161 qsound.zip) | 2026-10-20 |
+| M4 Input and keyboard | W7 | closed (one title per measured family; a zero-button title awaits a lawful set, the vocabulary and generator cover it in spec tests) | 2026-10-20 |
+| M5 Gamepads | W8 | closed (Neo Geo four-button title with scripted standard pads; a CPS-2 six-button title awaits qsound.zip and a parent set) | 2026-10-20 |
 | M6 Saves | W9 (storage half), W15 | merged; memory card verified, states persist, CPS-2 EEPROM runtime check pending a set | |
 | M7 ROM supply and cabinet | W2 (romsets half), W9 (ROM store half), W10, W12, W13b | closed (picker path with synthetic archives and the real cabinet; preload path with the real build; audit agrees with MAME on every lawful local set) | 2026-10-20 |
 | M8 BIOS and DIP switches | W16 | todo | |
@@ -74,6 +74,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 
 Newest first. One line per merge, milestone close, or contract amendment.
 
+- 2026-10-20 — **M3, M4, M5 closed** by `36-input-audio-acceptance.test.ts` on the Neo Geo and Namco sets (audio peak 68–71 ms under the 120 ms cap over 60 s; keyboard and two-pad flows verified; unplug release verified).
 - 2026-10-20 — W13b merged: cabinet harness page (picker, ROM store, saves, corner menu). **M7 closed.** W16 started.
 - 2026-10-20 — W15 merged: memory-card mount and flush, F8 recorded (0.161 screen bitmaps are not state, so next-frame identity after a restore is a core limitation). W16 brief written.
 - 2026-10-20 — F4–F6 measured on desktop for neogeo, namco-classic (vertical and heaviest titles) and irem-m72: pacing within 0.35 % at 60–144 Hz cadences, 60 s ratios 0.9999–1.0003, startup 0.3–1.1 s. W13b started.
