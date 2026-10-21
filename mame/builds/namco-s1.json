@@ -1,0 +1,15 @@
+{
+    "family": "namco-s1",
+    "target": "mame/targets/namco-s1.lua",
+    "list": "mame/targets/namco-s1.lst",
+    "memoryPages": 4096,
+    "sources": [
+        "src/mame/drivers/namcos1.c",
+        "src/mame/machine/namcos1.c",
+        "src/mame/video/namcos1.c",
+        "src/mame/drivers/namcos86.c",
+        "src/mame/video/namcos86.c",
+        "src/mame/machine/c117.c",
+        "src/mame/video/c116.c"
+    ]
+}
