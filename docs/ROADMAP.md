@@ -18,7 +18,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 | Milestone | Packages | Status | Closed on |
 | --------- | -------- | ------ | --------- |
 | M0 Feasibility probe | inherited | closed | 2026-10-20 (parent project) |
-| M1 Bridge, adapter, display, preload | W0, W1, W2, W3, W4, W5, W13a | in progress | |
+| M1 Bridge, adapter, display, preload | W0, W1, W2, W3, W4, W5, W13a | closed | 2026-10-20 |
 | M2 Family build matrix | W14a–f | in progress | |
 | M3 Audio | W6 | merged, acceptance pending real build | |
 | M4 Input and keyboard | W7 | todo | |
@@ -74,6 +74,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 
 Newest first. One line per merge, milestone close, or contract amendment.
 
+- 2026-10-20 — **M1 closed.** `30-m1-acceptance.test.ts` against the pipeline-built Neo Geo artifact: 59.34 fps on a 60 Hz cadence and 59.13 fps on 120 Hz against 59.186 Hz native, upright at native size (evidence in docs/probes/families/neogeo.md).
 - 2026-10-20 — W13a merged: `serve-harness --preload` and the preload harness page; the gated real-build case starts a machine and renders its first frame.
 - 2026-10-20 — W14c merged: `namco-s1` family (47 machines, 5.0 MB wasm, no target corrections). W14e started.
 - 2026-10-20 — W11 merged: `ArcadePlayer`; its production case exposed and fixed BIOS-option audit handling and the 1.38 thenable-Module hang. W13a, W14c, W14d started.

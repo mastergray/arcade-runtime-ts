@@ -16,8 +16,11 @@ hardware through Namco System 2 and Taito F2.
 
 ## Status
 
-Implementation stage, beginning at M1. The M0 feasibility probe is inherited
-complete from the parent project: direct MAME 0.161 source, built with a
+Implementation stage. M1 (bridge, adapter, display, preload harness) closed
+on 2026-10-20 with a Neo Geo title running at its native refresh on 60 and
+120 Hz cadences from a clean-checkout build; the family build matrix (M2) is
+in progress. The M0 feasibility probe is inherited complete from the parent
+project: direct MAME 0.161 source, built with a
 pinned Emscripten 1.38.31 toolchain, is the implementation path, and the
 probe evidence lives under `docs/probes/mame0161/`.
 

@@ -83,7 +83,7 @@ interface RawPreloadConfig {
 
 const WORKSPACE = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const CONFIG_ARGUMENT = process.env.ARCADE_PRELOAD_CONFIG;
-const DEFAULT_ARTIFACT = resolve(WORKSPACE, ".cache", "w3-web", "mame.js");
+const DEFAULT_ARTIFACT = resolve(WORKSPACE, "dist", "mame", "neogeo", "mameneogeo.js");   // The build-mame output for the M1 family
 const ARTIFACT = resolve(process.env.ARCADE_WEB_BRIDGE_ARTIFACT ?? DEFAULT_ARTIFACT);
 const WASM_ARTIFACT = `${ARTIFACT.slice(0, -extname(ARTIFACT).length)}.wasm`;
 const TIMEOUT = 90_000;
