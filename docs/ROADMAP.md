@@ -74,6 +74,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 
 Newest first. One line per merge, milestone close, or contract amendment.
 
+- 2026-10-20 — Integration fix: browser test pages now use the shared `tests/support/TestPageServer.ts`, which resolves `fflate` for pages that import the root index (W10 exposed the gap).
 - 2026-10-20 — W10 merged: `RomSetAudit`, `arcade-audit-roms`; §10.5 amended with `problems` and metadata shapes. W9 started.
 - 2026-10-20 — W7 merged: `ArcadeInput`, `KeyboardSource`, `DEFAULT_KEYBOARD_MAP`, internal controller-config generator. W6 started.
 - 2026-10-20 — W1 merged: probe patches relocated, neogeo/cps1/irem-m72 target pairs with complete lists, family-pair build mode; integrator follow-up repointed inherited tests and moved probe pre-JS. W3 started.

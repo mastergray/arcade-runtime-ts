@@ -49,7 +49,12 @@ integrator can keep them in sync.
    comment conventions, `Type Declarations` / `Type Predicates` / `Class`
    banners, and the `tests/run.ts` `TestFile` manifest shape with
    `ctg-js-test` pipelines.
-7. Ready for review means: branch rebased on current `main`;
+7. A browser test that needs a page serves it through
+   `tests/support/TestPageServer.ts` (`withTestPage(PAGE, run)`), which
+   transpiles repository modules in memory and resolves the runtime
+   dependencies the browser cannot (`fflate`). Do not write a private
+   page server.
+8. Ready for review means: branch rebased on current `main`;
    `npm run check` and `npm test` pass; browser cases pass or skip for a
    documented reason; only the write set and your tests changed; the
    merge note lists any integrator-owned line you need and any spec
