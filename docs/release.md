@@ -154,8 +154,8 @@ preserves every required notice. Any future proposal to distribute a family
 artifact reopens review of the pinned source, patches, complete corresponding
 source offer and distribution method before publication.
 
-- Reviewer: **to be completed by the release owner**
-- Review date: **to be completed by the release owner**
-- Final approval or exception notes: **to be completed by the release owner**
+- Reviewer: mastergray (release owner)
+- Review date: 2026-10-21
+- Final approval or exception notes: the runtime and npm package are released under MIT; MAME 0.161 family builds stay consumer-built and consumer-hosted under MAME's historical licence with the P1 notice set beside them. No exceptions.
 
 Do not tag or publish until these fields are completed.
