@@ -76,7 +76,6 @@ Newest first. One line per merge, milestone close, or contract amendment.
 
 - 2026-10-20 — W5 merged: `ArcadeDisplay` (`5f8ae09`); integrator follow-up added root exports and ImageData reuse.
 - 2026-10-20 — W1 and W7 started on their branches by Codex agents.
-
 - 2026-10-20 — §4.4 contract amendment: controller-config token table pinned for W3 and W7 (`153a821`).
 - 2026-10-20 — W0 merged: shared contracts, `ArcadeRuntimeError`, test doubles (`327a7a5`).
 - 2026-10-20 — Fork from `mame-game-runtime-ts`; M0 inherited closed.
