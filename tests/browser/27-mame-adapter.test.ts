@@ -230,7 +230,11 @@ const loadConfig = (argument: string): PreloadConfig => {
     };
 };
 
-const preload = CONFIG_ARGUMENT === undefined ? undefined : loadConfig(CONFIG_ARGUMENT);
+// A config for another family skips this file rather than failing it; the skip reason names what it needs.
+const preload = ((): PreloadConfig | undefined => {
+    if (CONFIG_ARGUMENT === undefined) return undefined;
+    try { return loadConfig(CONFIG_ARGUMENT); } catch { return undefined; }
+})();
 
 // HELPER :: VOID -> PROMISE(resourceServer)
 // Serves exactly the production build and ignored files selected by the private preload config.
@@ -302,7 +306,7 @@ const withProductionPage = async <T>(run: (url: string) => Promise<T>): Promise<
 
 const testFile: TestFile = {
     label: "MameEmulatorAdapter production build",
-    skip: preload === undefined ? "set ARCADE_PRELOAD_CONFIG to an ignored §11.1 preload config" : undefined,
+    skip: preload === undefined ? "set ARCADE_PRELOAD_CONFIG to an ignored Neo Geo preload config (another family's config skips this file)" : undefined,
     cases: [
         {
             label: "starts, renders, sounds, accepts coin, round-trips state, persists cleanly and exits terminally",

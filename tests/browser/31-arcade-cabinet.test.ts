@@ -240,7 +240,11 @@ const loadConfig = (argument: string): PreloadConfig => {
     };
 };
 
-const preload = CONFIG_ARGUMENT === undefined ? undefined : loadConfig(CONFIG_ARGUMENT);   // Never reads res/ without the documented environment variable
+// A config for another family skips this file rather than failing it; the skip reason names what it needs.
+const preload = ((): PreloadConfig | undefined => {
+    if (CONFIG_ARGUMENT === undefined) return undefined;
+    try { return loadConfig(CONFIG_ARGUMENT); } catch { return undefined; }
+})();   // Never reads res/ without the documented environment variable
 
 // HELPER :: VOID -> PROMISE(resourceServer)
 // Serves exactly the production Neo Geo build and ignored archives selected by the private preload config.

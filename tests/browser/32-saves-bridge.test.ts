@@ -244,7 +244,11 @@ const loadConfig = (argument: string): PreloadConfig => {
     };
 };
 
-const preload = CONFIG_ARGUMENT === undefined ? undefined : loadConfig(CONFIG_ARGUMENT);
+// A config for another family skips this file rather than failing it; the skip reason names what it needs.
+const preload = ((): PreloadConfig | undefined => {
+    if (CONFIG_ARGUMENT === undefined) return undefined;
+    try { return loadConfig(CONFIG_ARGUMENT); } catch { return undefined; }
+})();
 
 // HELPER :: VOID -> PROMISE(resourceServer)
 // Serves exactly the rebuilt family artifacts and ignored files selected by the private preload config.
@@ -316,7 +320,7 @@ const withProductionPage = async <T>(run: (url: string) => Promise<T>): Promise<
 
 const testFile: TestFile = {
     label: "MAME saves bridge",
-    skip: preload === undefined ? "set ARCADE_PRELOAD_CONFIG to an ignored Neo Geo preload config" : undefined,
+    skip: preload === undefined ? "set ARCADE_PRELOAD_CONFIG to an ignored Neo Geo preload config (another family's config skips this file)" : undefined,
     cases: [
         {
             label: "flushes, overlays and restores a mounted memory card while reporting state-frame fidelity",

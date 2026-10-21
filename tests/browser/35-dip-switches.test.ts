@@ -65,7 +65,7 @@ interface DipAcceptanceResult {
 const WORKSPACE = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const CONFIG_ARGUMENT = process.env.ARCADE_PRELOAD_CONFIG;
 const BUILD_DIRECTORY = resolve(WORKSPACE, "dist", "mame", "namco-classic");
-const TIMEOUT = 120_000;
+const TIMEOUT = 300_000;                                          // Three 20-second emulated boots past the Namco self-test
 
 const PAGE = `<!doctype html>
 <html>
@@ -132,8 +132,9 @@ const PAGE = `<!doctype html>
   }
 
   // The comparison region excludes the outer 5% border on every side and retains the upright active-screen
-  // interior where the service screen renders its DIP table. Four equally spaced emulated-frame checkpoints
-  // distinguish a selected difficulty/lives value from ordinary transient redraws.
+  // interior where the service screen renders its DIP table. Four equally spaced emulated-frame checkpoints,
+  // all after the Namco power-on self test (about 13 emulated seconds, DIP-independent), distinguish a
+  // selected difficulty/lives value from ordinary transient redraws.
   function activeRegion(frame) {
     const left = Math.floor(frame.width * 0.05);
     const right = Math.ceil(frame.width * 0.95);
@@ -164,14 +165,14 @@ const PAGE = `<!doctype html>
       ...(privateConfig.bios === undefined ? {} : { bios: privateConfig.bios }),
       dipswitches
     });
-    const checkpoints = new Set([60, 120, 180, 240]);
+    const checkpoints = new Set([900, 1000, 1100, 1200]);
     const frames = [];
     let seen = 0;
     await new Promise((resolveFrames) => {
       const unsubscribe = session.onFrame((frame) => {
         seen++;
         if (checkpoints.has(seen)) frames.push({ width: frame.width, height: frame.height, bytes: activeRegion(frame) });
-        if (seen === 240) { unsubscribe(); resolveFrames(); }
+        if (seen === 1200) { unsubscribe(); resolveFrames(); }
       });
     });
     await session.exit();
