@@ -71,6 +71,25 @@ const FAMILY_TARGETS: readonly FamilyTarget[] = [
         sources: ["src/mame/drivers/namcos1.c", "src/mame/drivers/namcos86.c"],
         expectedMachines: 47,
     },
+    {
+        id: "taito-classic",
+        sources: [
+            "src/mame/drivers/taitosj.c",
+            "src/mame/drivers/bublbobl.c",
+            "src/mame/drivers/arkanoid.c",
+            "src/mame/drivers/tnzs.c",
+            "src/mame/drivers/slapfght.c",
+            "src/mame/drivers/flstory.c",
+            "src/mame/drivers/lkage.c",
+            "src/mame/drivers/retofinv.c",
+            "src/mame/drivers/nycaptor.c",
+            "src/mame/drivers/buggychl.c",
+            "src/mame/drivers/gladiatr.c",
+            "src/mame/drivers/mexico86.c",
+            "src/mame/drivers/superqix.c",
+        ],
+        expectedMachines: 148,
+    },
 ] as const;
 
 const PRIVATE_MARKERS = [
