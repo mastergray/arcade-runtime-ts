@@ -51,8 +51,8 @@ Status values: `todo`, `ready` (brief written, can be started),
 | W3 | Production web bridge | N | M1 | in progress | `wp/w3-bridge` | |
 | W4 | `MameEmulatorAdapter` | N | M1, M6 | todo | | |
 | W5 | `ArcadeDisplay` | T | M1 | merged | `wp/w5-arcade-display` | 2026-10-20 `5f8ae09` |
-| W6 | `ArcadeAudio` | T | M3 | ready | `wp/w6-arcade-audio` | |
-| W7 | `ArcadeInput`, `KeyboardSource`, controller config | T | M4 | in progress | `wp/w7-arcade-input` | |
+| W6 | `ArcadeAudio` | T | M3 | in progress | `wp/w6-arcade-audio` | |
+| W7 | `ArcadeInput`, `KeyboardSource`, controller config | T | M4 | merged | `wp/w7-arcade-input` | 2026-10-20 (merge of `6cecda2`) |
 | W8 | `GamepadSource` | T | M5 | todo | | |
 | W9 | `ArcadeStorage`, `ArcadeRomStore` | T | M6, M7 | todo | | |
 | W10 | `RomSetAudit`, `arcade-audit-roms` | T | M7 | in progress | `wp/w10-romset-audit` | |
@@ -74,6 +74,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 
 Newest first. One line per merge, milestone close, or contract amendment.
 
+- 2026-10-20 — W7 merged: `ArcadeInput`, `KeyboardSource`, `DEFAULT_KEYBOARD_MAP`, internal controller-config generator. W6 started.
 - 2026-10-20 — W1 merged: probe patches relocated, neogeo/cps1/irem-m72 target pairs with complete lists, family-pair build mode; integrator follow-up repointed inherited tests and moved probe pre-JS. W3 started.
 - 2026-10-20 — §4.3.1 contract amendment: JavaScript-facing module shape pinned for W3 and W4; W3 brief written.
 - 2026-10-20 — W5 merged: `ArcadeDisplay` (`5f8ae09`); integrator follow-up added root exports and ImageData reuse.
