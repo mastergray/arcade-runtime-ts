@@ -13,23 +13,45 @@
     }
     * { box-sizing: border-box; }
     body { margin: 0; min-height: 100vh; }
-    main { width: min(1120px, calc(100% - 32px)); margin: 0 auto; padding: 28px 0 48px; }
+    main { width: min(1160px, calc(100% - 32px)); margin: 0 auto; padding: 28px 0 48px; }
     h1 { margin: 0 0 20px; font-size: clamp(1.35rem, 3vw, 2rem); letter-spacing: .04em; }
-    .controls { display: grid; grid-template-columns: 1fr 1.3fr 1fr auto; gap: 12px; align-items: end; }
+    h2 { margin: 0 0 10px; color: #aeb9c4; font-size: .82rem; text-transform: uppercase; letter-spacing: .08em; }
+    .controls { display: grid; grid-template-columns: 1fr 1.3fr 1fr auto auto; gap: 12px; align-items: end; }
     label { display: grid; gap: 6px; color: #aeb9c4; font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; }
-    select, input, button { min-height: 40px; border: 1px solid #39434e; border-radius: 4px; background: #181e24; color: #f5f8fa; font: inherit; padding: 8px 10px; }
-    button { border-color: #3d8d73; background: #195b48; cursor: pointer; font-weight: 700; }
+    select, input, button, summary { min-height: 40px; border: 1px solid #39434e; border-radius: 4px; background: #181e24; color: #f5f8fa; font: inherit; padding: 8px 10px; }
+    button, summary { border-color: #3d8d73; background: #195b48; cursor: pointer; font-weight: 700; }
     button:disabled { border-color: #39434e; background: #252b31; color: #77818b; cursor: not-allowed; }
+    input[type="checkbox"] { min-height: 0; accent-color: #58cda5; }
+    .check { display: flex; min-height: 40px; align-items: center; gap: 8px; padding: 0 4px; white-space: nowrap; }
     #preload-note { margin: 12px 0; color: #aeb9c4; }
     #status { margin: 14px 0; min-height: 1.4em; color: #7ee0bd; }
+    #status[data-state="error"], #status[data-state="audit-failed"], #status[data-state="overlay-incompatible"] { color: #ff9b91; }
     #player-container { display: grid; place-items: center; width: 100%; min-height: 480px; overflow: hidden; border: 1px solid #303943; border-radius: 6px; background: #050607; }
     canvas { display: block; max-width: 100%; max-height: 72vh; image-rendering: pixelated; }
     .panels { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
     section { min-width: 0; border: 1px solid #303943; border-radius: 6px; background: #151a20; padding: 14px; }
-    h2 { margin: 0 0 10px; color: #aeb9c4; font-size: .82rem; text-transform: uppercase; letter-spacing: .08em; }
     pre { min-height: 92px; max-height: 280px; overflow: auto; margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; font-size: .8rem; line-height: 1.5; }
-    @media (max-width: 760px) {
-      .controls, .panels { grid-template-columns: 1fr; }
+    .rom-supply { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+    #drop-zone { display: grid; place-items: center; min-height: 112px; border: 2px dashed #4f6673; border-radius: 6px; color: #b8c8d3; cursor: pointer; text-align: center; padding: 16px; }
+    #drop-zone[data-active="true"] { border-color: #7ee0bd; background: #17352c; }
+    #rom-picker { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+    .rom-list { display: grid; gap: 8px; min-height: 48px; margin: 10px 0; padding: 0; list-style: none; }
+    .rom-list li { display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid #303943; padding: 7px 0; overflow-wrap: anywhere; }
+    .rom-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    .rom-actions button, .rom-list button { min-height: 34px; padding: 5px 9px; }
+    #corner-menu { position: fixed; z-index: 3; right: 18px; bottom: 18px; width: min(300px, calc(100vw - 36px)); }
+    #corner-menu summary { list-style: none; box-shadow: 0 3px 20px #0009; }
+    #corner-menu summary::-webkit-details-marker { display: none; }
+    #corner-menu[open] summary { border-radius: 4px 4px 0 0; }
+    .menu-body { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; border: 1px solid #39434e; border-top: 0; border-radius: 0 0 4px 4px; background: #11171cef; padding: 10px; box-shadow: 0 8px 24px #000a; }
+    .menu-body button { min-height: 34px; font-size: .78rem; padding: 5px 7px; }
+    .menu-body .check { min-height: 34px; font-size: .72rem; }
+    #gamepads { grid-column: 1 / -1; margin: 2px 0 0; color: #aeb9c4; font-size: .75rem; line-height: 1.5; }
+    #clear-saves-retry { grid-column: 1 / -1; border-color: #b95e55; background: #762f2b; }
+    [hidden] { display: none !important; }
+    @media (max-width: 820px) {
+      .controls { grid-template-columns: 1fr 1fr; }
+      .rom-supply, .panels { grid-template-columns: 1fr; }
       #player-container { min-height: 300px; }
     }
   </style>
@@ -41,11 +63,33 @@
       <label>Family build<select id="family" aria-label="Family build"></select></label>
       <label>Machine<input id="machine" autocomplete="off" placeholder="machine short name"></label>
       <label>BIOS<input id="bios" autocomplete="off" placeholder="optional"></label>
+      <label class="check"><input id="autosave" type="checkbox"> Autosave</label>
       <button id="start" type="button" disabled>Start</button>
     </div>
     <p id="preload-note">Loading local harness configuration…</p>
     <p id="status" role="status" aria-live="polite" data-state="loading">Loading…</p>
     <div id="player-container"><canvas id="canvas" width="0" height="0"></canvas></div>
+
+    <div class="rom-supply">
+      <section>
+        <h2>Picked archives</h2>
+        <label id="drop-zone" for="rom-picker" tabindex="0" data-active="false">
+          Choose zip files or drop them here
+          <input id="rom-picker" type="file" accept=".zip,application/zip" multiple>
+        </label>
+        <ul id="pending-roms" class="rom-list"><li>No archives picked.</li></ul>
+        <div class="rom-actions">
+          <button id="confirm-roms" type="button" disabled>Confirm and store</button>
+          <button id="audit-roms" type="button" disabled>Audit selected source</button>
+        </div>
+      </section>
+      <section>
+        <h2>Browser-local ROM store</h2>
+        <ul id="rom-store" class="rom-list"><li>Loading local store…</li></ul>
+        <div class="rom-actions"><button id="clear-store" type="button" disabled>Clear store</button></div>
+      </section>
+    </div>
+
     <div class="panels">
       <section>
         <h2>ROM audit</h2>
@@ -57,6 +101,25 @@
       </section>
     </div>
   </main>
+
+  <details id="corner-menu">
+    <summary>Cabinet controls</summary>
+    <div class="menu-body">
+      <button id="fullscreen" type="button" disabled>Fullscreen</button>
+      <button id="sound" type="button" disabled>Mute sound</button>
+      <button id="soft-reset" type="button" disabled>Soft reset</button>
+      <button id="hard-reset" type="button" disabled>Hard reset</button>
+      <button id="save-state" type="button" disabled>Save state</button>
+      <button id="load-state" type="button" disabled>Load state</button>
+      <button id="persist" type="button" disabled>Persist now</button>
+      <button id="clear-saves" type="button" disabled>Clear saves</button>
+      <label class="check"><input id="keyboard-enabled" type="checkbox" checked> Keyboard</label>
+      <label class="check"><input id="gamepads-enabled" type="checkbox" checked> Gamepads</label>
+      <p id="gamepads">Connected gamepads: none</p>
+      <button id="clear-saves-retry" type="button" hidden>Clear saves and retry</button>
+    </div>
+  </details>
+
   <script type="module" src="/harness.js"></script>
 </body>
 </html>
