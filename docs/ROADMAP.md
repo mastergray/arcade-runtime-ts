@@ -26,7 +26,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 | M6 Saves | W9 (storage half), W15 | closed (2026-10-21): memory card verified, states persist, CPS-2 EEPROM written mid-run by `web_flush_nvram` | 2026-10-21 |
 | M7 ROM supply and cabinet | W2 (romsets half), W9 (ROM store half), W10, W12, W13b | closed (picker path with synthetic archives and the real cabinet; preload path with the real build; audit agrees with MAME on every lawful local set) | 2026-10-20 |
 | M8 BIOS and DIP switches | W16 | done | 2026-10-21: `35-dip-switches.test.ts` against the namco-classic build; a BIOS option is exercised by the Neo Geo acceptance (`-bios`). |
-| M9 v1.0.0 release gate | W17 | gate in place | Package and build-output tests pass; fresh `--all` rebuild done, licence decision recorded, M2 closed for v1.0.0; closing needs the version bump and a final full verification run. |
+| M9 v1.0.0 release gate | W17 | final verification run passed 2026-10-21 | Fresh `--all --fresh` rebuild of nine families, `npm run check`, 504 spec cases, gated browser runs (M1, F4–F6 and M3–M5 for all five required families, DIP and selector tests) all green on commit `d09f540`; closing needs the §14.1 desktop walkthrough by the release owner and the version bump commit. |
 
 ## Post-1.0
 
@@ -74,6 +74,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 
 ## Log
 
+- 2026-10-21 — **Final verification run** on `d09f540`: fresh nine-family rebuild; check and spec green; browser gate green with the Neo Geo preload and five family configs (F4 344–1173 ms, F5 worst 0.56 %, F6 0.9999–1.0002, audio peak 57–77 ms) and with the Namco classic DIP preload. Harness gained `--page` so a device-capability page is served at `/device-test` for other LAN devices. Six-button CPS-2 acceptance deferred to M18. Desktop walkthrough handed to the release owner.
 Newest first. One line per merge, milestone close, or contract amendment.
 
 - 2026-10-20 — **M3, M4, M5 closed** by `36-input-audio-acceptance.test.ts` on the Neo Geo and Namco sets (audio peak 68–71 ms under the 120 ms cap over 60 s; keyboard and two-pad flows verified; unplug release verified).
