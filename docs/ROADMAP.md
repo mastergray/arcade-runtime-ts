@@ -60,7 +60,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 | W12 | `ArcadeCabinet` | T | M7 | todo | | |
 | W13a | Harness: minimal preload page | T | M1 | ready (after W11) | `wp/w13a-harness-preload` | |
 | W13b | Harness: cabinet page | T | M7 | todo | | |
-| W14a | Family `cps2` | N | M2 | in progress | `wp/w14a-cps2` | |
+| W14a | Family `cps2` | N | M2 | merged (F4–F6 pending private set) | `wp/w14a-cps2` | 2026-10-20 (merge of `d0c0c05`) |
 | W14b | Family `namco-classic` | N | M2 | in progress | `wp/w14b-namco-classic` | |
 | W14c | Family `namco-s1` | N | M2 | ready | `wp/w14c-namco-s1` | |
 | W14d | Family `namco-s2` | N | M2 | ready | `wp/w14d-namco-s2` | |
@@ -74,6 +74,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 
 Newest first. One line per merge, milestone close, or contract amendment.
 
+- 2026-10-20 — W14a merged: `cps2` family (293 machines, 6.1 MB wasm, 137 s clean build); §4.6 row corrected for the CPS-1 unit coupling.
 - 2026-10-20 — M2 started: shared W14 brief written; cps2 and namco-classic agents launched (F3–F6 pending private sets).
 - 2026-10-20 — W4 merged: `MameEmulatorAdapter`, `MameSession`, overlay codec; real-build browser case passes. Decisions: default loader is classic-script injection (artifact is not ESM); snapshot taken at first frame after a flush; byte-identical video after state restore moved to F8/M6. W11 started.
 - 2026-10-20 — Integration: `build-mame neogeo` from a clean unpack with the production patches (2m10s, 256 machines, 256 romsets); the W3 browser cases pass against that artifact.

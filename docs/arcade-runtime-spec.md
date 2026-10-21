@@ -579,7 +579,7 @@ A build file:
     "target": "mame/targets/cps2.lua",
     "list": "mame/targets/cps2.lst",
     "memoryPages": 4096,
-    "sources": ["src/mame/drivers/cps2.c", "src/mame/machine/cps2crpt.c", "src/mame/video/cps1.c"]
+    "sources": ["src/mame/drivers/cps2.c", "src/mame/machine/cps2crpt.c", "src/mame/drivers/cps1.c", "src/mame/video/cps1.c", "src/mame/machine/kabuki.c"]
 }
 ```
 
@@ -769,7 +769,7 @@ and verified by F1. Device names are those the pinned drivers configure.
 | --------- | :------: | ---------------------- | --------- | --------------------- | ----- |
 | `neogeo` | yes | `drivers/neogeo.c`, `drivers/neogeo_noslot.c`, `video/neogeo.c`, `video/neogeo_spr.c`, `machine/neoboot.c`, `neocrypt.c`, `neoprot.c`, `ng_memcard.c` | M68000, Z80 | YM2610, UPD1990A, `BUSES["NEOGEO"]` | Requires `neogeo.zip` BIOS; `-bios` selects MVS/AES and region; 4 buttons; 320×224 at 59.185 Hz; later titles decrypt large graphics ROMs at startup; sets up to ~90 MB |
 | `cps1` | yes | `drivers/cps1.c`, `video/cps1.c`, `machine/kabuki.c` | M68000, Z80, PIC16C5X | YM2151, MSM5205, OKIM6295, QSound, EEPROM, Timekeeper | 384×224 at 59.637 Hz with 4:3 non-square pixels; QSound titles use Kabuki Z80 decryption |
-| `cps2` | yes | `drivers/cps2.c`, `machine/cps2crpt.c`, `video/cps1.c` | M68000, Z80 | QSound, OKIM6295, 93C46 EEPROM | Program ROMs are decrypted in full at startup by `cps2crpt` using the key region in the 0.161-generation set; startup cost in Wasm is F4; EEPROM persists settings and some high scores |
+| `cps2` | yes | `drivers/cps2.c`, `machine/cps2crpt.c`, plus the CPS-1 unit it links against: `drivers/cps1.c`, `video/cps1.c`, `machine/kabuki.c` | M68000, Z80, PIC16C5X | QSound, OKIM6295, 93C46 EEPROM, YM2151, MSM5205, Timekeeper | Program ROMs are decrypted in full at startup by `cps2crpt` using the key region in the 0.161-generation set; startup cost in Wasm is F4; EEPROM persists settings and some high scores. The CPS-2 QSound address map and shared-RAM handlers live in `drivers/cps1.c`, so a standalone CPS-2 subtarget must compile that unit (W14a) |
 | `namco-classic` | yes | `drivers/pacman.c`, `galaga.c`, `galaxian.c`, `rallyx.c`, `mappy.c`, `toypop.c`, `gaplus.c`, `skykid.c`, `baraduke.c`, `pacland.c`, `polepos.c` | Z80, S2650, M6809, HD63701, Z8002, MB88xx (Namco 5xxx MCUs) | Namco WSG, Namco 15XX, CUS30, 06XX/50XX–54XX, AY8910, SN76496, DAC, Discrete, Samples, TMS5220 | Mostly **vertical** 224×288 at 60.606 Hz; 0–2 buttons; cocktail DIP forced upright; some titles take an optional sample-set zip; `polepos.c` needs analog steering (M11) and is the family's heaviest member |
 | `namco-s1` | yes | `drivers/namcos1.c`, `drivers/namcos86.c` with their `machine/` and `video/` units | M6809 ×3, HD63701 | YM2151, CUS30, Namco 63701X, DAC, C116/C117 | Key-chip protection per title is in the driver; 288×224 horizontal; 1–3 buttons |
 | `namco-s2` | yes | `drivers/namcos2.c`, `machine/namcos2.c`, `machine/namcoic.c`, `video/namcos2.c`, `video/c45.c` | M68000 ×2, M6809, HD63705, M37450 | YM2151, C140, C45 road | Heaviest required family; sustained-speed evidence on desktop and the throttled mobile proxy is F6; Final Lap-class titles need analog (M11) |
@@ -1185,7 +1185,11 @@ interface RomSetReport {
 }
 ```
 
-A supplied archive that is not a zip, has a corrupt central directory or
+Each ROM may carry `bios`, the BIOS option it belongs to, and the metadata
+may carry `defaultBios`. A BIOS-tagged ROM is required only when its option
+is the one selected (`ArcadeStartConfig.bios`, else `defaultBios`), which is
+how MAME's own audit treats BIOS options; the other options' ROMs report
+`optional-missing`. A supplied archive that is not a zip, has a corrupt central directory or
 exceeds 4,096 entries is reported under `problems` with every ROM it was
 expected to hold marked `missing`; bad user input never throws.
 `INVALID_CONFIG` is reserved for metadata or `RomFile` values that fail
