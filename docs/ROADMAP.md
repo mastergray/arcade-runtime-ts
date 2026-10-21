@@ -54,7 +54,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 | W6 | `ArcadeAudio` | T | M3 | merged | `wp/w6-arcade-audio` | 2026-10-20 (merge of `d6ce5f4`) |
 | W7 | `ArcadeInput`, `KeyboardSource`, controller config | T | M4 | merged | `wp/w7-arcade-input` | 2026-10-20 (merge of `6cecda2`) |
 | W8 | `GamepadSource` | T | M5 | in progress | `wp/w8-gamepad-source` | |
-| W9 | `ArcadeStorage`, `ArcadeRomStore` | T | M6, M7 | in progress | `wp/w9-storage` | |
+| W9 | `ArcadeStorage`, `ArcadeRomStore` | T | M6, M7 | merged | `wp/w9-storage` | 2026-10-20 (merge of `aefb07c`) |
 | W10 | `RomSetAudit`, `arcade-audit-roms` | T | M7 | merged | `wp/w10-romset-audit` | 2026-10-20 (merge of `5859c88`) |
 | W11 | `ArcadePlayer` | T | M1–M4 | todo | | |
 | W12 | `ArcadeCabinet` | T | M7 | todo | | |
@@ -74,6 +74,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 
 Newest first. One line per merge, milestone close, or contract amendment.
 
+- 2026-10-20 — W9 merged: `ArcadeStorage`, `ArcadeRomStore`; §10.7 snippet amended to show injected dependencies.
 - 2026-10-20 — W6 merged: `ArcadeAudio`. W8 started.
 - 2026-10-20 — Integration fix: browser test pages now use the shared `tests/support/TestPageServer.ts`, which resolves `fflate` for pages that import the root index (W10 exposed the gap).
 - 2026-10-20 — W10 merged: `RomSetAudit`, `arcade-audit-roms`; §10.5 amended with `problems` and metadata shapes. W9 started.
