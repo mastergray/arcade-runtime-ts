@@ -17,7 +17,9 @@ links a modularized `createMame` pair into `dist/mame/<family>/`, runs
 `-listfull` and `-listxml` under Node for `build.json` and `romsets/`, copies
 the P1 licence notices under `notices/`, and fails if the threading inspector
 finds shared memory. `--skip-build` regenerates metadata from existing
-artifacts; `--skip-romsets` leaves `romsets/` alone.
+artifacts; `--skip-romsets` leaves `romsets/` alone; `--fresh` discards the
+unpacked tree first. The tree records its applied patch set in
+`.arcade-runtime-patches.json` and is reused only while that set matches.
 
 The link flags live in `scripts/mame-build/buildInfo.ts` and are exactly
 the link contract in `bridge/README.md`; a spec test holds the two in step.

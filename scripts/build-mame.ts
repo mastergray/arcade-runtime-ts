@@ -46,6 +46,7 @@ interface Options {
     readonly jobs: number;                                         // make -j
     readonly skipBuild: boolean;                                   // Reuse existing artifacts; regenerate metadata only
     readonly skipRomsets: boolean;                                 // Do not run -listxml
+    readonly fresh: boolean;                                       // Discard the source tree and unpack again
 }
 
 /**
@@ -55,7 +56,7 @@ interface Options {
  */
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");   // Repository root
-const USAGE = "Usage: build-mame (--all | <family>...) [--source <dir>] [--archive <zip>] [--emsdk <dir>] [--out <dir>] [--jobs <n>] [--skip-build] [--skip-romsets]";
+const USAGE = "Usage: build-mame (--all | <family>...) [--source <dir>] [--archive <zip>] [--emsdk <dir>] [--out <dir>] [--jobs <n>] [--skip-build] [--skip-romsets] [--fresh]";
 
 /**
  *
@@ -120,6 +121,23 @@ const applyPatch = (source: string, patchPath: string): void => {
     }
     const dryReverse = spawnSync("patch", ["--dry-run", "--silent", "--reverse", "--forward", "--batch", "-p1", "-d", source, "-i", patchPath]);
     if (dryReverse.status !== 0) throw new Error(`Source does not accept ${basename(patchPath)}`);
+};
+
+// HELPER :: STRING, [STRING] -> VOID
+// Applies the patch list to a source tree once. A marker file in the tree records the SHA-256 of every patch
+// applied; when it matches the current list the tree is reused as is, because later patches alter the context
+// that earlier ones were checked against and a per-patch dry run can no longer tell "applied" from "rejected".
+// A tree carrying a different patch set is refused so stale patches never leak into a build.
+const applyPatchSet = (source: string, patches: ReadonlyArray<string>): void => {
+    const marker = join(source, ".arcade-runtime-patches.json");
+    const manifest = patches.map((path) => ({ name: basename(path), sha256: sha256(readFileSync(join(ROOT, path))) }));
+    if (existsSync(marker)) {
+        const recorded = JSON.stringify(JSON.parse(readFileSync(marker, "utf8")));
+        if (recorded === JSON.stringify(manifest)) return;
+        throw new Error(`Source tree ${source} carries a different patch set (see ${marker}); unpack a fresh tree or pass --fresh`);
+    }
+    for (const patch of patches) applyPatch(source, join(ROOT, patch));
+    writeFileSync(marker, `${JSON.stringify(manifest, null, 2)}\n`);
 };
 
 // HELPER :: STRING -> [STRING]
@@ -227,6 +245,7 @@ const parseOptions = (argv: ReadonlyArray<string>): Options => {
     let jobs = 2;
     let skipBuild = false;
     let skipRomsets = false;
+    let fresh = false;
     while (args.length > 0) {
         const arg = args.shift()!;
         const next = (): string => { const value = args.shift(); if (value === undefined) throw new Error(USAGE); return value; };
@@ -238,11 +257,12 @@ const parseOptions = (argv: ReadonlyArray<string>): Options => {
         else if (arg === "--jobs") jobs = Number.parseInt(next(), 10);
         else if (arg === "--skip-build") skipBuild = true;
         else if (arg === "--skip-romsets") skipRomsets = true;
+        else if (arg === "--fresh") fresh = true;
         else if (arg.startsWith("--")) throw new Error(USAGE);
         else families.push(arg);
     }
     if ((families.length === 0 && !all) || !Number.isInteger(jobs) || jobs < 1) throw new Error(USAGE);
-    return { families, all, source, archive, emsdk, out, jobs, skipBuild, skipRomsets };
+    return { families, all, source, archive, emsdk, out, jobs, skipBuild, skipRomsets, fresh };
 };
 
 // HELPER :: [STRING] -> PROMISE(NUMBER)
@@ -253,8 +273,9 @@ export const buildMame = async (argv: ReadonlyArray<string>): Promise<number> =>
     const files = buildFilesFor(options);
     const patches = patchListFor();
     if (!options.skipBuild) {
+        if (options.fresh) rmSync(options.source, { recursive: true, force: true });
         ensureSource(options, versions.emulator);
-        for (const patch of patches) applyPatch(options.source, join(ROOT, patch));
+        applyPatchSet(options.source, patches);
         const env = emscriptenEnvironment(options, versions.emsdk);
         for (const file of files) compileFamily(options, file, env);
     }
