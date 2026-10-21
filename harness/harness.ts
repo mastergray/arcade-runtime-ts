@@ -6,11 +6,13 @@ import {
     ArcadeRomStore,                                               // Browser-local user-confirmed archive storage
     ArcadeRuntimeError,                                           // Typed overlay incompatibility detection
     ArcadeStorage,                                                // Per-family/machine save-overlay persistence
+    isRomSetMetadata,                                             // Validates fetched selector metadata before rendering it
 } from "/src/index.js";                                           // Public package surface only
 
 // Type dependencies:
 import type {
     ArcadeAdapter,                                                // Browser-test injection through the same public cabinet boundary
+    RomSetMetadata,                                               // BIOS and DIP selector source fetched beside the selected build
     RomSetReport,                                                 // Public audit report rendered below
     RomStoreEntry,                                                // Byte-free local store listing
 } from "/src/index.js";                                           // Public package surface only
@@ -38,6 +40,14 @@ interface Selection {
     readonly family: string;
     readonly machine: string;
     readonly bios?: string;
+    readonly dipswitches: Readonly<Record<string, string>>;
+}
+
+// INTERFACE :: BIOS and non-default DIP values passed to the most recently started cabinet
+// Exposed without ROM data so a browser acceptance case can verify the page-to-session boundary.
+interface LastStartConfig {
+    readonly bios?: string;
+    readonly dipswitches: Readonly<Record<string, string>>;
 }
 
 // TYPE :: "preload" | "store"
@@ -48,6 +58,7 @@ type RomSourceMode = "preload" | "store";
 // Production usage leaves this absent and resolves the selected family build normally.
 interface HarnessAdapterBoundary {
     readonly __arcadeHarnessAdapter?: ArcadeAdapter;
+    __arcadeHarnessLastStartConfig?: LastStartConfig;
 }
 
 /**
@@ -72,9 +83,17 @@ const element = <T extends Element>(selector: string): T => {
 
 const familySelect = element<HTMLSelectElement>("#family");
 const machineInput = element<HTMLInputElement>("#machine");
+const biosInputLabel = element<HTMLLabelElement>("#bios-input-label");
 const biosInput = element<HTMLInputElement>("#bios");
+const biosSelectLabel = element<HTMLLabelElement>("#bios-select-label");
+const biosSelect = element<HTMLSelectElement>("#bios-select");
 const autosaveInput = element<HTMLInputElement>("#autosave");
 const startButton = element<HTMLButtonElement>("#start");
+const selectorPanel = element<HTMLElement>("#machine-selectors");
+const dipSelectors = element<HTMLDivElement>("#dip-selectors");
+const resetDipsButton = element<HTMLButtonElement>("#reset-dips");
+const restartSwitchesButton = element<HTMLButtonElement>("#restart-switches");
+const selectorWarning = element<HTMLParagraphElement>("#selector-warning");
 const preloadNote = element<HTMLParagraphElement>("#preload-note");
 const statusLine = element<HTMLParagraphElement>("#status");
 const auditPanel = element<HTMLPreElement>("#audit");
@@ -130,6 +149,11 @@ let startPromise: Promise<void> | null = null;                    // Coalesces b
 let actionPromise: Promise<void> | null = null;                   // Serializes save/reset/menu actions
 let cleanupPromise: Promise<void> = Promise.resolve();            // Orders replacement after the prior cabinet is terminal
 let gamepadFrame: number | null = null;                           // Corner-menu connection display polling
+let machineMetadata: RomSetMetadata | null = null;                // Valid metadata matching the current family and machine
+let metadataLoading = false;                                      // Keeps audit/start gated until selector discovery settles
+let metadataRequest = 0;                                          // Rejects responses for an older family/machine input
+let metadataPromise: Promise<void> = Promise.resolve();           // Latest selector discovery awaited by cabinet preparation
+let preparedStartConfig: LastStartConfig | null = null;           // Page choices captured with the prepared cabinet
 
 /**
  *
@@ -182,14 +206,31 @@ const renderAudit = (report: RomSetReport): void => {
     auditPanel.dataset.status = report.status;
 };
 
+// HELPER :: VOID -> {[STRING]:STRING}
+// Reads only non-default settings from controls created from validated metadata.
+const selectedDipswitches = (): Readonly<Record<string, string>> => {
+    if (machineMetadata === null) return {};
+    const controls = Array.from(dipSelectors.querySelectorAll<HTMLSelectElement>("select[data-switch-name]"));
+    const selections: Record<string, string> = {};
+    for (const dipswitch of machineMetadata.dipswitches ?? []) {
+        const control = controls.find((candidate) => candidate.dataset.switchName === dipswitch.name);
+        const defaultSetting = dipswitch.values.find((setting) => setting.default);
+        if (control !== undefined && defaultSetting !== undefined && control.value !== defaultSetting.name) {
+            selections[dipswitch.name] = control.value;
+        }
+    }
+    return selections;
+};
+
 // HELPER :: VOID -> selection
 // Reads and normalizes current controls at the moment a cabinet is prepared.
 const selection = (): Selection => {
-    const bios = biosInput.value.trim();
+    const bios = (machineMetadata === null ? biosInput.value : biosSelect.value).trim();
     return {
         family: familySelect.value,
         machine: machineInput.value.trim(),
         ...(bios === "" ? {} : { bios }),
+        dipswitches: selectedDipswitches(),
     };
 };
 
@@ -205,7 +246,11 @@ const selectionKey = (value: Selection): string => {
     const source = sourceMode === "preload"
         ? preload?.roms.join("\0") ?? ""
         : storeEntries.map((entry) => `${entry.name}\0${entry.sha256}`).join("\0");
-    return `${value.family}\0${value.machine}\0${value.bios ?? ""}\0${sourceMode}\0${source}\0${autosaveInput.checked}`;
+    const dipswitches = Object.entries(value.dipswitches)
+        .sort(([left], [right]) => left.localeCompare(right))
+        .map(([name, setting]) => `${name}\0${setting}`)
+        .join("\0");
+    return `${value.family}\0${value.machine}\0${value.bios ?? ""}\0${dipswitches}\0${sourceMode}\0${source}\0${autosaveInput.checked}`;
 };
 
 // HELPER :: VOID -> VOID
@@ -213,9 +258,11 @@ const selectionKey = (value: Selection): string => {
 const updateControls = (): void => {
     const chosen = selection();
     const running = cabinet?.isStarted === true;
-    const canAudit = chosen.family !== "" && chosen.machine !== "" && hasRomSource();
+    const canAudit = chosen.family !== "" && chosen.machine !== "" && hasRomSource() && !metadataLoading;
     startButton.disabled = running || !auditOk;
     auditButton.disabled = running || !canAudit;
+    restartSwitchesButton.disabled = !running || preparedSelection === selectionKey(chosen);
+    resetDipsButton.disabled = machineMetadata === null || Object.keys(chosen.dipswitches).length === 0;
     for (const button of sessionButtons) button.disabled = !running;
     familySelect.disabled = running;
     machineInput.disabled = running;
@@ -287,6 +334,7 @@ const retireCabinet = (): void => {
     const previous = cabinet;
     cabinet = null;
     preparedSelection = null;
+    preparedStartConfig = null;
     auditOk = false;
     if (previous !== null) {
         cleanupPromise = cleanupPromise.then(() => previous.destroy()).catch((error: unknown) => {
@@ -300,13 +348,150 @@ const retireCabinet = (): void => {
 // Marks the current audit stale after a form or store change without hiding its prior diagnostic text.
 const invalidateSelection = (): void => {
     if (cabinet?.isStarted !== true) retireCabinet();
-    else {
-        preparedSelection = null;
-        auditOk = false;
-    }
+    else auditOk = false;
     auditPanel.dataset.status = "stale";
     clearSavesRetryButton.hidden = true;
     updateControls();
+};
+
+// HELPER :: STRING? -> VOID
+// Shows one metadata/preload warning without interpreting its contents as markup.
+const showSelectorWarning = (message?: string): void => {
+    selectorWarning.hidden = message === undefined;
+    selectorWarning.textContent = message ?? "";
+};
+
+// HELPER :: VOID -> BOOLEAN
+// True only while the selected controls still name the private preload's original machine.
+const preloadMatchesSelection = (): boolean => preload !== null
+    && preload.family === familySelect.value
+    && preload.machine === machineInput.value.trim();
+
+// HELPER :: BOOLEAN -> VOID
+// Restores the free-text BIOS fallback and hides every metadata-driven selector.
+const renderMetadataUnavailable = (settled: boolean): void => {
+    machineMetadata = null;
+    biosInputLabel.hidden = false;
+    biosSelectLabel.hidden = true;
+    selectorPanel.hidden = true;
+    biosSelect.replaceChildren();
+    dipSelectors.replaceChildren();
+    const ignored = settled && preloadMatchesSelection() ? Object.keys(preload?.dipswitches ?? {}).length : 0;
+    showSelectorWarning(ignored === 0
+        ? undefined
+        : `DIP metadata is unavailable; ${ignored} preload ${ignored === 1 ? "choice was" : "choices were"} ignored.`);
+};
+
+// HELPER :: VOID -> VOID
+// Invalidates a prepared cabinet, retaining a running cabinet until an explicit selector restart.
+const selectorChanged = (): void => {
+    const running = cabinet?.isStarted === true;
+    if (machineMetadata !== null) biosInput.value = biosSelect.value;
+    invalidateSelection();
+    setStatus(
+        running ? "Switch selection changed. Restart to apply these page choices." : "Selection changed. Run the audit before starting.",
+        running ? "restart-required" : "selection-changed",
+    );
+};
+
+// HELPER :: romSetMetadata -> VOID
+// Builds BIOS and DIP controls from one validated metadata document and applies matching preload page state.
+const renderMetadataSelectors = (metadata: RomSetMetadata): void => {
+    machineMetadata = metadata;
+    biosInputLabel.hidden = true;
+    biosSelectLabel.hidden = false;
+    selectorPanel.hidden = false;
+    biosSelect.replaceChildren();
+    dipSelectors.replaceChildren();
+
+    const warnings: string[] = [];
+    const configured = preloadMatchesSelection() ? preload : null;
+    const emptyBios = document.createElement("option");
+    emptyBios.value = "";
+    emptyBios.textContent = "Automatic (omit BIOS)";
+    biosSelect.append(emptyBios);
+    for (const bios of metadata.bios) {
+        const option = document.createElement("option");
+        option.value = bios;
+        option.textContent = `${bios}${bios === metadata.defaultBios ? " (default)" : ""}`;
+        biosSelect.append(option);
+    }
+    if (metadata.defaultBios !== undefined && metadata.defaultBios !== null && metadata.bios.includes(metadata.defaultBios)) {
+        biosSelect.value = metadata.defaultBios;
+    }
+    if (configured?.bios !== undefined && metadata.bios.includes(configured.bios)) biosSelect.value = configured.bios;
+    else if (configured?.bios !== undefined) warnings.push("the preload BIOS is absent from metadata");
+    biosInput.value = biosSelect.value;
+
+    const configuredDips = configured?.dipswitches ?? {};
+    const availableNames = new Set((metadata.dipswitches ?? []).map((dipswitch) => dipswitch.name));
+    const unknownNames = Object.keys(configuredDips).filter((name) => !availableNames.has(name)).length;
+    let unknownSettings = 0;
+    for (const [index, dipswitch] of (metadata.dipswitches ?? []).entries()) {
+        const label = document.createElement("label");
+        const caption = document.createElement("span");
+        const control = document.createElement("select");
+        caption.textContent = dipswitch.name;
+        control.id = `dip-switch-${index}`;
+        control.className = "dip-select";
+        control.dataset.switchName = dipswitch.name;
+        const defaultSetting = dipswitch.values.find((setting) => setting.default)!;
+        control.dataset.defaultValue = defaultSetting.name;
+        for (const setting of dipswitch.values) {
+            const option = document.createElement("option");
+            option.value = setting.name;
+            option.textContent = `${setting.name}${setting.default ? " (default)" : ""}`;
+            control.append(option);
+        }
+        const configuredSetting = configuredDips[dipswitch.name];
+        if (configuredSetting !== undefined && dipswitch.values.some((setting) => setting.name === configuredSetting)) {
+            control.value = configuredSetting;
+        } else {
+            control.value = defaultSetting.name;
+            if (configuredSetting !== undefined) unknownSettings++;
+        }
+        control.addEventListener("change", selectorChanged);
+        label.append(caption, control);
+        dipSelectors.append(label);
+    }
+    if (unknownNames > 0) warnings.push(`${unknownNames} preload DIP ${unknownNames === 1 ? "name is" : "names are"} absent from metadata`);
+    if (unknownSettings > 0) warnings.push(`${unknownSettings} preload DIP ${unknownSettings === 1 ? "setting is" : "settings are"} absent from metadata`);
+    showSelectorWarning(warnings.length === 0 ? undefined : `Warning: ${warnings.join("; ")}. Ignored choices will not be sent.`);
+};
+
+// HELPER :: VOID -> PROMISE(VOID)
+// Fetches the current build's conventional per-machine metadata and ignores superseded responses.
+const refreshMetadata = (): Promise<void> => {
+    const request = ++metadataRequest;
+    const family = familySelect.value;
+    const machine = machineInput.value.trim();
+    renderMetadataUnavailable(false);
+    metadataLoading = family !== "" && machine !== "";
+    updateControls();
+    metadataPromise = (async () => {
+        if (!metadataLoading) return;
+        let metadata: RomSetMetadata | null = null;
+        try {
+            const response = await fetch(`/mame/${encodeURIComponent(family)}/romsets/${encodeURIComponent(machine)}.json`);
+            if (response.ok) {
+                const parsed: unknown = await response.json();
+                if (isRomSetMetadata(parsed) && parsed.family === family && parsed.machine === machine) metadata = parsed;
+            }
+        } catch {
+            // Missing optional metadata has the same documented fallback as a 404 response.
+        }
+        if (request !== metadataRequest) return;
+        metadataLoading = false;
+        if (metadata === null) {
+            renderMetadataUnavailable(true);
+            log("Selector metadata is unavailable; using the free-text BIOS fallback.");
+        } else {
+            renderMetadataSelectors(metadata);
+            log("Loaded BIOS and DIP selectors from the served machine metadata.");
+        }
+        updateControls();
+    })();
+    return metadataPromise;
 };
 
 // HELPER :: STRING -> PROMISE(VOID)
@@ -342,6 +527,7 @@ const chooseFiles = (files: ReadonlyArray<File>): void => {
 // HELPER :: VOID -> PROMISE(BOOLEAN)
 // Creates ArcadeCabinet from preload URLs or bare store basenames and renders its pre-start audit.
 const prepareCabinet = async (): Promise<boolean> => {
+    await metadataPromise;
     const store = romStore;
     const chosen = selection();
     if (store === null || chosen.family === "" || chosen.machine === "" || !hasRomSource()) {
@@ -368,7 +554,7 @@ const prepareCabinet = async (): Promise<boolean> => {
         machineHints: { players: 2 as const, buttons: 6 as const },
         roms,
         ...(chosen.bios === undefined ? {} : { bios: chosen.bios }),
-        ...(sourceMode === "preload" && preload?.dipswitches !== undefined ? { dipswitches: preload.dipswitches } : {}),
+        dipswitches: chosen.dipswitches,
         display: { scaling: "fit" as const, imageRendering: "pixelated" as const },
     };
     const common = {
@@ -402,6 +588,10 @@ const prepareCabinet = async (): Promise<boolean> => {
     created.player.on("error", (error) => log(`Player error: ${error.message}`));
     cabinet = created;
     preparedSelection = key;
+    preparedStartConfig = {
+        ...(chosen.bios === undefined ? {} : { bios: chosen.bios }),
+        dipswitches: { ...chosen.dipswitches },
+    };
 
     setStatus("Auditing supplied archives…", "auditing");
     const report = await created.audit();
@@ -437,6 +627,12 @@ const startSelected = async (): Promise<void> => {
             startButton.disabled = true;
             setStatus("Starting the machine…", "starting");
             await selectedCabinet.start();
+            if (preparedStartConfig !== null) {
+                (globalThis as unknown as HarnessAdapterBoundary).__arcadeHarnessLastStartConfig = {
+                    ...(preparedStartConfig.bios === undefined ? {} : { bios: preparedStartConfig.bios }),
+                    dipswitches: { ...preparedStartConfig.dipswitches },
+                };
+            }
             try {
                 await selectedCabinet.player.audio.unlock();
                 log("Audio context unlocked from the start gesture.");
@@ -461,6 +657,17 @@ const startSelected = async (): Promise<void> => {
         }
     })();
     return startPromise;
+};
+
+// HELPER :: VOID -> PROMISE(VOID)
+// Replaces a running cabinet so changed BIOS/DIP page state reaches a fresh emulator session.
+const restartWithSelectors = async (): Promise<void> => {
+    if (startPromise !== null || cabinet?.isStarted !== true || restartSwitchesButton.disabled) return;
+    restartSwitchesButton.disabled = true;
+    setStatus("Restarting with the selected BIOS and DIP switches…", "restarting-switches");
+    retireCabinet();
+    await cleanupPromise;
+    await startSelected();
 };
 
 // HELPER :: VOID -> PROMISE(VOID)
@@ -592,6 +799,7 @@ const initialize = async (): Promise<void> => {
         biosInput.value = configured.bios ?? "";
         preloadNote.textContent = "Private preload inputs are active through the server allowlist.";
         if (!builds.includes(configured.family)) throw new Error("The configured family build is unavailable under the build root.");
+        await refreshMetadata();
         const ok = await prepareCabinet();
         if (ok && configured.autostart === true) {
             setStatus("Audit passed. Click anywhere once to start the machine.", "ready");
@@ -619,13 +827,31 @@ confirmButton.addEventListener("click", () => { void confirmPicked(); });
 auditButton.addEventListener("click", () => { void auditSelected(); });
 clearStoreButton.addEventListener("click", () => { void clearStore(); });
 startButton.addEventListener("click", () => { void startSelected(); });
+restartSwitchesButton.addEventListener("click", () => { void restartWithSelectors(); });
+resetDipsButton.addEventListener("click", () => {
+    for (const control of dipSelectors.querySelectorAll<HTMLSelectElement>("select[data-default-value]")) {
+        control.value = control.dataset.defaultValue ?? "";
+    }
+    selectorChanged();
+});
+biosSelect.addEventListener("change", selectorChanged);
 
 const formChanged = (): void => {
     invalidateSelection();
     setStatus("Selection changed. Run the audit before starting.", "selection-changed");
 };
-familySelect.addEventListener("change", formChanged);
-machineInput.addEventListener("input", formChanged);
+const machineChanged = (): void => {
+    invalidateSelection();
+    setStatus("Loading machine selector metadata…", "metadata-loading");
+    const request = metadataRequest + 1;
+    void refreshMetadata().then(() => {
+        if (request === metadataRequest && cabinet?.isStarted !== true) {
+            setStatus("Selection changed. Run the audit before starting.", "selection-changed");
+        }
+    });
+};
+familySelect.addEventListener("change", machineChanged);
+machineInput.addEventListener("input", machineChanged);
 biosInput.addEventListener("input", formChanged);
 autosaveInput.addEventListener("change", formChanged);
 

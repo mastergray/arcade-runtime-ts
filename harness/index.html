@@ -39,6 +39,10 @@
     .rom-list li { display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid #303943; padding: 7px 0; overflow-wrap: anywhere; }
     .rom-actions { display: flex; flex-wrap: wrap; gap: 8px; }
     .rom-actions button, .rom-list button { min-height: 34px; padding: 5px 9px; }
+    #machine-selectors { margin: 16px 0 0; }
+    .selector-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
+    .selector-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    #selector-warning { margin: 10px 0 0; color: #ffd27e; }
     #corner-menu { position: fixed; z-index: 3; right: 18px; bottom: 18px; width: min(300px, calc(100vw - 36px)); }
     #corner-menu summary { list-style: none; box-shadow: 0 3px 20px #0009; }
     #corner-menu summary::-webkit-details-marker { display: none; }
@@ -62,10 +66,20 @@
     <div class="controls">
       <label>Family build<select id="family" aria-label="Family build"></select></label>
       <label>Machine<input id="machine" autocomplete="off" placeholder="machine short name"></label>
-      <label>BIOS<input id="bios" autocomplete="off" placeholder="optional"></label>
+      <label id="bios-input-label">BIOS<input id="bios" autocomplete="off" placeholder="optional"></label>
+      <label id="bios-select-label" hidden>BIOS<select id="bios-select" aria-label="BIOS option"></select></label>
       <label class="check"><input id="autosave" type="checkbox"> Autosave</label>
       <button id="start" type="button" disabled>Start</button>
     </div>
+    <section id="machine-selectors" hidden>
+      <h2>Machine switches</h2>
+      <div id="dip-selectors" class="selector-grid"></div>
+      <div class="selector-actions">
+        <button id="reset-dips" type="button" disabled>Reset to defaults</button>
+        <button id="restart-switches" type="button" disabled>Restart with these switches</button>
+      </div>
+    </section>
+    <p id="selector-warning" role="alert" hidden></p>
     <p id="preload-note">Loading local harness configuration…</p>
     <p id="status" role="status" aria-live="polite" data-state="loading">Loading…</p>
     <div id="player-container"><canvas id="canvas" width="0" height="0"></canvas></div>
