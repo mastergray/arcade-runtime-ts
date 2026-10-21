@@ -1,0 +1,55 @@
+// Derived from pinned MAME 0.161 source (run at the source root):
+// for driver in namcos1 namcos86; do
+//   comm -12 \
+//     <(sed -nE 's/^[[:space:]]*(GAME|GAMEL|GAME_CUSTOM)[[:space:]]*[(][^,]+,[[:space:]]*([a-z0-9_]+).*/\2/p' "src/mame/drivers/$driver.c" | LC_ALL=C sort -u) \
+//     <(sed -nE 's/^([a-z0-9_]+)([[:space:]]*\/\/.*)?$/\1/p' src/mame/mame.lst | LC_ALL=C sort -u) \
+//     | awk -v source="src/mame/drivers/$driver.c" '{ print $0 " // " source }'
+// done | LC_ALL=C sort -u
+
+bakutotu // src/mame/drivers/namcos1.c
+berabohm // src/mame/drivers/namcos1.c
+berabohmb // src/mame/drivers/namcos1.c
+blastoff // src/mame/drivers/namcos1.c
+blazer // src/mame/drivers/namcos1.c
+boxyboy // src/mame/drivers/namcos1.c
+dangseed // src/mame/drivers/namcos1.c
+dspirit // src/mame/drivers/namcos1.c
+dspirit1 // src/mame/drivers/namcos1.c
+dspirit2 // src/mame/drivers/namcos1.c
+faceoff // src/mame/drivers/namcos1.c
+galaga88 // src/mame/drivers/namcos1.c
+galaga88a // src/mame/drivers/namcos1.c
+galaga88j // src/mame/drivers/namcos1.c
+genpeitd // src/mame/drivers/namcos86.c
+hopmappy // src/mame/drivers/namcos86.c
+mmaze // src/mame/drivers/namcos1.c
+pacmania // src/mame/drivers/namcos1.c
+pacmaniaj // src/mame/drivers/namcos1.c
+pacmaniao // src/mame/drivers/namcos1.c
+pistoldm // src/mame/drivers/namcos1.c
+puzlclub // src/mame/drivers/namcos1.c
+quester // src/mame/drivers/namcos1.c
+questers // src/mame/drivers/namcos1.c
+roishtar // src/mame/drivers/namcos86.c
+rompers // src/mame/drivers/namcos1.c
+romperso // src/mame/drivers/namcos1.c
+rthunder // src/mame/drivers/namcos86.c
+rthunder1 // src/mame/drivers/namcos86.c
+rthunder2 // src/mame/drivers/namcos86.c
+shadowld // src/mame/drivers/namcos1.c
+skykiddx // src/mame/drivers/namcos86.c
+skykiddxo // src/mame/drivers/namcos86.c
+soukobdx // src/mame/drivers/namcos1.c
+splatter // src/mame/drivers/namcos1.c
+splatter2 // src/mame/drivers/namcos1.c
+splatterj // src/mame/drivers/namcos1.c
+tankfrce // src/mame/drivers/namcos1.c
+tankfrce4 // src/mame/drivers/namcos1.c
+tankfrcej // src/mame/drivers/namcos1.c
+wldcourt // src/mame/drivers/namcos1.c
+wndrmomo // src/mame/drivers/namcos86.c
+ws // src/mame/drivers/namcos1.c
+ws89 // src/mame/drivers/namcos1.c
+ws90 // src/mame/drivers/namcos1.c
+youkaidk1 // src/mame/drivers/namcos1.c
+youkaidk2 // src/mame/drivers/namcos1.c
