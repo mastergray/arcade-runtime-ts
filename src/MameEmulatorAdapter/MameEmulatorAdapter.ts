@@ -190,12 +190,32 @@ const browserClock = (): MameClock => {
 };
 
 // HELPER :: STRING -> PROMISE(emscriptenModuleFactory)
-// Default init loader: accepts ESM exports and the global fallback used by script-aware hosts.
-const importModule: ModuleLoader = async (url) => {
-    const loaded = await import(url) as Record<string, unknown>;
-    const candidate = loaded["default"] ?? loaded["createMame"] ?? (globalThis as { createMame?: unknown }).createMame;
-    if (typeof candidate !== "function") throw new Error("The build script did not expose createMame.");
-    return candidate as Awaited<ReturnType<ModuleLoader>>;
+// Default init loader. The family build is classic modularized output that installs a global createMame, so
+// init injects it as a classic script once per URL and reads the global; a page may inject its own ModuleLoader instead.
+const scriptLoaders = new Map<string, Promise<Awaited<ReturnType<ModuleLoader>>>>();
+const loadClassicScript: ModuleLoader = (url) => {
+    const existing = scriptLoaders.get(url);
+    if (existing !== undefined) return existing;
+    const pending = new Promise<Awaited<ReturnType<ModuleLoader>>>((resolve, reject) => {
+        const documentValue = (globalThis as { document?: Document }).document;
+        if (documentValue === undefined) {
+            reject(new Error("The default MAME module loader needs a document; inject loadModule instead."));
+            return;
+        }
+        const script = documentValue.createElement("script");
+        script.src = url;
+        script.async = true;
+        script.onload = () => {
+            const candidate = (globalThis as { createMame?: unknown }).createMame;
+            if (typeof candidate === "function") resolve(candidate as Awaited<ReturnType<ModuleLoader>>);
+            else reject(new Error("The build script did not install createMame."));
+        };
+        script.onerror = () => reject(new Error(`The build script at ${url} failed to load.`));
+        documentValue.head.appendChild(script);
+    });
+    scriptLoaders.set(url, pending);
+    pending.catch(() => { scriptLoaders.delete(url); });
+    return pending;
 };
 
 // HELPER :: UNKNOWN -> STRING
@@ -430,7 +450,7 @@ export default class MameEmulatorAdapter implements ArcadeAdapter {
         return new MameEmulatorAdapter({
             buildUrl: config.buildUrl,
             build,
-            loadModule: config.loadModule ?? importModule,
+            loadModule: config.loadModule ?? loadClassicScript,
             scheduler: config.scheduler ?? browserScheduler(),
             clock: config.clock ?? browserClock(),
             fetch: fetcher,

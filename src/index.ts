@@ -5,6 +5,7 @@
 
 // Classes:
 export { default as ArcadeRuntimeError } from "./ArcadeRuntimeError/ArcadeRuntimeError.js";   // Base typed error and code registry
+export { default as MameEmulatorAdapter } from "./MameEmulatorAdapter/MameEmulatorAdapter.js";   // ArcadeAdapter over a direct-MAME family build
 export { default as ArcadeDisplay } from "./ArcadeDisplay/ArcadeDisplay.js";                 // Canvas sizing, drawing, placeholder and fullscreen
 export { default as ArcadeAudio } from "./ArcadeAudio/ArcadeAudio.js";                       // Stereo Web Audio playback, gesture unlock and bounded latency
 export { default as ArcadeInput } from "./ArcadeInput/ArcadeInput.js";                       // Channelled, reference-counted control holds
@@ -102,6 +103,13 @@ export type {
 
 // Class-owned types and predicates:
 export { isArcadeRuntimeErrorConfig, type ArcadeRuntimeErrorConfig } from "./ArcadeRuntimeError/types.js";   // Error construction config
+export {
+    isMameEmulatorAdapterConfig,                                   // Guard for MameEmulatorAdapterConfig
+    isMameEmulatorAdapterInitConfig,                               // Guard for MameEmulatorAdapterInitConfig
+    type MameClock,                                                // Injected monotonic clock
+    type MameEmulatorAdapterConfig,                                // Direct construction config
+    type MameEmulatorAdapterInitConfig,                            // init() config with optional browser dependencies
+} from "./MameEmulatorAdapter/types.js";
 export {
     isArcadeDisplayConfig,                                         // Guard for ArcadeDisplayConfig
     isDisplayDocumentLike,                                         // Guard for DisplayDocumentLike
