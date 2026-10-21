@@ -1268,6 +1268,13 @@ Families required for v1.0.0 are the eight marked *required* in §4.6.
 M1–M9 are v1.0.0; M10 onward are post-1.0 and ordered by expected value,
 not by dependency.
 
+Milestones are the **acceptance view**: a milestone closes when its row
+passes. §16 is the **execution view**: the same work cut into packages
+with exclusive file ownership so several agents can build them
+concurrently on branches. A milestone's packages may land in any order;
+the milestone closes only when all of them are merged and its acceptance
+row passes on `main`.
+
 | # | Milestone | Acceptance |
 | - | --------- | ---------- |
 | M1 | **MAME bridge + `MameEmulatorAdapter` + `ArcadeDisplay` + preload.** Implement the production patch set, web OSD modules, bridge exports, fresh-module lifecycle and the family build pipeline over the inherited `neogeo` and `cps1` targets, plus `serve-harness --preload` and a minimal harness page that starts the preloaded machine. | One Neo Geo and one CPS-1 title, loaded from a preload config, render upright at native size and correct speed on controlled 60 and 120 Hz display cadences |
@@ -1489,3 +1496,157 @@ performance run move to the M10 acceptance row.
 - 3D and later-generation boards (Namco System 21/22, CPS-3, Taito F3 and
   later) in v1; they may become families only after the required matrix
   ships and their own F-probes pass.
+
+---
+
+## 16. Concurrent work plan
+
+This section exists so that two or more coding agents can implement the
+spec at the same time on separate branches while one integrator reviews and
+merges to `main`. It does not change what is built, only how the work is
+cut and landed.
+
+### 16.1 Principles
+
+1. **Contracts first, then fan out.** Nothing is parallel until W0 (§16.3)
+   has merged: the shared types, predicates, error class and the test
+   doubles every other package tests against. After that, §2 is **frozen**.
+   A package that needs a contract change does not make it on its branch;
+   it opens a short contract-amendment branch that edits §2 of this spec
+   and `src/shared.types.ts` only, the integrator merges that first, and
+   dependants rebase.
+2. **Exclusive write sets.** Every package owns a list of paths and edits
+   nothing outside it except its own test files. Shared files
+   (`src/index.ts`, `package.json`, `tsconfig*.json`, `tests/run.ts`,
+   `src/shared.types.ts`, this spec) are integrator-owned; a package that
+   needs a line in one of them says so in its merge request and the
+   integrator adds it at merge time. Two packages never own the same path.
+3. **Doubles over dependencies.** A package above the adapter is developed
+   and tested against the W0 doubles (`FakeArcadeSession`,
+   `FakeArcadeAdapter`, `FakeModuleFactory`), never against another
+   package's branch. A package that composes others (`ArcadePlayer`,
+   `ArcadeCabinet`) starts only when the packages it composes have merged.
+4. **Lanes follow toolchains.** Work that needs emsdk and the MAME source
+   tree (patches, bridge C++, family targets, build pipeline) is one lane;
+   pure TypeScript work is another. An agent in the TypeScript lane never
+   needs the 3 GB of caches, and an agent in the native lane never blocks
+   on it.
+5. **The integrator does not implement packages.** The integrator writes
+   W0, reviews, merges, runs the full suites on `main`, maintains this
+   section, and closes milestones. If the integrator also takes a package,
+   it is one from the critical path and it is listed here like any other.
+
+### 16.2 Branches, worktrees and merging
+
+- One branch per package, named `wp/<id>-<slug>` (for example
+  `wp/w3-arcade-input`), cut from `main` at the package's start.
+- Each agent works in its own git worktree so checkouts never share a
+  working tree: `git worktree add ../arcade-runtime-ts.w3 wp/w3-arcade-input`.
+  A worktree has no `node_modules`, `res/` or `.cache/`; the TypeScript lane
+  runs `npm install` and nothing else, and the native lane recreates the
+  `res/emsdk` and `.cache/mame0161-source` links or sets `EMSDK_DIR`.
+- A package is ready for review when: `npm run check` and `npm test` pass
+  on the branch rebased onto current `main`; its browser cases pass or skip
+  for a documented reason; it touched only its write set plus its tests;
+  it added no file under `res/` and no ROM, machine name or hash to tracked
+  files; every public class, config and event has a predicate and a spec
+  test; and the branch's commits follow the repository's commit
+  conventions (short summary, blank line, details; no attribution lines).
+- Review is a spec-compliance review against the sections the package
+  row names, then a run of the full suites on the merged result. The
+  integrator merges with a merge commit (history is kept; no squash), runs
+  `check` and `test` on `main` again, and deletes the branch.
+- A merge that breaks `main` is reverted first and discussed second.
+- Conflicts are expected only in integrator-owned files and are resolved by
+  the integrator at merge time. A conflict anywhere else means a write-set
+  violation and the branch is sent back.
+
+### 16.3 Work packages
+
+Columns: **Owns** is the exclusive write set (plus the package's own test
+files under `tests/spec/` and `tests/browser/`). **After** lists packages
+that must be merged first. **Spec** lists the sections the agent's brief
+points at. **Lane** is N (native: emsdk and MAME source needed) or T (pure
+TypeScript).
+
+| ID | Package | Owns | After | Spec | Lane | Milestone |
+| -- | ------- | ---- | ----- | ---- | :--: | --------- |
+| W0 | Contracts and doubles: `shared.types.ts`, predicates, `ArcadeRuntimeError`, `tests/support/` doubles, `src/index.ts` skeleton | `src/shared.types.ts`, `src/ArcadeRuntimeError/`, `tests/support/`, `src/index.ts` | — | §2, §3, §14 | T | M1 |
+| W1 | Patch relocation and family target pairs: move probe patches to `mame/probes/patches/`, fix probe script paths, `neogeo.{lua,lst}` and `cps1.{lua,lst}` covering full driver lists | `mame/patches/`, `mame/probes/`, `mame/targets/`, `scripts/probe-*.sh`, `scripts/read-mame-probe-config.js` | — | §1.2, §4.1, §4.6, §12.1 | N | M1 |
+| W2 | Build pipeline: `build-mame.ts`, `build.json` writer, threading gate wiring, `extract-romsets.ts` (metadata only) | `scripts/build-mame.ts`, `scripts/extract-romsets.ts`, `mame/builds/` | W0, W1 | §4.1, §10.5 metadata, §14 build | N | M1, M7 |
+| W3 | Production bridge: patches 0001–0003, `mame/bridge/*.cpp`, screen-period accumulator, exports and callbacks | `mame/patches/0001-*`, `0002-*`, `0003-*`, `mame/bridge/` | W1 | §4.2–§4.5, §12.1 M1B | N | M1 |
+| W4 | `MameEmulatorAdapter` and session: MEMFS layout, audit classification, heap copies, lifecycle, persist, overlay codec | `src/MameEmulatorAdapter/` | W0, W2, W3 | §2.4, §5 | N | M1, M6 |
+| W5 | `ArcadeDisplay` | `src/ArcadeDisplay/` | W0 | §7 | T | M1 |
+| W6 | `ArcadeAudio` | `src/ArcadeAudio/` | W0 | §8 | T | M3 |
+| W7 | `ArcadeInput` and `KeyboardSource`, `DEFAULT_KEYBOARD_MAP`, controller-config generator (`web.cfg` text) | `src/ArcadeInput/`, `src/KeyboardSource/`, `src/ControllerConfig/` | W0 | §4.4, §6, §10.3 | T | M4 |
+| W8 | `GamepadSource` | `src/GamepadSource/` | W7 | §10.4 | T | M5 |
+| W9 | `ArcadeStorage` and `ArcadeRomStore` | `src/ArcadeStorage/`, `src/ArcadeRomStore/` | W0 | §10.7 | T | M6, M7 |
+| W10 | `RomSetAudit` and the `arcade-audit-roms` bin | `src/RomSetAudit/`, `scripts/audit-roms.ts` | W0 | §10.5 | T | M7 |
+| W11 | `ArcadePlayer` | `src/ArcadePlayer/` | W4, W5, W6, W7 | §9 | T | M1–M4 |
+| W12 | `ArcadeCabinet` | `src/ArcadeCabinet/` | W8, W9, W10, W11 | §10.6 | T | M7 |
+| W13 | Harness and preload: `serve-harness.ts --preload`, `harness/` | `scripts/serve-harness.ts`, `harness/` | W11 (minimal page), W12 (cabinet page) | §11 | T | M1, M7 |
+| W14a–f | One package per remaining family: `cps2`, `namco-classic`, `namco-s1`, `namco-s2`, `taito-classic`, `taito-16`; target pair, build file, F1–F6 record | `mame/targets/<family>.*`, `mame/builds/<family>.json`, `docs/probes/families/<family>.md` | W2 | §4.6, §13.1 | N | M2 |
+| W15 | Saves bridge: memory card and EEPROM coverage in `web_flush_nvram`, F8 record | `mame/patches/0003-*`, `docs/probes/families/*` (F8 rows only) | W3, W4 | §4.3, §12 M6 | N | M6 |
+| W16 | BIOS and DIP: `web_machine_info` BIOS fields, generated DIP cfg, harness selectors | `mame/bridge/web_bridge.cpp` (BIOS struct only), `src/DipConfig/`, `harness/` (selectors only) | W4, W13 | §4.5, §12 M8 | N+T | M8 |
+| W17 | Release gate: licence notices in build output, `npm pack` tests, hosted-harness policy | `scripts/build-mame.ts` (notice copy only), `tests/spec/*package*` | W2, W12 | §0.4, §14.1 | T | M9 |
+
+`src/ControllerConfig/` and `src/DipConfig/` are internal modules (pure
+text generators) added to the layout of §1.2 by this section; they are not
+public exports.
+
+### 16.4 Dependency graph and critical path
+
+```
+W0 ─┬─ W5 (display) ──────────────┐
+    ├─ W6 (audio) ────────────────┤
+    ├─ W7 (input) ── W8 (gamepad) ┤
+    ├─ W9 (storage) ──────────────┼─ W11 (player) ─ W12 (cabinet) ─ W13b (harness) ─ W17
+    ├─ W10 (audit) ───────────────┤                                   
+    └─ W2 (build) ◄── W1 (targets)│
+            │            └─ W3 (bridge) ─ W4 (adapter) ─┘
+            │                              ├─ W15 (saves)
+            │                              └─ W16 (bios/dip)
+            └─ W14a … W14f (families, each independent)
+```
+
+The critical path is **W0 → W1 → W3 → W4 → W11 → W12**. Everything in the
+TypeScript lane except W11 and W12 can run while W1, W3 and W4 are being
+built, and W14a–f can run as soon as W2 has merged. W13's minimal page
+(enough to start a preloaded machine) is split off so M1 acceptance does not
+wait for the cabinet.
+
+### 16.5 Lane assignment for two agents
+
+| Lane | Agent | Order of packages | Notes |
+| ---- | ----- | ----------------- | ----- |
+| Native (N) | Agent A | W1 → W3 → W4 → W15 → W16 (native half) | Needs emsdk, the source cache and private preload configs; owns everything under `mame/` after W0 |
+| TypeScript (T) | Agent B | W5 → W7 → W6 → W9 → W10 → W8 → W11 → W12 → W13 → W17 | Needs only `npm install`; tests against doubles until W4 merges, then reruns its browser cases against the real build |
+| Integrator | reviewer | W0 first; then review/merge; W2 if nobody else is free | W2 sits between lanes (Node script that drives emsdk) and is small; it is the integrator's default package |
+
+With a third agent, W14a–f are its lane: one branch per family, each
+independent of the others, each gated on W2. With a fourth, W10 and W9
+move off Agent B's queue since they share no code with the rest of the
+TypeScript lane.
+
+### 16.6 Agent brief
+
+Every package starts from a brief with exactly these parts, so an agent can
+work from the brief and the spec alone:
+
+1. The package row from §16.3, verbatim.
+2. The spec sections it names, read in full before writing code.
+3. The write set and the rule that nothing else is edited.
+4. The contracts it consumes (`src/shared.types.ts` at the current `main`)
+   and the doubles it tests against (`tests/support/`).
+5. The definition of ready-for-review from §16.2.
+6. The repository rules that are easy to violate: constructors read no
+   globals; `init` supplies browser defaults; one error class; every public
+   type has a predicate; a test that touches the DOM goes in `browser`;
+   nothing under `res/` is read by a committed test except through the
+   preload or probe config environment variable; no ROM identity in tracked
+   files; no attribution lines in commits.
+7. The exact commands: `npm run check`, `npm test`, `npm run test:browser`,
+   and for the native lane the probe and build commands with `EMSDK_DIR`.
+
+A brief that cannot be written this way means the package is not ready to
+be handed off; split it or land a contract amendment first.
