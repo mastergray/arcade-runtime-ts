@@ -58,7 +58,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 | W10 | `RomSetAudit`, `arcade-audit-roms` | T | M7 | merged | `wp/w10-romset-audit` | 2026-10-20 (merge of `5859c88`) |
 | W11 | `ArcadePlayer` | T | M1–M4 | merged | `wp/w11-arcade-player` | 2026-10-20 (merge of `aa9c9b0`) |
 | W12 | `ArcadeCabinet` | T | M7 | todo | | |
-| W13a | Harness: minimal preload page | T | M1 | in progress | `wp/w13a-harness-preload` | |
+| W13a | Harness: minimal preload page | T | M1 | merged | `wp/w13a-harness-preload` | 2026-10-20 (merge of `2dab339`) |
 | W13b | Harness: cabinet page | T | M7 | todo | | |
 | W14a | Family `cps2` | N | M2 | merged (F4–F6 pending private set) | `wp/w14a-cps2` | 2026-10-20 (merge of `d0c0c05`) |
 | W14b | Family `namco-classic` | N | M2 | merged (F4–F6 pending private set) | `wp/w14b-namco-classic` | 2026-10-20 (merge of `5653b31`) |
@@ -74,6 +74,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 
 Newest first. One line per merge, milestone close, or contract amendment.
 
+- 2026-10-20 — W13a merged: `serve-harness --preload` and the preload harness page; the gated real-build case starts a machine and renders its first frame.
 - 2026-10-20 — W14c merged: `namco-s1` family (47 machines, 5.0 MB wasm, no target corrections). W14e started.
 - 2026-10-20 — W11 merged: `ArcadePlayer`; its production case exposed and fixed BIOS-option audit handling and the 1.38 thenable-Module hang. W13a, W14c, W14d started.
 - 2026-10-20 — W14b merged: `namco-classic` family (378 machines, 7.4 MB wasm); galaxian.c adds 85 KiB Brotli so `galaxian-misc` stays folded in.
