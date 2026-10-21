@@ -3,6 +3,7 @@
 // Dependencies:
 import ArcadeRuntimeError from "../ArcadeRuntimeError/ArcadeRuntimeError.js";   // Sole typed failure class
 import controllerConfigFor from "../ControllerConfig/controllerConfigFor.js";   // Deterministic MAME 0.161 web.cfg
+import dipConfigFor from "../DipConfig/dipConfigFor.js";          // Validated per-machine DIP cfg text
 import { isRomSetMetadata, type RomSetMetadata } from "../RomSetAudit/types.js";   // Optional roles, BIOS and size metadata
 import {
     isArcadeStartConfig,                                          // Guards every start request
@@ -326,11 +327,6 @@ export default class MameEmulatorAdapter implements ArcadeAdapter {
             message: "The requested machine is not present in this family build.",
             data: config.machine,
         });
-        if (config.dipswitches !== undefined && Object.keys(config.dipswitches).length > 0) throw new ArcadeRuntimeError({
-            code: ArcadeRuntimeError.CODE.UNSUPPORTED,
-            message: "DIP-switch cfg generation is provided by the M8 package.",
-            data: config.dipswitches,
-        });
         const { sampleRate, optionArguments, fixedArguments } = this.argumentsFor(config);
         const metadata = await this.metadataFor(config.machine);
         if (config.bios !== undefined && metadata !== null && (metadata.bios.length === 0 || !metadata.bios.includes(config.bios))) {
@@ -339,6 +335,17 @@ export default class MameEmulatorAdapter implements ArcadeAdapter {
                 message: "The requested BIOS is not offered by this machine.",
                 data: config.bios,
             });
+        }
+        const dipSelections = config.dipswitches ?? {};
+        const dipNames = Object.keys(dipSelections);
+        let dipConfig: string | null = null;
+        if (dipNames.length > 0) {
+            if (metadata === null) throw new ArcadeRuntimeError({
+                code: ArcadeRuntimeError.CODE.UNSUPPORTED,
+                message: "DIP switch names cannot be validated because the machine's romset metadata is unavailable.",
+                data: dipNames,
+            });
+            dipConfig = dipConfigFor(config.machine, metadata.dipswitches, dipSelections);
         }
         this.assertMemoryBudget(config, metadata);
 
@@ -386,8 +393,10 @@ export default class MameEmulatorAdapter implements ArcadeAdapter {
                 machine: config.machine,
             };
             if (config.changes !== undefined) restoreOverlayTree(module, OverlayCodec.decode(config.changes.slice(), overlayHeader));
+            const dipConfigPath = `/mame/cfg/${config.machine}.cfg`;
+            if (dipConfig !== null) module.FS.writeFile(dipConfigPath, new TextEncoder().encode(dipConfig));
             const memoryCardPath = this.prepareMemoryCard(module, config.machine);
-            const ignoredPaths = ["cfg/web.cfg"];
+            const ignoredPaths = ["cfg/web.cfg", ...(dipConfig === null ? [] : [`cfg/${config.machine}.cfg`])];
 
             let mainError: unknown = undefined;
             try {
