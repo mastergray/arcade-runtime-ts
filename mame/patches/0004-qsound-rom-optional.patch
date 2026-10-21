@@ -1,0 +1,22 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Arcade Runtime <arcade-runtime@example.invalid>
+Date: Wed, 21 Oct 2026 11:00:00 -0500
+Subject: [PATCH 4/4] Make the QSound DSP16 placeholder ROM optional
+
+The pinned release declares an 8 KiB BAD_DUMP "qsound.bin" for the DSP16 core, but that core's execute_run is a do-nothing stub and QSound output is high-level emulated without it. Later MAME releases replaced the placeholder with the real 24 KiB internal ROM under a different name, so sets kept current no longer carry the old file and the pinned release refused to start every QSound title. The ROM stays declared and audited, but its absence no longer blocks startup.
+---
+ src/emu/sound/qsound.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/emu/sound/qsound.c b/src/emu/sound/qsound.c
+--- a/src/emu/sound/qsound.c
++++ b/src/emu/sound/qsound.c
+@@ -53,7 +53,7 @@
+ // NOTE: ROM is marked as bad since a handful of questionable bits haven't been fully examined.
+ ROM_START( qsound )
+ 	ROM_REGION( 0x2000, "qsound", 0 )
+-	ROM_LOAD16_WORD( "qsound.bin", 0x0000, 0x2000, BAD_DUMP CRC(059c847d) SHA1(229cead1be2f86733dd80573d4983ba482355ece) )
++	ROM_LOAD_OPTIONAL( "qsound.bin", 0x0000, 0x2000, BAD_DUMP CRC(059c847d) SHA1(229cead1be2f86733dd80573d4983ba482355ece) )
+ ROM_END
+ 
+ 

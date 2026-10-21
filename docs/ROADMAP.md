@@ -19,14 +19,14 @@ Status values: `todo`, `ready` (brief written, can be started),
 | --------- | -------- | ------ | --------- |
 | M0 Feasibility probe | inherited | closed | 2026-10-20 (parent project) |
 | M1 Bridge, adapter, display, preload | W0, W1, W2, W3, W4, W5, W13a | closed | 2026-10-20 |
-| M2 Family build matrix | W14a–f | all six merged; F4–F6 measured for neogeo, namco-classic, irem-m72, taito-16; pending lawful zip sets for cps2 (a parent set), namco-s1, namco-s2, taito-classic | |
+| M2 Family build matrix | W14a–f | closed for v1.0.0 (2026-10-21): all six merged; F4–F6 measured for neogeo, namco-classic, irem-m72, taito-16; cps1 and cps2 measured after the QSound placeholder ROM patch 0004; namco-s1, namco-s2 and taito-classic deferred from v1.0.0 on 2026-10-21 (built and gated, no lawful set to measure) | |
 | M3 Audio | W6 | closed (Neo Geo and Namco WSG titles; a CPS title awaits the 0.161 qsound.zip) | 2026-10-20 |
 | M4 Input and keyboard | W7 | closed (one title per measured family; a zero-button title awaits a lawful set, the vocabulary and generator cover it in spec tests) | 2026-10-20 |
-| M5 Gamepads | W8 | closed (Neo Geo four-button title with scripted standard pads; a CPS-2 six-button title awaits qsound.zip and a parent set) | 2026-10-20 |
-| M6 Saves | W9 (storage half), W15 | merged; memory card verified, states persist, CPS-2 EEPROM runtime check pending a set | |
+| M5 Gamepads | W8 | closed (Neo Geo four-button title with scripted standard pads; CPS-1/CPS-2 two- and three-button titles pass; a six-button CPS-2 title still awaits a lawful parent set) | 2026-10-20 |
+| M6 Saves | W9 (storage half), W15 | closed (2026-10-21): memory card verified, states persist, CPS-2 EEPROM written mid-run by `web_flush_nvram` | 2026-10-21 |
 | M7 ROM supply and cabinet | W2 (romsets half), W9 (ROM store half), W10, W12, W13b | closed (picker path with synthetic archives and the real cabinet; preload path with the real build; audit agrees with MAME on every lawful local set) | 2026-10-20 |
 | M8 BIOS and DIP switches | W16 | done | 2026-10-21: `35-dip-switches.test.ts` against the namco-classic build; a BIOS option is exercised by the Neo Geo acceptance (`-bios`). |
-| M9 v1.0.0 release gate | W17 | gate in place | Package and build-output tests pass; fresh `--all` rebuild done and licence decision recorded; closing needs the remaining M2 family evidence and the version bump. |
+| M9 v1.0.0 release gate | W17 | gate in place | Package and build-output tests pass; fresh `--all` rebuild done, licence decision recorded, M2 closed for v1.0.0; closing needs the version bump and a final full verification run. |
 
 ## Post-1.0
 
@@ -66,7 +66,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 | W14d | Family `namco-s2` | N | M2 | in progress | `wp/w14d-namco-s2` | |
 | W14e | Family `taito-classic` | N | M2 | merged (F4–F6 pending private set) | `wp/w14e-taito-classic` | 2026-10-20 (merge of `79aea64`) |
 | W14f | Family `taito-16` | N | M2 | ready | `wp/w14f-taito-16` | |
-| W15 | Saves bridge (memcard, EEPROM, F8) | N | M6 | merged (CPS-2 EEPROM runtime check pending a set) | `wp/w15-saves-bridge` | 2026-10-20 (merge of `6f0a252`) |
+| W15 | Saves bridge (memcard, EEPROM, F8) | N | M6 | merged (CPS-2 EEPROM runtime check done 2026-10-21) | `wp/w15-saves-bridge` | 2026-10-20 (merge of `6f0a252`) |
 | W13c | Harness: BIOS and DIP selectors | T | M8 | merged | `wp/w13c-harness-selectors` | `6cf1dea` |
 | W16 | BIOS and DIP switches | N+T | M8 | merged | `wp/w16-bios-dip` | `d5446ad` |
 | W17 | Release gate | T | M9 | merged | `wp/w17-release-gate` | 2026-10-21 |
@@ -76,6 +76,8 @@ Status values: `todo`, `ready` (brief written, can be started),
 Newest first. One line per merge, milestone close, or contract amendment.
 
 - 2026-10-20 — **M3, M4, M5 closed** by `36-input-audio-acceptance.test.ts` on the Neo Geo and Namco sets (audio peak 68–71 ms under the 120 ms cap over 60 s; keyboard and two-pad flows verified; unplug release verified).
+- 2026-10-21 — cps1 and cps2 F4–F6, M3–M5 and the CPS-2 EEPROM flush recorded from lawful sets (7z sets converted to zips under the ignored res/ tree). **M2 and M6 closed for v1.0.0.**
+- 2026-10-21 — Decision: namco-s1, namco-s2 and taito-classic drop from the v1.0.0 required matrix (no lawful local sets); README lists supported families. Patch 0004 makes the 0.161 QSound placeholder ROM optional: the pinned DSP16 core is a stub, and current QSound device dumps carry a different file, so every CPS-2 and CPS-1.5 title refused to start.
 - 2026-10-21 — Full fresh rebuild of all nine families with the SDL2 notice; build-output gate exposed four taito-classic metadata files with a defaultless DIP field (generator now omits such fields). taito-16 F4–F6 and M3–M5 recorded from a lawful set. Licence review decision recorded in docs/release.md.
 - 2026-10-21 — W17 merged: isolated `npm pack` test with the packed bin run against a synthetic set, build-output gate over every built family, `docs/release.md`, SDL2 notice added to the P1 copy. Integrator applied the `package.json` `files` list and moved `tsx` to dependencies (the bin stays TypeScript); `version` stays 0.0.0 and `private` stays until the release itself.
 - 2026-10-21 — W13c merged: harness BIOS and DIP selectors from the served machine metadata, restart-with-switches; §16.3/§16.4 updated for the W13c split. M8 fully closed.

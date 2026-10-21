@@ -10,9 +10,32 @@ packages, copies, hosts or links to ROMs. A page composes the runtime, obtains
 ROM zips from its own user, and is responsible for what it loads.
 
 The runtime owns the pinned MAME-to-WebAssembly family builds, video, audio,
-input, saves and lifecycle. Target hardware is SNK Neo Geo, Capcom CPS-1 and
-CPS-2, and the classic Namco and Taito architectures from `pacman.c` and `galaga.c`
-hardware through Namco System 2 and Taito F2.
+input, saves and lifecycle.
+
+## Supported families
+
+Each family is a separate MAME 0.161 build selected by `mame/targets/`. The
+emulator core is pinned at 0.161, so ROM sets must be the 0.161 generation of
+each set; the `arcade-audit-roms` command and the runtime's audit report say
+exactly which archive and file a set is missing.
+
+| Family | Hardware | v1.0.0 |
+| ------ | -------- | :----: |
+| `neogeo` | SNK Neo Geo MVS/AES (needs the user's `neogeo.zip` BIOS) | measured |
+| `cps1` | Capcom CPS-1 and CPS-1.5 (QSound titles) | measured |
+| `cps2` | Capcom CPS-2 | measured |
+| `namco-classic` | Namco `pacman.c`, `galaga.c`, `polepos.c` and related boards (need the user's Namco custom I/O device ROMs) | measured |
+| `taito-16` | Taito 16-bit boards (B, F2, X, Z, H and related) | measured |
+| `irem-m72` | Irem M72 | measured, optional |
+| `namco-s1` | Namco System 1 and System 86 | builds; evidence deferred |
+| `namco-s2` | Namco System 2 | builds; evidence deferred |
+| `taito-classic` | Taito 8-bit boards (`bublbobl.c`, `arkanoid.c`, `tnzs.c` and related) | builds; evidence deferred |
+
+"Measured" means the family's startup, pacing, sustained-speed and
+input/audio acceptance evidence was recorded from a lawful local set
+(`docs/probes/families/`). "Evidence deferred" families compile, pass the
+threading and release gates and ship metadata, but no title was run on them
+for v1.0.0 because no lawful set was available locally.
 
 ## Status
 

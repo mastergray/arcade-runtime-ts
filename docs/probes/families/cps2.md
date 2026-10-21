@@ -130,3 +130,36 @@ path with a Neo Geo BIOS-side file under the overlay's `nvram/` root. The M6
 CPS-2 acceptance step still needs an ignored lawful CPS-2 preload: change an
 EEPROM-backed setting, call `persist()`, start a fresh module with that overlay,
 and verify the setting and EEPROM bytes survive.
+
+## F4–F6 measured — a 384×224 horizontal title at 59.637 Hz (parent set)
+
+Observed 2026-10-21 with the `build-mame cps1 cps2 --fresh` artifact carrying
+patch 0004, headless Chromium on the desktop host, the real adapter driven
+through `tests/browser/33-family-measurements.test.ts` (injected scheduler at
+a controlled cadence against a real clock; the identity stays in the ignored
+preload config). The audit reports the set complete with the QSound DSP16
+placeholder ROM optional-missing.
+
+Why patch 0004 exists: the pinned release declares an 8 KiB `BAD_DUMP`
+`qsound.bin` for its DSP16 core, whose `execute_run` is a do-nothing stub;
+QSound audio is high-level emulated without it. Later MAME releases replaced
+that placeholder with the real 24 KiB internal ROM under another name, so a
+current QSound device archive does not satisfy 0.161 and every CPS-2 and
+CPS-1.5 title refused to start ("Required files are missing"). The patch
+marks the ROM optional; it stays declared and audited.
+
+| Probe | Result |
+| ----- | ------ |
+| F4 startup to first valid frame | 601 ms (includes full `cps2crpt` program decryption); geometry ok |
+| F5 emulated rate against native refresh, per cadence | 60 Hz → 59.89 fps (+0.43 %), 90 → 59.60 (−0.06 %), 120 → 59.60 (−0.07 %), 144 → 59.55 (−0.14 %); every frame at the machine's native size and orientation |
+| F6 sixty-second emulated-time ratio at the 60 Hz cadence (desktop) | 1.0000 |
+
+M3–M5 acceptance (`36-input-audio-acceptance.test.ts`) on the same set:
+audio unlocked and under the cap for 60 s (queued max 61.4 ms), keyboard
+coin/start changed the picture, two scripted pads took players 1 and 2 and a
+held direction released on unplug. The title is a two-button game, so the
+six-button CPS-2 control check stays pending a lawful six-button parent set.
+
+M6 EEPROM: with the machine running, `web_flush_nvram()` wrote
+`/mame/nvram/<machine>/eeprom` (128 bytes, the 93C46 image) into MEMFS
+without exiting, so the overlay captures CPS-2 settings mid-run.
