@@ -24,7 +24,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 | M4 Input and keyboard | W7 | todo | |
 | M5 Gamepads | W8 | todo | |
 | M6 Saves | W9 (storage half), W15 | merged; memory card verified, states persist, CPS-2 EEPROM runtime check pending a set | |
-| M7 ROM supply and cabinet | W2 (romsets half), W9 (ROM store half), W10, W12, W13b | todo | |
+| M7 ROM supply and cabinet | W2 (romsets half), W9 (ROM store half), W10, W12, W13b | closed (picker path with synthetic archives and the real cabinet; preload path with the real build; audit agrees with MAME on every lawful local set) | 2026-10-20 |
 | M8 BIOS and DIP switches | W16 | todo | |
 | M9 v1.0.0 release gate | W17 | todo | |
 
@@ -59,7 +59,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 | W11 | `ArcadePlayer` | T | M1–M4 | merged | `wp/w11-arcade-player` | 2026-10-20 (merge of `aa9c9b0`) |
 | W12 | `ArcadeCabinet` | T | M7 | merged | `wp/w12-arcade-cabinet` | 2026-10-20 (merge of `07caa9a`) |
 | W13a | Harness: minimal preload page | T | M1 | merged | `wp/w13a-harness-preload` | 2026-10-20 (merge of `2dab339`) |
-| W13b | Harness: cabinet page | T | M7 | in progress | `wp/w13b-harness-cabinet` | |
+| W13b | Harness: cabinet page | T | M7 | merged | `wp/w13b-harness-cabinet` | 2026-10-20 (merge of `0fbda6a`) |
 | W14a | Family `cps2` | N | M2 | merged (F4–F6 pending private set) | `wp/w14a-cps2` | 2026-10-20 (merge of `d0c0c05`) |
 | W14b | Family `namco-classic` | N | M2 | merged (F4–F6 pending private set) | `wp/w14b-namco-classic` | 2026-10-20 (merge of `5653b31`) |
 | W14c | Family `namco-s1` | N | M2 | merged (F4–F6 pending private set) | `wp/w14c-namco-s1` | 2026-10-20 (merge of `a2c9046`) |
@@ -67,13 +67,14 @@ Status values: `todo`, `ready` (brief written, can be started),
 | W14e | Family `taito-classic` | N | M2 | merged (F4–F6 pending private set) | `wp/w14e-taito-classic` | 2026-10-20 (merge of `79aea64`) |
 | W14f | Family `taito-16` | N | M2 | ready | `wp/w14f-taito-16` | |
 | W15 | Saves bridge (memcard, EEPROM, F8) | N | M6 | merged (CPS-2 EEPROM runtime check pending a set) | `wp/w15-saves-bridge` | 2026-10-20 (merge of `6f0a252`) |
-| W16 | BIOS and DIP switches | N+T | M8 | ready | `wp/w16-bios-dip` | |
+| W16 | BIOS and DIP switches | N+T | M8 | in progress | `wp/w16-bios-dip` | |
 | W17 | Release gate | T | M9 | todo | | |
 
 ## Log
 
 Newest first. One line per merge, milestone close, or contract amendment.
 
+- 2026-10-20 — W13b merged: cabinet harness page (picker, ROM store, saves, corner menu). **M7 closed.** W16 started.
 - 2026-10-20 — W15 merged: memory-card mount and flush, F8 recorded (0.161 screen bitmaps are not state, so next-frame identity after a restore is a core limitation). W16 brief written.
 - 2026-10-20 — F4–F6 measured on desktop for neogeo, namco-classic (vertical and heaviest titles) and irem-m72: pacing within 0.35 % at 60–144 Hz cadences, 60 s ratios 0.9999–1.0003, startup 0.3–1.1 s. W13b started.
 - 2026-10-20 — Device ROM sets modelled (`device` role); the user's lawful sets audit ok for neogeo, namco-classic and irem-m72. `33-family-measurements.test.ts` added for F4–F6. W15 started; W13b brief written.
