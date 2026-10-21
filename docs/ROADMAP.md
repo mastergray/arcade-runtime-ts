@@ -51,11 +51,11 @@ Status values: `todo`, `ready` (brief written, can be started),
 | W3 | Production web bridge | N | M1 | in progress | `wp/w3-bridge` | |
 | W4 | `MameEmulatorAdapter` | N | M1, M6 | todo | | |
 | W5 | `ArcadeDisplay` | T | M1 | merged | `wp/w5-arcade-display` | 2026-10-20 `5f8ae09` |
-| W6 | `ArcadeAudio` | T | M3 | todo | | |
+| W6 | `ArcadeAudio` | T | M3 | ready | `wp/w6-arcade-audio` | |
 | W7 | `ArcadeInput`, `KeyboardSource`, controller config | T | M4 | in progress | `wp/w7-arcade-input` | |
 | W8 | `GamepadSource` | T | M5 | todo | | |
 | W9 | `ArcadeStorage`, `ArcadeRomStore` | T | M6, M7 | todo | | |
-| W10 | `RomSetAudit`, `arcade-audit-roms` | T | M7 | todo | | |
+| W10 | `RomSetAudit`, `arcade-audit-roms` | T | M7 | in progress | `wp/w10-romset-audit` | |
 | W11 | `ArcadePlayer` | T | M1–M4 | todo | | |
 | W12 | `ArcadeCabinet` | T | M7 | todo | | |
 | W13a | Harness: minimal preload page | T | M1 | todo | | |
