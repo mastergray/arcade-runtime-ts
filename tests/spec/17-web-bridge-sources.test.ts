@@ -244,6 +244,16 @@ const testFile: TestFile = {
                     P.equals(true),
                 )
                 .assert(
+                    "the exported control storage is the state polled by each MAME input item",
+                    () => {
+                        const source = readFileSync(join(BRIDGE_ROOT, "web_input.cpp"), "utf8");
+                        return source.includes("web_control_state, &s_controls[pad][item]")
+                            && source.includes("return *reinterpret_cast<INT32 *>(item_internal)")
+                            && source.includes("s_controls[pad][item] = pressed ? 0x80 : 0");
+                    },
+                    P.equals(true),
+                )
+                .assert(
                     "all callbacks are read from Module.web and no M11 axis export leaks into M1",
                     () => {
                         const source = readFileSync(join(BRIDGE_ROOT, "web_bridge.cpp"), "utf8");

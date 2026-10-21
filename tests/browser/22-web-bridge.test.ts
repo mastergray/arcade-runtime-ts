@@ -44,6 +44,7 @@ interface MainBridgeResult {
     readonly nvramFiles: number;
     readonly nvramFlushOk: boolean;
     readonly pauseReturnedZero: boolean;
+    readonly postLoadFrameAdvanced: boolean;
     readonly refreshMatchesFamily: boolean;
     readonly saveOk: boolean;
     readonly stateBytes: number;
@@ -297,6 +298,7 @@ const PAGE = `<!doctype html>
       stage = 'load';
       load('w3-roundtrip');
       var loadOk = waitForState(run, active.values, stateIndex);
+      var postLoadFrameAdvanced = loadOk && run(1) === 1;
 
       stage = 'flush';
       var postLoadFlush = flush();
@@ -335,6 +337,7 @@ const PAGE = `<!doctype html>
         nvramFiles: nvram.files,
         nvramFlushOk: postLoadFlush === 0,
         pauseReturnedZero: pauseReturnedZero,
+        postLoadFrameAdvanced: postLoadFrameAdvanced,
         refreshMatchesFamily: Math.abs(info.refreshHz - expected.refresh) < 0.01,
         saveOk: saveOk,
         stateBytes: stateBytes,
@@ -525,6 +528,7 @@ const testFile: TestFile = {
                             && result.pauseReturnedZero
                             && result.saveOk
                             && result.loadOk
+                            && result.postLoadFrameAdvanced
                             && result.stateBytes > 0;
                     }),
                     true,
