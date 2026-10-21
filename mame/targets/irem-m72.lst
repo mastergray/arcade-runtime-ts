@@ -1,0 +1,40 @@
+// Derived from pinned MAME 0.161 source (run at the source root):
+// comm -12 \
+//   <(sed -nE 's/^[[:space:]]*(GAME|GAMEL|GAME_CUSTOM)[[:space:]]*[(][^,]+,[[:space:]]*([a-z0-9_]+).*/\2/p' src/mame/drivers/m72.c | LC_ALL=C sort -u) \
+//   <(sed -nE 's/^([a-z0-9_]+)([[:space:]]*\/\/.*)?$/\1/p' src/mame/mame.lst | LC_ALL=C sort -u)
+
+airduel // src/mame/drivers/m72.c
+bchopper // src/mame/drivers/m72.c
+cosmccop // src/mame/drivers/m72.c
+dbreed // src/mame/drivers/m72.c
+dbreedm72 // src/mame/drivers/m72.c
+dkgensan // src/mame/drivers/m72.c
+dkgensanm72 // src/mame/drivers/m72.c
+gallop // src/mame/drivers/m72.c
+hharry // src/mame/drivers/m72.c
+hharryu // src/mame/drivers/m72.c
+imgfight // src/mame/drivers/m72.c
+imgfightj // src/mame/drivers/m72.c
+kengo // src/mame/drivers/m72.c
+loht // src/mame/drivers/m72.c
+lohtb // src/mame/drivers/m72.c
+lohtb2 // src/mame/drivers/m72.c
+lohtj // src/mame/drivers/m72.c
+majtitle // src/mame/drivers/m72.c
+majtitlej // src/mame/drivers/m72.c
+mrheli // src/mame/drivers/m72.c
+nspirit // src/mame/drivers/m72.c
+nspiritj // src/mame/drivers/m72.c
+poundfor // src/mame/drivers/m72.c
+poundforj // src/mame/drivers/m72.c
+poundforu // src/mame/drivers/m72.c
+rtype // src/mame/drivers/m72.c
+rtype2 // src/mame/drivers/m72.c
+rtype2j // src/mame/drivers/m72.c
+rtype2jc // src/mame/drivers/m72.c
+rtypeb // src/mame/drivers/m72.c
+rtypej // src/mame/drivers/m72.c
+rtypejp // src/mame/drivers/m72.c
+rtypeu // src/mame/drivers/m72.c
+xmultipl // src/mame/drivers/m72.c
+xmultiplm72 // src/mame/drivers/m72.c

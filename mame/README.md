@@ -72,6 +72,15 @@ For ROM-free driver-family size probes, choose one tracked definition under
 npm run probe:mame:family -- "$PWD/res/mame-family-probe.json"
 ```
 
+The release-family pairs need no private config. The pair-mode probe copies a
+committed `<family>.lua` + `<family>.lst` into the cached source tree, builds
+that exact subtarget and links a ROM-free `-listfull` artifact:
+
+```sh
+EMSDK_DIR="$PWD/res/emsdk" MAME_PROBE_KIND=family-pair \
+  scripts/probe-mame0161-tiny.sh <family>
+```
+
 The family probe runs `-listfull` and does not preload ROM content. Set
 `MAME_FAMILY_PROBE_URL` and `MAME_FAMILY_PROBE_MACHINE` to exercise its generic
 browser test.
