@@ -362,6 +362,7 @@ if (CONFIG_ARGUMENT !== undefined) cases.push({
             });
         })
         .interact("save quick state, persist it and clear only save storage", async ({ page }) => {
+            await page.evaluate(() => { document.querySelector<HTMLDetailsElement>("#corner-menu")!.open = true; });
             await page.locator("#save-state").click();
             await page.waitForFunction(() => document.querySelector<HTMLElement>("#status")?.dataset.state === "state-saved");
             await page.evaluate(() => {

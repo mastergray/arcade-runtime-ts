@@ -225,7 +225,7 @@ if (CONFIG_ARGUMENT !== undefined) cases.push({
             return {
                 running: status?.dataset.state === "running",
                 firstFrame: (canvas?.width ?? 0) > 0 && (canvas?.height ?? 0) > 0,
-                keyboardAttached: status?.textContent?.includes("Keyboard controls are attached") === true,
+                keyboardAttached: /Keyboard (and gamepad )?controls are attached/.test(status?.textContent ?? ""),
             };
         }), P.equals<ProductionResult>({ running: true, firstFrame: true, keyboardAttached: true }))
         .start(url, { headless: true, timeout: TIMEOUT })),
