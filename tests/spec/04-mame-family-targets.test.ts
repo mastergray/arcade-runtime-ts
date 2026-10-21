@@ -38,6 +38,7 @@ const TARGET_ROOT = new URL("../../mame/targets/", import.meta.url);
 
 const FAMILY_TARGETS: readonly FamilyTarget[] = [
     { id: "cps1", sources: ["src/mame/drivers/cps1.c"], expectedMachines: 178 },
+    { id: "cps2", sources: ["src/mame/drivers/cps2.c"], expectedMachines: 293 },
     {
         id: "irem-m72",
         sources: ["src/mame/drivers/m72.c"],
