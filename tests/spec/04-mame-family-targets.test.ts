@@ -95,6 +95,22 @@ const FAMILY_TARGETS: readonly FamilyTarget[] = [
         ],
         expectedMachines: 148,
     },
+    {
+        id: "taito-16",
+        sources: [
+            "src/mame/drivers/rastan.c",
+            "src/mame/drivers/opwolf.c",
+            "src/mame/drivers/rainbow.c",
+            "src/mame/drivers/volfied.c",
+            "src/mame/drivers/asuka.c",
+            "src/mame/drivers/taito_l.c",
+            "src/mame/drivers/taito_x.c",
+            "src/mame/drivers/taito_b.c",
+            "src/mame/drivers/taito_f2.c",
+            "src/mame/drivers/taito_h.c",
+        ],
+        expectedMachines: 189,
+    },
 ] as const;
 
 const PRIVATE_MARKERS = [
