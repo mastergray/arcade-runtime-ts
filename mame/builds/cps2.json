@@ -1,0 +1,13 @@
+{
+    "family": "cps2",
+    "target": "mame/targets/cps2.lua",
+    "list": "mame/targets/cps2.lst",
+    "memoryPages": 4096,
+    "sources": [
+        "src/mame/drivers/cps2.c",
+        "src/mame/machine/cps2crpt.c",
+        "src/mame/drivers/cps1.c",
+        "src/mame/video/cps1.c",
+        "src/mame/machine/kabuki.c"
+    ]
+}
