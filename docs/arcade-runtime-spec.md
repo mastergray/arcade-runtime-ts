@@ -648,7 +648,9 @@ adapter (W4). The adapter is tested against a `FakeModuleLoader` module of
 this shape; the bridge is tested by driving a real build through it.
 
 **Instantiation.** The build's JavaScript is a 1.38.31 `MODULARIZE` factory
-named `createMame`. The adapter calls it with
+named `createMame`, installed as a global by a classic (non-ESM) script;
+the adapter's default loader injects it with a `<script>` tag and a page
+may inject any other `ModuleLoader`. The adapter calls it with
 `{ noInitialRun: true, print, printErr, locateFile, web }`, where `web` is
 the callback object below, then writes MEMFS inputs, then calls
 `Module.callMain(argv)`. `callMain` returns after `cli_frontend::execute()`
@@ -673,7 +675,7 @@ the machine is advanced only by `web_run_frames`.
 | `web_save_state` / `web_load_state` | `(name: char*) → void` | Schedules save/load of `/mame/sta/<name>.sta`; completion arrives on `onStateDone`. |
 | `web_flush_nvram` | `() → i32` | Flushes NVRAM (and memory card, F8) to MEMFS without exiting; returns 0 on success. |
 | `web_exit` | `() → void` | Schedules exit; `onExit` fires once the bridge has stopped and flushed. |
-| `web_machine_info` | `() → char*` | Returns a NUL-terminated JSON string owned by the bridge, valid until the next call: `{ name, description, width, height, refreshHz, orientation, aspectRatio, players, buttons, bios: [{name, description, isDefault}], hasNvram }`. The adapter adds `family` from `build.json`. |
+| `web_machine_info` | `() → char*` | Returns a NUL-terminated JSON string owned by the bridge, valid until the next call: `{ name, description, width, height, refreshHz, orientation, aspectRatio, players, buttons, bios: [{name, description, isDefault}], hasNvram }`. The adapter adds `family` from `build.json`. `width` and `height` are valid from the first `onFrame` onward (the 0.161 render target has no size before it first rasterizes), so the adapter reads this inside its first-frame callback. |
 
 **Callbacks** read from `Module.web` at the moment each fires:
 
@@ -822,7 +824,7 @@ Hardware characteristics the runtime must handle as a result of this matrix:
 interface MameEmulatorAdapterConfig {
     readonly buildUrl: string;          // e.g. "/mame/cps2/"; serves mamecps2.js, .wasm, build.json, romsets/
     readonly build: BuildInfo;          // already fetched and validated
-    readonly loadModule: ModuleLoader;  // injected; init defaults to dynamic import of the build's JS
+    readonly loadModule: ModuleLoader;  // injected; init defaults to classic-script injection of the build's JS
 }
 
 class MameEmulatorAdapter implements ArcadeAdapter {
@@ -836,7 +838,7 @@ class MameEmulatorAdapter implements ArcadeAdapter {
 ```
 
 The constructor is deterministic and reads no globals. `init` fetches and
-validates `build.json`, supplies global `fetch` and dynamic import when
+validates `build.json`, supplies global `fetch` and a classic-script loader when
 omitted, resolves artifact URLs relative to `buildUrl`, and constructs.
 Metadata selection, requested adapter and artifact filenames must agree
 before module JavaScript is imported.
@@ -856,7 +858,9 @@ before module JavaScript is imported.
    is present, validates `changes` and maps its logical roots to the
    writable directories.
 5. Snapshots a hash of every persisted file under `nvram`, `cfg`, `sta` and
-   the memory-card location *after* the incoming overlay is restored.
+   the memory-card location *after* the incoming overlay is restored and
+   after the first valid frame, following one `web_flush_nvram()`, so
+   files MAME itself materializes at boot do not read as user changes.
    Adapter-generated files (`web.cfg`, the DIP cfg) are excluded from
    dirty detection.
 6. Calls `callMain([machine, ...argv])`.
@@ -1499,7 +1503,7 @@ already require.
 | F5 | Does the screen-period accumulator hold the family's native refresh (60.606, 59.185, 57.5 Hz) within 0.5 % on 60, 90, 120 and 144 Hz cadences, and does a vertical title arrive upright at the expected geometry? | Pacing and orientation acceptance per family |
 | F6 | Sustained emulated-time ratio over 60 s on desktop, and informationally under the 4× CPU-throttled mobile proxy, for the family's heaviest title? | Desktop full speed is a v1.0.0 gate per family; the proxy number is a provisional phone-playable label that M10 replaces with physical-phone evidence |
 | F7 | Which BIOS options does `-listxml` report, does `-bios` select them in the browser, and how does the audit distinguish required BIOS from optional BIOS sets? | `MachineInfo.bios`, `ArcadeStartConfig.bios`, audit roles |
-| F8 | Where does 0.161 persist each family's state: NVRAM files, EEPROM, Neo Geo memory cards, Timekeeper? Does `web_flush_nvram()` cover all of them mid-run? | Overlay roots and the scope of patch 0003 |
+| F8 | Where does 0.161 persist each family's state: NVRAM files, EEPROM, Neo Geo memory cards, Timekeeper? Does `web_flush_nvram()` cover all of them mid-run? After a scheduled state load, is the next rendered frame byte-identical to the frame after the save, and if not which screen or device state the 0.161 driver omits? | Overlay roots, the scope of patch 0003, and the M6 state-fidelity acceptance per family |
 | F9 | Which titles reference sample sets, what does the auditor report when a sample zip is absent, and does the title run without it? | `samples` role handling and optional-missing reporting |
 | F10 | How does each family name its input ports (`P1_BUTTON1`, `COIN1`, `SELECT1`, `TILT`, shared-stick alternating boards, cocktail DIPs), and how many frames must a coin be held to register? | Controller-config generator coverage and per-family `tap` minimum |
 | F11 | Which analog port types occur (steering, pedal, spinner, dial, trackball, light gun), with what ranges and sensitivities? | M10 `ArcadeAxis` design |

@@ -49,14 +49,14 @@ Status values: `todo`, `ready` (brief written, can be started),
 | W1 | Patch relocation and family target pairs | N | M1 | merged | `wp/w1-targets` | 2026-10-20 (merge of `7f99a0d`) |
 | W2 | Build pipeline and romsets extraction | N | M1, M7 | merged | `wp/w2-build-pipeline` | 2026-10-20 |
 | W3 | Production web bridge | N | M1 | merged | `wp/w3-bridge` | 2026-10-20 (merge of `c4d6c12`) |
-| W4 | `MameEmulatorAdapter` | N | M1, M6 | in progress | `wp/w4-mame-adapter` | |
+| W4 | `MameEmulatorAdapter` | N | M1, M6 | merged | `wp/w4-mame-adapter` | 2026-10-20 (merge of `f1c3653`) |
 | W5 | `ArcadeDisplay` | T | M1 | merged | `wp/w5-arcade-display` | 2026-10-20 `5f8ae09` |
 | W6 | `ArcadeAudio` | T | M3 | merged | `wp/w6-arcade-audio` | 2026-10-20 (merge of `d6ce5f4`) |
 | W7 | `ArcadeInput`, `KeyboardSource`, controller config | T | M4 | merged | `wp/w7-arcade-input` | 2026-10-20 (merge of `6cecda2`) |
 | W8 | `GamepadSource` | T | M5 | merged | `wp/w8-gamepad-source` | 2026-10-20 (merge of `e0d67ff`) |
 | W9 | `ArcadeStorage`, `ArcadeRomStore` | T | M6, M7 | merged | `wp/w9-storage` | 2026-10-20 (merge of `aefb07c`) |
 | W10 | `RomSetAudit`, `arcade-audit-roms` | T | M7 | merged | `wp/w10-romset-audit` | 2026-10-20 (merge of `5859c88`) |
-| W11 | `ArcadePlayer` | T | M1–M4 | ready (after W4) | `wp/w11-arcade-player` | |
+| W11 | `ArcadePlayer` | T | M1–M4 | in progress | `wp/w11-arcade-player` | |
 | W12 | `ArcadeCabinet` | T | M7 | todo | | |
 | W13a | Harness: minimal preload page | T | M1 | ready (after W11) | `wp/w13a-harness-preload` | |
 | W13b | Harness: cabinet page | T | M7 | todo | | |
@@ -74,6 +74,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 
 Newest first. One line per merge, milestone close, or contract amendment.
 
+- 2026-10-20 — W4 merged: `MameEmulatorAdapter`, `MameSession`, overlay codec; real-build browser case passes. Decisions: default loader is classic-script injection (artifact is not ESM); snapshot taken at first frame after a flush; byte-identical video after state restore moved to F8/M6. W11 started.
 - 2026-10-20 — Integration: `build-mame neogeo` from a clean unpack with the production patches (2m10s, 256 machines, 256 romsets); the W3 browser cases pass against that artifact.
 - 2026-10-20 — W3 merged: production web bridge (patches 0001–0003, `mame/bridge/`), link contract recorded in `mame/bridge/README.md`; `build-mame` link flags reconciled. Observed: Neo Geo memory card writes nothing through the narrow NVRAM flush (F8 item for W15). W4 started.
 - 2026-10-20 — W2 merged (integrator): `build-mame.ts`, `extract-romsets.ts`, `scripts/mame-build/`, family build files; neogeo built end to end with 256 romsets. §4.1 amended for the two toolchain patches.
