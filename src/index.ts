@@ -15,6 +15,7 @@ export { default as GamepadSource } from "./GamepadSource/GamepadSource.js";    
 export { default as ArcadeStorage } from "./ArcadeStorage/ArcadeStorage.js";                 // Browser-local save-overlay persistence
 export { default as RomSetAudit } from "./RomSetAudit/RomSetAudit.js";                       // Pre-start audit of user zips against romsets metadata
 export { default as ArcadeRomStore } from "./ArcadeRomStore/ArcadeRomStore.js";              // Browser-local user ROM archives
+export { default as ArcadeCabinet } from "./ArcadeCabinet/ArcadeCabinet.js";                 // Player, sources, storage and ROM store composed from one config
 
 // Shared helpers:
 export {
@@ -192,6 +193,14 @@ export {
     type RomStoreEntry,                                            // Byte-free listing entry
     type SubtleCryptoLike,                                         // SHA-256 digest dependency
 } from "./ArcadeRomStore/types.js";
+export {
+    isArcadeCabinetConfig,                                         // Guard for ArcadeCabinetConfig
+    isArcadeCabinetInitConfig,                                     // Guard for ArcadeCabinetInitConfig
+    isArcadeControlsConfig,                                        // Guard for ArcadeControlsConfig
+    type ArcadeCabinetConfig,                                      // Resolved direct-construction config
+    type ArcadeCabinetInitConfig,                                  // Page-level init config
+    type ArcadeControlsConfig,                                     // Keyboard, gamepad and reserved touch declarations
+} from "./ArcadeCabinet/types.js";
 export {
     isRomSetMetadata,                                              // Guard for RomSetMetadata
     isRomSetReport,                                                // Guard for RomSetReport
