@@ -19,7 +19,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 | --------- | -------- | ------ | --------- |
 | M0 Feasibility probe | inherited | closed | 2026-10-20 (parent project) |
 | M1 Bridge, adapter, display, preload | W0, W1, W2, W3, W4, W5, W13a | closed | 2026-10-20 |
-| M2 Family build matrix | W14a–f | all six merged; F4–F6 measurements pending per family | |
+| M2 Family build matrix | W14a–f | all six merged; F4–F6 measured for neogeo, namco-classic, irem-m72; pending lawful sets for cps2, namco-s1, namco-s2, taito-classic, taito-16 | |
 | M3 Audio | W6 | merged, acceptance pending real build | |
 | M4 Input and keyboard | W7 | todo | |
 | M5 Gamepads | W8 | todo | |
@@ -59,7 +59,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 | W11 | `ArcadePlayer` | T | M1–M4 | merged | `wp/w11-arcade-player` | 2026-10-20 (merge of `aa9c9b0`) |
 | W12 | `ArcadeCabinet` | T | M7 | merged | `wp/w12-arcade-cabinet` | 2026-10-20 (merge of `07caa9a`) |
 | W13a | Harness: minimal preload page | T | M1 | merged | `wp/w13a-harness-preload` | 2026-10-20 (merge of `2dab339`) |
-| W13b | Harness: cabinet page | T | M7 | ready | `wp/w13b-harness-cabinet` | |
+| W13b | Harness: cabinet page | T | M7 | in progress | `wp/w13b-harness-cabinet` | |
 | W14a | Family `cps2` | N | M2 | merged (F4–F6 pending private set) | `wp/w14a-cps2` | 2026-10-20 (merge of `d0c0c05`) |
 | W14b | Family `namco-classic` | N | M2 | merged (F4–F6 pending private set) | `wp/w14b-namco-classic` | 2026-10-20 (merge of `5653b31`) |
 | W14c | Family `namco-s1` | N | M2 | merged (F4–F6 pending private set) | `wp/w14c-namco-s1` | 2026-10-20 (merge of `a2c9046`) |
@@ -74,6 +74,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 
 Newest first. One line per merge, milestone close, or contract amendment.
 
+- 2026-10-20 — F4–F6 measured on desktop for neogeo, namco-classic (vertical and heaviest titles) and irem-m72: pacing within 0.35 % at 60–144 Hz cadences, 60 s ratios 0.9999–1.0003, startup 0.3–1.1 s. W13b started.
 - 2026-10-20 — Device ROM sets modelled (`device` role); the user's lawful sets audit ok for neogeo, namco-classic and irem-m72. `33-family-measurements.test.ts` added for F4–F6. W15 started; W13b brief written.
 - 2026-10-20 — W12 merged: `ArcadeCabinet`. Audit gained a CRC-and-size fallback (older naming generations load as MAME does); `build-mame` records applied patch sets per tree.
 - 2026-10-20 — W14f merged: `taito-16` family (189 machines, 6.9 MB wasm). All eight required families now build; M2 awaits F4–F6 with lawful sets. W15 brief written.
