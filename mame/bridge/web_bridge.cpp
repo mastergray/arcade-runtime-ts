@@ -291,7 +291,22 @@ extern "C" EMSCRIPTEN_KEEPALIVE void web_exit()
 
 extern "C" EMSCRIPTEN_KEEPALIVE int web_flush_nvram()
 {
-	return s_machine == NULL ? 1 : s_machine->web_flush_nvram();
+	if (s_machine == NULL || s_machine->web_flush_nvram() != 0)
+		return 1;
+
+	image_interface_iterator images(s_machine->root_device());
+	for (device_image_interface *image = images.first(); image != NULL; image = images.next())
+	{
+		if (image->image_type() != IO_MEMCARD || !image->exists())
+			continue;
+
+		if (image->is_readonly())
+			return 1;
+		image->call_unload();
+		if (image->ftell() != image->length())
+			return 1;
+	}
+	return 0;
 }
 
 extern "C" EMSCRIPTEN_KEEPALIVE const char *web_machine_info()
