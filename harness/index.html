@@ -3,116 +3,162 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Arcade Runtime Harness</title>
+  <title>Arcade Library</title>
   <style>
     :root {
       color-scheme: dark;
       font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      background: #101317;
-      color: #e8edf2;
+      background: #0d1115;
+      color: #eef3f7;
     }
     * { box-sizing: border-box; }
+    html, body { max-width: 100%; overflow-x: hidden; }
     body { margin: 0; min-height: 100vh; }
-    main { width: min(1160px, calc(100% - 32px)); margin: 0 auto; padding: 28px 0 48px; }
-    h1 { margin: 0 0 20px; font-size: clamp(1.35rem, 3vw, 2rem); letter-spacing: .04em; }
-    h2 { margin: 0 0 10px; color: #aeb9c4; font-size: .82rem; text-transform: uppercase; letter-spacing: .08em; }
-    .controls { display: grid; grid-template-columns: 1fr 1.3fr 1fr auto auto; gap: 12px; align-items: end; }
-    label { display: grid; gap: 6px; color: #aeb9c4; font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; }
-    select, input, button, summary { min-height: 40px; border: 1px solid #39434e; border-radius: 4px; background: #181e24; color: #f5f8fa; font: inherit; padding: 8px 10px; }
-    button, summary { border-color: #3d8d73; background: #195b48; cursor: pointer; font-weight: 700; }
-    button:disabled { border-color: #39434e; background: #252b31; color: #77818b; cursor: not-allowed; }
-    input[type="checkbox"] { min-height: 0; accent-color: #58cda5; }
-    .check { display: flex; min-height: 40px; align-items: center; gap: 8px; padding: 0 4px; white-space: nowrap; }
-    #preload-note { margin: 12px 0; color: #aeb9c4; }
-    #status { margin: 14px 0; min-height: 1.4em; color: #7ee0bd; }
-    #status[data-state="error"], #status[data-state="audit-failed"], #status[data-state="overlay-incompatible"] { color: #ff9b91; }
-    #player-container { display: grid; place-items: center; width: 100%; min-height: 480px; overflow: hidden; border: 1px solid #303943; border-radius: 6px; background: #050607; }
-    canvas { display: block; max-width: 100%; max-height: 72vh; image-rendering: pixelated; }
-    .panels { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
-    section { min-width: 0; border: 1px solid #303943; border-radius: 6px; background: #151a20; padding: 14px; }
-    pre { min-height: 92px; max-height: 280px; overflow: auto; margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; font-size: .8rem; line-height: 1.5; }
-    .rom-supply { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
-    #drop-zone { display: grid; place-items: center; min-height: 112px; border: 2px dashed #4f6673; border-radius: 6px; color: #b8c8d3; cursor: pointer; text-align: center; padding: 16px; }
-    #drop-zone[data-active="true"] { border-color: #7ee0bd; background: #17352c; }
+    main { width: min(1160px, calc(100% - 28px)); margin: 0 auto; padding: 26px 0 80px; }
+    h1 { margin: 0; font-size: clamp(1.45rem, 5vw, 2.25rem); letter-spacing: .02em; }
+    h2 { margin: 0 0 10px; color: #c0cad3; font-size: .82rem; text-transform: uppercase; letter-spacing: .08em; }
+    h3 { margin: 0; font-size: 1.08rem; line-height: 1.35; }
+    p { line-height: 1.55; }
+    button, select, summary {
+      min-height: 40px;
+      max-width: 100%;
+      border: 1px solid #3e4a55;
+      border-radius: 6px;
+      background: #182027;
+      color: #f7fafc;
+      font: inherit;
+      padding: 8px 10px;
+    }
+    button, summary { border-color: #43987c; background: #185b48; cursor: pointer; font-weight: 700; }
+    button:disabled { border-color: #3e4a55; background: #252c32; color: #7d8790; cursor: not-allowed; }
+    select { width: 100%; }
+    input[type="checkbox"] { min-height: 0; accent-color: #5bd4ab; }
+    .check { display: flex; min-height: 38px; align-items: center; gap: 8px; color: #c0cad3; font-size: .78rem; }
+    .intro { max-width: 70ch; margin: 8px 0 18px; color: #b7c3cd; }
+    #drop-zone {
+      display: grid;
+      place-items: center;
+      min-height: 132px;
+      border: 2px dashed #577080;
+      border-radius: 10px;
+      background: #12191f;
+      color: #d4e0e8;
+      cursor: pointer;
+      text-align: center;
+      padding: 20px;
+      transition: border-color .15s, background .15s;
+    }
+    #drop-zone strong { display: block; margin-bottom: 7px; color: #fff; font-size: 1rem; }
+    #drop-zone[data-active="true"], body[data-dragging="true"] #drop-zone { border-color: #7ee0bd; background: #15372d; }
     #rom-picker { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
-    .rom-list { display: grid; gap: 8px; min-height: 48px; margin: 10px 0; padding: 0; list-style: none; }
-    .rom-list li { display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid #303943; padding: 7px 0; overflow-wrap: anywhere; }
-    .rom-actions { display: flex; flex-wrap: wrap; gap: 8px; }
-    .rom-actions button, .rom-list button { min-height: 34px; padding: 5px 9px; }
-    #machine-selectors { margin: 16px 0 0; }
-    .selector-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
-    .selector-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
-    #selector-warning { margin: 10px 0 0; color: #ffd27e; }
-    #corner-menu { position: fixed; z-index: 3; right: 18px; bottom: 18px; width: min(300px, calc(100vw - 36px)); }
+    .library-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 12px 0 0; }
+    #library-summary, #preload-note { margin: 0; color: #aebbc5; font-size: .82rem; }
+    #build-warnings { margin: 10px 0 0; padding-left: 20px; color: #ffd27e; line-height: 1.5; }
+    #status { min-height: 1.5em; margin: 16px 0; color: #7ee0bd; overflow-wrap: anywhere; }
+    #status[data-state="error"], #status[data-state="files-bad"], #status[data-state="overlay-incompatible"] { color: #ff9b91; }
+    #library { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 330px), 1fr)); gap: 16px; margin: 16px 0; }
+    .empty-library, .game-card, .unknown-card, .stored-panel, .player-section, .diagnostics details {
+      min-width: 0;
+      border: 1px solid #303b45;
+      border-radius: 9px;
+      background: #141a20;
+    }
+    .empty-library { grid-column: 1 / -1; padding: 24px; color: #afbbc5; text-align: center; }
+    .game-card, .unknown-card { display: grid; align-content: start; gap: 13px; padding: 16px; overflow: hidden; }
+    .game-card[data-selected="true"] { border-color: #55bc98; box-shadow: 0 0 0 1px #55bc9844; }
+    .card-heading { display: flex; align-items: start; justify-content: space-between; gap: 10px; }
+    .family { margin: 4px 0 0; color: #9fadb8; font-size: .76rem; overflow-wrap: anywhere; }
+    .badge { flex: 0 0 auto; border-radius: 999px; background: #253039; color: #c7d2da; padding: 4px 8px; font-size: .68rem; }
+    .archive-list { display: grid; gap: 7px; margin: 0; padding: 0; list-style: none; }
+    .archive-list li { border-left: 3px solid #51606c; padding: 3px 0 3px 9px; line-height: 1.45; overflow-wrap: anywhere; }
+    .archive-list li[data-state="ok"] { border-color: #58cda5; }
+    .archive-list li[data-state="missing"] { border-color: #e2aa55; }
+    .archive-list li[data-state="bad"] { border-color: #ef7166; }
+    .game-verdict { min-height: 1.4em; margin: 0; color: #c9d4dc; overflow-wrap: anywhere; }
+    .game-card[data-audit-status="ok"] .game-verdict { color: #7ee0bd; }
+    .game-card[data-audit-status="bad"] .game-verdict { color: #ff9b91; }
+    .card-actions, .selector-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    .card-actions button, .selector-actions button { flex: 1 1 150px; }
+    .machine-selectors { display: grid; gap: 11px; border-top: 1px solid #303b45; padding-top: 13px; }
+    .selector-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr)); gap: 10px; }
+    .selector-grid label { display: grid; min-width: 0; gap: 6px; color: #b3c0ca; font-size: .74rem; letter-spacing: .04em; }
+    .selector-warning { margin: 0; color: #ffd27e; font-size: .78rem; }
+    .unknown-card { border-color: #785f3f; }
+    .unknown-card p { margin: 0; color: #e4c48e; overflow-wrap: anywhere; }
+    .lower-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(250px, 1fr); gap: 16px; margin-top: 16px; }
+    .player-section, .stored-panel { padding: 14px; }
+    #player-container { display: grid; place-items: center; width: 100%; min-height: 430px; overflow: hidden; border-radius: 6px; background: #050607; }
+    canvas { display: block; max-width: 100%; max-height: 72vh; image-rendering: pixelated; }
+    #stored-files { display: grid; gap: 8px; margin: 0 0 12px; padding: 0; list-style: none; }
+    #stored-files li { display: flex; min-width: 0; align-items: center; justify-content: space-between; gap: 8px; border-bottom: 1px solid #303b45; padding: 6px 0; }
+    #stored-files span { min-width: 0; overflow-wrap: anywhere; }
+    #stored-files button { flex: 0 0 auto; min-height: 34px; padding: 5px 8px; }
+    .diagnostics { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+    .diagnostics details { overflow: hidden; }
+    .diagnostics summary { border: 0; border-radius: 8px; background: #1c2925; }
+    .diagnostics details[open] summary { border-radius: 8px 8px 0 0; }
+    pre { min-height: 92px; max-height: 280px; overflow: auto; margin: 0; padding: 14px; white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; font-size: .78rem; line-height: 1.5; }
+    #corner-menu { position: fixed; z-index: 3; right: 14px; bottom: 14px; width: min(310px, calc(100vw - 28px)); }
     #corner-menu summary { list-style: none; box-shadow: 0 3px 20px #0009; }
     #corner-menu summary::-webkit-details-marker { display: none; }
-    #corner-menu[open] summary { border-radius: 4px 4px 0 0; }
-    .menu-body { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; border: 1px solid #39434e; border-top: 0; border-radius: 0 0 4px 4px; background: #11171cef; padding: 10px; box-shadow: 0 8px 24px #000a; }
-    .menu-body button { min-height: 34px; font-size: .78rem; padding: 5px 7px; }
+    #corner-menu[open] summary { border-radius: 6px 6px 0 0; }
+    .menu-body { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; border: 1px solid #3e4a55; border-top: 0; border-radius: 0 0 6px 6px; background: #10161bef; padding: 10px; box-shadow: 0 8px 24px #000a; }
+    .menu-body button { min-height: 34px; font-size: .76rem; padding: 5px 7px; }
     .menu-body .check { min-height: 34px; font-size: .72rem; }
-    #gamepads { grid-column: 1 / -1; margin: 2px 0 0; color: #aeb9c4; font-size: .75rem; line-height: 1.5; }
+    #gamepads { grid-column: 1 / -1; margin: 2px 0 0; color: #aeb9c4; font-size: .73rem; line-height: 1.5; }
     #clear-saves-retry { grid-column: 1 / -1; border-color: #b95e55; background: #762f2b; }
     [hidden] { display: none !important; }
-    @media (max-width: 820px) {
-      .controls { grid-template-columns: 1fr 1fr; }
-      .rom-supply, .panels { grid-template-columns: 1fr; }
-      #player-container { min-height: 300px; }
+    @media (max-width: 760px) {
+      main { width: min(100% - 20px, 1160px); padding-top: 18px; }
+      .lower-grid, .diagnostics { grid-template-columns: 1fr; }
+      #player-container { min-height: 260px; }
+      .card-heading { align-items: start; }
     }
   </style>
 </head>
 <body>
   <main>
-    <h1>Arcade Runtime Harness</h1>
-    <div class="controls">
-      <label>Family build<select id="family" aria-label="Family build"></select></label>
-      <label>Machine<input id="machine" autocomplete="off" placeholder="machine short name"></label>
-      <label id="bios-input-label">BIOS<input id="bios" autocomplete="off" placeholder="optional"></label>
-      <label id="bios-select-label" hidden>BIOS<select id="bios-select" aria-label="BIOS option"></select></label>
-      <label class="check"><input id="autosave" type="checkbox"> Autosave</label>
-      <button id="start" type="button" disabled>Start</button>
+    <h1>Your arcade library</h1>
+    <p class="intro">Choose or drop your zip files. This page will identify each game, tell you which companion zips it needs, and keep confirmed files only in this browser.</p>
+
+    <label id="drop-zone" for="rom-picker" tabindex="0" data-active="false">
+      <span><strong>Drop zip files anywhere</strong>or choose them from this device</span>
+      <input id="rom-picker" type="file" accept=".zip,application/zip" multiple>
+    </label>
+    <div class="library-actions">
+      <button id="store-all" type="button" disabled>Store all and check</button>
+      <p id="library-summary">Loading the available games…</p>
     </div>
-    <section id="machine-selectors" hidden>
-      <h2>Machine switches</h2>
-      <div id="dip-selectors" class="selector-grid"></div>
-      <div class="selector-actions">
-        <button id="reset-dips" type="button" disabled>Reset to defaults</button>
-        <button id="restart-switches" type="button" disabled>Restart with these switches</button>
-      </div>
-    </section>
-    <p id="selector-warning" role="alert" hidden></p>
-    <p id="preload-note">Loading local harness configuration…</p>
+    <ul id="build-warnings" role="alert" hidden></ul>
+    <p id="preload-note" hidden></p>
     <p id="status" role="status" aria-live="polite" data-state="loading">Loading…</p>
-    <div id="player-container"><canvas id="canvas" width="0" height="0"></canvas></div>
 
-    <div class="rom-supply">
-      <section>
-        <h2>Picked archives</h2>
-        <label id="drop-zone" for="rom-picker" tabindex="0" data-active="false">
-          Choose zip files or drop them here
-          <input id="rom-picker" type="file" accept=".zip,application/zip" multiple>
-        </label>
-        <ul id="pending-roms" class="rom-list"><li>No archives picked.</li></ul>
-        <div class="rom-actions">
-          <button id="confirm-roms" type="button" disabled>Confirm and store</button>
-          <button id="audit-roms" type="button" disabled>Audit selected source</button>
-        </div>
+    <section aria-labelledby="library-heading">
+      <h2 id="library-heading">Games found</h2>
+      <div id="library"><p class="empty-library">Looking for games and files saved in this browser…</p></div>
+    </section>
+
+    <div class="lower-grid">
+      <section class="player-section" aria-labelledby="player-heading">
+        <h2 id="player-heading">Play area</h2>
+        <div id="player-container"><canvas id="canvas" width="0" height="0"></canvas></div>
       </section>
-      <section>
-        <h2>Browser-local ROM store</h2>
-        <ul id="rom-store" class="rom-list"><li>Loading local store…</li></ul>
-        <div class="rom-actions"><button id="clear-store" type="button" disabled>Clear store</button></div>
+      <section class="stored-panel" aria-labelledby="stored-heading">
+        <h2 id="stored-heading">Files saved in this browser</h2>
+        <ul id="stored-files"><li><span>Loading saved files…</span></li></ul>
+        <button id="clear-files" type="button" disabled>Remove all saved files</button>
       </section>
     </div>
 
-    <div class="panels">
-      <section>
-        <h2>ROM audit</h2>
-        <pre id="audit" data-status="unavailable">No audit has run.</pre>
-      </section>
-      <section>
-        <h2>Log</h2>
-        <pre id="log">Harness loading.</pre>
-      </section>
+    <div class="diagnostics">
+      <details>
+        <summary>Detailed file check</summary>
+        <pre id="audit" data-status="unavailable">No game has been checked yet.</pre>
+      </details>
+      <details>
+        <summary>Technical log</summary>
+        <pre id="log">Page loading.</pre>
+      </details>
     </div>
   </main>
 
@@ -125,12 +171,13 @@
       <button id="hard-reset" type="button" disabled>Hard reset</button>
       <button id="save-state" type="button" disabled>Save state</button>
       <button id="load-state" type="button" disabled>Load state</button>
-      <button id="persist" type="button" disabled>Persist now</button>
-      <button id="clear-saves" type="button" disabled>Clear saves</button>
+      <button id="persist" type="button" disabled>Save changes</button>
+      <button id="clear-saves" type="button" disabled>Clear saved play</button>
+      <label class="check"><input id="autosave" type="checkbox"> Save changes automatically</label>
       <label class="check"><input id="keyboard-enabled" type="checkbox" checked> Keyboard</label>
       <label class="check"><input id="gamepads-enabled" type="checkbox" checked> Gamepads</label>
       <p id="gamepads">Connected gamepads: none</p>
-      <button id="clear-saves-retry" type="button" hidden>Clear saves and retry</button>
+      <button id="clear-saves-retry" type="button" hidden>Clear saved play and retry</button>
     </div>
   </details>
 
