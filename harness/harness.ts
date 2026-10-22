@@ -6,6 +6,7 @@ import {
     ArcadeRomStore,                                               // Browser-local user-confirmed archive storage
     ArcadeRuntimeError,                                           // Typed overlay incompatibility detection
     ArcadeStorage,                                                // Per-family/machine save-overlay persistence
+    DEFAULT_KEYBOARD_MAP,                                         // Listed in the cabinet menu so a player can see the bindings
     RomSetAudit,                                                  // Fast per-card check before a cabinet is started
     isBuildInfo,                                                  // Validates each served family index
     isRomSetMetadata,                                             // Validates fetched per-game metadata
@@ -130,6 +131,37 @@ const autosaveInput = element<HTMLInputElement>("#autosave");
 const keyboardEnabledInput = element<HTMLInputElement>("#keyboard-enabled");
 const gamepadsEnabledInput = element<HTMLInputElement>("#gamepads-enabled");
 const gamepadsLine = element<HTMLParagraphElement>("#gamepads");
+const keyboardBindings = element<HTMLElement>("#keyboard-bindings");
+
+// HELPER :: STRING -> STRING
+// Turns a KeyboardEvent.code into the label printed on the key.
+const keyLabel = (code: string): string => {
+    if (code.startsWith("Key")) return code.slice(3);
+    if (code.startsWith("Digit")) return code.slice(5);
+    if (code.startsWith("Arrow")) return `${code.slice(5)} arrow`;
+    return code.replace(/Left$/, " (left)").replace(/([a-z])([A-Z])/g, "$1 $2");
+};
+
+// HELPER :: VOID -> VOID
+// Renders the default keyboard map as one line per player plus the cabinet keys, from the library's own export.
+const renderKeyboardBindings = (): void => {
+    const lines = new Map<string, string[]>();
+    for (const [code, control] of Object.entries(DEFAULT_KEYBOARD_MAP)) {
+        const group = "player" in control ? `Player ${control.player}` : "Cabinet";
+        const what = control.kind === "direction" ? control.direction
+            : control.kind === "button" ? `button ${control.button}`
+            : control.kind;
+        lines.set(group, [...(lines.get(group) ?? []), `${what}: ${keyLabel(code)}`]);
+    }
+    keyboardBindings.replaceChildren(...[...lines.entries()].map(([group, entries]) => {
+        const row = document.createElement("p");
+        const strong = document.createElement("strong");
+        strong.textContent = `${group} — `;
+        row.append(strong, entries.join(", "));
+        return row;
+    }));
+};
+renderKeyboardBindings();
 const sessionButtons = [
     fullscreenButton,
     soundButton,

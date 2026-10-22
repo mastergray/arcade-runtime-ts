@@ -80,6 +80,9 @@
     .card-actions, .selector-actions { display: flex; flex-wrap: wrap; gap: 8px; }
     .card-actions button, .selector-actions button { flex: 1 1 150px; }
     .machine-selectors { display: grid; gap: 11px; border-top: 1px solid #303b45; padding-top: 13px; }
+    .bindings { font-size: 0.85rem; }
+    .bindings summary { cursor: pointer; }
+    .bindings p { margin: 6px 0; }
     .machine-selectors > summary { cursor: pointer; font-size: 0.8rem; letter-spacing: 0.04em; text-transform: uppercase; color: #9fb3c8; }
     .machine-selectors:not([open]) { gap: 0; }
     .selector-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr)); gap: 10px; }
@@ -179,6 +182,10 @@
       <label class="check"><input id="keyboard-enabled" type="checkbox" checked> Keyboard</label>
       <label class="check"><input id="gamepads-enabled" type="checkbox" checked> Gamepads</label>
       <p id="gamepads">Connected gamepads: none</p>
+      <details class="bindings">
+        <summary>Keyboard bindings</summary>
+        <div id="keyboard-bindings"></div>
+      </details>
       <button id="clear-saves-retry" type="button" hidden>Clear saved play and retry</button>
     </div>
   </details>
