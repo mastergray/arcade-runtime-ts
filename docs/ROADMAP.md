@@ -26,6 +26,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 | M6 Saves | W9 (storage half), W15 | closed (2026-10-21): memory card verified, states persist, CPS-2 EEPROM written mid-run by `web_flush_nvram` | 2026-10-21 |
 | M7 ROM supply and cabinet | W2 (romsets half), W9 (ROM store half), W10, W12, W13b | closed (picker path with synthetic archives and the real cabinet; preload path with the real build; audit agrees with MAME on every lawful local set) | 2026-10-20 |
 | M8 BIOS and DIP switches | W16 | done | 2026-10-21: `35-dip-switches.test.ts` against the namco-classic build; a BIOS option is exercised by the Neo Geo acceptance (`-bios`). |
+| M21 Family wave 2 | W19a–g | ready (briefs written 2026-10-21): `sega-16`, `midway-mcr`, `konami-16`, `atari-classic`, `misc-16`, `taito-f3` new; `irem-m72` gains M92 and `taito-16` gains Z System. Decided 2026-10-21 to land before the 1.0.0 commit | |
 | M9 v1.0.0 release gate | W17 | final verification run passed 2026-10-21 | Fresh `--all --fresh` rebuild of nine families, `npm run check`, 504 spec cases, gated browser runs (M1, F4–F6 and M3–M5 for all five required families, DIP and selector tests) all green on commit `d09f540`; closing needs the §14.1 desktop walkthrough by the release owner and the version bump commit. |
 
 ## Post-1.0
@@ -74,9 +75,17 @@ Status values: `todo`, `ready` (brief written, can be started),
 | W16 | BIOS and DIP switches | N+T | M8 | merged | `wp/w16-bios-dip` | `d5446ad` |
 | W17 | Release gate | T | M9 | merged | `wp/w17-release-gate` | 2026-10-21 |
 | W18 | Harness library view | T | M19 | merged | `wp/w18-harness-library` | 2026-10-21 (merge `04015f0`) |
+| W19a | `sega-16` family | N | M21 | ready | `wp/w19a-sega-16` | |
+| W19b | `midway-mcr` family | N | M21 | ready | `wp/w19b-midway-mcr` | |
+| W19c | `konami-16` family | N | M21 | ready | `wp/w19c-konami-16` | |
+| W19d | `atari-classic` family | N | M21 | ready | `wp/w19d-atari-classic` | |
+| W19e | `misc-16` family | N | M21 | ready | `wp/w19e-misc-16` | |
+| W19f | `irem-m72` + M92, `taito-16` + Z System | N | M21 | ready | `wp/w19f-irem-taito-ext` | |
+| W19g | `taito-f3` family | N | M21 | ready | `wp/w19g-taito-f3` | |
 
 ## Log
 
+- 2026-10-21 — Release-owner spot check found titles on Sega, Midway, Konami, Atari, Data East, Seibu and Taito F3 boards outside every build. Decision: seven more family packages (W19a–g, milestone M21) land before the 1.0.0 commit; §4.6 rows added. 3D (namcos21/22), Naomi and pinball drivers stay out of scope.
 - 2026-10-21 — Hand test found a CPS-2 title aborting with `OOM` at 256 MiB and the largest Neo Geo sets rejected by the memory pre-check. Measured by relinking at 384/512/1024 MiB: all boot at 384. `memoryPages` raised to 8,192 for `cps2` and `neogeo`; adapter maps an `OOM` abort to `MEMORY_EXCEEDED`. F3 records updated.
 - 2026-10-21 — Release-owner hand test: audio dropouts on a Neo Geo and a Namco classic title traced to the browser gate running concurrently on the same machine; audio clean once idle (probe: 0 gaps idle, 35 gaps fully loaded, 1 gap half loaded). M20 opened. Cabinet menu now lists the keyboard bindings.
 - 2026-10-21 — Hand test: three CPS-1, CPS-2 and Neo Geo titles garbled for the whole session on their first start in a tab, clean after reload. Headless library-flow probe reproduced it: every scheduled buffer on the first run was 120 ms (the cap), 20 ms after reload. Cause: `ArcadeAudio` trimmed an overflow only to the cap and restarted the rebuilt audio with the 20 ms lead; with the lead equal to the frame period nothing played before the next chunk overflowed again, so one stall (a freshly created context whose clock had not started, or a catch-up burst) pinned the queue for the rest of the session. Fix: an overflow trims to `TRIM_QUEUE_MS` 60 and restarts at the clock with no lead; spec §8 and tests 18 updated (new "cap recovery" case). Probe after the fix: a CPS-2 title, a Neo Geo title and `galaga.c` first runs schedule 20 ms buffers with one trim near start. This was also the persistence mechanism behind the earlier "awful" audio under load.

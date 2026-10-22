@@ -25,6 +25,7 @@ An agent handed a brief works from the brief and the spec alone.
 | [W13c — harness BIOS and DIP selectors](W13c-harness-selectors.md) | TypeScript |
 | [W17 — v1.0.0 release gate](W17-release-gate.md) | TypeScript |
 | [W18 — harness drop-first library view](W18-harness-library.md) | TypeScript |
+| [W19a–g — family wave 2](W19-family-wave-2.md) | Native |
 
 Package and milestone status is tracked in one place,
 [`docs/ROADMAP.md`](../ROADMAP.md); this list only links the briefs.
