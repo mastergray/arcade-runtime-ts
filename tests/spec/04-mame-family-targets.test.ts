@@ -150,6 +150,11 @@ const FAMILY_TARGETS: readonly FamilyTarget[] = [
         ],
         expectedMachines: 189,
     },
+    {
+        id: "taito-f3",
+        sources: ["src/mame/drivers/taito_f3.c"],
+        expectedMachines: 90,
+    },
 ] as const;
 
 const PRIVATE_MARKERS = [
