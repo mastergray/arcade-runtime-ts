@@ -39,7 +39,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 | M14 Optional FBNeo probe | not yet cut | todo |
 | M15 Optional `LibretroAdapter` | not yet cut | todo |
 | M16 Pinned MAME upgrade probe | not yet cut | todo |
-| M19 Harness library view (W18) | W18 | in progress: drop-first identification, per-game start; started 2026-10-21 on `wp/w18-harness-library` |
+| M19 Harness library view (W18) | W18 | merged 2026-10-21: drop-first identification, per-game start, folded settings; test 38 added |
 | M17 Deferred families | not yet cut | todo: namco-s1, namco-s2, taito-classic F4–F6 once a lawful set exists (§4.6) |
 | M18 Six-button CPS-2 acceptance | not yet cut | todo: keyboard binds P1 buttons 1–6 and `GamepadSource` forwards six action buttons, so such titles are expected to play; the measured §14.1 flow-4 run awaits a lawful six-button parent set (deferred 2026-10-21) |
 
@@ -75,6 +75,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 
 ## Log
 
+- 2026-10-21 — W18 merged: harness is a drop-first library (zip basename → family and title from served metadata, per-card audit verdict and Start, folded settings, `?family=` limit). Integrator follow-up folded selectors and fixed companion wording. §11 and §11.1 amended.
 - 2026-10-21 — **Final verification run** on `d09f540`: fresh nine-family rebuild; check and spec green; browser gate green with the Neo Geo preload and five family configs (F4 344–1173 ms, F5 worst 0.56 %, F6 0.9999–1.0002, audio peak 57–77 ms) and with the Namco classic DIP preload. Harness gained `--page` so a device-capability page is served at `/device-test` for other LAN devices. Six-button CPS-2 acceptance deferred to M18. Desktop walkthrough handed to the release owner.
 Newest first. One line per merge, milestone close, or contract amendment.
 
