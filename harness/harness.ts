@@ -65,6 +65,7 @@ interface GameCard {
     report: RomSetReport | null;
     checkState: CheckState;
     checkError?: string;
+    settingsOpen: boolean;                                         // Whether the card's game-settings section is expanded
 }
 
 // INTERFACE :: BIOS and non-default DIP values passed to the most recently started cabinet
@@ -293,12 +294,13 @@ const archiveLine = (card: GameCard, archive: RomSetMetadata["archives"][number]
     }
     const problem = card.report.problems.find((entry) => archiveKey(entry.archive) === key);
     if (problem !== undefined) return { message: `Could not read ${archive.name}: ${problem.reason}`, state: "bad" };
+    const row = card.report.archives.find((entry) => archiveKey(entry.name) === key);
     const files = card.report.files.filter((file) => archiveKey(file.archive) === key);
+    const missing = files.find((file) => file.status === "missing");
+    if (row?.present === false && missing !== undefined) return { message: `Needs ${archive.name}.`, state: "missing" };
     const wrong = files.find((file) => file.status === "wrong-crc" || file.status === "wrong-size");
     if (wrong !== undefined) return { message: `Wrong version of file ${wrong.name} in ${archive.name}.`, state: "bad" };
-    const missing = files.find((file) => file.status === "missing");
     if (missing !== undefined) return { message: `${archive.name} is missing file ${missing.name}.`, state: "missing" };
-    const row = card.report.archives.find((entry) => archiveKey(entry.name) === key);
     if (row?.present === true) return { message: `${archive.name} is ready.`, state: "ok" };
     if (row?.required === false) return { message: `${archive.name} is optional and is not present.`, state: "ok" };
     return { message: `Needs ${archive.name}.`, state: "missing" };
@@ -313,7 +315,9 @@ const cardVerdict = (card: GameCard): string => {
     if (card.checkState === "failed") return card.checkError ?? "These files could not be checked.";
     if (card.report === null) return "Add the files shown above, then store and check them.";
     if (card.report.status === "ok") return "Ready to play.";
-    const missingArchive = card.report.archives.find((archive) => archive.required && !archive.present);
+    const report = card.report;
+    const missingArchive = report.archives.find((archive) => !archive.present
+        && (archive.required || report.files.some((file) => file.status === "missing" && archiveKey(file.archive) === archiveKey(archive.name))));
     if (missingArchive !== undefined) return `Needs ${missingArchive.name}.`;
     const wrong = card.report.files.find((file) => file.status === "wrong-crc" || file.status === "wrong-size");
     if (wrong !== undefined) return `Wrong version of file ${wrong.name}.`;
@@ -337,9 +341,15 @@ const actionButton = (label: string, className: string, action: () => void): HTM
 const renderSelectors = (card: GameCard): HTMLElement | null => {
     const metadata = card.metadata;
     if (metadata === null || (metadata.bios.length === 0 && (metadata.dipswitches?.length ?? 0) === 0)) return null;
-    const panel = document.createElement("div");
+    const needsRestart = isRunningCard(card) && preparedChoice !== choiceSignature(card);
+    const panel = document.createElement("details");
     panel.className = "machine-selectors";
     panel.dataset.selectors = card.indexed.machine;
+    panel.open = card.settingsOpen || needsRestart;
+    panel.addEventListener("toggle", () => { card.settingsOpen = panel.open; });
+    const summary = document.createElement("summary");
+    summary.textContent = metadata.bios.length > 0 && (metadata.dipswitches?.length ?? 0) > 0 ? "Game settings and system version" : metadata.bios.length > 0 ? "System version" : "Game settings";
+    panel.append(summary);
     const grid = document.createElement("div");
     grid.className = "selector-grid";
 
@@ -410,7 +420,6 @@ const renderSelectors = (card: GameCard): HTMLElement | null => {
         reset.disabled = Object.keys(selectedDips(card)).length === 0;
         actions.append(reset);
     }
-    const needsRestart = isRunningCard(card) && preparedChoice !== choiceSignature(card);
     if (needsRestart) {
         const restart = actionButton("Restart with these choices", "restart-switches", () => { void startCard(card); });
         actions.append(restart);
@@ -630,6 +639,7 @@ const loadCard = async (indexed: IndexedMachine, selected: boolean): Promise<Gam
             dipValues: choices.dips,
             report: null,
             checkState: "idle",
+            settingsOpen: false,
         };
         cards.set(key, card);
         return card;

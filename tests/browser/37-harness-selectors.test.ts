@@ -287,6 +287,7 @@ const cases: TestCase[] = [
                 await page.locator('[data-machine="selector_machine"] .game-start').click();
                 await page.waitForFunction(() => document.querySelector<HTMLElement>("#status")?.dataset.state === "running"
                     && (window as unknown as { __arcadeHarnessSelectorTest: SyntheticBrowserState }).__arcadeHarnessSelectorTest.starts.length === 1);
+                await page.locator('[data-machine="selector_machine"] .machine-selectors > summary').click();
                 await page.locator('[data-machine="selector_machine"] .reset-dips').click();
                 await page.waitForFunction(() => document.querySelector<HTMLElement>("#status")?.dataset.state === "restart-required"
                     && document.querySelector<HTMLButtonElement>('[data-machine="selector_machine"] .restart-switches') !== null);

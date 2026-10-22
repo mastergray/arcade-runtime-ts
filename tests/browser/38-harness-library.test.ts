@@ -312,6 +312,7 @@ const testFile: TestFile = {
                 await page.waitForFunction(() => document.querySelector<HTMLElement>('[data-machine="switch_quest"]')?.dataset.auditStatus === "ok");
             })
             .interact("change one game setting, capture the phone view and start that card", async ({ page }) => {
+                await page.locator('[data-machine="switch_quest"] .machine-selectors > summary').click();
                 await page.locator('[data-machine="switch_quest"] .dip-select').selectOption("Fast");
                 await page.setViewportSize({ width: 390, height: 844 });
                 await page.evaluate(() => {
