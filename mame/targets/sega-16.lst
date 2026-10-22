@@ -1,0 +1,60 @@
+// Derived from pinned MAME 0.161 source (run at the source root):
+// for driver in segahang segaorun segaxbd; do
+//   comm -12 \
+//     <(sed -nE 's/^[[:space:]]*(GAME|GAMEL|GAME_CUSTOM)[[:space:]]*[(][^,]+,[[:space:]]*([a-z0-9_]+).*/\2/p' "src/mame/drivers/$driver.c" | LC_ALL=C sort -u) \
+//     <(sed -nE 's/^([a-z0-9_]+)([[:space:]]*\/\/.*)?$/\1/p' src/mame/mame.lst | LC_ALL=C sort -u) \
+//     | awk -v source="src/mame/drivers/$driver.c" '{ print $0 " // " source }'
+// done | LC_ALL=C sort -u
+
+abcop // src/mame/drivers/segaxbd.c
+abcopj // src/mame/drivers/segaxbd.c
+aburner // src/mame/drivers/segaxbd.c
+aburner2 // src/mame/drivers/segaxbd.c
+aburner2g // src/mame/drivers/segaxbd.c
+endurob2 // src/mame/drivers/segahang.c
+endurobl // src/mame/drivers/segahang.c
+enduror // src/mame/drivers/segahang.c
+enduror1 // src/mame/drivers/segahang.c
+gprider // src/mame/drivers/segaxbd.c
+gpriderj // src/mame/drivers/segaxbd.c
+gprideru // src/mame/drivers/segaxbd.c
+hangon // src/mame/drivers/segahang.c
+hangon1 // src/mame/drivers/segahang.c
+hangon2 // src/mame/drivers/segahang.c
+lastsurv // src/mame/drivers/segaxbd.c
+loffire // src/mame/drivers/segaxbd.c
+loffirej // src/mame/drivers/segaxbd.c
+loffireu // src/mame/drivers/segaxbd.c
+outrun // src/mame/drivers/segaorun.c
+outrunb // src/mame/drivers/segaorun.c
+outrundx // src/mame/drivers/segaorun.c
+outrundxa // src/mame/drivers/segaorun.c
+outrundxj // src/mame/drivers/segaorun.c
+outrunra // src/mame/drivers/segaorun.c
+rachero // src/mame/drivers/segaxbd.c
+rascot // src/mame/drivers/segaxbd.c
+shangon // src/mame/drivers/segaorun.c
+shangon1 // src/mame/drivers/segaorun.c
+shangon2 // src/mame/drivers/segaorun.c
+shangon3 // src/mame/drivers/segaorun.c
+shangonle // src/mame/drivers/segaorun.c
+shangonrb // src/mame/drivers/segahang.c
+shangonro // src/mame/drivers/segahang.c
+sharrier // src/mame/drivers/segahang.c
+sharrier1 // src/mame/drivers/segahang.c
+smgp // src/mame/drivers/segaxbd.c
+smgp5 // src/mame/drivers/segaxbd.c
+smgp6 // src/mame/drivers/segaxbd.c
+smgpj // src/mame/drivers/segaxbd.c
+smgpja // src/mame/drivers/segaxbd.c
+smgpu // src/mame/drivers/segaxbd.c
+smgpu1 // src/mame/drivers/segaxbd.c
+smgpu2 // src/mame/drivers/segaxbd.c
+thndrbld // src/mame/drivers/segaxbd.c
+thndrbld1 // src/mame/drivers/segaxbd.c
+toutrun // src/mame/drivers/segaorun.c
+toutrun1 // src/mame/drivers/segaorun.c
+toutrun2 // src/mame/drivers/segaorun.c
+toutrun3 // src/mame/drivers/segaorun.c
+toutrunj // src/mame/drivers/segaorun.c
+toutrunj1 // src/mame/drivers/segaorun.c
