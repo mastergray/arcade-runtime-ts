@@ -28,7 +28,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 | M8 BIOS and DIP switches | W16 | done | 2026-10-21: `35-dip-switches.test.ts` against the namco-classic build; a BIOS option is exercised by the Neo Geo acceptance (`-bios`). |
 | M21 Family wave 2 | W19a–g | closed 2026-10-22: all seven merged 2026-10-21; F4–F6 and acceptance measured by the integrator (agents' sandbox cannot run Chromium): `sega-16`, `midway-mcr`, `konami-16`, `atari-classic`, `misc-16`, `taito-f3` new; `irem-m72` gains M92 and `taito-16` gains Z System. Decided 2026-10-21 to land before the 1.0.0 commit | |
 | M24 Retro desktop design system | W21 | todo: theme tokens and component kit from the mockups; see `docs/ui-roadmap.md` |
-| M25 Desktop library shell | W22 | todo: main screen on the existing library flow; favorites, recent, search, status bar |
+| M25 Desktop library shell | W22 | todo: main screen on the existing library flow; favorites, recent, search, status bar; gamepad and keyboard focus navigation of the whole shell (decided 2026-10-22) |
 | M26 Dialogs (Import, Settings, Controls) | W23 | todo: Controls needs the keyboard half of M10 |
 | M27 Game metadata (year, manufacturer) | W24 | todo: additive `romsets/` fields from `-listxml` |
 | M28 Touch and small screens | W25 | todo: `TouchSource`, phone and tablet layouts; brings the mobile gates of M10 |

@@ -42,13 +42,14 @@ marked new.
 | Aspect ratio, filter | `display.scaling`, `imageRendering` | none |
 | On-screen pad, landscape pad halves, swap | §10.1 touch primitives (post-1.0, M10) | **new**: `TouchSource` and the pad layouts; today's runtime is desktop-only |
 | Tablet library-as-dialog, phone navigation | — | **new**: responsive shell |
+| Gamepad navigation of the shell (decided 2026-10-22) | `GamepadSource` drives the machine only | **new**: a UI focus layer driven by the pad (d-pad or stick moves focus, one button activates, one goes back, Start opens the menu) so the library, dialogs and cabinet controls work from the couch; the same layer serves keyboard arrows. While a game runs the pad belongs to the game, so a held button or the Select/Start pair opens the shell |
 
 ## 3. Milestones and packages (proposed)
 
 | Milestone | Package | Scope | Depends on |
 | --- | --- | --- | --- |
 | M24 Retro desktop design system | W21 | Theme tokens and a component kit taken from the mockups' values: window chrome and title bar, bevels, menu bar and menus, toolbar, dialog, tabs, list, table, status bar, buttons and form controls; a static gallery page proving every component in light of the mockups; no runtime wiring | — |
-| M25 Desktop shell | W22 | The main screen built from the kit on top of the existing library flow: three windows, menu bar, toolbar, status bar, favorites and recent, search, generated icons; replaces `harness/index.html`'s layout while keeping its selectors and the browser tests green | M24, M19 |
+| M25 Desktop shell | W22 | The main screen built from the kit on top of the existing library flow: three windows, menu bar, toolbar, status bar, favorites and recent, search, generated icons; gamepad and keyboard focus navigation across every control; replaces `harness/index.html`'s layout while keeping its selectors and the browser tests green | M24, M19 |
 | M26 Dialogs | W23 | Import, Settings and Controls dialogs; Controls needs the map editor and persisted custom map (M10's keyboard half), so W23 lands that half or follows it | M25, M10 (keyboard) |
 | M27 Game metadata | W24 | `year` and `manufacturer` in `romsets/<machine>.json` (additive), shown on the strip and list; search covers them | — (can run first) |
 | M28 Touch and small screens | W25 | `TouchSource` and the on-screen pad from §10.1, phone-portrait, phone-landscape (with swap) and tablet layouts, the library-as-dialog, and the M10 mobile gates | M25, M10 (touch) |
@@ -75,5 +76,6 @@ M28 last since it brings the first mobile acceptance gates.
 2. **Harness or product.** Whether this replaces the developer harness in
    place (one page, same tests) or becomes a second page that the package
    documents as the reference library UI.
-3. **Genre.** Out of MAME's metadata; include only if a licensed catalogue
+3. **Pad takeover while playing.** Which pad gesture leaves the game and opens the shell (a held button, Select + Start), and whether it pauses the machine.
+4. **Genre.** Out of MAME's metadata; include only if a licensed catalogue
    is chosen, otherwise drop the field from the strip.
