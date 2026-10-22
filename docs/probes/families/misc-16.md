@@ -78,11 +78,10 @@ pages.
 
 ## F4 — What is the slowest Chromium time from `callMain` to first frame?
 
-pending integrator browser run
+measured 2026-10-22 (quiet): 315–520 ms to the first valid frame across six titles; see the measured section below.
 
-This sandbox cannot bind loopback or start Chromium, so no frame arrived and
-the required non-blank first-frame confirmation is pending. On an unrestricted
-host, run the real-adapter and family-measurement cases with:
+The agent's sandbox could not start Chromium; the integrator measured on the
+host (first frames non-blank for all six titles) with:
 
 ```sh
 ARCADE_PRELOAD_CONFIG="$PWD/res/preload-misc-16.json" \
@@ -97,7 +96,7 @@ and transfer, and record browser version and desktop CPU.
 
 ## F5 — Are native refresh and upright geometry correct?
 
-pending integrator browser run
+measured: six titles at 256×240/60.000 Hz, 256×240/57.445 Hz, 224×256 vertical/59.600 Hz, 256×224/57.500 Hz, 320×240/59.572 Hz and 512×224/60.798 Hz, every frame at native size and orientation; worst cadence error 0.57 %; see the table below.
 
 ```sh
 ARCADE_PRELOAD_CONFIG="$PWD/res/preload-misc-16.json" \
@@ -113,7 +112,7 @@ must be non-blank.
 
 ## F6 — Does the heaviest title sustain full speed?
 
-pending integrator browser run
+measured: 60 s ratios 1.0000–1.0002 on desktop for all six, including the TMS34020 board.
 
 ```sh
 ARCADE_PRELOAD_CONFIG="$PWD/res/preload-misc-16.json" \
@@ -127,3 +126,27 @@ CPU-throttled mobile proxy. Record browser version, CPU and whether frameskip
 was disabled. If the configured lawful title is not the family's heaviest,
 its measurement is representative and the strict heaviest-title result
 remains pending.
+
+## F4–F6 measured 2026-10-21/22
+
+Measured with the `build-mame` production artifact, headless Chromium on the
+desktop host, the real adapter driven through
+`tests/browser/33-family-measurements.test.ts` (injected scheduler at a
+controlled cadence against a real clock) and the M3–M5 acceptance in
+`tests/browser/36-input-audio-acceptance.test.ts`. Identities stay in the
+ignored preload configs; titles are described by their native geometry.
+Runs marked "loaded" overlapped three Emscripten builds on the same host and
+are conservative; the 60 s ratio tolerance is 2 %, the cadence tolerance 1 %.
+
+| Title | F4 | F5 | F6 | Acceptance |
+| ----- | -- | -- | -- | ---------- |
+| 256×240 at 60.000 Hz | 334 ms | 60 → 60.08 (+0.13 %), 90 → 60.21 (+0.35 %), 120 → 59.96 (−0.06 %), 144 → 59.88 (−0.20 %) | 1.0002 | pass |
+| 256×240 at 57.445 Hz | 349 ms | 60 → 57.28 (−0.28 %), 90 → 57.51 (+0.11 %), 120 → 57.48 (+0.06 %), 144 → 57.23 (−0.38 %) | 1.0000 | pass |
+| 224×256 vertical at 59.600 Hz | 390 ms | 60 → 59.66 (+0.11 %), 90 → 59.49 (−0.18 %), 120 → 59.84 (+0.40 %), 144 → 59.59 (−0.02 %) | 1.0001 | pass |
+| 256×224 at 57.500 Hz | 315 ms | 60 → 57.83 (+0.57 %), 90 → 57.57 (+0.13 %), 120 → 57.51 (+0.02 %), 144 → 57.52 (+0.04 %) | 1.0000 | pass |
+| 320×240 at 59.572 Hz | 499 ms | 60 → 59.66 (+0.15 %), 90 → 59.46 (−0.19 %), 120 → 59.51 (−0.11 %), 144 → 59.56 (−0.03 %) | 1.0001 | pass |
+| 512×224 at 60.798 Hz (TMS34020 board, with its device ROM zip) | 520 ms | 60 → 60.85 (+0.09 %), 90 → 60.66 (−0.22 %), 120 → 60.93 (+0.22 %), 144 → 60.56 (−0.39 %) | 1.0000 | pass |
+
+The `r2dx_v33.c` clone available locally needs its parent set beside it
+(0.161 reports the parent's files missing), so no `r2dx_v33` title was
+measured.

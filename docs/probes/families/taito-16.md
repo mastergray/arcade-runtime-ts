@@ -120,9 +120,9 @@ was not attempted.
 
 | Probe | Taito Z status |
 | ----- | -------------- |
-| F4 startup to first valid, non-blank frame | pending integrator browser run |
-| F5 native refresh and upright geometry | pending integrator browser run |
-| F6 sixty-second emulated-time ratio | pending integrator browser run |
+| F4 startup to first valid, non-blank frame | measured 2026-10-22, see below |
+| F5 native refresh and upright geometry | measured 2026-10-22, see below |
+| F6 sixty-second emulated-time ratio | measured 2026-10-22, see below |
 
 ## F4 — What is the slowest Chromium time from `callMain` to first frame?
 
@@ -177,3 +177,18 @@ audio unlocked and under the cap for 60 s (queued max 58.7 ms), keyboard
 coin/start changed the picture, two scripted pads took players 1 and 2 and a
 held direction released on unplug. The family's heaviest title (F6 strictly)
 remains pending a lawful set.
+
+## F4–F6 measured 2026-10-22 — the Z System driver added by W19f
+
+Measured with the `build-mame` production artifact, headless Chromium on the
+desktop host, the real adapter driven through
+`tests/browser/33-family-measurements.test.ts` (injected scheduler at a
+controlled cadence against a real clock) and the M3–M5 acceptance in
+`tests/browser/36-input-audio-acceptance.test.ts`. Identities stay in the
+ignored preload configs; titles are described by their native geometry.
+Runs marked "loaded" overlapped three Emscripten builds on the same host and
+are conservative; the 60 s ratio tolerance is 2 %, the cadence tolerance 1 %.
+
+| Title | F4 | F5 | F6 | Acceptance |
+| ----- | -- | -- | -- | ---------- |
+| Z System: 320×240 at 60.000 Hz | 496 ms | 60 → 59.66 (−0.56 %), 90 → 59.87 (−0.21 %), 120 → 59.85 (−0.24 %), 144 → 59.98 (−0.03 %) | 1.0000 | pass |

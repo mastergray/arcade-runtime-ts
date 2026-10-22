@@ -69,7 +69,7 @@ pages.
 
 ## F4 — What is the slowest Chromium time from `callMain` to first frame?
 
-pending unrestricted Chromium runner
+measured 2026-10-21 (loaded): 933 ms to the first valid frame for a 512×480 interlaced title at 30.000 Hz; see the measured section below.
 
 An ignored lawful private set was supplied to the real adapter and family
 measurement browser cases. The managed sandbox denied the loopback test
@@ -88,7 +88,7 @@ result.
 
 ## F5 — Are native refresh and upright geometry correct?
 
-pending unrestricted Chromium runner
+measured: 512×480 horizontal at 30.000 Hz, every frame at native size; 60 Hz → 30.00 fps (−0.00 %), 90 → 29.96 (−0.13 %), 120 → 29.95 (−0.16 %), 144 → 29.96 (−0.15 %).
 
 The same pre-page Chromium failure prevented a geometry or pacing result.
 Using the ignored lawful config and the mechanics from
@@ -99,7 +99,7 @@ and 144 Hz cadences. Every cadence must be within 0.5% of native refresh.
 
 ## F6 — Does the heaviest title sustain full speed?
 
-pending unrestricted Chromium runner
+measured: sixty-second emulated-time ratio 1.0000 on desktop.
 
 The same pre-page Chromium failure prevented the 60-second run. After a
 warm-up interval, measure exactly 60 seconds at the 60 Hz cadence and report
@@ -108,3 +108,21 @@ mobile proxy as informational evidence. Record browser version, CPU and
 whether frameskip was disabled. The available lawful set is not asserted to
 be the family's heaviest title, so the strict heaviest-title gate remains
 pending even after that set is measured.
+
+## F4–F6 measured 2026-10-21/22
+
+Measured with the `build-mame` production artifact, headless Chromium on the
+desktop host, the real adapter driven through
+`tests/browser/33-family-measurements.test.ts` (injected scheduler at a
+controlled cadence against a real clock) and the M3–M5 acceptance in
+`tests/browser/36-input-audio-acceptance.test.ts`. Identities stay in the
+ignored preload configs; titles are described by their native geometry.
+Runs marked "loaded" overlapped three Emscripten builds on the same host and
+are conservative; the 60 s ratio tolerance is 2 %, the cadence tolerance 1 %.
+
+| Title | F4 | F5 | F6 | Acceptance |
+| ----- | -- | -- | -- | ---------- |
+| 512×480 interlaced horizontal at 30.000 Hz (loaded) | 933 ms | 60 → 30.00 fps (−0.00 %), 90 → 29.96 (−0.13 %), 120 → 29.95 (−0.16 %), 144 → 29.96 (−0.15 %) | 1.0000 | M3–M5 pass |
+
+The 30 Hz interlaced board is the first sub-60 Hz native refresh verified
+through the accumulator: one native period per two 60 Hz ticks.

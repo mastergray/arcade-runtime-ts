@@ -72,7 +72,7 @@ pages.
 
 ## F4 — What is the slowest Chromium time from `callMain` to first frame?
 
-pending integrator browser run
+measured 2026-10-22 (quiet): 299–457 ms to the first valid frame across the two vector titles and the raster title; see the measured section below.
 
 This managed sandbox cannot bind loopback or start Chromium, so no browser
 suite was attempted. On a host with those capabilities, run:
@@ -90,7 +90,7 @@ do not record the configured title or ROM identity.
 
 ## F5 — Are native refresh, upright geometry and vector output correct?
 
-pending integrator browser run
+measured: vector 640×480 horizontal at 41.016 Hz and 480×640 vertical at 60.000 Hz, raster 336×240 at 59.923 Hz, every frame at native size and orientation; worst cadence error 0.77 % (the 41 Hz board at a 60 Hz cadence). Vector output is not blank: 2.4–3.3 % of the 640×480 canvas lit with about 300 distinct colours and 4–5 % of the vertical canvas lit with 670–900 colours, sampled three times over nine seconds through the real display.
 
 Run the same exact command on an unrestricted browser host:
 
@@ -110,7 +110,7 @@ bridge.
 
 ## F6 — Does the heaviest title sustain full speed?
 
-pending integrator browser run
+measured: 60 s ratios 0.9999–1.0003 on desktop.
 
 Run the same exact command on an unrestricted browser host:
 
@@ -126,3 +126,23 @@ Chromium's 4× CPU-throttled mobile proxy and report that informational ratio.
 Record browser version, CPU and whether frameskip was disabled. If the
 configured title is not the public metadata-heaviest family member, retain
 that qualification and schedule strict heaviest-title evidence separately.
+
+## F4–F6 measured 2026-10-21/22
+
+Measured with the `build-mame` production artifact, headless Chromium on the
+desktop host, the real adapter driven through
+`tests/browser/33-family-measurements.test.ts` (injected scheduler at a
+controlled cadence against a real clock) and the M3–M5 acceptance in
+`tests/browser/36-input-audio-acceptance.test.ts`. Identities stay in the
+ignored preload configs; titles are described by their native geometry.
+Runs marked "loaded" overlapped three Emscripten builds on the same host and
+are conservative; the 60 s ratio tolerance is 2 %, the cadence tolerance 1 %.
+
+| Title | F4 | F5 | F6 | Acceptance |
+| ----- | -- | -- | -- | ---------- |
+| vector 640×480 horizontal at 41.016 Hz | 341 ms | 60 → 41.33 (+0.77 %), 90 → 40.91 (−0.25 %), 120 → 40.92 (−0.23 %), 144 → 40.98 (−0.08 %) | 1.0003 | M3–M5: see note |
+| vector 480×640 vertical at 60.000 Hz | 299 ms | 60 → 60.00 (−0.01 %), 90 → 59.98 (−0.04 %), 120 → 59.99 (−0.02 %), 144 → 59.91 (−0.15 %) | 1.0000 | pass |
+| raster 336×240 at 59.923 Hz | 457 ms | 60 → 59.99 (+0.12 %), 90 → 59.66 (−0.43 %), 120 → 59.92 (0.00 %), 144 → 59.87 (−0.09 %) | 0.9999 | pass |
+
+Vector lines are drawn by the stock `rendersw.inc` software renderer the
+bridge already uses, so no bridge change was needed.

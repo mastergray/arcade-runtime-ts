@@ -77,9 +77,9 @@ attempted.
 
 | Probe | M92 status |
 | ----- | ---------- |
-| F4 startup to first valid, non-blank frame | pending integrator browser run |
-| F5 native refresh and upright geometry | pending integrator browser run |
-| F6 sixty-second emulated-time ratio | pending integrator browser run |
+| F4 startup to first valid, non-blank frame | measured 2026-10-22, see below |
+| F5 native refresh and upright geometry | measured 2026-10-22, see below |
+| F6 sixty-second emulated-time ratio | measured 2026-10-22, see below |
 
 ## F4–F6 measured — an Irem M72 title
 
@@ -99,3 +99,18 @@ worktree, so they are if anything conservative.
 Desktop full speed holds for this family; the 4× CPU-throttled mobile proxy
 is deferred to M10 as §0.2 allows. The 55 Hz native refresh is the first
 non-60 Hz board verified through the accumulator.
+
+## F4–F6 measured 2026-10-22 — the M92 driver added by W19f
+
+Measured with the `build-mame` production artifact, headless Chromium on the
+desktop host, the real adapter driven through
+`tests/browser/33-family-measurements.test.ts` (injected scheduler at a
+controlled cadence against a real clock) and the M3–M5 acceptance in
+`tests/browser/36-input-audio-acceptance.test.ts`. Identities stay in the
+ignored preload configs; titles are described by their native geometry.
+Runs marked "loaded" overlapped three Emscripten builds on the same host and
+are conservative; the 60 s ratio tolerance is 2 %, the cadence tolerance 1 %.
+
+| Title | F4 | F5 | F6 | Acceptance |
+| ----- | -- | -- | -- | ---------- |
+| M92: 320×240 at 60.000 Hz | 403 ms | 60 → 60.11 (+0.19 %), 90 → 60.00 (−0.00 %), 120 → 59.85 (−0.25 %), 144 → 59.94 (−0.09 %) | 1.0002 | pass |
