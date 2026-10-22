@@ -40,6 +40,7 @@ marked new.
 | Controls dialog, Change key… | `DEFAULT_KEYBOARD_MAP` is fixed | **M10 key remapping** (already on the roadmap): a map editor and a persisted custom map |
 | Emulator build "Auto" | family resolved from the zip basename (W18) | none; the select only exposes an override |
 | Aspect ratio, filter | `display.scaling`, `imageRendering` | none |
+| Side-border trim (Video tab) | — | **new** (hand test 2026-10-22): the Neo Geo driver outputs the full 320-pixel line, and some titles leave the outer 8 columns on each side in their backdrop colour, which shows as flat vertical bars; most emulators offer a 304-wide crop. A per-family or per-machine `display.crop` of a few pixels, off by default, exposed on the Settings Video tab |
 | On-screen pad, landscape pad halves, swap | §10.1 touch primitives (post-1.0, M10) | **new**: `TouchSource` and the pad layouts; today's runtime is desktop-only |
 | Tablet library-as-dialog, phone navigation | — | **new**: responsive shell |
 | Gamepad navigation of the shell (decided 2026-10-22) | `GamepadSource` drives the machine only | **new**: a UI focus layer driven by the pad (d-pad or stick moves focus, one button activates, one goes back, Start opens the menu) so the library, dialogs and cabinet controls work from the couch; the same layer serves keyboard arrows. While a game runs the pad belongs to the game, so a held button or the Select/Start pair opens the shell |
