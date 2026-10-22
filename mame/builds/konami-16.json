@@ -29,6 +29,8 @@
         "src/mame/video/k054000.c",
         "src/mame/video/k054156_k054157_k056832.c",
         "src/mame/video/k054338.c",
-        "src/mame/video/k055555.c"
+        "src/mame/video/k055555.c",
+        "src/mame/machine/konamigx.c",
+        "src/mame/video/konamigx.c"
     ]
 }

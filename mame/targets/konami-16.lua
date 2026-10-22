@@ -10,6 +10,7 @@ CPUS["Z80"] = true
 -- MAME 0.161's M6809 core selection supplies M6809, HD6309 and KONAMI.
 CPUS["M6809"] = true
 CPUS["M680X0"] = true
+CPUS["TMS57002"] = true
 
 SOUNDS["SAMPLES"] = true
 SOUNDS["YM2151"] = true
@@ -19,6 +20,7 @@ SOUNDS["UPD7759"] = true
 SOUNDS["K007232"] = true
 SOUNDS["K053260"] = true
 SOUNDS["K054539"] = true
+SOUNDS["K056800"] = true
 
 MACHINES["BANKDEV"] = true
 MACHINES["EEPROMDEV"] = true
@@ -77,6 +79,10 @@ _G["createProjects_mame_konami-16"] = function(_target, _subtarget)
 		MAME_DIR .. "src/mame/video/k054156_k054157_k056832.c",
 		MAME_DIR .. "src/mame/video/k054338.c",
 		MAME_DIR .. "src/mame/video/k055555.c",
+
+		-- `mystwarr.c`-class drivers reuse the Konami GX mixer helpers.
+		MAME_DIR .. "src/mame/machine/konamigx.c",
+		MAME_DIR .. "src/mame/video/konamigx.c",
 	}
 end
 
