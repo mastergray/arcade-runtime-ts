@@ -472,7 +472,7 @@ const testFile: TestFile = {
                     usageError: {
                         status: 1,
                         stdout: "",
-                        stderr: "Usage: arcade-audit-roms [--json] [--bios <option>] <romsets-dir> <machine> <zip>...\n",
+                        stderr: "Usage: arcade-audit-roms [--json] [--bios <option>] [--strictness strict|mame] <romsets-dir> <machine> <zip>...\n",
                     },
                 }))
                 .start(undefined),

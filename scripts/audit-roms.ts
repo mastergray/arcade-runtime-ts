@@ -8,7 +8,7 @@ import { basename, join, resolve } from "node:path";               // Builds met
 import { pathToFileURL } from "node:url";                          // Detects direct command-line execution
 import ArcadeRuntimeError from "../src/ArcadeRuntimeError/ArcadeRuntimeError.js";   // Identifies audit argument errors
 import RomSetAudit from "../src/RomSetAudit/RomSetAudit.js";       // Shared browser/Node audit logic
-import { isRomSetMetadata } from "../src/RomSetAudit/types.js";    // Validates parsed metadata before audit
+import { isAuditStrictness, isRomSetMetadata } from "../src/RomSetAudit/types.js";   // Validates the policy flag and parsed metadata
 
 // Type dependencies:
 import type { RomFile } from "../src/shared.types.js";             // In-memory archive input
@@ -30,7 +30,7 @@ type TableRow = ReadonlyArray<string>;
  *
  */
 
-const USAGE = "Usage: arcade-audit-roms [--json] [--bios <option>] <romsets-dir> <machine> <zip>...";
+const USAGE = "Usage: arcade-audit-roms [--json] [--bios <option>] [--strictness strict|mame] <romsets-dir> <machine> <zip>...";
 
 /**
  *
@@ -61,13 +61,15 @@ const section = (title: string, headings: TableRow, rows: ReadonlyArray<TableRow
 // Renders every report field as human-readable tables for the default CLI mode.
 export const renderReport = (report: RomSetReport): string => [
     `Machine: ${report.machine}`,
-    `Status: ${report.status}`,
+    `Status: ${report.status} (${report.strictness})`,
     "",
     section("ARCHIVES", ["NAME", "ROLE", "PRESENT", "REQUIRED"], report.archives.map((archive) => [
         archive.name, archive.role, archive.present ? "yes" : "no", archive.required ? "yes" : "no",
     ])),
     "",
     section("FILES", ["ARCHIVE", "NAME", "STATUS"], report.files.map((file) => [file.archive, file.name, file.status])),
+    "",
+    section("WARNINGS", ["ARCHIVE", "NAME", "STATUS"], report.warnings.map((file) => [file.archive, file.name, file.status])),
     "",
     section("UNEXPECTED", ["ARCHIVE", "NAME"], report.unexpected.map((file) => [file.archive, file.name])),
     "",
@@ -84,8 +86,11 @@ const main = (args: string[]): void => {
     const json = args.includes("--json");
     const biosIndex = args.indexOf("--bios");
     const bios = biosIndex >= 0 ? args[biosIndex + 1] : undefined;
-    const positional = args.filter((arg, index) => arg !== "--json" && (biosIndex < 0 || (index !== biosIndex && index !== biosIndex + 1)));
-    if (positional.length < 3 || positional.some((arg) => arg.startsWith("--"))) {
+    const strictnessIndex = args.indexOf("--strictness");
+    const strictness = strictnessIndex >= 0 ? args[strictnessIndex + 1] : undefined;
+    const consumed = new Set([biosIndex, strictnessIndex].filter((index) => index >= 0).flatMap((index) => [index, index + 1]));
+    const positional = args.filter((arg, index) => arg !== "--json" && !consumed.has(index));
+    if (positional.length < 3 || positional.some((arg) => arg.startsWith("--")) || (strictness !== undefined && !isAuditStrictness(strictness))) {
         console.error(USAGE);
         process.exitCode = 1;
         return;
@@ -101,7 +106,7 @@ const main = (args: string[]): void => {
             name: basename(path),
             bytes: new Uint8Array(readFileSync(path)),
         }));
-        const report = RomSetAudit.audit(parsed, roms, bios === undefined ? {} : { bios });
+        const report = RomSetAudit.audit(parsed, roms, { ...(bios === undefined ? {} : { bios }), ...(strictness === undefined ? {} : { strictness }) });
         console.log(json ? JSON.stringify(report, null, 2) : renderReport(report));
         process.exitCode = reportExitCode(report);
     } catch (error) {

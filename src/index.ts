@@ -202,8 +202,13 @@ export {
     type ArcadeControlsConfig,                                     // Keyboard, gamepad and reserved touch declarations
 } from "./ArcadeCabinet/types.js";
 export {
+    classifyAuditFile,                                             // Pure per-file disposition under a strictness policy
+    isAuditStrictness,                                             // Guard for AuditStrictness
     isRomSetMetadata,                                              // Guard for RomSetMetadata
     isRomSetReport,                                                // Guard for RomSetReport
+    type AuditFileDisposition,                                     // accepted, warning or failure
+    type AuditStrictness,                                          // "strict" (exact pinned set) or "mame" (PLD tolerance)
+    type RomFileStatus,                                            // Per-file audit status literals
     type RomSetMetadata,                                           // Per-machine romsets/<machine>.json shape
     type RomSetReport,                                             // Byte-free audit result
 } from "./RomSetAudit/types.js";

@@ -1085,6 +1085,9 @@ embedding ROM bytes in error data. URL basenames and blob names become
 emulator; `start()` runs the same audit first and rejects with
 `ROM_SET_INVALID` carrying the report when a required file is missing or
 wrong, so the user sees a precise message before any WASM work begins.
+`ArcadeGameConfig` accepts `auditStrictness?: "strict" | "mame"`, defaulting
+to `"strict"`; `audit()` and the pre-start audit use that mode, and `start()`
+accepts an `ok` report even when its `warnings` array is non-empty (§10.5).
 
 Lifecycle, failure handling and event semantics follow `DosPlayer`: a
 failed `start()` tears down any partial session, display/audio
@@ -1213,6 +1216,21 @@ how MAME's own audit treats BIOS options; the other options' ROMs report
 `optional-missing`. A supplied archive that is not a zip, has a corrupt central directory or
 exceeds 4,096 entries is reported under `problems` with every ROM it was
 expected to hold marked `missing`; bad user input never throws.
+
+**Strictness (M23).** Each `roms[]` row may additionally carry `region`, the
+string emitted by `-listxml`; metadata generated before this field existed
+remains valid. `RomSetAudit.audit(metadata, roms, { bios?, strictness? })`
+accepts `strictness: "strict" | "mame"` and defaults to `"strict"`. Every
+report carries the selected `strictness` and a `warnings` array of
+`{ name, archive, status }` rows. In `"mame"` mode, a required file whose
+region tag ends in `plds` and whose true status is `missing`, `wrong-size` or
+`wrong-crc` is reported as a warning and does not lower the overall status;
+all other required-file defects remain failures. Strict mode produces no
+warnings and retains the previous verdict rules. This is the runtime's
+compatibility policy, narrower than the pinned loader's own rule (which
+warns on any wrong length or checksum but treats every missing required dump
+as fatal): programmable-logic dumps are documentation the emulation never
+reads, so a set differing from 0.161 only there is accepted.
 `INVALID_CONFIG` is reserved for metadata or `RomFile` values that fail
 their predicates. In the metadata, `bios` is an array of BIOS option
 names, and `cloneof`, `romof` and `sampleof` are names or `null`.
@@ -1273,7 +1291,7 @@ class ArcadeCabinet {
     get keyboardEnabled(): boolean;  set keyboardEnabled(value: boolean);
     get gamepadsEnabled(): boolean;  set gamepadsEnabled(value: boolean);
     get isStarted(): boolean;
-    audit(): Promise<RomSetReport>;
+    audit(): Promise<RomSetReport>;              // forwards game.auditStrictness; picked blobs are stored only after an ok report, warnings included (§10.5)
     start(): Promise<void>;
     save(): Promise<boolean>;
     quickSave(slot?: string): Promise<void>;     // saveState then save()
@@ -1356,6 +1374,7 @@ demonstrate the library. It is a consumer, not a product feature:
   title and companion archives, picked files go into `ArcadeRomStore`,
   and the audit verdict is rendered on the game's card before its Start
   (W18; the W13a/W13b family and machine inputs are retired).
+  One persisted library-wide setting, "File check: exact 0.161 set / what MAME accepts", controls every card audit and every cabinet start (§10.5 strictness). An `ok` report with warnings reads "Ready to play (N files differ from 0.161; MAME ignores them)", enables Start, and lists each warned file and its true status in the detailed file check; strict-mode wording is unchanged.
 - `ArcadeCabinet` with default keyboard map, gamepads, a corner menu
   (fullscreen, sound, reset, save/load state, clear saves), BIOS/DIP
   selectors once M8 exists, and a touch layout chosen by `MachineInfo`

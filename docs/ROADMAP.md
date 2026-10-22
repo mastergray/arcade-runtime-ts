@@ -28,7 +28,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 | M8 BIOS and DIP switches | W16 | done | 2026-10-21: `35-dip-switches.test.ts` against the namco-classic build; a BIOS option is exercised by the Neo Geo acceptance (`-bios`). |
 | M21 Family wave 2 | W19a–g | closed 2026-10-22: all seven merged 2026-10-21; F4–F6 and acceptance measured by the integrator (agents' sandbox cannot run Chromium): `sega-16`, `midway-mcr`, `konami-16`, `atari-classic`, `misc-16`, `taito-f3` new; `irem-m72` gains M92 and `taito-16` gains Z System. Decided 2026-10-21 to land before the 1.0.0 commit | |
 | M9 v1.0.0 release gate | W17 | final verification run passed again 2026-10-22 on `b0eb45d` after family wave 2 | Fresh rebuild of fifteen families (build ids reproduced), `npm run check`, 512 spec cases, browser gate with one title from each of thirteen families (61 passed, 0 failed, 23 skipped by design); the §14.1 walkthrough was done by the release owner on 2026-10-21/22 (audio fix, heap fix and library view all exercised). Closing needs only the version-bump commit. |
-| M23 Audit strictness modes | W20 | in progress: cut 2026-10-22; `RomSetAudit` gains `strictness: "strict" \| "mame"` (default strict, today's behaviour) so a lawful archive whose only difference from 0.161 is a PLD dump MAME would merely warn about can start; metadata gains `region`. Decided 2026-10-22 to land before the 1.0.0 commit | |
+| M23 Audit strictness modes | W20 | closed 2026-10-22 (merge `76add8f`): `RomSetAudit` gains `strictness: "strict" \| "mame"` (default strict, today's behaviour) so a lawful archive whose only difference from 0.161 is a PLD dump MAME would merely warn about can start; metadata gains `region`. Decided 2026-10-22 to land before the 1.0.0 commit | |
 
 ## Post-1.0
 
@@ -84,10 +84,11 @@ Status values: `todo`, `ready` (brief written, can be started),
 | W19e | `misc-16` family | N | M21 | merged | `wp/w19e-misc-16` | 2026-10-21 (merge `19bfe58`) |
 | W19f | `irem-m72` + M92, `taito-16` + Z System | N | M21 | merged | `wp/w19f-irem-taito-ext` | 2026-10-21 (merge `ec72f94`) |
 | W19g | `taito-f3` family | N | M21 | merged | `wp/w19g-taito-f3` | 2026-10-21 (merge `8d6711e`) |
-| W20 | Audit strictness modes | T | M23 | in progress | `wp/w20-audit-strictness` | cut 2026-10-22 |
+| W20 | Audit strictness modes | T | M23 | merged | `wp/w20-audit-strictness` | 2026-10-22 (merge `76add8f`) |
 
 ## Log
 
+- 2026-10-22 — W20 merged: `RomSetAudit` strictness (`strict` default, `mame` tolerates PLD-region defects as warnings; pinned CPS-1 tags them `aboardplds`/`bboardplds`/`cboardplds`, so the policy keys on the `plds` suffix), `roms[].region` in metadata, `ArcadeGameConfig.auditStrictness`, harness "File check" setting, `arcade-audit-roms --strictness`. Integrator: exports, spec §9/§10.5/§10.6/§11, metadata regenerated for fifteen families. Follow-up noted: the audit accepts a parent-assigned file only from the parent archive while MAME searches the game's zip first (merged clone zips), and entry names must be flat.
 - 2026-10-22 — Release gate re-run on fifteen families: fresh rebuild reproduced every build id, check clean, 512 spec cases, browser gate 61/0 across thirteen family titles. **M21 closed.** M9 awaits the version-bump commit.
 - 2026-10-22 — F4–F6 and M3–M5 measured on the host for every W19 family (twenty titles over eight records); all within the 1 % cadence and 2 % sustained gates on a quiet host. One open item: the 41 Hz Atari vector title's keyboard coin at the acceptance test's 120 ms hold did not register (pad coin at 200 ms did); noted in the record, tracked as M22.
 - 2026-10-21 — W19a–g merged (seven packages in one afternoon, three agents at a time). Agent findings: the sandbox cannot bind loopback or start Chromium, so every F4–F6 record was measured by the integrator; the toolchain's bundled Node 8 rejects the agent runner's stdio, worked around with an untracked `BASH_ENV`; `taito-f3`'s bulk `-listxml` runs out of heap (64 MiB Ensoniq DRAM per configuration), so `extract-romsets.ts` now falls back to one `-listxml` per machine. Vector titles verified to draw through the bridge's software renderer.
