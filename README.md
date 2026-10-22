@@ -25,8 +25,14 @@ exactly which archive and file a set is missing.
 | `cps1` | Capcom CPS-1 and CPS-1.5 (QSound titles) | measured |
 | `cps2` | Capcom CPS-2 | measured |
 | `namco-classic` | Namco `pacman.c`, `galaga.c`, `polepos.c` and related boards (need the user's Namco custom I/O device ROMs) | measured |
-| `taito-16` | Taito 16-bit boards (B, F2, X, Z, H and related) | measured |
-| `irem-m72` | Irem M72 | measured, optional |
+| `taito-16` | Taito 16-bit boards (B, F2, X, Z System, H and related) | measured |
+| `taito-f3` | Taito F3 (68EC020 with the Ensoniq sound board) | measured |
+| `irem-m72` | Irem M72 and M92 | measured |
+| `sega-16` | Sega `segahang.c`, `segaorun.c` and `segaxbd.c` boards | measured |
+| `midway-mcr` | Bally/Midway MCR-1/2/3 and MCR-68k | measured |
+| `konami-16` | Konami 68000 boards (`tmnt.c`, `simpsons.c`, `xmen.c`, `gijoe.c`, `mystwarr.c`, `spy.c` hardware) | measured |
+| `atari-classic` | Atari vector boards (`bzone.c`, `tempest.c`) and `rampart.c` | measured |
+| `misc-16` | Data East (`dec0.c`, `karnov.c`), Seibu (`raiden.c`, `raiden2.c`, `r2dx_v33.c`), Toaplan `snowbros.c`, Technos `shadfrce.c` and Rare `btoads.c` boards (`btoads.c` needs the user's `bsmt2000.zip` device ROM) | measured |
 | `namco-s1` | Namco System 1 and System 86 | builds; evidence deferred |
 | `namco-s2` | Namco System 2 | builds; evidence deferred |
 | `taito-classic` | Taito 8-bit boards (`bublbobl.c`, `arkanoid.c`, `tnzs.c` and related) | builds; evidence deferred |

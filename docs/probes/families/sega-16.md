@@ -69,7 +69,7 @@ pages.
 
 ## F4 — What is the slowest Chromium time from `callMain` to first frame?
 
-pending sandbox browser execution
+measured 2026-10-21/22: 354–410 ms to the first valid frame across three titles (`segahang.c`, `segaorun.c` and `segaxbd.c` hardware); see the measured section below.
 
 A lawful ignored preload config was present and supplied to the real-adapter
 measurement mechanics. The repository browser path could not bind its local
@@ -85,7 +85,7 @@ non-blank frame, excluding file selection and transfer.
 
 ## F5 — Are native refresh and upright geometry correct?
 
-pending sandbox browser execution
+measured: 320×224 horizontal at 60.054 Hz (two boards) and at 59.637 Hz (X Board), every frame at native size; worst cadence error 0.44 % on a quiet host; see the table below.
 
 The same pre-page browser failure prevented a geometry or cadence observation.
 On an unrestricted host, record the real adapter's upright native width,
@@ -95,10 +95,30 @@ height and refresh, confirm the first delivered frame is non-blank, and measure
 
 ## F6 — Does the heaviest title sustain full speed?
 
-pending sandbox browser execution
+measured: 60 s ratios 0.9989–0.9995 on desktop; the X Board title, the family's heaviest, holds 0.9995 on a quiet host and fell to 0.795 only while three Emscripten builds shared the host.
 
 The same pre-page browser failure prevented the 60-second window. On an
 unrestricted desktop host, warm the real adapter, measure exactly 60 seconds at
 the 60 Hz cadence and report `emulated seconds / wall seconds`; repeat under
 Chromium's informational 4× CPU-throttled proxy. Record the Chromium version,
 CPU and whether frameskip was disabled.
+
+## F4–F6 measured 2026-10-21/22
+
+Measured with the `build-mame` production artifact, headless Chromium on the
+desktop host, the real adapter driven through
+`tests/browser/33-family-measurements.test.ts` and the M3–M5 acceptance in
+`tests/browser/36-input-audio-acceptance.test.ts`. Identities stay in the
+ignored preload configs; titles are described by their native geometry.
+Rows marked "loaded" overlapped three Emscripten builds on the same host.
+Cadence tolerance 1 %, 60 s ratio tolerance 2 %.
+
+| Title | F4 | F5 | F6 | Acceptance |
+| ----- | -- | -- | -- | ---------- |
+| 320×224 at 60.054 Hz, `segaorun.c` board (quiet) | 354 ms | 60 → 60.20 (+0.24 %), 90 → 59.86 (−0.33 %), 120 → 59.79 (−0.44 %), 144 → 60.11 (+0.09 %) | 0.9994 | pass (queued max 57.4 ms) |
+| 320×224 at 60.054 Hz, `segahang.c` board (loaded) | 356 ms | 60 → 60.12 (+0.11 %), 90 → 60.23 (+0.29 %), 120 → 60.18 (+0.21 %), 144 → 60.14 (+0.14 %) | 0.9989 | pass |
+| 320×224 at 59.637 Hz, X Board, heaviest (quiet) | 410 ms | 60 → 59.66 (+0.05 %), 90 → 59.66 (+0.04 %), 120 → 59.62 (−0.03 %), 144 → 59.52 (−0.19 %) | 0.9995 | pass |
+
+Analog steering and throttle on these boards take the digital fallback
+(M11); the acceptance's coin, start and direction inputs changed the picture
+from both keyboard and gamepad.

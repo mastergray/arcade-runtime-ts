@@ -140,9 +140,19 @@ are conservative; the 60 s ratio tolerance is 2 %, the cadence tolerance 1 %.
 
 | Title | F4 | F5 | F6 | Acceptance |
 | ----- | -- | -- | -- | ---------- |
-| vector 640×480 horizontal at 41.016 Hz | 341 ms | 60 → 41.33 (+0.77 %), 90 → 40.91 (−0.25 %), 120 → 40.92 (−0.23 %), 144 → 40.98 (−0.08 %) | 1.0003 | M3–M5: see note |
+| vector 640×480 horizontal at 41.016 Hz (quiet re-run: 305 ms; 60 → 41.00 (−0.04 %), 90 → 41.00 (−0.04 %), 120 → 41.20 (+0.44 %), 144 → 40.90 (−0.29 %); 0.9996) | 341 ms | 60 → 41.33 (+0.77 %), 90 → 40.91 (−0.25 %), 120 → 40.92 (−0.23 %), 144 → 40.98 (−0.08 %) | 1.0003 | M3–M5: see note |
 | vector 480×640 vertical at 60.000 Hz | 299 ms | 60 → 60.00 (−0.01 %), 90 → 59.98 (−0.04 %), 120 → 59.99 (−0.02 %), 144 → 59.91 (−0.15 %) | 1.0000 | pass |
 | raster 336×240 at 59.923 Hz | 457 ms | 60 → 59.99 (+0.12 %), 90 → 59.66 (−0.43 %), 120 → 59.92 (0.00 %), 144 → 59.87 (−0.09 %) | 0.9999 | pass |
 
 Vector lines are drawn by the stock `rendersw.inc` software renderer the
 bridge already uses, so no bridge change was needed.
+
+Acceptance note for the 41 Hz vector title: M3 (audio unlocked, sound,
+queued max 68.0 ms) and M5 (two pads took players 1 and 2, pad coin and
+start changed the picture, held direction released on unplug) pass; M4's
+keyboard coin and start did not change the picture within the test's
+2-second window although the keyboard direction was held and released
+correctly, so the keyboard input path itself works. The test holds the
+keyboard coin for 120 ms and the pad coin for 200 ms; the board's coin
+input is the likely difference. Logged on the roadmap as a post-1.0 check
+rather than a runtime defect.

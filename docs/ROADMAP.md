@@ -41,6 +41,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 | M15 Optional `LibretroAdapter` | not yet cut | todo |
 | M16 Pinned MAME upgrade probe | not yet cut | todo |
 | M19 Harness library view (W18) | W18 | merged 2026-10-21: drop-first identification, per-game start, folded settings; test 38 added |
+| M22 Coin hold length on the Atari vector board | not yet cut | todo: the acceptance test's 120 ms keyboard coin did not register on the 41 Hz vector title while the 200 ms pad coin did; find the board's coin debounce and either lengthen the test's hold or document a minimum press |
 | M20 Audio queue depth under load | not yet cut | todo: the 20 ms dry-restart lead gives zero dropouts on an idle desktop but 35 dropouts in 20 s with every core busy (measured 2026-10-21); a deeper lead needs the 120 ms cap to exclude scheduled lead, or it drops frames instead. The pinned-queue bug behind the sustained garble is fixed (see 2026-10-21 log); what remains is the one-off gap plus trim that each stall still costs |
 | M17 Deferred families | not yet cut | todo: namco-s1, namco-s2, taito-classic F4–F6 once a lawful set exists (§4.6) |
 | M18 Six-button CPS-2 acceptance | not yet cut | todo: keyboard binds P1 buttons 1–6 and `GamepadSource` forwards six action buttons, so such titles are expected to play; the measured §14.1 flow-4 run awaits a lawful six-button parent set (deferred 2026-10-21) |
@@ -85,6 +86,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 
 ## Log
 
+- 2026-10-22 — F4–F6 and M3–M5 measured on the host for every W19 family (twenty titles over eight records); all within the 1 % cadence and 2 % sustained gates on a quiet host. One open item: the 41 Hz Atari vector title's keyboard coin at the acceptance test's 120 ms hold did not register (pad coin at 200 ms did); noted in the record, tracked as M22.
 - 2026-10-21 — W19a–g merged (seven packages in one afternoon, three agents at a time). Agent findings: the sandbox cannot bind loopback or start Chromium, so every F4–F6 record was measured by the integrator; the toolchain's bundled Node 8 rejects the agent runner's stdio, worked around with an untracked `BASH_ENV`; `taito-f3`'s bulk `-listxml` runs out of heap (64 MiB Ensoniq DRAM per configuration), so `extract-romsets.ts` now falls back to one `-listxml` per machine. Vector titles verified to draw through the bridge's software renderer.
 - 2026-10-21 — Release-owner spot check found titles on Sega, Midway, Konami, Atari, Data East, Seibu and Taito F3 boards outside every build. Decision: seven more family packages (W19a–g, milestone M21) land before the 1.0.0 commit; §4.6 rows added. 3D (namcos21/22), Naomi and pinball drivers stay out of scope.
 - 2026-10-21 — Hand test found a CPS-2 title aborting with `OOM` at 256 MiB and the largest Neo Geo sets rejected by the memory pre-check. Measured by relinking at 384/512/1024 MiB: all boot at 384. `memoryPages` raised to 8,192 for `cps2` and `neogeo`; adapter maps an `OOM` abort to `MEMORY_EXCEEDED`. F3 records updated.

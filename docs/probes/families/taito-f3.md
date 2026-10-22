@@ -83,7 +83,7 @@ bytes. No machine fails the §5 estimate, so the build remains at 4,096 pages.
 
 ## F4 — What is the slowest Chromium time from `callMain` to first frame?
 
-pending integrator browser run
+measured 2026-10-22 (quiet): 1,141 and 1,180 ms to the first valid frame for two titles; the slowest start in the matrix after CPS-2, spent in the 68EC020 boot and Ensoniq board reset. See the measured section below.
 
 This sandbox cannot bind loopback or start Chromium, so the browser suite was
 not attempted. On an unrestricted host, run the supplied ignored config
@@ -103,7 +103,7 @@ unconfirmed here.
 
 ## F5 — Are native refresh and upright geometry correct?
 
-pending integrator browser run
+measured: 320×232 and 320×224 horizontal at 58.970 Hz, every frame at native size; worst cadence error 0.54 %; see the table below.
 
 Run the exact integrator command:
 
@@ -121,7 +121,7 @@ frame must be non-blank.
 
 ## F6 — Does the heaviest title sustain full speed?
 
-pending integrator browser run
+measured: 60 s ratios 0.9996 and 0.9991 on desktop; the heaviest per-frame cost in the matrix still holds full speed.
 
 Run the exact integrator command:
 
@@ -136,3 +136,17 @@ After warm-up, measure exactly 60 seconds of wall time and report
 CPU-throttled mobile proxy and report that ratio as informational evidence.
 Record browser version, CPU and whether frameskip was disabled. Desktop full
 speed for this heaviest-per-frame family remains unconfirmed here.
+
+## F4–F6 measured 2026-10-22
+
+Measured with the `build-mame` production artifact (metadata written by the
+per-machine `-listxml` fallback), headless Chromium on the desktop host, the
+real adapter driven through `tests/browser/33-family-measurements.test.ts`
+and the M3–M5 acceptance in `tests/browser/36-input-audio-acceptance.test.ts`,
+on a quiet host. Identities stay in the ignored preload configs. Cadence
+tolerance 1 %, 60 s ratio tolerance 2 %.
+
+| Title | F4 | F5 | F6 | Acceptance |
+| ----- | -- | -- | -- | ---------- |
+| 320×232 at 58.970 Hz | 1,141 ms | 60 → 58.65 (−0.54 %), 90 → 59.13 (+0.28 %), 120 → 58.97 (−0.00 %), 144 → 59.08 (+0.19 %) | 0.9996 | pass |
+| 320×224 at 58.970 Hz | 1,180 ms | 60 → 59.00 (+0.04 %), 90 → 59.09 (+0.20 %), 120 → 59.05 (+0.13 %), 144 → 58.94 (−0.05 %) | 0.9991 | pass |
