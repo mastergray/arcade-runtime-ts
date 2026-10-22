@@ -26,8 +26,8 @@ Status values: `todo`, `ready` (brief written, can be started),
 | M6 Saves | W9 (storage half), W15 | closed (2026-10-21): memory card verified, states persist, CPS-2 EEPROM written mid-run by `web_flush_nvram` | 2026-10-21 |
 | M7 ROM supply and cabinet | W2 (romsets half), W9 (ROM store half), W10, W12, W13b | closed (picker path with synthetic archives and the real cabinet; preload path with the real build; audit agrees with MAME on every lawful local set) | 2026-10-20 |
 | M8 BIOS and DIP switches | W16 | done | 2026-10-21: `35-dip-switches.test.ts` against the namco-classic build; a BIOS option is exercised by the Neo Geo acceptance (`-bios`). |
-| M21 Family wave 2 | W19a–g | all seven merged 2026-10-21; F4–F6 and acceptance measured by the integrator (agents' sandbox cannot run Chromium): `sega-16`, `midway-mcr`, `konami-16`, `atari-classic`, `misc-16`, `taito-f3` new; `irem-m72` gains M92 and `taito-16` gains Z System. Decided 2026-10-21 to land before the 1.0.0 commit | |
-| M9 v1.0.0 release gate | W17 | final verification run passed 2026-10-21 | Fresh `--all --fresh` rebuild of nine families, `npm run check`, 504 spec cases, gated browser runs (M1, F4–F6 and M3–M5 for all five required families, DIP and selector tests) all green on commit `d09f540`; closing needs the §14.1 desktop walkthrough by the release owner and the version bump commit. |
+| M21 Family wave 2 | W19a–g | closed 2026-10-22: all seven merged 2026-10-21; F4–F6 and acceptance measured by the integrator (agents' sandbox cannot run Chromium): `sega-16`, `midway-mcr`, `konami-16`, `atari-classic`, `misc-16`, `taito-f3` new; `irem-m72` gains M92 and `taito-16` gains Z System. Decided 2026-10-21 to land before the 1.0.0 commit | |
+| M9 v1.0.0 release gate | W17 | final verification run passed again 2026-10-22 on `782c3ed` after family wave 2 | Fresh rebuild of fifteen families (build ids reproduced), `npm run check`, 512 spec cases, browser gate with one title from each of thirteen families (61 passed, 0 failed, 23 skipped by design); the §14.1 walkthrough was done by the release owner on 2026-10-21/22 (audio fix, heap fix and library view all exercised). Closing needs only the version-bump commit. |
 
 ## Post-1.0
 
@@ -86,6 +86,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 
 ## Log
 
+- 2026-10-22 — Release gate re-run on fifteen families: fresh rebuild reproduced every build id, check clean, 512 spec cases, browser gate 61/0 across thirteen family titles. **M21 closed.** M9 awaits the version-bump commit.
 - 2026-10-22 — F4–F6 and M3–M5 measured on the host for every W19 family (twenty titles over eight records); all within the 1 % cadence and 2 % sustained gates on a quiet host. One open item: the 41 Hz Atari vector title's keyboard coin at the acceptance test's 120 ms hold did not register (pad coin at 200 ms did); noted in the record, tracked as M22.
 - 2026-10-21 — W19a–g merged (seven packages in one afternoon, three agents at a time). Agent findings: the sandbox cannot bind loopback or start Chromium, so every F4–F6 record was measured by the integrator; the toolchain's bundled Node 8 rejects the agent runner's stdio, worked around with an untracked `BASH_ENV`; `taito-f3`'s bulk `-listxml` runs out of heap (64 MiB Ensoniq DRAM per configuration), so `extract-romsets.ts` now falls back to one `-listxml` per machine. Vector titles verified to draw through the bridge's software renderer.
 - 2026-10-21 — Release-owner spot check found titles on Sega, Midway, Konami, Atari, Data East, Seibu and Taito F3 boards outside every build. Decision: seven more family packages (W19a–g, milestone M21) land before the 1.0.0 commit; §4.6 rows added. 3D (namcos21/22), Naomi and pinball drivers stay out of scope.
