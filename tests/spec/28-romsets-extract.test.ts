@@ -91,20 +91,32 @@ const testFile: TestFile = {
                     romCount: state.subject[1]?.roms.length,
                     samples: state.subject[3]?.samples,
                     nodump: state.subject[1]?.roms.find((rom) => rom.name === "undumped.rom")?.nodump,
+                    regions: state.subject[1]?.roms.map((rom) => rom.region),
                     dipswitches: state.subject[1]?.dipswitches,
-                }), P.equals<{ names: string[]; description: string | undefined; bios: ReadonlyArray<string> | undefined; romCount: number | undefined; samples: ReadonlyArray<string> | undefined; nodump: boolean | undefined; dipswitches: unknown }>({
+                }), P.equals<{ names: string[]; description: string | undefined; bios: ReadonlyArray<string> | undefined; romCount: number | undefined; samples: ReadonlyArray<string> | undefined; nodump: boolean | undefined; regions: ReadonlyArray<string | undefined> | undefined; dipswitches: unknown }>({
                     names: ["fakebios", "fakegame", "fakeclone", "fakeold", "fakedev", "fakemcu", "fakemcugame"],
                     description: "Fake Game & Friends (World)",
                     bios: ["euro", "japan"],
                     romCount: 5,
                     samples: ["boom", "zap"],
                     nodump: true,
+                    regions: ["main", "fixed", "maincpu", "ymsnd", "extra"],
                     dipswitches: [
                         { name: "Difficulty", tag: "DSWA", mask: 3, values: [{ name: "Easy", value: 3, default: true }, { name: "Hard", value: 1, default: false }] },
                         { name: "Lives", tag: "DSWB", mask: 192, values: [{ name: "3", value: 128, default: true }, { name: "5", value: 192, default: false }] },
                         { name: "Bonus Life", tag: "DSWB", mask: 8, values: [{ name: "Only at 100000", value: 0, default: false }] },
                     ],
                 }))
+                .start(undefined),
+        },
+        {
+            label: "parseListXml leaves region absent when a synthetic ROM attribute is absent",
+            run: () => CTGTest.init("absent region")
+                .stage("parse one legacy-style ROM row", () => parseListXml(`<mame><machine name="legacy"><description>Legacy</description><rom name="entry.bin" size="1" crc="00000000"/></machine></mame>`)[0]!.roms[0]!)
+                .assert("no region property is created", (state) => ({
+                    region: state.subject.region,
+                    ownsRegion: Object.prototype.hasOwnProperty.call(state.subject, "region"),
+                }), P.equals<{ region: string | undefined; ownsRegion: boolean }>({ region: undefined, ownsRegion: false }))
                 .start(undefined),
         },
         {
@@ -156,7 +168,7 @@ const testFile: TestFile = {
                     bios: ["euro", "japan"],
                     cloneof: null,
                     romof: "fakebios",
-                    undumped: { name: "undumped.rom", size: 1024, crc: "00000000", sha1: null, archive: "fakegame.zip", optional: true, bios: null, device: null },
+                    undumped: { name: "undumped.rom", size: 1024, crc: "00000000", sha1: null, archive: "fakegame.zip", optional: true, bios: null, device: null, region: "extra" },
                     defaultBios: "euro",
                     euroTag: "euro",
                 }))
@@ -186,7 +198,7 @@ const testFile: TestFile = {
                     device: state.subject.roms.find((rom) => rom.name === "mcu.bin"),
                 }), P.equals<{ archives: string[]; device: unknown }>({
                     archives: ["fakemcugame.zip:game", "fakemcu.zip:device"],
-                    device: { name: "mcu.bin", size: 1024, crc: "ffffffff", sha1: "f".repeat(40), archive: "fakemcu.zip", optional: false, bios: null, device: "fakemcu" },
+                    device: { name: "mcu.bin", size: 1024, crc: "ffffffff", sha1: "f".repeat(40), archive: "fakemcu.zip", optional: false, bios: null, device: "fakemcu", region: "mcu" },
                 }))
                 .start(undefined),
         },

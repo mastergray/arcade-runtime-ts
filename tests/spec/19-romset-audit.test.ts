@@ -12,6 +12,7 @@ import { unzipSync, zipSync } from "fflate";                       // Builds and
 import { renderReport } from "../../scripts/audit-roms.ts";        // Expected default CLI presentation
 import ArcadeRuntimeError from "../../src/ArcadeRuntimeError/ArcadeRuntimeError.ts";
 import RomSetAudit from "../../src/RomSetAudit/RomSetAudit.ts";
+import { classifyAuditFile } from "../../src/RomSetAudit/types.ts";   // Pure status/region/mode policy under test
 import { errorSnapshot, thrownBy } from "../support/fixtures.ts";  // Stable typed-error assertions
 
 // Type dependencies:
@@ -115,13 +116,16 @@ const completeRoms = (): RomFile[] => [
 // Produces the exact expected report in metadata order.
 const expectedReport = (config: {
     readonly status?: RomSetReport["status"];
+    readonly strictness?: RomSetReport["strictness"];
     readonly present?: Readonly<Record<string, boolean>>;
     readonly fileStatus?: Readonly<Record<string, RomSetReport["files"][number]["status"]>>;
     readonly unexpected?: RomSetReport["unexpected"];
     readonly problems?: RomSetReport["problems"];
+    readonly warnings?: RomSetReport["warnings"];
 } = {}): RomSetReport => ({
     machine: "fakeclone",
     status: config.status ?? "ok",
+    strictness: config.strictness ?? "strict",
     archives: metadata().archives.map((archive) => ({
         name: archive.name,
         role: archive.role,
@@ -140,6 +144,7 @@ const expectedReport = (config: {
             status: config.fileStatus?.[sample.name] ?? "ok" as const,
         })),
     ],
+    warnings: config.warnings ?? [],
     unexpected: config.unexpected ?? [],
     problems: config.problems ?? [],
 });
@@ -216,6 +221,24 @@ for (let index = 0; index <= 4_096; index++) overLimitEntries[`entry-${index}.bi
 const testFile: TestFile = {
     label: "RomSetAudit",
     cases: [
+        {
+            label: "the pure file decision warns only for PLD-region defects in mame mode",
+            run: () => CTGTest.init("audit file decision")
+                .assert("classification matrix", () => ({
+                    pldWrongSizeMame: classifyAuditFile("plds", "wrong-size", "mame"),
+                    pldWrongSizeStrict: classifyAuditFile("plds", "wrong-size", "strict"),
+                    boardPldMissingMame: classifyAuditFile("bboardplds", "missing", "mame"),
+                    programWrongSizeMame: classifyAuditFile("maincpu", "wrong-size", "mame"),
+                    programWrongSizeStrict: classifyAuditFile("maincpu", "wrong-size", "strict"),
+                }), P.equals<unknown>({
+                    pldWrongSizeMame: "warning",
+                    pldWrongSizeStrict: "failure",
+                    boardPldMissingMame: "warning",
+                    programWrongSizeMame: "failure",
+                    programWrongSizeStrict: "failure",
+                }))
+                .start(undefined),
+        },
         auditCase("complete split game, parent and BIOS archives are ok", completeRoms(), expectedReport()),
         auditCase("a missing parent archive is incomplete and names its file", complete.filter((rom) => rom.name !== "fakegame.zip"), expectedReport({
             status: "incomplete",
@@ -230,6 +253,67 @@ const testFile: TestFile = {
             { name: "fakeclone.zip", bytes: zip({ "clone.bin": ENTRY_BYTES["clone.bin"].subarray(1), "optional.bin": ENTRY_BYTES["optional.bin"] }) },
             ...complete.slice(1),
         ], expectedReport({ status: "bad", fileStatus: { "clone.bin": "wrong-size" } })),
+        {
+            label: "mame mode preserves PLD wrong-size and missing statuses as warnings while strict mode fails them",
+            run: () => CTGTest.init("strict and mame reports")
+                .stage("audit a wrong-size and a missing PLD file in both modes", () => {
+                    const base = metadata();
+                    const pldMetadata: RomSetMetadata = {
+                        ...base,
+                        roms: base.roms.map((rom) => rom.name === "clone.bin" || rom.name === "parent.bin" ? { ...rom, region: "plds" } : { ...rom, region: "maincpu" }),
+                    };
+                    const wrongSizeRoms = [
+                        { name: "fakeclone.zip", bytes: zip({ "clone.bin": ENTRY_BYTES["clone.bin"].subarray(1), "optional.bin": ENTRY_BYTES["optional.bin"] }) },
+                        ...complete.slice(1),
+                    ];
+                    const missingRoms = complete.filter((rom) => rom.name !== "fakegame.zip");
+                    return {
+                        wrongStrict: RomSetAudit.audit(pldMetadata, wrongSizeRoms),
+                        wrongMame: RomSetAudit.audit(pldMetadata, wrongSizeRoms, { strictness: "mame" }),
+                        missingStrict: RomSetAudit.audit(pldMetadata, missingRoms),
+                        missingMame: RomSetAudit.audit(pldMetadata, missingRoms, { strictness: "mame" }),
+                    };
+                })
+                .assert("reports retain true file statuses and differ only in verdict policy and warnings", (state) => state.subject, P.equals<unknown>({
+                    wrongStrict: expectedReport({ status: "bad", fileStatus: { "clone.bin": "wrong-size" } }),
+                    wrongMame: expectedReport({
+                        strictness: "mame",
+                        fileStatus: { "clone.bin": "wrong-size" },
+                        warnings: [{ name: "clone.bin", archive: "fakeclone.zip", status: "wrong-size" }],
+                    }),
+                    missingStrict: expectedReport({
+                        status: "incomplete",
+                        present: { "fakegame.zip": false },
+                        fileStatus: { "parent.bin": "missing" },
+                    }),
+                    missingMame: expectedReport({
+                        strictness: "mame",
+                        present: { "fakegame.zip": false },
+                        fileStatus: { "parent.bin": "missing" },
+                        warnings: [{ name: "parent.bin", archive: "fakegame.zip", status: "missing" }],
+                    }),
+                }))
+                .start(undefined),
+        },
+        {
+            label: "mame mode still fails a program ROM defect",
+            run: () => CTGTest.init("program ROM remains fatal")
+                .stage("audit one wrong-size program file", () => {
+                    const base = metadata();
+                    const programMetadata: RomSetMetadata = { ...base, roms: base.roms.map((rom) => ({ ...rom, region: "maincpu" })) };
+                    const roms = [
+                        { name: "fakeclone.zip", bytes: zip({ "clone.bin": ENTRY_BYTES["clone.bin"].subarray(1), "optional.bin": ENTRY_BYTES["optional.bin"] }) },
+                        ...complete.slice(1),
+                    ];
+                    return RomSetAudit.audit(programMetadata, roms, { strictness: "mame" });
+                })
+                .assert("the report is bad without warnings", (state) => state.subject, P.equals<RomSetReport>(expectedReport({
+                    status: "bad",
+                    strictness: "mame",
+                    fileStatus: { "clone.bin": "wrong-size" },
+                })))
+                .start(undefined),
+        },
         auditCase("a missing optional ROM stays ok and reports optional-missing", [
             { name: "fakeclone.zip", bytes: zip({ "clone.bin": ENTRY_BYTES["clone.bin"] }) },
             ...complete.slice(1),
@@ -351,6 +435,10 @@ const testFile: TestFile = {
                 .assert("duplicate case-folded RomFile names", () => errorSnapshot(
                     thrownBy(() => RomSetAudit.audit(metadata(), [complete[0]!, { ...complete[0]!, name: "FAKECLONE.ZIP" }])), ArcadeRuntimeError,
                 ), P.equals<ErrorSnapshot>({ isRuntimeError: true, code: 1, label: "INVALID_CONFIG" }))
+                .assert("invalid strictness names the field", () => {
+                    const error = thrownBy(() => RomSetAudit.audit(metadata(), complete, { strictness: "loose" as "strict" }));
+                    return { ...errorSnapshot(error, ArcadeRuntimeError), data: ArcadeRuntimeError.is(error) ? error.data : null };
+                }, P.equals<ErrorSnapshot & { data: unknown }>({ isRuntimeError: true, code: 1, label: "INVALID_CONFIG", data: "strictness" }))
                 .start(undefined),
         },
         {

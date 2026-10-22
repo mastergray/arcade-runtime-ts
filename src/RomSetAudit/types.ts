@@ -44,6 +44,7 @@ export interface RomSetMetadata {
         readonly optional: boolean;                                 // Missing entry does not invalidate the set
         readonly bios?: NonEmptyString | null;                      // BIOS option this entry belongs to; required only when that option is selected
         readonly device?: NonEmptyString | null;                    // Device short name when this is a device ROM; also accepted from the game archive
+        readonly region?: string;                                   // MAME memory-region tag; optional for metadata generated before M23
     }>;
     readonly defaultBios?: NonEmptyString | null;                    // Option selected when a start config names none
     readonly dipswitches?: ReadonlyArray<{
@@ -62,11 +63,23 @@ export interface RomSetMetadata {
     }>;
 }
 
+// TYPE :: "strict" | "mame"
+// Overall audit policy: exact pinned metadata or the explicitly tolerated programmable-logic differences.
+export type AuditStrictness = "strict" | "mame";
+
+// TYPE :: expected-file status literals shared by reports and the pure classification decision.
+export type RomFileStatus = "ok" | "missing" | "wrong-size" | "wrong-crc" | "optional-missing";
+
+// TYPE :: "accepted" | "warning" | "failure"
+// Effect one true per-file result has on the selected audit policy's overall verdict.
+export type AuditFileDisposition = "accepted" | "warning" | "failure";
+
 // INTERFACE :: actionable result of auditing supplied archives against metadata
 // Contains archive and entry identities only; ROM bytes never enter a report.
 export interface RomSetReport {
     readonly machine: NonEmptyString;                               // Audited machine short name
     readonly status: "ok" | "incomplete" | "bad";                  // Overall required-ROM verdict
+    readonly strictness: AuditStrictness;                           // Policy used to compute status
     readonly archives: ReadonlyArray<{
         readonly name: RomName;                                     // Metadata archive name
         readonly role: RomRole;                                     // Metadata archive role
@@ -76,7 +89,12 @@ export interface RomSetReport {
     readonly files: ReadonlyArray<{
         readonly name: NonEmptyString;                              // Expected ROM or sample entry
         readonly archive: RomName;                                  // Archive in which it was sought
-        readonly status: "ok" | "missing" | "wrong-size" | "wrong-crc" | "optional-missing";
+        readonly status: RomFileStatus;
+    }>;
+    readonly warnings: ReadonlyArray<{
+        readonly name: NonEmptyString;                              // Required PLD entry tolerated by MAME-compatible policy
+        readonly archive: RomName;                                 // Archive in which it was sought
+        readonly status: "missing" | "wrong-size" | "wrong-crc";  // True file result; never rewritten to ok
     }>;
     readonly unexpected: ReadonlyArray<{
         readonly archive: RomName;                                  // Supplied metadata archive
@@ -97,6 +115,7 @@ export interface RomSetReport {
 const CRC_PATTERN = /^[0-9a-f]{8}$/;                               // Canonical CRC32 text
 const SHA1_PATTERN = /^[0-9a-f]{40}$/;                             // Canonical SHA-1 text
 const FILE_STATUSES = ["ok", "missing", "wrong-size", "wrong-crc", "optional-missing"] as const;
+const WARNING_STATUSES = ["missing", "wrong-size", "wrong-crc"] as const;
 const MAX_IOPORT_VALUE = 0xffff_ffff;                             // ioport_value is UINT32 in pinned MAME
 
 /**
@@ -133,7 +152,8 @@ const isMetadataRom = (value: unknown): value is RomSetMetadata["roms"][number] 
     && isRomName(value.archive)
     && typeof value.optional === "boolean"
     && (value.bios === undefined || value.bios === null || isNonEmptyString(value.bios))
-    && (value.device === undefined || value.device === null || isNonEmptyString(value.device));
+    && (value.device === undefined || value.device === null || isNonEmptyString(value.device))
+    && (value.region === undefined || typeof value.region === "string");
 
 // PREDICATE :: UNKNOWN -> BOOLEAN
 // True when value is one expected sample declaration.
@@ -178,6 +198,13 @@ const isReportFile = (value: unknown): value is RomSetReport["files"][number] =>
     && (FILE_STATUSES as readonly unknown[]).includes(value.status);
 
 // PREDICATE :: UNKNOWN -> BOOLEAN
+// True when value is one required-file warning row.
+const isReportWarning = (value: unknown): value is RomSetReport["warnings"][number] => isObject(value)
+    && isNonEmptyString(value.name)
+    && isRomName(value.archive)
+    && (WARNING_STATUSES as readonly unknown[]).includes(value.status);
+
+// PREDICATE :: UNKNOWN -> BOOLEAN
 // True when value is one unexpected-entry row in a report.
 const isUnexpectedFile = (value: unknown): value is RomSetReport["unexpected"][number] => isObject(value)
     && isRomName(value.archive)
@@ -194,6 +221,20 @@ const isArchiveProblem = (value: unknown): value is RomSetReport["problems"][num
  * Type Predicates
  *
  */
+
+// PREDICATE :: UNKNOWN -> BOOLEAN
+// True when value is one supported overall audit policy.
+export function isAuditStrictness(value: unknown): value is AuditStrictness {
+    return value === "strict" || value === "mame";
+}
+
+// PURE :: STRING?, romFileStatus, auditStrictness -> auditFileDisposition
+// Classifies a true file result without inspecting an archive. Pinned CPS-1 uses aboardplds, bboardplds and
+// cboardplds while other drivers use plds, so the narrow programmable-logic policy follows the shared suffix.
+export function classifyAuditFile(region: string | undefined, status: RomFileStatus, strictness: AuditStrictness): AuditFileDisposition {
+    if (status === "ok" || status === "optional-missing") return "accepted";
+    return strictness === "mame" && region?.toLowerCase().endsWith("plds") === true ? "warning" : "failure";
+}
 
 // PREDICATE :: UNKNOWN -> BOOLEAN
 // True when value is complete resolved metadata with unique archives and valid archive references.
@@ -234,15 +275,22 @@ export function isRomSetReport(value: unknown): value is RomSetReport {
     if (!isObject(value)
         || !isNonEmptyString(value.machine)
         || !(value.status === "ok" || value.status === "incomplete" || value.status === "bad")
+        || !isAuditStrictness(value.strictness)
         || !isArrayOf(value.archives, isReportArchive)
         || !isArrayOf(value.files, isReportFile)
+        || !isArrayOf(value.warnings, isReportWarning)
         || !isArrayOf(value.unexpected, isUnexpectedFile)
         || !isArrayOf(value.problems, isArchiveProblem)) return false;
 
     const archives = value.archives as RomSetReport["archives"];
     if (!uniqueCaseFolded(archives.map((archive) => archive.name))) return false;
     const archiveNames = new Set(archives.map((archive) => romNameKey(archive.name)));
-    return (value.files as RomSetReport["files"]).every((file) => archiveNames.has(romNameKey(file.archive)))
+    const files = value.files as RomSetReport["files"];
+    const warnings = value.warnings as RomSetReport["warnings"];
+    return (value.strictness !== "strict" || warnings.length === 0)
+        && files.every((file) => archiveNames.has(romNameKey(file.archive)))
+        && warnings.every((warning) => archiveNames.has(romNameKey(warning.archive))
+            && files.some((file) => file.name === warning.name && romNameKey(file.archive) === romNameKey(warning.archive) && file.status === warning.status))
         && (value.unexpected as RomSetReport["unexpected"]).every((file) => archiveNames.has(romNameKey(file.archive)))
         && (value.problems as RomSetReport["problems"]).every((problem) => archiveNames.has(romNameKey(problem.archive)));
 }
