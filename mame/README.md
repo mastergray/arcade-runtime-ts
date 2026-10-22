@@ -10,6 +10,12 @@ EMSDK_DIR="$PWD/res/emsdk" node --import tsx scripts/build-mame.ts neogeo cps1
 node --import tsx scripts/build-mame.ts --all --jobs 4
 ```
 
+`extract-romsets.ts` runs one bulk `-listxml` per family. When that run
+aborts (0.161 keeps every enumerated machine configuration alive, and the
+Taito F3 Ensoniq board embeds 64 MiB per configuration, so `taito-f3` runs
+out of heap) it falls back to one `-listxml <machine>` per `-listfull`
+entry and merges the results; the fallback is logged.
+
 It unpacks `res/mame0161s.zip` into `.cache/mame/mame0161/` when no
 `--source` tree is given, applies the two toolchain patches from
 `probes/patches/` and then every `patches/*.patch`, runs the P2 make recipe,

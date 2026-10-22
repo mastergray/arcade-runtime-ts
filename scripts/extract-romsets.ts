@@ -6,8 +6,12 @@
 import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";   // Writes one JSON per machine
 import { join, resolve } from "node:path";                       // Output paths
 import { pathToFileURL } from "node:url";                        // Detects direct command-line execution
+import { parseListFull } from "./mame-build/buildInfo.js";     // Machine names for the per-machine fallback
 import { runMameUnderNode } from "./mame-build/nodeRunner.js";   // Runs the family build's -listxml under Node
 import { romsetsFromListXml } from "./mame-build/romsets.js";    // Converts the XML into per-machine metadata
+
+// Type dependencies:
+import type { RomSetMetadata } from "../src/RomSetAudit/types.js";    // One machine's metadata
 
 /**
  *
@@ -23,6 +27,32 @@ const USAGE = "Usage: extract-romsets <family> [--dist <dir>]";
  *
  */
 
+// HELPER :: STRING, STRING -> PROMISE(MAP(STRING, romSetMetadata))
+// Runs one bulk -listxml, falling back to one -listxml per -listfull machine when the bulk run aborts or yields no document.
+// NOTE: 0.161 keeps every enumerated machine configuration alive during a bulk -listxml; a family whose device
+// configurations are large (Taito F3's Ensoniq board embeds 64 MiB each) exhausts the fixed heap before the end.
+export const listXmlRomsets = async (family: string, javascript: string): Promise<Map<string, RomSetMetadata>> => {
+    let bulkFailure: string;
+    try {
+        const run = await runMameUnderNode(javascript, ["-listxml"]);
+        if (run.stdout.includes("<mame")) return romsetsFromListXml(family, run.stdout);
+        bulkFailure = `no document: ${run.stderr.slice(0, 200)}`;
+    } catch (error) {
+        bulkFailure = error instanceof Error ? error.message : String(error);
+    }
+    const listing = await runMameUnderNode(javascript, ["-listfull"]);
+    const machines = parseListFull(listing.stdout).map((entry) => entry.name);
+    if (machines.length === 0) throw new Error(`-listxml failed for ${family} (${bulkFailure}) and -listfull named no machines to fall back on`);
+    console.log(`${family}: bulk -listxml failed (${bulkFailure.slice(0, 120)}); extracting ${machines.length} machines one at a time`);
+    const merged = new Map<string, RomSetMetadata>();
+    for (const machine of machines) {
+        const run = await runMameUnderNode(javascript, ["-listxml", machine]);
+        if (!run.stdout.includes("<mame")) throw new Error(`-listxml ${machine} produced no document for ${family}: ${run.stderr.slice(0, 500)}`);
+        for (const [name, metadata] of romsetsFromListXml(family, run.stdout)) merged.set(name, metadata);
+    }
+    return merged;
+};
+
 // HELPER :: STRING, STRING -> PROMISE(NUMBER)
 // Runs -listxml for the family build under dist/mame/<family>/, writes romsets/<machine>.json for every machine, returns the count.
 // NOTE: The romsets directory is replaced wholesale so a rebuilt family never keeps stale machines.
@@ -30,9 +60,7 @@ export const extractRomsets = async (family: string, distRoot: string): Promise<
     const familyDirectory = join(distRoot, family);
     const javascript = join(familyDirectory, `mame${family}.js`);
     if (!existsSync(javascript)) throw new Error(`No family build at ${javascript}; run build-mame first`);
-    const run = await runMameUnderNode(javascript, ["-listxml"]);
-    if (!run.stdout.includes("<mame")) throw new Error(`-listxml produced no document for ${family}: ${run.stderr.slice(0, 500)}`);
-    const romsets = romsetsFromListXml(family, run.stdout);
+    const romsets = await listXmlRomsets(family, javascript);
     const output = join(familyDirectory, "romsets");
     rmSync(output, { recursive: true, force: true });
     mkdirSync(output, { recursive: true });

@@ -26,7 +26,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 | M6 Saves | W9 (storage half), W15 | closed (2026-10-21): memory card verified, states persist, CPS-2 EEPROM written mid-run by `web_flush_nvram` | 2026-10-21 |
 | M7 ROM supply and cabinet | W2 (romsets half), W9 (ROM store half), W10, W12, W13b | closed (picker path with synthetic archives and the real cabinet; preload path with the real build; audit agrees with MAME on every lawful local set) | 2026-10-20 |
 | M8 BIOS and DIP switches | W16 | done | 2026-10-21: `35-dip-switches.test.ts` against the namco-classic build; a BIOS option is exercised by the Neo Geo acceptance (`-bios`). |
-| M21 Family wave 2 | W19a–g | ready (briefs written 2026-10-21): `sega-16`, `midway-mcr`, `konami-16`, `atari-classic`, `misc-16`, `taito-f3` new; `irem-m72` gains M92 and `taito-16` gains Z System. Decided 2026-10-21 to land before the 1.0.0 commit | |
+| M21 Family wave 2 | W19a–g | all seven merged 2026-10-21; F4–F6 and acceptance measured by the integrator (agents' sandbox cannot run Chromium): `sega-16`, `midway-mcr`, `konami-16`, `atari-classic`, `misc-16`, `taito-f3` new; `irem-m72` gains M92 and `taito-16` gains Z System. Decided 2026-10-21 to land before the 1.0.0 commit | |
 | M9 v1.0.0 release gate | W17 | final verification run passed 2026-10-21 | Fresh `--all --fresh` rebuild of nine families, `npm run check`, 504 spec cases, gated browser runs (M1, F4–F6 and M3–M5 for all five required families, DIP and selector tests) all green on commit `d09f540`; closing needs the §14.1 desktop walkthrough by the release owner and the version bump commit. |
 
 ## Post-1.0
@@ -75,16 +75,17 @@ Status values: `todo`, `ready` (brief written, can be started),
 | W16 | BIOS and DIP switches | N+T | M8 | merged | `wp/w16-bios-dip` | `d5446ad` |
 | W17 | Release gate | T | M9 | merged | `wp/w17-release-gate` | 2026-10-21 |
 | W18 | Harness library view | T | M19 | merged | `wp/w18-harness-library` | 2026-10-21 (merge `04015f0`) |
-| W19a | `sega-16` family | N | M21 | ready | `wp/w19a-sega-16` | |
-| W19b | `midway-mcr` family | N | M21 | ready | `wp/w19b-midway-mcr` | |
-| W19c | `konami-16` family | N | M21 | ready | `wp/w19c-konami-16` | |
-| W19d | `atari-classic` family | N | M21 | ready | `wp/w19d-atari-classic` | |
-| W19e | `misc-16` family | N | M21 | ready | `wp/w19e-misc-16` | |
-| W19f | `irem-m72` + M92, `taito-16` + Z System | N | M21 | ready | `wp/w19f-irem-taito-ext` | |
-| W19g | `taito-f3` family | N | M21 | ready | `wp/w19g-taito-f3` | |
+| W19a | `sega-16` family | N | M21 | merged | `wp/w19a-sega-16` | 2026-10-21 (merge `694b180`) |
+| W19b | `midway-mcr` family | N | M21 | merged | `wp/w19b-midway-mcr` | 2026-10-21 (merge `bce4b28`) |
+| W19c | `konami-16` family | N | M21 | merged | `wp/w19c-konami-16` | 2026-10-21 (merge `5acdec3`) |
+| W19d | `atari-classic` family | N | M21 | merged | `wp/w19d-atari-classic` | 2026-10-21 (merge `4286ad2`) |
+| W19e | `misc-16` family | N | M21 | merged | `wp/w19e-misc-16` | 2026-10-21 (merge `ec77bb6`) |
+| W19f | `irem-m72` + M92, `taito-16` + Z System | N | M21 | merged | `wp/w19f-irem-taito-ext` | 2026-10-21 (merge `827654c`) |
+| W19g | `taito-f3` family | N | M21 | merged | `wp/w19g-taito-f3` | 2026-10-21 (merge `abf623a`) |
 
 ## Log
 
+- 2026-10-21 — W19a–g merged (seven packages in one afternoon, three agents at a time). Agent findings: the sandbox cannot bind loopback or start Chromium, so every F4–F6 record was measured by the integrator; the toolchain's bundled Node 8 rejects the agent runner's stdio, worked around with an untracked `BASH_ENV`; `taito-f3`'s bulk `-listxml` runs out of heap (64 MiB Ensoniq DRAM per configuration), so `extract-romsets.ts` now falls back to one `-listxml` per machine. Vector titles verified to draw through the bridge's software renderer.
 - 2026-10-21 — Release-owner spot check found titles on Sega, Midway, Konami, Atari, Data East, Seibu and Taito F3 boards outside every build. Decision: seven more family packages (W19a–g, milestone M21) land before the 1.0.0 commit; §4.6 rows added. 3D (namcos21/22), Naomi and pinball drivers stay out of scope.
 - 2026-10-21 — Hand test found a CPS-2 title aborting with `OOM` at 256 MiB and the largest Neo Geo sets rejected by the memory pre-check. Measured by relinking at 384/512/1024 MiB: all boot at 384. `memoryPages` raised to 8,192 for `cps2` and `neogeo`; adapter maps an `OOM` abort to `MEMORY_EXCEEDED`. F3 records updated.
 - 2026-10-21 — Release-owner hand test: audio dropouts on a Neo Geo and a Namco classic title traced to the browser gate running concurrently on the same machine; audio clean once idle (probe: 0 gaps idle, 35 gaps fully loaded, 1 gap half loaded). M20 opened. Cabinet menu now lists the keyboard bindings.
