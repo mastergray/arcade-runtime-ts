@@ -24,6 +24,7 @@ An agent handed a brief works from the brief and the spec alone.
 | [W16 — DIP switches end to end](W16-bios-dip.md) | TypeScript (+ metadata regeneration) |
 | [W13c — harness BIOS and DIP selectors](W13c-harness-selectors.md) | TypeScript |
 | [W17 — v1.0.0 release gate](W17-release-gate.md) | TypeScript |
+| [W18 — harness drop-first library view](W18-harness-library.md) | TypeScript |
 
 Package and milestone status is tracked in one place,
 [`docs/ROADMAP.md`](../ROADMAP.md); this list only links the briefs.

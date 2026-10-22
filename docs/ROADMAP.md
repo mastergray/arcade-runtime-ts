@@ -39,6 +39,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 | M14 Optional FBNeo probe | not yet cut | todo |
 | M15 Optional `LibretroAdapter` | not yet cut | todo |
 | M16 Pinned MAME upgrade probe | not yet cut | todo |
+| M19 Harness library view (W18) | W18 | in progress: drop-first identification, per-game start; started 2026-10-21 on `wp/w18-harness-library` |
 | M17 Deferred families | not yet cut | todo: namco-s1, namco-s2, taito-classic F4–F6 once a lawful set exists (§4.6) |
 | M18 Six-button CPS-2 acceptance | not yet cut | todo: keyboard binds P1 buttons 1–6 and `GamepadSource` forwards six action buttons, so such titles are expected to play; the measured §14.1 flow-4 run awaits a lawful six-button parent set (deferred 2026-10-21) |
 

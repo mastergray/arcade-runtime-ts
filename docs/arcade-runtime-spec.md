@@ -1336,10 +1336,14 @@ responsible for how it is used.
 `harness/index.html` is the page the project uses to develop and
 demonstrate the library. It is a consumer, not a product feature:
 
-- A family/build selector reading `build.json` from a locally served
-  `dist/mame/<family>/`.
-- A machine input and a file picker/drop zone for zips; picked files go into
-  `ArcadeRomStore`, and the audit report is rendered before start.
+- An index built from `/builds.json` and each family's `build.json` under
+  a locally served `dist/mame/`, optionally limited to the families a
+  `?family=` query names (W18).
+- A file picker/drop zone for zips. Each zip is identified by its
+  basename against that index, its `romsets/<machine>.json` supplies the
+  title and companion archives, picked files go into `ArcadeRomStore`,
+  and the audit verdict is rendered on the game's card before its Start
+  (W18; the W13a/W13b family and machine inputs are retired).
 - `ArcadeCabinet` with default keyboard map, gamepads, a corner menu
   (fullscreen, sound, reset, save/load state, clear saves), BIOS/DIP
   selectors once M8 exists, and a touch layout chosen by `MachineInfo`
@@ -1723,6 +1727,7 @@ TypeScript).
 | W15 | Saves bridge: memory card and EEPROM coverage in `web_flush_nvram`, F8 record | `mame/patches/0003-*`, `docs/probes/families/*` (F8 rows only) | W3, W4 | §4.3, §12 M6 | N | M6 |
 | W16 | BIOS and DIP: `web_machine_info` BIOS fields, generated DIP cfg | `mame/bridge/web_bridge.cpp` (BIOS struct only), `src/DipConfig/` | W4, W13 | §4.5, §12 M8 | N+T | M8 |
 | W17 | Release gate: licence notices in build output, `npm pack` tests, hosted-harness policy | `scripts/build-mame.ts` (notice copy only), `tests/spec/*package*` | W2, W12 | §0.4, §14.1 | T | M9 |
+| W18 | Harness library view: zip-driven identification, per-game start | `harness/`, `scripts/serve-harness.ts`, harness browser tests | W13c | §11 | T | post-1.0 polish |
 
 `src/ControllerConfig/` and `src/DipConfig/` are internal modules (pure
 text generators) added to the layout of §1.2 by this section; they are not
