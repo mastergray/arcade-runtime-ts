@@ -67,7 +67,7 @@ const WORKSPACE = resolve(dirname(fileURLToPath(import.meta.url)), "../..");   /
 const CONFIG_ARGUMENT = process.env.ARCADE_PRELOAD_CONFIG;         // Sole route to ignored private inputs
 const FAMILY = "example-family";
 const MACHINE = "example_machine";
-const GAME_ARCHIVE = "example_game.zip";
+const GAME_ARCHIVE = "example_machine.zip";
 const PARENT_ARCHIVE = "example_parent.zip";
 const GAME_ENTRY = "example_game_program.bin";
 const PARENT_ENTRY = "example_parent_program.bin";
@@ -261,36 +261,35 @@ const cases: TestCase[] = [
         label: "confirms two picked zips into the local store, audits and starts a scripted real cabinet, then removes and clears",
         run: () => withSyntheticHarness((url, gameArchive, parentArchive) => CTGBrowserTest.init("harness cabinet picker and store")
             .interact("install a scripted public adapter and pick two generated zips", async ({ page }) => {
-                await page.waitForFunction(() => document.querySelector<HTMLElement>("#status")?.dataset.state === "no-preload");
+                await page.waitForFunction(() => document.querySelector<HTMLElement>("#status")?.dataset.state === "ready-for-files");
                 await page.addScriptTag({ content: SCRIPTED_ADAPTER });
                 await page.waitForFunction(() => (window as unknown as { __arcadeHarnessAdapterReady?: boolean }).__arcadeHarnessAdapterReady === true);
-                await page.locator("#machine").fill(MACHINE);
                 await page.locator("#rom-picker").setInputFiles([
                     { name: GAME_ARCHIVE, mimeType: "application/zip", buffer: Buffer.from(gameArchive) },
                     { name: PARENT_ARCHIVE, mimeType: "application/zip", buffer: Buffer.from(parentArchive) },
                 ]);
-                await page.waitForFunction(() => document.querySelectorAll("#pending-roms li").length === 2);
+                await page.waitForFunction(() => document.querySelectorAll('[data-machine="example_machine"] .archive-list li').length === 2);
                 await page.evaluate(() => {
                     const browser = window as unknown as Window & { __arcadeHarnessSynthetic: SyntheticBrowserState };
-                    const text = document.querySelector("#pending-roms")?.textContent ?? "";
-                    browser.__arcadeHarnessSynthetic.pickedVisible = text.includes("example_game.zip")
-                        && text.includes("example_parent.zip") && text.includes("B");
+                    const text = document.querySelector('[data-machine="example_machine"]')?.textContent ?? "";
+                    browser.__arcadeHarnessSynthetic.pickedVisible = text.includes("example_machine.zip")
+                        && text.includes("example_parent.zip") && text.includes("ready to store");
                 });
-                await page.locator("#confirm-roms").click();
+                await page.locator('[data-machine="example_machine"] .store-card').click();
                 await page.waitForFunction(() => document.querySelectorAll(".store-remove").length === 2
-                    && document.querySelector<HTMLElement>("#audit")?.dataset.status === "ok"
-                    && document.querySelector<HTMLButtonElement>("#start")?.disabled === false);
+                    && document.querySelector<HTMLElement>('[data-machine="example_machine"]')?.dataset.auditStatus === "ok"
+                    && document.querySelector<HTMLButtonElement>('[data-machine="example_machine"] .game-start')?.disabled === false);
                 await page.evaluate(() => {
                     const browser = window as unknown as Window & { __arcadeHarnessSynthetic: SyntheticBrowserState };
-                    const store = document.querySelector("#rom-store")?.textContent ?? "";
-                    const audit = document.querySelector("#audit")?.textContent ?? "";
-                    browser.__arcadeHarnessSynthetic.storedVisible = store.includes("example_game.zip") && store.includes("example_parent.zip");
-                    browser.__arcadeHarnessSynthetic.auditRolesVisible = audit.includes("game  example_game.zip")
-                        && audit.includes("parent  example_parent.zip");
+                    const store = document.querySelector("#stored-files")?.textContent ?? "";
+                    const card = document.querySelector('[data-machine="example_machine"]')?.textContent ?? "";
+                    browser.__arcadeHarnessSynthetic.storedVisible = store.includes("example_machine.zip") && store.includes("example_parent.zip");
+                    browser.__arcadeHarnessSynthetic.auditRolesVisible = card.includes("example_machine.zip is ready")
+                        && card.includes("example_parent.zip is ready");
                 });
             })
             .interact("choose incompatible-save recovery, start, observe a frame, remove one archive and clear the store", async ({ page }) => {
-                await page.locator("#start").click();
+                await page.locator('[data-machine="example_machine"] .game-start').click();
                 await page.waitForFunction(() => document.querySelector<HTMLElement>("#status")?.dataset.state === "overlay-incompatible"
                     && document.querySelector<HTMLButtonElement>("#clear-saves-retry")?.hidden === false);
                 await page.evaluate(() => {
@@ -307,9 +306,9 @@ const cases: TestCase[] = [
                 await page.evaluate(() => {
                     (window as unknown as Window & { __arcadeHarnessSynthetic: SyntheticBrowserState }).__arcadeHarnessSynthetic.removedOne = true;
                 });
-                await page.locator("#clear-store").click();
+                await page.locator("#clear-files").click();
                 await page.waitForFunction(() => document.querySelectorAll(".store-remove").length === 0
-                    && document.querySelector<HTMLButtonElement>("#clear-store")?.disabled === true);
+                    && document.querySelector<HTMLButtonElement>("#clear-files")?.disabled === true);
             })
             .assertPage("picker, store, audit, frame and destructive store controls all complete", (page) => page.evaluate((): SyntheticResult => {
                 const browser = window as unknown as Window & { __arcadeHarnessSynthetic: SyntheticBrowserState };
@@ -325,7 +324,7 @@ const cases: TestCase[] = [
                     firstFrame: canvas?.width === 2 && canvas.height === 2,
                     resolvedFromStore: state.startedRoms?.length === 2 && state.startedRoms.every((rom) => rom.byteLength > 0),
                     removedOne: state.removedOne === true,
-                    storeCleared: document.querySelector("#rom-store")?.textContent?.includes("store is empty") === true,
+                    storeCleared: document.querySelector("#stored-files")?.textContent?.includes("No files are saved") === true,
                 };
             }), P.equals<SyntheticResult>({
                 pickedVisible: true,
@@ -348,7 +347,7 @@ if (CONFIG_ARGUMENT !== undefined) cases.push({
     run: () => withProductionHarness((url) => CTGBrowserTest.init("harness cabinet production saves")
         .interact("start the preloaded production cabinet and wait for its first frame", async ({ page }) => {
             await page.waitForFunction(() => document.querySelector<HTMLElement>("#status")?.dataset.state === "ready");
-            await page.locator("#start").click();
+            await page.locator('[data-selected="true"] .game-start').click();
             await page.waitForFunction(() => document.querySelector<HTMLElement>("#status")?.dataset.state === "running"
                 && (document.querySelector<HTMLCanvasElement>("#canvas")?.width ?? 0) > 0
                 && (document.querySelector<HTMLCanvasElement>("#canvas")?.height ?? 0) > 0);

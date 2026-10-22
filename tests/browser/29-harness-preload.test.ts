@@ -23,9 +23,9 @@ import type { TestCase, TestFile } from "../run.ts";               // Test manif
 
 // INTERFACE :: privacy-safe observation of the synthetic preload page
 interface SyntheticResult {
-    readonly familySelected: boolean;
-    readonly machineFilled: boolean;
-    readonly biosEmpty: boolean;
+    readonly familyShown: boolean;
+    readonly titleShown: boolean;
+    readonly selectorsAbsent: boolean;
     readonly auditStatus: string | undefined;
     readonly auditRendered: boolean;
     readonly startEnabled: boolean;
@@ -158,14 +158,12 @@ const cases: TestCase[] = [
         label: "a synthetic preload is sanitized, audited and rendered without exposing unlisted files",
         run: () => withSyntheticHarness((url) => CTGBrowserTest.init("harness synthetic preload")
             .interact("wait for the real page audit", async ({ page }) => {
-                await page.waitForFunction(() => document.querySelector<HTMLElement>("#audit")?.dataset.status === "ok");
+                await page.waitForFunction(() => document.querySelector<HTMLElement>('[data-machine="example_machine"]')?.dataset.auditStatus === "ok");
             })
             .assertPage("page controls, audit and HTTP allowlist are complete", (page) => page.evaluate(async (): Promise<SyntheticResult> => {
-                const family = document.querySelector<HTMLSelectElement>("#family");
-                const machine = document.querySelector<HTMLInputElement>("#machine");
-                const bios = document.querySelector<HTMLInputElement>("#bios");
+                const card = document.querySelector<HTMLElement>('[data-machine="example_machine"]');
                 const audit = document.querySelector<HTMLElement>("#audit");
-                const start = document.querySelector<HTMLButtonElement>("#start");
+                const start = card?.querySelector<HTMLButtonElement>(".game-start");
                 const config = await fetch("/preload.json").then((response) => response.json()) as {
                     roms: string[];
                     romUrls: string[];
@@ -177,11 +175,11 @@ const cases: TestCase[] = [
                     fetch("/mame/example-family/mameexample-family.wasm"),
                 ]);
                 return {
-                    familySelected: family?.value === "example-family",
-                    machineFilled: machine?.value === "example_machine",
-                    biosEmpty: bios?.value === "",
+                    familyShown: card?.dataset.family === "example-family",
+                    titleShown: card?.querySelector("h3")?.textContent === "Synthetic example machine",
+                    selectorsAbsent: card?.querySelector(".machine-selectors") === null,
                     auditStatus: audit?.dataset.status,
-                    auditRendered: audit?.textContent?.includes("Audit: ok") === true && audit.textContent.includes("example_program.bin"),
+                    auditRendered: audit?.textContent?.includes("Synthetic example machine: ok") === true && audit.textContent.includes("example_program.bin"),
                     startEnabled: start?.disabled === false,
                     sanitized: config.roms.length === 1 && config.roms[0] === "example_machine.zip"
                         && config.romUrls[0] === "/preload/example_machine.zip",
@@ -191,9 +189,9 @@ const cases: TestCase[] = [
                     wasmType: wasm.headers.get("content-type"),
                 };
             }), P.equals<SyntheticResult>({
-                familySelected: true,
-                machineFilled: true,
-                biosEmpty: true,
+                familyShown: true,
+                titleShown: true,
+                selectorsAbsent: true,
                 auditStatus: "ok",
                 auditRendered: true,
                 startEnabled: true,
@@ -212,7 +210,7 @@ if (CONFIG_ARGUMENT !== undefined) cases.push({
     run: () => withProductionHarness((url) => CTGBrowserTest.init("harness production preload")
         .interact("wait for audit, provide the one gesture and wait for a frame", async ({ page }) => {
             await page.waitForFunction(() => document.querySelector<HTMLElement>("#status")?.dataset.state === "ready");
-            await page.locator("#start").click();
+            await page.locator('[data-selected="true"] .game-start').click();
             await page.waitForFunction(() => {
                 const status = document.querySelector<HTMLElement>("#status");
                 const canvas = document.querySelector<HTMLCanvasElement>("#canvas");

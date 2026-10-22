@@ -264,39 +264,38 @@ const cases: TestCase[] = [
         label: "metadata selectors pass one BIOS and one changed DIP, warn on a stale preload name and restart at defaults",
         run: () => withSyntheticHarness((url) => CTGBrowserTest.init("harness synthetic BIOS and DIP selectors")
             .interact("observe preload selections and install the scripted cabinet boundary", async ({ page }) => {
-                await page.waitForFunction(() => document.querySelector<HTMLElement>("#audit")?.dataset.status === "ok"
-                    && document.querySelector<HTMLElement>("#machine-selectors")?.hidden === false);
+                await page.waitForFunction(() => document.querySelector<HTMLElement>('[data-machine="selector_machine"]')?.dataset.auditStatus === "ok"
+                    && document.querySelector('[data-machine="selector_machine"] .machine-selectors') !== null);
                 await page.addScriptTag({ content: SCRIPTED_ADAPTER });
                 await page.waitForFunction(() => (window as unknown as { __arcadeHarnessAdapterReady?: boolean }).__arcadeHarnessAdapterReady === true);
                 await page.evaluate(() => {
                     const browser = window as unknown as Window & { __arcadeHarnessSelectorTest: SyntheticBrowserState };
-                    const bios = document.querySelector<HTMLSelectElement>("#bios-select");
-                    const dips = Array.from(document.querySelectorAll<HTMLSelectElement>(".dip-select"));
+                    const card = document.querySelector<HTMLElement>('[data-machine="selector_machine"]');
+                    const bios = card?.querySelector<HTMLSelectElement>(".bios-select");
+                    const dips = Array.from(card?.querySelectorAll<HTMLSelectElement>(".dip-select") ?? []);
                     const tempo = dips.find((control) => control.dataset.switchName === "Cabinet Tempo");
                     const bonus = dips.find((control) => control.dataset.switchName === "Bonus Pattern");
-                    browser.__arcadeHarnessSelectorTest.selectorsVisible = bios?.hidden === false && dips.length === 2;
+                    browser.__arcadeHarnessSelectorTest.selectorsVisible = bios !== null && bios !== undefined && dips.length === 2;
                     browser.__arcadeHarnessSelectorTest.preloadSelected = bios?.value === "alternate-bios"
                         && tempo?.value === "Quick" && bonus?.value === "Sparse";
-                    browser.__arcadeHarnessSelectorTest.unknownWarned = document.querySelector<HTMLElement>("#selector-warning")?.hidden === false;
-                    bios?.dispatchEvent(new Event("change", { bubbles: true }));
+                    browser.__arcadeHarnessSelectorTest.unknownWarned = card?.querySelector(".selector-warning") !== null;
                 });
-                await page.waitForFunction(() => document.querySelector<HTMLElement>("#status")?.dataset.state === "selection-changed");
-                await page.locator("#audit-roms").click();
                 await page.waitForFunction(() => document.querySelector<HTMLElement>("#status")?.dataset.state === "ready"
-                    && document.querySelector<HTMLButtonElement>("#start")?.disabled === false);
+                    && document.querySelector<HTMLButtonElement>('[data-machine="selector_machine"] .game-start')?.disabled === false);
             })
             .interact("start once, reset the DIP fields and use the explicit selector restart", async ({ page }) => {
-                await page.locator("#start").click();
+                await page.locator('[data-machine="selector_machine"] .game-start').click();
                 await page.waitForFunction(() => document.querySelector<HTMLElement>("#status")?.dataset.state === "running"
                     && (window as unknown as { __arcadeHarnessSelectorTest: SyntheticBrowserState }).__arcadeHarnessSelectorTest.starts.length === 1);
-                await page.locator("#reset-dips").click();
+                await page.locator('[data-machine="selector_machine"] .machine-selectors > summary').click();
+                await page.locator('[data-machine="selector_machine"] .reset-dips').click();
                 await page.waitForFunction(() => document.querySelector<HTMLElement>("#status")?.dataset.state === "restart-required"
-                    && document.querySelector<HTMLButtonElement>("#restart-switches")?.disabled === false);
+                    && document.querySelector<HTMLButtonElement>('[data-machine="selector_machine"] .restart-switches') !== null);
                 await page.evaluate(() => {
                     (window as unknown as Window & { __arcadeHarnessSelectorTest: SyntheticBrowserState })
                         .__arcadeHarnessSelectorTest.restartEnabled = true;
                 });
-                await page.locator("#restart-switches").click();
+                await page.locator('[data-machine="selector_machine"] .restart-switches').click();
                 await page.waitForFunction(() => document.querySelector<HTMLElement>("#status")?.dataset.state === "running"
                     && (window as unknown as { __arcadeHarnessSelectorTest: SyntheticBrowserState }).__arcadeHarnessSelectorTest.starts.length === 2);
             })
@@ -331,9 +330,9 @@ if (CONFIG_ARGUMENT !== undefined) cases.push({
     run: () => withProductionHarness((url) => CTGBrowserTest.init("harness production DIP selector")
         .interact("select one generated non-default value and start the preloaded cabinet", async ({ page }) => {
             await page.waitForFunction(() => document.querySelector<HTMLElement>("#status")?.dataset.state === "ready"
-                && document.querySelectorAll(".dip-select").length > 0);
+                && document.querySelectorAll('[data-selected="true"] .dip-select').length > 0);
             await page.evaluate(() => {
-                const controls = Array.from(document.querySelectorAll<HTMLSelectElement>(".dip-select"));
+                const controls = Array.from(document.querySelectorAll<HTMLSelectElement>('[data-selected="true"] .dip-select'));
                 for (const control of controls) {
                     const setting = Array.from(control.options).find((option) => option.value !== control.dataset.defaultValue);
                     if (setting === undefined) continue;
@@ -351,9 +350,7 @@ if (CONFIG_ARGUMENT !== undefined) cases.push({
             if (autostart) {
                 await page.locator("#status").click();
             } else {
-                await page.locator("#audit-roms").click();
-                await page.waitForFunction(() => document.querySelector<HTMLElement>("#status")?.dataset.state === "ready");
-                await page.locator("#start").click();
+                await page.locator('[data-selected="true"] .game-start').click();
             }
             await page.waitForFunction(() => document.querySelector<HTMLElement>("#status")?.dataset.state === "running"
                 && (window as unknown as { __arcadeHarnessLastStartConfig?: unknown }).__arcadeHarnessLastStartConfig !== undefined,
@@ -367,7 +364,7 @@ if (CONFIG_ARGUMENT !== undefined) cases.push({
             const selected = browser.__arcadeHarnessProductionSelector;
             const sent = browser.__arcadeHarnessLastStartConfig?.dipswitches;
             return {
-                selectorsVisible: document.querySelector<HTMLElement>("#machine-selectors")?.hidden === false,
+                selectorsVisible: document.querySelector('[data-selected="true"] .machine-selectors') !== null,
                 nonDefaultChosen: selected !== undefined,
                 running: document.querySelector<HTMLElement>("#status")?.dataset.state === "running",
                 reachedSession: selected !== undefined && sent?.[selected.switchName] === selected.settingName,

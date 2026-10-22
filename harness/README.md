@@ -21,10 +21,14 @@ npm run harness -- --preload res/preload.json
 Open the printed URL. An autostart config waits for one click anywhere before it
 starts, so that click can also serve as the browser audio gesture.
 
-Without a preload, choose a family and machine, then pick or drop one or more zip
-files. The page shows each basename and size before copying anything. **Confirm
-and store** puts those files into `ArcadeRomStore` in this browser; the audit then
-runs against their bare basenames before Start is enabled. Store entries can be
+Without a preload, drop or choose zip files anywhere on the page. Each zip is
+identified by its basename against the machine lists of every served family
+build (`?family=neogeo`, repeatable or comma-separated, limits that index to the
+builds named), and a card shows the game's title, its family build and every
+companion zip it still needs by name. **Store and check** on a card, or **Store
+all and check**, puts those files into `ArcadeRomStore` in this browser and runs
+the audit at once; an ok card gets its own **Start**. Game settings and the
+system version, where a game has them, fold out on the card. Saved files can be
 removed individually or cleared together. Clearing the ROM store does not clear
 save data, and clearing saves does not touch the ROM store.
 
