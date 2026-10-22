@@ -45,6 +45,11 @@ Status values: `todo`, `ready` (brief written, can be started),
 | M22 Coin hold length on the Atari vector board | not yet cut | todo: the acceptance test's 120 ms keyboard coin did not register on the 41 Hz vector title while the 200 ms pad coin did; find the board's coin debounce and either lengthen the test's hold or document a minimum press |
 | M20 Audio queue depth under load | not yet cut | todo: the 20 ms dry-restart lead gives zero dropouts on an idle desktop but 35 dropouts in 20 s with every core busy (measured 2026-10-21); a deeper lead needs the 120 ms cap to exclude scheduled lead, or it drops frames instead. The pinned-queue bug behind the sustained garble is fixed (see 2026-10-21 log); what remains is the one-off gap plus trim that each stall still costs |
 | M17 Deferred families | not yet cut | todo: namco-s1, namco-s2, taito-classic F4–F6 once a lawful set exists (§4.6) |
+| M24 Retro desktop design system | W21 | todo: theme tokens and component kit from the mockups; see `docs/ui-roadmap.md` |
+| M25 Desktop library shell | W22 | todo: main screen on the existing library flow; favorites, recent, search, status bar |
+| M26 Dialogs (Import, Settings, Controls) | W23 | todo: Controls needs the keyboard half of M10 |
+| M27 Game metadata (year, manufacturer) | W24 | todo: additive `romsets/` fields from `-listxml` |
+| M28 Touch and small screens | W25 | todo: `TouchSource`, phone and tablet layouts; brings the mobile gates of M10 |
 | M18 Six-button CPS-2 acceptance | not yet cut | todo: keyboard binds P1 buttons 1–6 and `GamepadSource` forwards six action buttons, so such titles are expected to play; the measured §14.1 flow-4 run awaits a lawful six-button parent set (deferred 2026-10-21) |
 
 ## Work packages
@@ -88,6 +93,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 
 ## Log
 
+- 2026-10-22 — UI roadmap drafted from the retro desktop-OS mockups (`docs/ui-roadmap.md`): M24–M28, W21–W25, all post-1.0; open decisions are the menu-versus-buttons split and whether the shell replaces the harness.
 - 2026-10-22 — Post-W20 browser gate on `69bcfa8`: Neo Geo preload plus twelve family configs, 58 passed, 23 skipped by design, one failure that is the open M22 item (the 41 Hz vector title's keyboard coin at the test's 120 ms hold); rerun with the family's non-vector title: 27 passed, 0 failed. Check clean, spec 523/523. Metadata for all fifteen families carries `roms[].region`.
 - 2026-10-22 — W20 merged: `RomSetAudit` strictness (`strict` default, `mame` tolerates PLD-region defects as warnings; pinned CPS-1 tags them `aboardplds`/`bboardplds`/`cboardplds`, so the policy keys on the `plds` suffix), `roms[].region` in metadata, `ArcadeGameConfig.auditStrictness`, harness "File check" setting, `arcade-audit-roms --strictness`. Integrator: exports, spec §9/§10.5/§10.6/§11, metadata regenerated for fifteen families. Follow-up noted: the audit accepts a parent-assigned file only from the parent archive while MAME searches the game's zip first (merged clone zips), and entry names must be flat.
 - 2026-10-22 — Release gate re-run on fifteen families: fresh rebuild reproduced every build id, check clean, 512 spec cases, browser gate 61/0 across thirteen family titles. **M21 closed.** M9 awaits the version-bump commit.
