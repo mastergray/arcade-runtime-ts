@@ -45,6 +45,18 @@ const FAMILY_TARGETS: readonly FamilyTarget[] = [
         expectedMachines: 35,
     },
     {
+        id: "konami-16",
+        sources: [
+            "src/mame/drivers/tmnt.c",
+            "src/mame/drivers/simpsons.c",
+            "src/mame/drivers/xmen.c",
+            "src/mame/drivers/gijoe.c",
+            "src/mame/drivers/mystwarr.c",
+            "src/mame/drivers/spy.c",
+        ],
+        expectedMachines: 98,
+    },
+    {
         id: "neogeo",
         sources: ["src/mame/drivers/neogeo.c", "src/mame/drivers/neogeo_noslot.c"],
         expectedMachines: 256,
