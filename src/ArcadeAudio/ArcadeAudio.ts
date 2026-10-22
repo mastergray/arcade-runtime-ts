@@ -49,6 +49,7 @@ export default class ArcadeAudio {
     /* Static Fields */
     static readonly GESTURE_EVENTS: ReadonlyArray<string> = ["pointerdown", "keydown", "touchend"];   // Events that count as a user gesture
     static readonly MAX_QUEUE_MS: FiniteNumber = 120;             // Six normal P10 chunks; older samples drop beyond it
+    static readonly TRIM_QUEUE_MS: FiniteNumber = 60;             // Depth an overflow trims back to, so one overload cannot pin the queue at the cap
     static readonly MIN_CHUNK_MS: FiniteNumber = 16;              // Smallest pending duration scheduled as one buffer
     static readonly LEAD_SECONDS = 0.02;                          // Lead when the schedule has run dry, retained from DosAudio
 
@@ -63,6 +64,7 @@ export default class ArcadeAudio {
     private _scheduled: ScheduledChunk[] = [];                     // Started sources with some audio not yet played
     private _droppedSamples = 0;                                   // Interleaved sample values dropped by the cap
     private _nextStartTime = 0;                                    // Audio-clock time immediately after the last source
+    private _restartTrimmed = false;                               // Whether the next flush restarts trimmed audio at the clock with no lead
     private _armed: Unsubscribe | null = null;                     // Gesture-listener remover, or null
     private _muted = false;                                        // Whether gain is zero
     private _destroyed = false;                                    // Whether destroy() ran
@@ -202,7 +204,7 @@ export default class ArcadeAudio {
     private enqueue(sound: SoundEvent): void {
         if (this._destroyed || !isSoundEvent(sound) || sound.frames === 0) return;
         const [left, right] = deinterleaveStereo(sound.samples);
-        const decision = audioQueueCapDecision(this.queuedMs, sound.frames, this._session.sampleRate, ArcadeAudio.MAX_QUEUE_MS);
+        const decision = audioQueueCapDecision(this.queuedMs, sound.frames, this._session.sampleRate, ArcadeAudio.MAX_QUEUE_MS, ArcadeAudio.TRIM_QUEUE_MS);
         if (decision.dropQueuedFrames > 0) this.dropQueuedFrames(decision.dropQueuedFrames);
         const droppedFrames = decision.dropQueuedFrames + decision.dropIncomingFrames;
         this._droppedSamples += droppedFrames * 2;
@@ -219,6 +221,8 @@ export default class ArcadeAudio {
 
     // PRIVATE :: VOID -> VOID
     // Schedules all pending frames as one stereo buffer once MIN_CHUNK_MS is ready and the context is running.
+    // NOTE: Audio rebuilt by a cap trim restarts at the clock itself; a lead there would delay playback by the lead on
+    // every overflow, and with the lead matching the frame period nothing would ever play (the queue stays pinned).
     private flush(): void {
         if (this._destroyed || this._context.state !== "running") return;
         const rate = this._session.sampleRate;
@@ -243,7 +247,8 @@ export default class ArcadeAudio {
             source.buffer = buffer;
             source.connect(this._gain);
             const now = this._context.currentTime;
-            const startTime = this._nextStartTime > now ? this._nextStartTime : now + ArcadeAudio.LEAD_SECONDS;
+            const lead = this._restartTrimmed ? 0 : ArcadeAudio.LEAD_SECONDS;
+            const startTime = this._nextStartTime > now ? this._nextStartTime : now + lead;
             scheduled = { left, right, source, frames: buffer.length, sampleRate: buffer.sampleRate, startTime };
             source.onended = () => { if (scheduled !== null) this.removeScheduled(scheduled); };
             this._scheduled.push(scheduled);
@@ -260,12 +265,14 @@ export default class ArcadeAudio {
 
         this._pending = [];
         this._pendingFrames = 0;
+        this._restartTrimmed = false;
     }
 
     // PRIVATE :: NUMBER -> VOID
     // Rebuilds all unplayed scheduled and pending data after removing exactly count oldest stereo frames.
     private dropQueuedFrames(count: number): void {
         const now = this._context.currentTime;
+        this._restartTrimmed = true;
         const chunks: StereoChunk[] = [];
         for (const scheduled of this._scheduled) {
             const remaining = ArcadeAudio.remainingFrames(scheduled, now);

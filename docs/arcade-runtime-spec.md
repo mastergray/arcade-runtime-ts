@@ -1003,7 +1003,13 @@ buffer playback, the latency cap and mute. Differences:
   session rate and Web Audio converts; queue accounting uses buffer
   duration, never callback arrival time (P10: the 50 Hz mixer cadence
   crosses the screen cadence).
-- `MAX_QUEUE_MS` 120, `MIN_CHUNK_MS` 16.
+- `MAX_QUEUE_MS` 120, `MIN_CHUNK_MS` 16, `TRIM_QUEUE_MS` 60. An overflow drops
+  the oldest frames down to the trim depth, not merely to the cap, and the
+  rebuilt audio restarts at the audio clock with no lead. `DosAudio` trimmed
+  only to the cap and restarted with the lead: with a lead equal to the frame
+  period nothing played before the next chunk trimmed again, so one stall (a
+  freshly created context whose clock has not started yet) pinned the queue at
+  the cap for the rest of the session.
 
 ---
 

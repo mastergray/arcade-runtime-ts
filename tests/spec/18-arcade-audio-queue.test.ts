@@ -270,14 +270,20 @@ const testFile: TestFile = {
         {
             label: "pure cap and minimum-chunk decisions use duration and drop queued frames before incoming frames",
             run: () => CTGTest.init("pure queue decisions")
-                .assert("decisions match the 120 ms cap and 16 ms threshold", () => ({
+                .assert("decisions match the 120 ms cap, the 60 ms trim and the 16 ms threshold", () => ({
                     queuedFirst: audioQueueCapDecision(100, 1920, 48000, 120),
                     incomingAfterQueue: audioQueueCapDecision(20, 7000, 48000, 120),
+                    exactlyFull: audioQueueCapDecision(100, 960, 48000, 120, 60),
+                    trimmedQueuedFirst: audioQueueCapDecision(100, 1920, 48000, 120, 60),
+                    trimmedIncomingAfterQueue: audioQueueCapDecision(20, 7000, 48000, 120, 60),
                     belowMinimum: shouldScheduleAudio(15.999, 16),
                     atMinimum: shouldScheduleAudio(16, 16),
                 }), P.equals<unknown>({
                     queuedFirst: { dropQueuedFrames: 960, dropIncomingFrames: 0 },
                     incomingAfterQueue: { dropQueuedFrames: 960, dropIncomingFrames: 1240 },
+                    exactlyFull: { dropQueuedFrames: 0, dropIncomingFrames: 0 },
+                    trimmedQueuedFirst: { dropQueuedFrames: 3840, dropIncomingFrames: 0 },
+                    trimmedIncomingAfterQueue: { dropQueuedFrames: 960, dropIncomingFrames: 4120 },
                     belowMinimum: false,
                     atMinimum: true,
                 }))
@@ -414,7 +420,7 @@ const testFile: TestFile = {
                 .start(undefined),
         },
         {
-            label: "a running seven-chunk burst drops the oldest scheduled 20 ms, counts both channel samples, and rebuilds the newest 120 ms",
+            label: "a running seven-chunk burst drops the oldest 80 ms, counts both channel samples, rebuilds the newest 60 ms and restarts it at the clock",
             run: () => CTGTest.init("oldest-first running cap")
                 .stage("emit seven distinguishable P10 chunks without advancing playback", () => {
                     const { session, context, audio } = rig("running", 48000);
@@ -425,17 +431,55 @@ const testFile: TestFile = {
                         droppedSamples: audio.droppedSamples,
                         stoppedOldSources: context.stopCalls,
                         rebuiltFrames: newestBuffer?.length ?? 0,
+                        rebuiltStart: context.startCalls.at(-1),
                         firstRetained: newestBuffer === undefined ? null : [newestBuffer.data[0]?.[0], newestBuffer.data[1]?.[0]],
                         lastRetained: newestBuffer === undefined ? null : [newestBuffer.data[0]?.at(-1), newestBuffer.data[1]?.at(-1)],
                     };
                 })
-                .assert("chunk one is gone and chunks two through seven fill the cap", (state) => state.subject, P.equals<unknown>({
-                    queuedMs: 120,
-                    droppedSamples: 1920,
+                .assert("chunks one to four are gone and chunks five to seven restart at the clock with no lead", (state) => state.subject, P.equals<unknown>({
+                    queuedMs: 60,
+                    droppedSamples: 7680,
                     stoppedOldSources: 6,
-                    rebuiltFrames: 5760,
-                    firstRetained: [2, -2],
+                    rebuiltFrames: 2880,
+                    rebuiltStart: 0,
+                    firstRetained: [5, -5],
                     lastRetained: [7, -7],
+                }))
+                .start(undefined),
+        },
+        {
+            label: "a stalled clock that fills the queue does not pin it: once the clock runs, later chunks append without further stops or leads",
+            run: () => CTGTest.init("cap recovery")
+                .stage("fill the queue on a frozen clock, then advance 20 ms per 50 Hz chunk for a second", () => {
+                    const { session, context, audio } = rig("running", 48000);
+                    for (let value = 1; value <= 7; value++) session.emitSound(stereo(960, value, -value));
+                    const stopsAfterFill = context.stopCalls;
+                    const startsAfterFill = context.startCalls.length;
+                    let maximum = 0;
+                    let contiguous = true;
+                    for (let chunk = 0; chunk < 50; chunk++) {
+                        context.advanceTo((chunk + 1) / 50);
+                        const expectedStart = context.startCalls.at(-1)! + (context.buffers.at(-1)!.length / 48000);
+                        session.emitSound(stereo(960));
+                        if (Math.abs(context.startCalls.at(-1)! - expectedStart) > 1e-9) contiguous = false;
+                        maximum = Math.max(maximum, audio.queuedMs);
+                    }
+                    return {
+                        stopsAfterFill,
+                        laterStops: context.stopCalls - stopsAfterFill,
+                        laterStarts: context.startCalls.length - startsAfterFill,
+                        contiguous,
+                        maximum,
+                        droppedSamples: audio.droppedSamples,
+                    };
+                })
+                .assert("one trim at the fill, then fifty contiguous appends under the cap", (state) => state.subject, P.equals<unknown>({
+                    stopsAfterFill: 6,
+                    laterStops: 0,
+                    laterStarts: 50,
+                    contiguous: true,
+                    maximum: 60,
+                    droppedSamples: 7680,
                 }))
                 .start(undefined),
         },

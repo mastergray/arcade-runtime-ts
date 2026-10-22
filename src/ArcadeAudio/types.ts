@@ -107,12 +107,15 @@ export function deinterleaveStereo(samples: Float32Array): readonly [Float32Arra
     return [left, right];
 }
 
-// FUNCTION :: finiteNumber, NUMBER, finiteNumber, finiteNumber -> audioQueueCapDecision
-// Returns the exact oldest-first frame drops needed to keep existing duration plus an incoming chunk at or below the cap.
-export function audioQueueCapDecision(queuedMs: number, incomingFrames: number, sampleRate: number, maxQueueMs: number): AudioQueueCapDecision {
+// FUNCTION :: finiteNumber, NUMBER, finiteNumber, finiteNumber, finiteNumber? -> audioQueueCapDecision
+// Returns the exact oldest-first frame drops needed once existing duration plus an incoming chunk exceeds the cap.
+// NOTE: An overflow trims down to trimQueueMs (default: the cap) so one overload cannot leave the queue pinned at the cap.
+export function audioQueueCapDecision(queuedMs: number, incomingFrames: number, sampleRate: number, maxQueueMs: number, trimQueueMs: number = maxQueueMs): AudioQueueCapDecision {
     const queuedFrames = Math.max(0, Math.round((queuedMs / 1000) * sampleRate));
     const capacityFrames = Math.max(0, Math.floor((maxQueueMs / 1000) * sampleRate));
-    const excessFrames = Math.max(0, queuedFrames + incomingFrames - capacityFrames);
+    const trimFrames = Math.min(capacityFrames, Math.max(0, Math.floor((trimQueueMs / 1000) * sampleRate)));
+    const overflow = queuedFrames + incomingFrames > capacityFrames;
+    const excessFrames = overflow ? queuedFrames + incomingFrames - trimFrames : 0;
     const dropQueuedFrames = Math.min(queuedFrames, excessFrames);
     return {
         dropQueuedFrames,
