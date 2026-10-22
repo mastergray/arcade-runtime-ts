@@ -3,14 +3,14 @@
 ## Integrator question
 
 Can the integrator rebase this branch, including implementation commits
-`7aeb72e` and `e9eece2`, onto current `main` before review? `main` advanced
-from `ddcd9fb` to `50f1c86` while W8 was in progress, but this managed
+`354adfe` and `33ba4ba`, onto current `main` before review? `main` advanced
+from `c81fb6f` to `143359c` while W8 was in progress, but this managed
 worktree exposes the shared `.git` worktree directory as read-only for
 history rewrites. A clean `git rebase main` is rejected when Git tries to
 create `index.lock`; `--autostash` cannot create the shared stash ref.
 
 The W8 paths do not overlap the W9 files or the later brief/lockfile commit.
-I tested the exact W8 files over a fresh archive of `50f1c86`:
+I tested the exact W8 files over a fresh archive of `143359c`:
 
 - `npm run check` passed.
 - `npm test` passed: 404/404 cases.

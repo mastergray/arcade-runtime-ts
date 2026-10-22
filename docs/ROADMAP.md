@@ -27,7 +27,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 | M7 ROM supply and cabinet | W2 (romsets half), W9 (ROM store half), W10, W12, W13b | closed (picker path with synthetic archives and the real cabinet; preload path with the real build; audit agrees with MAME on every lawful local set) | 2026-10-20 |
 | M8 BIOS and DIP switches | W16 | done | 2026-10-21: `35-dip-switches.test.ts` against the namco-classic build; a BIOS option is exercised by the Neo Geo acceptance (`-bios`). |
 | M21 Family wave 2 | W19a–g | closed 2026-10-22: all seven merged 2026-10-21; F4–F6 and acceptance measured by the integrator (agents' sandbox cannot run Chromium): `sega-16`, `midway-mcr`, `konami-16`, `atari-classic`, `misc-16`, `taito-f3` new; `irem-m72` gains M92 and `taito-16` gains Z System. Decided 2026-10-21 to land before the 1.0.0 commit | |
-| M9 v1.0.0 release gate | W17 | final verification run passed again 2026-10-22 on `782c3ed` after family wave 2 | Fresh rebuild of fifteen families (build ids reproduced), `npm run check`, 512 spec cases, browser gate with one title from each of thirteen families (61 passed, 0 failed, 23 skipped by design); the §14.1 walkthrough was done by the release owner on 2026-10-21/22 (audio fix, heap fix and library view all exercised). Closing needs only the version-bump commit. |
+| M9 v1.0.0 release gate | W17 | final verification run passed again 2026-10-22 on `b0eb45d` after family wave 2 | Fresh rebuild of fifteen families (build ids reproduced), `npm run check`, 512 spec cases, browser gate with one title from each of thirteen families (61 passed, 0 failed, 23 skipped by design); the §14.1 walkthrough was done by the release owner on 2026-10-21/22 (audio fix, heap fix and library view all exercised). Closing needs only the version-bump commit. |
 
 ## Post-1.0
 
@@ -50,39 +50,39 @@ Status values: `todo`, `ready` (brief written, can be started),
 
 | ID | Package | Lane | Milestone | Status | Branch | Merged |
 | -- | ------- | :--: | --------- | ------ | ------ | ------ |
-| W0 | Contracts and doubles | T | M1 | merged | (integrator, on `main`) | 2026-10-20 `327a7a5` |
-| W1 | Patch relocation and family target pairs | N | M1 | merged | `wp/w1-targets` | 2026-10-20 (merge of `7f99a0d`) |
+| W0 | Contracts and doubles | T | M1 | merged | (integrator, on `main`) | 2026-10-20 `1e02e22` |
+| W1 | Patch relocation and family target pairs | N | M1 | merged | `wp/w1-targets` | 2026-10-20 (merge of `227e397`) |
 | W2 | Build pipeline and romsets extraction | N | M1, M7 | merged | `wp/w2-build-pipeline` | 2026-10-20 |
-| W3 | Production web bridge | N | M1 | merged | `wp/w3-bridge` | 2026-10-20 (merge of `c4d6c12`) |
-| W4 | `MameEmulatorAdapter` | N | M1, M6 | merged | `wp/w4-mame-adapter` | 2026-10-20 (merge of `f1c3653`) |
-| W5 | `ArcadeDisplay` | T | M1 | merged | `wp/w5-arcade-display` | 2026-10-20 `5f8ae09` |
-| W6 | `ArcadeAudio` | T | M3 | merged | `wp/w6-arcade-audio` | 2026-10-20 (merge of `d6ce5f4`) |
-| W7 | `ArcadeInput`, `KeyboardSource`, controller config | T | M4 | merged | `wp/w7-arcade-input` | 2026-10-20 (merge of `6cecda2`) |
-| W8 | `GamepadSource` | T | M5 | merged | `wp/w8-gamepad-source` | 2026-10-20 (merge of `e0d67ff`) |
-| W9 | `ArcadeStorage`, `ArcadeRomStore` | T | M6, M7 | merged | `wp/w9-storage` | 2026-10-20 (merge of `aefb07c`) |
-| W10 | `RomSetAudit`, `arcade-audit-roms` | T | M7 | merged | `wp/w10-romset-audit` | 2026-10-20 (merge of `5859c88`) |
-| W11 | `ArcadePlayer` | T | M1–M4 | merged | `wp/w11-arcade-player` | 2026-10-20 (merge of `aa9c9b0`) |
-| W12 | `ArcadeCabinet` | T | M7 | merged | `wp/w12-arcade-cabinet` | 2026-10-20 (merge of `07caa9a`) |
-| W13a | Harness: minimal preload page | T | M1 | merged | `wp/w13a-harness-preload` | 2026-10-20 (merge of `2dab339`) |
-| W13b | Harness: cabinet page | T | M7 | merged | `wp/w13b-harness-cabinet` | 2026-10-20 (merge of `0fbda6a`) |
-| W14a | Family `cps2` | N | M2 | merged (F4–F6 pending private set) | `wp/w14a-cps2` | 2026-10-20 (merge of `d0c0c05`) |
-| W14b | Family `namco-classic` | N | M2 | merged (F4–F6 pending private set) | `wp/w14b-namco-classic` | 2026-10-20 (merge of `5653b31`) |
-| W14c | Family `namco-s1` | N | M2 | merged (F4–F6 pending private set) | `wp/w14c-namco-s1` | 2026-10-20 (merge of `a2c9046`) |
+| W3 | Production web bridge | N | M1 | merged | `wp/w3-bridge` | 2026-10-20 (merge of `4a9904c`) |
+| W4 | `MameEmulatorAdapter` | N | M1, M6 | merged | `wp/w4-mame-adapter` | 2026-10-20 (merge of `e547d84`) |
+| W5 | `ArcadeDisplay` | T | M1 | merged | `wp/w5-arcade-display` | 2026-10-20 `989da2c` |
+| W6 | `ArcadeAudio` | T | M3 | merged | `wp/w6-arcade-audio` | 2026-10-20 (merge of `02b597c`) |
+| W7 | `ArcadeInput`, `KeyboardSource`, controller config | T | M4 | merged | `wp/w7-arcade-input` | 2026-10-20 (merge of `09832e1`) |
+| W8 | `GamepadSource` | T | M5 | merged | `wp/w8-gamepad-source` | 2026-10-20 (merge of `da43081`) |
+| W9 | `ArcadeStorage`, `ArcadeRomStore` | T | M6, M7 | merged | `wp/w9-storage` | 2026-10-20 (merge of `490a713`) |
+| W10 | `RomSetAudit`, `arcade-audit-roms` | T | M7 | merged | `wp/w10-romset-audit` | 2026-10-20 (merge of `9f3b09e`) |
+| W11 | `ArcadePlayer` | T | M1–M4 | merged | `wp/w11-arcade-player` | 2026-10-20 (merge of `efcf036`) |
+| W12 | `ArcadeCabinet` | T | M7 | merged | `wp/w12-arcade-cabinet` | 2026-10-20 (merge of `dabf834`) |
+| W13a | Harness: minimal preload page | T | M1 | merged | `wp/w13a-harness-preload` | 2026-10-20 (merge of `ead6ebf`) |
+| W13b | Harness: cabinet page | T | M7 | merged | `wp/w13b-harness-cabinet` | 2026-10-20 (merge of `d7f9ec1`) |
+| W14a | Family `cps2` | N | M2 | merged (F4–F6 pending private set) | `wp/w14a-cps2` | 2026-10-20 (merge of `f036417`) |
+| W14b | Family `namco-classic` | N | M2 | merged (F4–F6 pending private set) | `wp/w14b-namco-classic` | 2026-10-20 (merge of `080e147`) |
+| W14c | Family `namco-s1` | N | M2 | merged (F4–F6 pending private set) | `wp/w14c-namco-s1` | 2026-10-20 (merge of `b341b25`) |
 | W14d | Family `namco-s2` | N | M2 | in progress | `wp/w14d-namco-s2` | |
-| W14e | Family `taito-classic` | N | M2 | merged (F4–F6 pending private set) | `wp/w14e-taito-classic` | 2026-10-20 (merge of `79aea64`) |
+| W14e | Family `taito-classic` | N | M2 | merged (F4–F6 pending private set) | `wp/w14e-taito-classic` | 2026-10-20 (merge of `826f3b5`) |
 | W14f | Family `taito-16` | N | M2 | ready | `wp/w14f-taito-16` | |
-| W15 | Saves bridge (memcard, EEPROM, F8) | N | M6 | merged (CPS-2 EEPROM runtime check done 2026-10-21) | `wp/w15-saves-bridge` | 2026-10-20 (merge of `6f0a252`) |
-| W13c | Harness: BIOS and DIP selectors | T | M8 | merged | `wp/w13c-harness-selectors` | `6cf1dea` |
-| W16 | BIOS and DIP switches | N+T | M8 | merged | `wp/w16-bios-dip` | `d5446ad` |
+| W15 | Saves bridge (memcard, EEPROM, F8) | N | M6 | merged (CPS-2 EEPROM runtime check done 2026-10-21) | `wp/w15-saves-bridge` | 2026-10-20 (merge of `029da0f`) |
+| W13c | Harness: BIOS and DIP selectors | T | M8 | merged | `wp/w13c-harness-selectors` | `a70ef37` |
+| W16 | BIOS and DIP switches | N+T | M8 | merged | `wp/w16-bios-dip` | `ae888a4` |
 | W17 | Release gate | T | M9 | merged | `wp/w17-release-gate` | 2026-10-21 |
-| W18 | Harness library view | T | M19 | merged | `wp/w18-harness-library` | 2026-10-21 (merge `04015f0`) |
-| W19a | `sega-16` family | N | M21 | merged | `wp/w19a-sega-16` | 2026-10-21 (merge `694b180`) |
-| W19b | `midway-mcr` family | N | M21 | merged | `wp/w19b-midway-mcr` | 2026-10-21 (merge `bce4b28`) |
-| W19c | `konami-16` family | N | M21 | merged | `wp/w19c-konami-16` | 2026-10-21 (merge `5acdec3`) |
-| W19d | `atari-classic` family | N | M21 | merged | `wp/w19d-atari-classic` | 2026-10-21 (merge `4286ad2`) |
-| W19e | `misc-16` family | N | M21 | merged | `wp/w19e-misc-16` | 2026-10-21 (merge `ec77bb6`) |
-| W19f | `irem-m72` + M92, `taito-16` + Z System | N | M21 | merged | `wp/w19f-irem-taito-ext` | 2026-10-21 (merge `827654c`) |
-| W19g | `taito-f3` family | N | M21 | merged | `wp/w19g-taito-f3` | 2026-10-21 (merge `abf623a`) |
+| W18 | Harness library view | T | M19 | merged | `wp/w18-harness-library` | 2026-10-21 (merge `da62007`) |
+| W19a | `sega-16` family | N | M21 | merged | `wp/w19a-sega-16` | 2026-10-21 (merge `0413251`) |
+| W19b | `midway-mcr` family | N | M21 | merged | `wp/w19b-midway-mcr` | 2026-10-21 (merge `2b94c27`) |
+| W19c | `konami-16` family | N | M21 | merged | `wp/w19c-konami-16` | 2026-10-21 (merge `8d41e90`) |
+| W19d | `atari-classic` family | N | M21 | merged | `wp/w19d-atari-classic` | 2026-10-21 (merge `2727d73`) |
+| W19e | `misc-16` family | N | M21 | merged | `wp/w19e-misc-16` | 2026-10-21 (merge `19bfe58`) |
+| W19f | `irem-m72` + M92, `taito-16` + Z System | N | M21 | merged | `wp/w19f-irem-taito-ext` | 2026-10-21 (merge `ec72f94`) |
+| W19g | `taito-f3` family | N | M21 | merged | `wp/w19g-taito-f3` | 2026-10-21 (merge `8d6711e`) |
 
 ## Log
 
@@ -94,7 +94,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 - 2026-10-21 — Release-owner hand test: audio dropouts on a Neo Geo and a Namco classic title traced to the browser gate running concurrently on the same machine; audio clean once idle (probe: 0 gaps idle, 35 gaps fully loaded, 1 gap half loaded). M20 opened. Cabinet menu now lists the keyboard bindings.
 - 2026-10-21 — Hand test: three CPS-1, CPS-2 and Neo Geo titles garbled for the whole session on their first start in a tab, clean after reload. Headless library-flow probe reproduced it: every scheduled buffer on the first run was 120 ms (the cap), 20 ms after reload. Cause: `ArcadeAudio` trimmed an overflow only to the cap and restarted the rebuilt audio with the 20 ms lead; with the lead equal to the frame period nothing played before the next chunk overflowed again, so one stall (a freshly created context whose clock had not started, or a catch-up burst) pinned the queue for the rest of the session. Fix: an overflow trims to `TRIM_QUEUE_MS` 60 and restarts at the clock with no lead; spec §8 and tests 18 updated (new "cap recovery" case). Probe after the fix: a CPS-2 title, a Neo Geo title and `galaga.c` first runs schedule 20 ms buffers with one trim near start. This was also the persistence mechanism behind the earlier "awful" audio under load.
 - 2026-10-21 — W18 merged: harness is a drop-first library (zip basename → family and title from served metadata, per-card audit verdict and Start, folded settings, `?family=` limit). Integrator follow-up folded selectors and fixed companion wording. §11 and §11.1 amended.
-- 2026-10-21 — **Final verification run** on `d09f540`: fresh nine-family rebuild; check and spec green; browser gate green with the Neo Geo preload and five family configs (F4 344–1173 ms, F5 worst 0.56 %, F6 0.9999–1.0002, audio peak 57–77 ms) and with the Namco classic DIP preload. Harness gained `--page` so a device-capability page is served at `/device-test` for other LAN devices. Six-button CPS-2 acceptance deferred to M18. Desktop walkthrough handed to the release owner.
+- 2026-10-21 — **Final verification run** on `e0f709b`: fresh nine-family rebuild; check and spec green; browser gate green with the Neo Geo preload and five family configs (F4 344–1173 ms, F5 worst 0.56 %, F6 0.9999–1.0002, audio peak 57–77 ms) and with the Namco classic DIP preload. Harness gained `--page` so a device-capability page is served at `/device-test` for other LAN devices. Six-button CPS-2 acceptance deferred to M18. Desktop walkthrough handed to the release owner.
 Newest first. One line per merge, milestone close, or contract amendment.
 
 - 2026-10-20 — **M3, M4, M5 closed** by `36-input-audio-acceptance.test.ts` on the Neo Geo and Namco sets (audio peak 68–71 ms under the 120 ms cap over 60 s; keyboard and two-pad flows verified; unplug release verified).
@@ -130,8 +130,8 @@ Newest first. One line per merge, milestone close, or contract amendment.
 - 2026-10-20 — W7 merged: `ArcadeInput`, `KeyboardSource`, `DEFAULT_KEYBOARD_MAP`, internal controller-config generator. W6 started.
 - 2026-10-20 — W1 merged: probe patches relocated, neogeo/cps1/irem-m72 target pairs with complete lists, family-pair build mode; integrator follow-up repointed inherited tests and moved probe pre-JS. W3 started.
 - 2026-10-20 — §4.3.1 contract amendment: JavaScript-facing module shape pinned for W3 and W4; W3 brief written.
-- 2026-10-20 — W5 merged: `ArcadeDisplay` (`5f8ae09`); integrator follow-up added root exports and ImageData reuse.
+- 2026-10-20 — W5 merged: `ArcadeDisplay` (`989da2c`); integrator follow-up added root exports and ImageData reuse.
 - 2026-10-20 — W1 and W7 started on their branches by Codex agents.
-- 2026-10-20 — §4.4 contract amendment: controller-config token table pinned for W3 and W7 (`153a821`).
-- 2026-10-20 — W0 merged: shared contracts, `ArcadeRuntimeError`, test doubles (`327a7a5`).
+- 2026-10-20 — §4.4 contract amendment: controller-config token table pinned for W3 and W7 (`c2fde2c`).
+- 2026-10-20 — W0 merged: shared contracts, `ArcadeRuntimeError`, test doubles (`1e02e22`).
 - 2026-10-20 — Fork from `mame-game-runtime-ts`; M0 inherited closed.

@@ -2,11 +2,11 @@
 
 ## Integrator action required
 
-`main` advanced to `ddd7b8b` after this worktree was cut. A normal
+`main` advanced to `43d9101` after this worktree was cut. A normal
 `git rebase main` is conflict-free (verified in an isolated clone), but this
 managed worktree exposes the shared worktree Git metadata read-only: Git cannot
 create `index.lock`, `HEAD.lock`, ref locks or new object-store temporary files.
-The package branch therefore remains based on `01d49dd`.
+The package branch therefore remains based on `d25e044`.
 
 Can the integrator run `git rebase main` for `wp/w7-arcade-input` in an
 environment where the shared `.git/worktrees/arcade-runtime-ts.w7` metadata is
@@ -91,7 +91,7 @@ npm test             pass (270/270)
 npm run test:browser pass (3 W7 + 7 W5 cases; 22 unrelated probe skips)
 ```
 
-On the conflict-free isolated rebase onto `main` at `ddd7b8b`:
+On the conflict-free isolated rebase onto `main` at `43d9101`:
 
 ```text
 npm run check pass

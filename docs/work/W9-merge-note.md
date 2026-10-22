@@ -3,14 +3,14 @@
 ## Integrator question
 
 Can the integrator rebase this branch, including implementation commits
-`a6c1140` and `4438ac5`, onto current `main` before review? `main` advanced
-from `46112de` to `ddcd9fb` while W9 was in progress, but this managed
+`371e46a` and `97a4103`, onto current `main` before review? `main` advanced
+from `fa6d7ca` to `c81fb6f` while W9 was in progress, but this managed
 worktree exposes `.git` as read-only for history rewrites. Both
 `git rebase --autostash main` and a rebase with a temporary index were
 rejected when Git tried to write `ORIG_HEAD`/`HEAD`.
 
 The W9 paths do not overlap the five new W6 commits. I tested their exact
-combined tree by applying the `46112de..ddcd9fb` file delta over W9, then
+combined tree by applying the `fa6d7ca..c81fb6f` file delta over W9, then
 reversing it after the run:
 
 - `npm run check` passed.
