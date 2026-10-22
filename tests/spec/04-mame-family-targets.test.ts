@@ -41,8 +41,8 @@ const FAMILY_TARGETS: readonly FamilyTarget[] = [
     { id: "cps2", sources: ["src/mame/drivers/cps2.c"], expectedMachines: 293 },
     {
         id: "irem-m72",
-        sources: ["src/mame/drivers/m72.c"],
-        expectedMachines: 35,
+        sources: ["src/mame/drivers/m72.c", "src/mame/drivers/m92.c"],
+        expectedMachines: 71,
     },
     {
         id: "midway-mcr",
@@ -138,8 +138,9 @@ const FAMILY_TARGETS: readonly FamilyTarget[] = [
             "src/mame/drivers/taito_b.c",
             "src/mame/drivers/taito_f2.c",
             "src/mame/drivers/taito_h.c",
+            "src/mame/drivers/taito_z.c",
         ],
-        expectedMachines: 189,
+        expectedMachines: 223,
     },
 ] as const;
 

@@ -72,6 +72,8 @@ _G["createProjects_mame_taito-16"] = function(_target, _subtarget)
 		MAME_DIR .. "src/mame/video/taito_f2.c",
 		MAME_DIR .. "src/mame/drivers/taito_h.c",
 		MAME_DIR .. "src/mame/video/taito_h.c",
+		MAME_DIR .. "src/mame/drivers/taito_z.c",
+		MAME_DIR .. "src/mame/video/taito_z.c",
 
 		MAME_DIR .. "src/mame/machine/cchip.c",
 		MAME_DIR .. "src/mame/audio/taitosnd.c",

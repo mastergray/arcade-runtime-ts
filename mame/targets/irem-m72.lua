@@ -13,6 +13,10 @@ CPUS["MCS51"] = true
 
 SOUNDS["DAC"] = true
 SOUNDS["YM2151"] = true
+SOUNDS["IREMGA20"] = true
+SOUNDS["OKIM6295"] = true
+
+VIDEOS["BUFSPRITE"] = true
 
 -- The release-era generated project always archives the bus library, and its
 -- pinned llvm-ar cannot create an empty archive. Keep one harmless bus core.
@@ -44,6 +48,8 @@ _G["createProjects_mame_irem-m72"] = function(_target, _subtarget)
 		MAME_DIR .. "src/mame/audio/m72.c",
 		MAME_DIR .. "src/mame/video/m72.c",
 		MAME_DIR .. "src/mame/machine/irem_cpu.c",
+		MAME_DIR .. "src/mame/drivers/m92.c",
+		MAME_DIR .. "src/mame/video/m92.c",
 	}
 end
 
