@@ -74,7 +74,12 @@ interface GameCard {
 interface LastStartConfig {
     readonly bios?: string;
     readonly dipswitches: Readonly<Record<string, string>>;
+    readonly auditStrictness: AuditStrictness;
 }
+
+// TYPE :: "strict" | "mame"
+// Harness-wide file-check choice persisted independently of any game card.
+type AuditStrictness = "strict" | "mame";
 
 // INTERFACE :: optional public adapter supplied by a browser acceptance case
 // Production usage leaves this absent and resolves the card's family build normally.
@@ -106,6 +111,7 @@ const element = <T extends Element>(selector: string): T => {
 const picker = element<HTMLInputElement>("#rom-picker");
 const dropZone = element<HTMLElement>("#drop-zone");
 const storeAllButton = element<HTMLButtonElement>("#store-all");
+const fileCheckSelect = element<HTMLSelectElement>("#file-check");
 const librarySummary = element<HTMLParagraphElement>("#library-summary");
 const buildWarnings = element<HTMLUListElement>("#build-warnings");
 const preloadNote = element<HTMLParagraphElement>("#preload-note");
@@ -132,6 +138,7 @@ const keyboardEnabledInput = element<HTMLInputElement>("#keyboard-enabled");
 const gamepadsEnabledInput = element<HTMLInputElement>("#gamepads-enabled");
 const gamepadsLine = element<HTMLParagraphElement>("#gamepads");
 const keyboardBindings = element<HTMLElement>("#keyboard-bindings");
+const AUDIT_STRICTNESS_KEY = "arcade-runtime:harness:audit-strictness";
 
 // HELPER :: STRING -> STRING
 // Turns a KeyboardEvent.code into the label printed on the key.
@@ -196,6 +203,11 @@ let menuPromise: Promise<void> | null = null;                     // Serializes 
 let gamepadFrame: number | null = null;                           // Corner-menu connection display polling
 let discoveryRequest = 0;                                        // Rejects superseded asynchronous metadata discovery
 let buildsLoaded = 0;                                            // Successfully indexed family count
+let auditStrictness: AuditStrictness = (() => {
+    try { return localStorage.getItem(AUDIT_STRICTNESS_KEY) === "mame" ? "mame" : "strict"; }
+    catch { return "strict"; }
+})();                                                             // Strict by default; storage denial does not block the harness
+fileCheckSelect.value = auditStrictness;
 
 /**
  *
@@ -308,6 +320,7 @@ const renderDetailedCheck = (report: RomSetReport, card: GameCard): void => {
         "",
         ...report.archives.map((archive) => `${archive.present ? "present" : "missing"}  ${archive.role}  ${archive.name}`),
         ...(report.files.length === 0 ? [] : ["", ...report.files.map((file) => `${file.status}  ${file.archive}/${file.name}`)]),
+        ...(report.warnings.length === 0 ? [] : ["", "WARNINGS", ...report.warnings.map((file) => `${file.status}  ${file.archive}/${file.name}`)]),
         ...(report.problems.length === 0 ? [] : ["", ...report.problems.map((problem) => `${problem.archive}: ${problem.reason}`)]),
     ];
     auditPanel.textContent = lines.join("\n");
@@ -328,6 +341,8 @@ const archiveLine = (card: GameCard, archive: RomSetMetadata["archives"][number]
     if (problem !== undefined) return { message: `Could not read ${archive.name}: ${problem.reason}`, state: "bad" };
     const row = card.report.archives.find((entry) => archiveKey(entry.name) === key);
     const files = card.report.files.filter((file) => archiveKey(file.archive) === key);
+    const warnings = card.report.warnings.filter((file) => archiveKey(file.archive) === key);
+    if (card.report.status === "ok" && warnings.length > 0) return { message: `${archive.name} is accepted with ${warnings.length} ignored file difference.`, state: "ok" };
     const missing = files.find((file) => file.status === "missing");
     if (row?.present === false && missing !== undefined) return { message: `Needs ${archive.name}.`, state: "missing" };
     const wrong = files.find((file) => file.status === "wrong-crc" || file.status === "wrong-size");
@@ -346,7 +361,9 @@ const cardVerdict = (card: GameCard): string => {
     if (card.checkState === "loading") return "Checking these files…";
     if (card.checkState === "failed") return card.checkError ?? "These files could not be checked.";
     if (card.report === null) return "Add the files shown above, then store and check them.";
-    if (card.report.status === "ok") return "Ready to play.";
+    if (card.report.status === "ok") return card.report.warnings.length === 0
+        ? "Ready to play."
+        : `Ready to play (${card.report.warnings.length} files differ from 0.161; MAME ignores them)`;
     const report = card.report;
     const missingArchive = report.archives.find((archive) => !archive.present
         && (archive.required || report.files.some((file) => file.status === "missing" && archiveKey(file.archive) === archiveKey(archive.name))));
@@ -765,7 +782,7 @@ const checkCard = async (card: GameCard, announce: boolean): Promise<void> => {
         const report = RomSetAudit.audit(
             card.metadata,
             await romFilesFor(card),
-            card.bios === "" ? {} : { bios: card.bios },
+            { ...(card.bios === "" ? {} : { bios: card.bios }), strictness: auditStrictness },
         );
         card.report = report;
         card.checkState = "complete";
@@ -775,7 +792,7 @@ const checkCard = async (card: GameCard, announce: boolean): Promise<void> => {
         if (announce) {
             if (isRunningCard(card) && preparedChoice !== choiceSignature(card)) {
                 setStatus("This choice needs a restart before it takes effect.", "restart-required");
-            } else if (report.status === "ok") setStatus(`${card.metadata.description} is ready to play.`, "ready");
+            } else if (report.status === "ok") setStatus(report.warnings.length === 0 ? `${card.metadata.description} is ready to play.` : cardVerdict(card), "ready");
             else if (report.status === "bad") setStatus(cardVerdict(card), "files-bad");
             else setStatus(cardVerdict(card), "files-missing");
         }
@@ -941,6 +958,7 @@ const startCard = async (card: GameCard): Promise<void> => {
                 machine: card.indexed.machine,
                 machineHints: { players: 2 as const, buttons: 6 as const },
                 roms: startSources(card),
+                auditStrictness,
                 ...(bios === "" ? {} : { bios }),
                 dipswitches,
                 display: { scaling: "fit" as const, imageRendering: "pixelated" as const },
@@ -983,6 +1001,7 @@ const startCard = async (card: GameCard): Promise<void> => {
             (globalThis as unknown as HarnessAdapterBoundary).__arcadeHarnessLastStartConfig = {
                 ...(bios === "" ? {} : { bios }),
                 dipswitches: { ...dipswitches },
+                auditStrictness,
             };
             try {
                 await created.player.audio.unlock();
@@ -1179,6 +1198,21 @@ storeAllButton.addEventListener("click", () => {
     const keys = new Set(games.flatMap((card) => pendingForCard(card)));
     const affected = games.filter((card) => pendingForCard(card).some((key) => keys.has(key)));
     void storeArchives(keys, affected);
+});
+fileCheckSelect.addEventListener("change", () => {
+    auditStrictness = fileCheckSelect.value === "mame" ? "mame" : "strict";
+    try { localStorage.setItem(AUDIT_STRICTNESS_KEY, auditStrictness); } catch { /* The live setting still applies when storage is unavailable. */ }
+    void (async () => {
+        setStatus("Rechecking the library with the selected file policy…", "checking");
+        const checkable = visibleCards().filter((card) => card.metadata !== null && pendingForCard(card).length === 0);
+        for (const card of checkable) {
+            card.report = null;
+            card.checkState = "idle";
+            await checkCard(card, false);
+        }
+        const failed = checkable.find((card) => card.report?.status !== "ok");
+        setStatus(failed === undefined ? "The library was rechecked." : cardVerdict(failed), failed === undefined ? "ready" : failed.report?.status === "bad" ? "files-bad" : "files-missing");
+    })();
 });
 clearFilesButton.addEventListener("click", () => { void clearStored(); });
 

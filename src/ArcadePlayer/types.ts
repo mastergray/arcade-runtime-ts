@@ -21,6 +21,7 @@ import type {
     RomSource,                                                     // URL, bytes or picked Blob
     ScalingMode,                                                   // Display scaling choice
 } from "../shared.types.js";
+import type { AuditStrictness } from "../RomSetAudit/types.js";     // Pre-start ROM-set policy
 
 /**
  *
@@ -43,6 +44,7 @@ export interface ArcadeGameConfig {
     readonly changes?: Uint8Array;                                 // Overlay restored on the first start
     readonly bios?: NonEmptyString;                                // Optional MAME BIOS value
     readonly dipswitches?: Readonly<Record<string, string>>;       // Port name to setting name
+    readonly auditStrictness?: AuditStrictness;                    // Exact pinned set by default; optional PLD tolerance in mame mode
     readonly options?: ArcadeOptions;                              // Adapter-specific supported options
     readonly display?: {
         readonly scaling?: ScalingMode;                            // Fit, integer or vertical fill-height
@@ -115,6 +117,7 @@ export function isArcadeGameConfig(value: unknown): value is ArcadeGameConfig {
         || (game.bios !== undefined && !isNonEmptyString(game.bios))
         || (game.dipswitches !== undefined && (typeof game.dipswitches !== "object" || game.dipswitches === null
             || !Object.values(game.dipswitches).every((setting) => typeof setting === "string")))
+        || (game.auditStrictness !== undefined && game.auditStrictness !== "strict" && game.auditStrictness !== "mame")
         || (game.options !== undefined && !isArcadeOptions(game.options))) return false;
     if (game.display === undefined) return true;
     return typeof game.display === "object" && game.display !== null

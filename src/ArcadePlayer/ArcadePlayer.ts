@@ -92,8 +92,10 @@ const isAdapterMetadataSource = (adapter: ArcadeAdapter): adapter is AdapterMeta
 const copyReport = (report: RomSetReport): RomSetReport => ({
     machine: report.machine,
     status: report.status,
+    strictness: report.strictness,
     archives: report.archives.map((archive) => ({ ...archive })),
     files: report.files.map((file) => ({ ...file })),
+    warnings: report.warnings.map((warning) => ({ ...warning })),
     unexpected: report.unexpected.map((file) => ({ ...file })),
     problems: report.problems.map((problem) => ({ ...problem })),
 });
@@ -420,7 +422,10 @@ export default class ArcadePlayer {
         } catch {
             return this.metadataUnavailableReport(roms);
         }
-        return RomSetAudit.audit(metadata, roms, this._game.bios === undefined ? {} : { bios: this._game.bios });
+        return RomSetAudit.audit(metadata, roms, {
+            ...(this._game.bios === undefined ? {} : { bios: this._game.bios }),
+            ...(this._game.auditStrictness === undefined ? {} : { strictness: this._game.auditStrictness }),
+        });
     }
 
     // PRIVATE :: VOID -> PROMISE([romFile])
@@ -455,8 +460,10 @@ export default class ArcadePlayer {
         return {
             machine: this._game.machine,
             status: "ok",
+            strictness: this._game.auditStrictness ?? "strict",
             archives,
             files: [],
+            warnings: [],
             unexpected: [],
             problems: [{ archive: archives[0]!.name, reason: METADATA_UNAVAILABLE }],
         };

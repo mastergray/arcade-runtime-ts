@@ -473,7 +473,7 @@ const testFile: TestFile = {
                 .start(undefined),
         },
         {
-            label: "init restores storage unless changes are explicit, resolves bare ROM basenames and stores picked blobs only after an ok audit",
+            label: "init forwards audit strictness, restores storage, resolves bare ROM basenames and stores picked blobs only after an ok audit",
             run: () => CTGTest.init("ArcadeCabinet init storage and ROM store")
                 .stage("prepare real stores, initialize two cabinets and inspect adapter inputs", () => withAudioContext(async () => {
                     const saves = storage("restore");
@@ -486,7 +486,7 @@ const testFile: TestFile = {
                     const cabinet = await ArcadeCabinet.init({
                         canvas: new CanvasDouble() as unknown as HTMLCanvasElement,
                         container: new ContainerDouble() as unknown as HTMLElement,
-                        game: gameConfig(["cached-fixture.zip", { name: "picked-fixture.zip", blob: picked }, memory]),
+                        game: { ...gameConfig(["cached-fixture.zip", { name: "picked-fixture.zip", blob: picked }, memory]), auditStrictness: "mame" },
                         adapter,
                         fetch: async () => { throw new Error("unexpected fetch"); },
                         storage: saves,
@@ -522,11 +522,11 @@ const testFile: TestFile = {
                         fetch: async () => { throw new Error("unexpected fetch"); },
                         romStore: localRoms,
                     })));
-                    return { beforeAudit, report: report.status, afterAudit, restored, roms, explicitChanges, missing };
+                    return { beforeAudit, report: { status: report.status, strictness: report.strictness }, afterAudit, restored, roms, explicitChanges, missing };
                 }))
                 .assert("the stores affect only the documented sources and overlay precedence", (state) => state.subject, P.equals<unknown>({
                     beforeAudit: ["cached-fixture.zip"],
-                    report: "ok",
+                    report: { status: "ok", strictness: "mame" },
                     afterAudit: ["cached-fixture.zip", "picked-fixture.zip"],
                     restored: [4, 5],
                     roms: [

@@ -36,6 +36,7 @@ interface ListXmlRom {
     readonly bios: string | null;                                  // BIOS option the ROM belongs to
     readonly nodump: boolean;                                      // status="nodump"
     readonly optional: boolean;                                    // optional="yes"
+    readonly region?: string;                                      // Memory-region tag; absent only in synthetic/legacy XML
 }
 
 // INTERFACE :: one <dipswitch> element
@@ -119,6 +120,7 @@ export const parseListXml = (xml: string): ListXmlMachine[] => {
                     bios: a.bios ?? null,
                     nodump: a.status === "nodump",
                     optional: a.optional === "yes",
+                    ...(a.region === undefined ? {} : { region: a.region }),
                 };
             }).filter((rom) => rom.name !== ""),
             samples: [...body.matchAll(SAMPLE_PATTERN)].map((sample) => attributesOf(sample[1]!).name ?? "").filter((name) => name !== ""),
@@ -271,6 +273,7 @@ export const romsetsFromListXml = (family: string, xml: string): Map<string, Rom
                     optional: rom.optional || rom.nodump,
                     bios: rom.bios,
                     device: null,
+                    ...(rom.region === undefined ? {} : { region: rom.region }),
                 })),
                 ...deviceSets.flatMap((device) => device.roms.map((rom) => ({
                     name: rom.name,
@@ -281,6 +284,7 @@ export const romsetsFromListXml = (family: string, xml: string): Map<string, Rom
                     optional: rom.optional || rom.nodump,
                     bios: null,
                     device: device.name,
+                    ...(rom.region === undefined ? {} : { region: rom.region }),
                 }))),
             ],
             samples: sampleArchive === null ? [] : machine.samples.map((name) => ({ name, archive: sampleArchive })),

@@ -29,6 +29,11 @@ interface LibraryResult {
     readonly threeGamesShown: boolean;
     readonly familyFilterUnknown: boolean;
     readonly changedDipReceived: boolean;
+    readonly strictRejectedPldDifference: boolean;
+    readonly mameWarningReady: boolean;
+    readonly warnedFileDetailed: boolean;
+    readonly mameChoicePersisted: boolean;
+    readonly mameStartConfigured: boolean;
     readonly noHorizontalScroll: boolean;
 }
 
@@ -40,6 +45,10 @@ interface BrowserState {
     unknownShown?: boolean;
     threeGamesShown?: boolean;
     familyFilterUnknown?: boolean;
+    strictRejectedPldDifference?: boolean;
+    mameWarningReady?: boolean;
+    warnedFileDetailed?: boolean;
+    mameChoicePersisted?: boolean;
     noHorizontalScroll?: boolean;
     starts: Array<{ readonly bios?: string; readonly dipswitches?: Readonly<Record<string, string>> }>;
 }
@@ -187,12 +196,14 @@ const withSyntheticHarness = async <T>(run: (url: string, archives: Readonly<Rec
             parent: new Uint8Array([2, 7, 1, 8]),
             standalone: new Uint8Array([3, 1, 6, 1]),
             selector: new Uint8Array([5, 9, 2, 6]),
+            pldExpected: new Uint8Array([5, 3, 5]),
+            pldActual: new Uint8Array([5, 3]),
         };
         const archives = {
             child: zipSync({ "runner_program.bin": entries.child }, { level: 6, mtime: new Date("2000-01-01T00:00:00Z") }),
             parent: zipSync({ "base_program.bin": entries.parent }, { level: 6, mtime: new Date("2000-01-01T00:00:00Z") }),
             standalone: zipSync({ "lamp_program.bin": entries.standalone }, { level: 6, mtime: new Date("2000-01-01T00:00:00Z") }),
-            selector: zipSync({ "switch_program.bin": entries.selector }, { level: 6, mtime: new Date("2000-01-01T00:00:00Z") }),
+            selector: zipSync({ "switch_program.bin": entries.selector, "logic.bin": entries.pldActual }, { level: 6, mtime: new Date("2000-01-01T00:00:00Z") }),
             unknown: zipSync({ "unknown.bin": new Uint8Array([8, 9]) }, { level: 6, mtime: new Date("2000-01-01T00:00:00Z") }),
         };
         const buildRoot = join(directory, "builds");
@@ -243,7 +254,10 @@ const withSyntheticHarness = async <T>(run: (url: string, archives: Readonly<Rec
             defaultBios: "home",
             sampleof: null,
             archives: [{ name: SELECTOR_ARCHIVE, role: "game" }],
-            roms: [{ name: "switch_program.bin", size: entries.selector.length, crc: crc32(entries.selector), sha1: null, archive: SELECTOR_ARCHIVE, optional: false }],
+            roms: [
+                { name: "switch_program.bin", size: entries.selector.length, crc: crc32(entries.selector), sha1: null, archive: SELECTOR_ARCHIVE, optional: false, region: "maincpu" },
+                { name: "logic.bin", size: entries.pldExpected.length, crc: crc32(entries.pldExpected), sha1: null, archive: SELECTOR_ARCHIVE, optional: false, region: "plds" },
+            ],
             dipswitches: [{
                 name: "Game Speed",
                 tag: "SPEED",
@@ -309,7 +323,21 @@ const testFile: TestFile = {
                     state.threeGamesShown = document.querySelectorAll(".game-card").length === 3;
                 });
                 await page.locator('[data-machine="switch_quest"] .store-card').click();
-                await page.waitForFunction(() => document.querySelector<HTMLElement>('[data-machine="switch_quest"]')?.dataset.auditStatus === "ok");
+                await page.waitForFunction(() => document.querySelector<HTMLElement>('[data-machine="switch_quest"]')?.dataset.auditStatus === "bad");
+                await page.evaluate(() => {
+                    (window as unknown as Window & { __arcadeHarnessLibraryTest: BrowserState }).__arcadeHarnessLibraryTest.strictRejectedPldDifference
+                        = document.querySelector<HTMLButtonElement>('[data-machine="switch_quest"] .game-start')?.disabled === true;
+                });
+                await page.locator(".library-settings > summary").click();
+                await page.locator("#file-check").selectOption("mame");
+                await page.waitForFunction(() => document.querySelector<HTMLElement>('[data-machine="switch_quest"]')?.dataset.auditStatus === "ok"
+                    && document.querySelector('[data-machine="switch_quest"] .game-verdict')?.textContent?.includes("1 files differ from 0.161; MAME ignores them") === true);
+                await page.evaluate(() => {
+                    const state = (window as unknown as Window & { __arcadeHarnessLibraryTest: BrowserState }).__arcadeHarnessLibraryTest;
+                    state.mameWarningReady = document.querySelector<HTMLButtonElement>('[data-machine="switch_quest"] .game-start')?.disabled === false;
+                    const detail = document.querySelector("#audit")?.textContent ?? "";
+                    state.warnedFileDetailed = detail.includes("WARNINGS") && detail.includes("wrong-size  switch_quest.zip/logic.bin");
+                });
             })
             .interact("change one game setting, capture the phone view and start that card", async ({ page }) => {
                 await page.locator('[data-machine="switch_quest"] .machine-selectors > summary').click();
@@ -329,8 +357,12 @@ const testFile: TestFile = {
                 try {
                     await restricted.goto(`${url}?family=${FAMILY_ONE}`);
                     await restricted.waitForFunction(() => document.querySelector('[data-unknown="switch_quest"]') !== null);
+                    await restricted.waitForFunction(() => (document.querySelector("#file-check") as HTMLSelectElement | null)?.value === "mame");
                     await page.evaluate(() => {
                         (window as unknown as Window & { __arcadeHarnessLibraryTest: BrowserState }).__arcadeHarnessLibraryTest.familyFilterUnknown = true;
+                    });
+                    await page.evaluate(() => {
+                        (window as unknown as Window & { __arcadeHarnessLibraryTest: BrowserState }).__arcadeHarnessLibraryTest.mameChoicePersisted = true;
                     });
                 } finally {
                     await restricted.close();
@@ -339,6 +371,7 @@ const testFile: TestFile = {
             .assertPage("the complete library flow remains card-local and phone-safe", (page) => page.evaluate((): LibraryResult => {
                 const state = (window as unknown as Window & { __arcadeHarnessLibraryTest: BrowserState }).__arcadeHarnessLibraryTest;
                 const started = state.starts[0];
+                const lastStart = (window as unknown as { __arcadeHarnessLastStartConfig?: { readonly auditStrictness?: string } }).__arcadeHarnessLastStartConfig;
                 return {
                     missingParentNamed: state.missingParentNamed === true,
                     companionAttached: state.companionAttached === true,
@@ -348,6 +381,11 @@ const testFile: TestFile = {
                     familyFilterUnknown: state.familyFilterUnknown === true,
                     changedDipReceived: started?.bios === "home"
                         && JSON.stringify(started.dipswitches) === JSON.stringify({ "Game Speed": "Fast" }),
+                    strictRejectedPldDifference: state.strictRejectedPldDifference === true,
+                    mameWarningReady: state.mameWarningReady === true,
+                    warnedFileDetailed: state.warnedFileDetailed === true,
+                    mameChoicePersisted: state.mameChoicePersisted === true,
+                    mameStartConfigured: lastStart?.auditStrictness === "mame",
                     noHorizontalScroll: state.noHorizontalScroll === true,
                 };
             }), P.equals<LibraryResult>({
@@ -358,6 +396,11 @@ const testFile: TestFile = {
                 threeGamesShown: true,
                 familyFilterUnknown: true,
                 changedDipReceived: true,
+                strictRejectedPldDifference: true,
+                mameWarningReady: true,
+                warnedFileDetailed: true,
+                mameChoicePersisted: true,
+                mameStartConfigured: true,
                 noHorizontalScroll: true,
             }))
             .start(url, { headless: true, timeout: TIMEOUT })),

@@ -51,14 +51,16 @@ const metadataLike = (): RomSetMetadata => structuredClone(FIXTURE);
 const reportLike = (): RomSetReport => ({
     machine: "fakeclone",
     status: "ok",
+    strictness: "mame",
     archives: [
         { name: "fakeclone.zip", role: "game", present: true, required: true },
         { name: "fakesamples.zip", role: "samples", present: false, required: false },
     ],
     files: [
-        { name: "clone.bin", archive: "fakeclone.zip", status: "ok" },
+        { name: "clone.bin", archive: "fakeclone.zip", status: "wrong-crc" },
         { name: "voice.wav", archive: "fakesamples.zip", status: "optional-missing" },
     ],
+    warnings: [{ name: "clone.bin", archive: "fakeclone.zip", status: "wrong-crc" }],
     unexpected: [{ archive: "fakeclone.zip", name: "extra.bin" }],
     problems: [{ archive: "fakeclone.zip", reason: "invalid or corrupt zip central directory" }],
 });
@@ -142,6 +144,12 @@ const testFile: TestFile = {
         predicateCase("isRomSetMetadata rejects a non-boolean optional flag", isRomSetMetadata, metadataWith(metadataLike(), "roms", [
             { ...metadataLike().roms[0], optional: "no" }, ...metadataLike().roms.slice(1),
         ]), false),
+        predicateCase("isRomSetMetadata accepts ROM rows with or without region", isRomSetMetadata, metadataWith(metadataLike(), "roms", [
+            { ...metadataLike().roms[0], region: "maincpu" }, ...metadataLike().roms.slice(1),
+        ]), true),
+        predicateCase("isRomSetMetadata rejects a non-string ROM region", isRomSetMetadata, metadataWith(metadataLike(), "roms", [
+            { ...metadataLike().roms[0], region: 1 }, ...metadataLike().roms.slice(1),
+        ]), false),
 
         // isRomSetMetadata: sample rows
         predicateCase("isRomSetMetadata rejects a non-array samples field", isRomSetMetadata, metadataWith(metadataLike(), "samples", {}), false),
@@ -154,6 +162,7 @@ const testFile: TestFile = {
         predicateCase("isRomSetReport rejects a non-object", isRomSetReport, null, false),
         predicateCase("isRomSetReport rejects an empty machine", isRomSetReport, reportWith(reportLike(), "machine", ""), false),
         predicateCase("isRomSetReport rejects an unknown overall status", isRomSetReport, reportWith(reportLike(), "status", "unknown"), false),
+        predicateCase("isRomSetReport rejects an unknown strictness", isRomSetReport, reportWith(reportLike(), "strictness", "loose"), false),
         predicateCase("isRomSetReport rejects a non-array archives field", isRomSetReport, reportWith(reportLike(), "archives", {}), false),
         predicateCase("isRomSetReport rejects an invalid archive row", isRomSetReport, reportWith(reportLike(), "archives", [
             { name: "fakeclone.zip", role: "game", present: "yes", required: true },
@@ -168,6 +177,11 @@ const testFile: TestFile = {
         predicateCase("isRomSetReport rejects a file referencing an absent archive", isRomSetReport, reportWith(reportLike(), "files", [
             { name: "clone.bin", archive: "absent.zip", status: "missing" },
         ]), false),
+        predicateCase("isRomSetReport rejects a non-array warnings field", isRomSetReport, reportWith(reportLike(), "warnings", {}), false),
+        predicateCase("isRomSetReport rejects a warning that does not match a file row", isRomSetReport, reportWith(reportLike(), "warnings", [
+            { name: "clone.bin", archive: "fakeclone.zip", status: "wrong-size" },
+        ]), false),
+        predicateCase("isRomSetReport rejects warnings in strict mode", isRomSetReport, reportWith(reportLike(), "strictness", "strict"), false),
         predicateCase("isRomSetReport rejects a non-array unexpected field", isRomSetReport, reportWith(reportLike(), "unexpected", {}), false),
         predicateCase("isRomSetReport rejects an invalid unexpected entry", isRomSetReport, reportWith(reportLike(), "unexpected", [
             { archive: "fakeclone.zip", name: "" },

@@ -7,12 +7,12 @@ import {
     isRomFile,                                                     // Guards every supplied archive
     romNameKey,                                                    // Case-insensitive archive matching
 } from "../shared.types.js";
-import { isRomSetMetadata } from "./types.js";                     // Guards the resolved metadata input
+import { classifyAuditFile, isAuditStrictness, isRomSetMetadata } from "./types.js";   // Guards inputs and classifies true file results
 
 // Type dependencies:
 import type { UnzipFileInfo } from "fflate";                       // Metadata exposed to unzipSync's filter
 import type { RomFile } from "../shared.types.js";                 // Supplied zip bytes
-import type { RomSetMetadata, RomSetReport } from "./types.js";    // Audit input and byte-free result
+import type { AuditStrictness, RomSetMetadata, RomSetReport } from "./types.js";   // Audit input, policy and byte-free result
 
 /**
  *
@@ -212,10 +212,12 @@ export default class RomSetAudit {
     // NOTE: Invalid, corrupt and over-limit zip bytes become problems and missing file rows; they never throw.
     // NOTE: A ROM tagged with a BIOS option is required only when that option is the selected one (options.bios,
     // else the metadata default); MAME audits the same way, so other options' ROMs report optional-missing.
-    static audit(metadata: RomSetMetadata, roms: RomFile[], options: { readonly bios?: string } = {}): RomSetReport {
+    static audit(metadata: RomSetMetadata, roms: RomFile[], options: { readonly bios?: string; readonly strictness?: AuditStrictness } = {}): RomSetReport {
         if (!isRomSetMetadata(metadata)) throw RomSetAudit.invalidConfig("RomSetAudit metadata is invalid.", "metadata");
         if (!isRomFileList(roms)) throw RomSetAudit.invalidConfig("RomSetAudit ROM files are invalid.", "roms");
         if (options.bios !== undefined && typeof options.bios !== "string") throw RomSetAudit.invalidConfig("RomSetAudit bios must be a string.", "bios");
+        if (options.strictness !== undefined && !isAuditStrictness(options.strictness)) throw RomSetAudit.invalidConfig("RomSetAudit strictness must be strict or mame.", "strictness");
+        const strictness = options.strictness ?? "strict";
         const selectedBios = options.bios ?? metadata.defaultBios ?? null;
         const isRequired = (rom: RomSetMetadata["roms"][number]): boolean => !rom.optional && (rom.bios === undefined || rom.bios === null || rom.bios === selectedBios);
 
@@ -292,11 +294,21 @@ export default class RomSetAudit {
             if (inspection !== undefined && "reason" in inspection) problems.push({ archive: archive.name, reason: inspection.reason });
         }
 
-        const requiredFiles = files.slice(0, metadata.roms.length).filter((_, index) => isRequired(metadata.roms[index]!));
-        const status = requiredFiles.some((file) => file.status === "wrong-size" || file.status === "wrong-crc")
+        const requiredFiles = files.slice(0, metadata.roms.length).flatMap((file, index) => {
+            const rom = metadata.roms[index]!;
+            return isRequired(rom) ? [{ file, rom }] : [];
+        });
+        const failures = requiredFiles.filter(({ file, rom }) => classifyAuditFile(rom.region, file.status, strictness) === "failure");
+        const warnings: RomSetReport["warnings"] = files.slice(0, metadata.roms.length).flatMap((file, index) => {
+            const rom = metadata.roms[index]!;
+            return isRequired(rom) && classifyAuditFile(rom.region, file.status, strictness) === "warning"
+                ? [{ name: file.name, archive: file.archive, status: file.status as "missing" | "wrong-size" | "wrong-crc" }]
+                : [];
+        });
+        const status = failures.some(({ file }) => file.status === "wrong-size" || file.status === "wrong-crc")
             ? "bad"
-            : requiredFiles.some((file) => file.status === "missing") ? "incomplete" : "ok";
-        return { machine: metadata.machine, status, archives, files, unexpected, problems };
+            : failures.some(({ file }) => file.status === "missing") ? "incomplete" : "ok";
+        return { machine: metadata.machine, status, strictness, archives, files, warnings, unexpected, problems };
     }
 
     // HELPER :: STRING, UNKNOWN -> arcadeRuntimeError

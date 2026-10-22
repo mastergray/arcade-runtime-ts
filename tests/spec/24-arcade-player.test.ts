@@ -219,7 +219,7 @@ const incompleteMetadata = (): RomSetMetadata => ({
     bios: ["default"],
     sampleof: null,
     archives: [{ name: "game.zip", role: "game" }],
-    roms: [{ name: "required.bin", size: 1, crc: "00000000", sha1: null, archive: "game.zip", optional: false }],
+    roms: [{ name: "required.bin", size: 1, crc: "00000000", sha1: null, archive: "game.zip", optional: false, region: "plds" }],
     samples: [],
 });
 
@@ -254,6 +254,7 @@ const testFile: TestFile = {
                         selections: [isArcadeAdapterSelection({ buildUrl: "/mame/" }), isArcadeAdapterSelection({ type: "mame", buildUrl: "/mame/" }), isArcadeAdapterSelection({ type: "libretro", core: {}, buildUrl: "/core/" })],
                         badSelections: [isArcadeAdapterSelection(null), isArcadeAdapterSelection({ type: "other", buildUrl: "/" }), isArcadeAdapterSelection({ type: "libretro", buildUrl: "/" }), isArcadeAdapterSelection({ buildUrl: "" })],
                         validGame: isArcadeGameConfig(game),
+                        validMameGame: isArcadeGameConfig({ ...game, auditStrictness: "mame" }),
                         badGame: [
                             isArcadeGameConfig(null),
                             isArcadeGameConfig(replacing(game as unknown as Record<string, unknown>, "machine", "")),
@@ -262,6 +263,7 @@ const testFile: TestFile = {
                             isArcadeGameConfig(replacing(game as unknown as Record<string, unknown>, "changes", [])),
                             isArcadeGameConfig(replacing(game as unknown as Record<string, unknown>, "bios", "")),
                             isArcadeGameConfig(replacing(game as unknown as Record<string, unknown>, "dipswitches", { Difficulty: 1 })),
+                            isArcadeGameConfig(replacing(game as unknown as Record<string, unknown>, "auditStrictness", "loose")),
                             isArcadeGameConfig(replacing(game as unknown as Record<string, unknown>, "options", { bad: {} })),
                             isArcadeGameConfig(replacing(game as unknown as Record<string, unknown>, "display", { scaling: "stretch" })),
                             isArcadeGameConfig(replacing(game as unknown as Record<string, unknown>, "display", { imageRendering: "crisp" })),
@@ -281,7 +283,7 @@ const testFile: TestFile = {
                 }, P.equals<unknown>({
                     statuses: [true, true, true, true, true], badStatus: false,
                     selections: [true, true, true], badSelections: [false, false, false, false],
-                    validGame: true, badGame: [false, false, false, false, false, false, false, false, false, false],
+                    validGame: true, validMameGame: true, badGame: [false, false, false, false, false, false, false, false, false, false, false],
                     validConfig: true, badConfig: [false, false, false, false, false, false],
                     validEvents: true, badEvents: [false, false, false, false],
                 }))
@@ -448,6 +450,47 @@ const testFile: TestFile = {
                     reportStatus: "incomplete",
                     status: "idle",
                     startCalls: 0,
+                }))
+                .start(undefined),
+        },
+        {
+            label: "mame audit strictness starts with a missing PLD warning and exposes that warning from audit",
+            run: () => CTGTest.init("mame audit warning")
+                .stage("audit and start against metadata requiring one absent PLD dump", () => withAudioContext(async () => {
+                    const session = new FakeArcadeSession();
+                    const adapter = new FakeArcadeAdapter().script("resolve", session);
+                    Object.assign(adapter, { build: validBuildInfo(), buildUrl: "/build/" });
+                    const player = new ArcadePlayer({
+                        canvas: new CanvasDouble() as unknown as HTMLCanvasElement,
+                        container: new ContainerDouble() as unknown as HTMLElement,
+                        game: { ...gameConfig(), auditStrictness: "mame" },
+                        adapter,
+                        fetch: async () => ({ ok: true, status: 200, arrayBuffer: async () => jsonBody(incompleteMetadata()) }),
+                    });
+                    const report = await player.audit();
+                    await player.start();
+                    const result = {
+                        report: {
+                            status: report.status,
+                            strictness: report.strictness,
+                            warnings: report.warnings,
+                            fileStatus: report.files[0]?.status,
+                        },
+                        playerStatus: player.status,
+                        startCalls: adapter.startCalls.length,
+                    };
+                    await player.destroy();
+                    return result;
+                }))
+                .assert("the true missing status remains visible while the session runs", (state) => state.subject, P.equals<unknown>({
+                    report: {
+                        status: "ok",
+                        strictness: "mame",
+                        warnings: [{ name: "required.bin", archive: "game.zip", status: "missing" }],
+                        fileStatus: "missing",
+                    },
+                    playerStatus: "running",
+                    startCalls: 1,
                 }))
                 .start(undefined),
         },
@@ -664,6 +707,8 @@ const testFile: TestFile = {
                     return {
                         valid: isRomSetReport(second),
                         status: second.status,
+                        strictness: second.strictness,
+                        warnings: second.warnings,
                         problems: second.problems.map((problem) => problem.reason),
                         startCalls: adapter.startCalls.length,
                     };
@@ -671,6 +716,8 @@ const testFile: TestFile = {
                 .assert("the fallback stays cached internally and explains metadata absence", (state) => state.subject, P.equals<unknown>({
                     valid: true,
                     status: "ok",
+                    strictness: "strict",
+                    warnings: [],
                     problems: ["ROM-set metadata was unavailable."],
                     startCalls: 0,
                 }))
