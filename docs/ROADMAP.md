@@ -32,6 +32,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 | M26 Dialogs (Import, Settings, Controls) | W23 | todo: Controls needs the keyboard half of M10 |
 | M27 Game metadata (year, manufacturer) | W24 | todo: additive `romsets/` fields from `-listxml` |
 | M28 Touch and small screens | W25 | todo: `TouchSource`, phone and tablet layouts; brings the mobile gates of M10 |
+| M29 Family wave 3 | not yet cut | todo: `sega-s16` for `segas16a.c`, `segas16b.c` and `segas18.c` (System 16A/16B/18), `atari-gauntlet` for `gauntlet.c`, and `namco-na` for `namcona1.c` (NA-1/NA-2); found 2026-10-22 when sets on those boards reported no family build. Same brief pattern as W19 | |
 | M9 v1.0.0 release gate | W17 | final verification run passed again 2026-10-22 on `b0eb45d` after family wave 2 | Fresh rebuild of fifteen families (build ids reproduced), `npm run check`, 512 spec cases, browser gate with one title from each of thirteen families (61 passed, 0 failed, 23 skipped by design); the §14.1 walkthrough was done by the release owner on 2026-10-21/22 (audio fix, heap fix and library view all exercised). Closing needs only the version-bump commit. |
 | M23 Audit strictness modes | W20 | closed 2026-10-22 (merge `76add8f`): `RomSetAudit` gains `strictness: "strict" \| "mame"` (default strict, today's behaviour) so a lawful archive whose only difference from 0.161 is a PLD dump MAME would merely warn about can start; metadata gains `region`. Decided 2026-10-22 to land before the 1.0.0 commit | |
 
@@ -93,6 +94,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 
 ## Log
 
+- 2026-10-22 — M29 family wave 3 added to 1.0.0: System 16A/16B/18, the Gauntlet board and Namco NA-1/NA-2, after local sets on those boards reported no family build.
 - 2026-10-22 — Decision: the retro desktop UI (M24–M28) is part of 1.0.0, not post-1.0; rows moved. Hand test found no keyboard movement on an X Board title: those boards are analogue (`AD_STICK`/`PADDLE`/`PEDAL`), which is M11; recommended before 1.0.0 as well.
 - 2026-10-22 — UI roadmap drafted from the retro desktop-OS mockups (`docs/ui-roadmap.md`): M24–M28, W21–W25, all post-1.0; open decisions are the menu-versus-buttons split and whether the shell replaces the harness.
 - 2026-10-22 — Post-W20 browser gate on `69bcfa8`: Neo Geo preload plus twelve family configs, 58 passed, 23 skipped by design, one failure that is the open M22 item (the 41 Hz vector title's keyboard coin at the test's 120 ms hold); rerun with the family's non-vector title: 27 passed, 0 failed. Check clean, spec 523/523. Metadata for all fifteen families carries `roms[].region`.
