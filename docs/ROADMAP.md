@@ -41,7 +41,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 | Milestone | Packages | Status |
 | --------- | -------- | ------ |
 | M10 Mobile: touch, mapper, portrait | not yet cut | todo |
-| M11 Analog inputs | not yet cut | todo, **recommended before 1.0.0**: the measured Sega boards (`segaxbd.c`, `segaorun.c`, `segahang.c`) declare `AD_STICK`, `PADDLE` and `PEDAL` ports, and the bridge binds only digital joystick ports, so arrow keys and pad d-pads do nothing on them (hand test 2026-10-22: no movement on an X Board title). Needs `ArcadeAxis`/`web_set_axis`, keyboard-driven axis ramps like MAME's own increment/decrement, and gamepad stick binding |
+| M11 Analog inputs | not yet cut | todo, **recommended before 1.0.0**: the measured Sega boards (`segaxbd.c`, `segaorun.c`, `segahang.c`) declare `AD_STICK`, `PADDLE` and `PEDAL` ports, and the bridge binds only digital joystick ports, so arrow keys and pad d-pads do nothing on them (hand test 2026-10-22: no movement on an X Board title). Needs `ArcadeAxis`/`web_set_axis`, keyboard-driven axis ramps like MAME's own increment/decrement, and gamepad stick binding. The Atari classic family adds three more port kinds found 2026-10-22: the vector tank title uses two digital sticks (`IPT_JOYSTICKLEFT_UP/DOWN`, `IPT_JOYSTICKRIGHT_UP/DOWN`, MAME defaults E/D and I/K), which the bridge's single virtual joystick never drives, so the arrow keys do nothing; `tempest.c` uses `IPT_DIAL` (a spinner); the three-player `rampart.c` set uses `IPT_TRACKBALL`, while its two-player set uses plain joysticks and works. M11 therefore covers: (a) a digital dual-stick synthesis so up/down/left/right drive both sticks tank-style, with the four raw stick keys bindable; (b) dial, trackball, paddle, pedal and AD stick axes with keyboard ramps and pad stick/trigger bindings |
 | M12 High-score bridge | not yet cut | todo |
 | M13 Local compatibility matrix | not yet cut | todo |
 | M14 Optional FBNeo probe | not yet cut | todo |
@@ -94,6 +94,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 
 ## Log
 
+- 2026-10-22 — Hand test: no tank control on the vector tank title. Cause: dual digital sticks (`JOYSTICKLEFT/RIGHT`) that the bridge's virtual joystick never drives; `tempest.c` (dial) and three-player `rampart.c` (trackball) are analogue. All folded into M11's scope.
 - 2026-10-22 — M29 family wave 3 added to 1.0.0: System 16A/16B/18, the Gauntlet board and Namco NA-1/NA-2, after local sets on those boards reported no family build.
 - 2026-10-22 — Decision: the retro desktop UI (M24–M28) is part of 1.0.0, not post-1.0; rows moved. Hand test found no keyboard movement on an X Board title: those boards are analogue (`AD_STICK`/`PADDLE`/`PEDAL`), which is M11; recommended before 1.0.0 as well.
 - 2026-10-22 — UI roadmap drafted from the retro desktop-OS mockups (`docs/ui-roadmap.md`): M24–M28, W21–W25, all post-1.0; open decisions are the menu-versus-buttons split and whether the shell replaces the harness.
