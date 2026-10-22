@@ -52,6 +52,9 @@
     #drop-zone[data-active="true"], body[data-dragging="true"] #drop-zone { border-color: #7ee0bd; background: #15372d; }
     #rom-picker { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
     .library-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 12px 0 0; }
+    .library-settings { margin: 12px 0 0; border: 1px solid #303b45; border-radius: 8px; background: #141a20; }
+    .library-settings summary { border: 0; background: #1c2925; }
+    .library-setting { display: grid; grid-template-columns: minmax(0, 1fr) minmax(180px, 280px); align-items: center; gap: 12px; padding: 12px; color: #c0cad3; font-size: .78rem; }
     #library-summary, #preload-note { margin: 0; color: #aebbc5; font-size: .82rem; }
     #build-warnings { margin: 10px 0 0; padding-left: 20px; color: #ffd27e; line-height: 1.5; }
     #status { min-height: 1.5em; margin: 16px 0; color: #7ee0bd; overflow-wrap: anywhere; }
@@ -118,6 +121,7 @@
       .lower-grid, .diagnostics { grid-template-columns: 1fr; }
       #player-container { min-height: 260px; }
       .card-heading { align-items: start; }
+      .library-setting { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -134,6 +138,16 @@
       <button id="store-all" type="button" disabled>Store all and check</button>
       <p id="library-summary">Loading the available games…</p>
     </div>
+    <details class="library-settings">
+      <summary>Library settings</summary>
+      <label class="library-setting" for="file-check">
+        <span>File check: exact 0.161 set / what MAME accepts</span>
+        <select id="file-check">
+          <option value="strict">exact 0.161 set</option>
+          <option value="mame">what MAME accepts</option>
+        </select>
+      </label>
+    </details>
     <ul id="build-warnings" role="alert" hidden></ul>
     <p id="preload-note" hidden></p>
     <p id="status" role="status" aria-live="polite" data-state="loading">Loading…</p>
