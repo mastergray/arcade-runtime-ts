@@ -1,0 +1,20 @@
+{
+    "family": "atari-classic",
+    "target": "mame/targets/atari-classic.lua",
+    "list": "mame/targets/atari-classic.lst",
+    "memoryPages": 4096,
+    "sources": [
+        "src/mame/drivers/bzone.c",
+        "src/mame/audio/bzone.c",
+        "src/mame/drivers/tempest.c",
+        "src/mame/drivers/rampart.c",
+        "src/mame/video/rampart.c",
+        "src/mame/video/avgdvg.c",
+        "src/mame/machine/atari_vg.c",
+        "src/mame/machine/mathbox.c",
+        "src/mame/audio/redbaron.c",
+        "src/mame/machine/atarigen.c",
+        "src/mame/video/atarimo.c",
+        "src/mame/machine/slapstic.c"
+    ]
+}

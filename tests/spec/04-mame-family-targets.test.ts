@@ -37,6 +37,15 @@ interface FamilyListEntry {
 const TARGET_ROOT = new URL("../../mame/targets/", import.meta.url);
 
 const FAMILY_TARGETS: readonly FamilyTarget[] = [
+    {
+        id: "atari-classic",
+        sources: [
+            "src/mame/drivers/bzone.c",
+            "src/mame/drivers/tempest.c",
+            "src/mame/drivers/rampart.c",
+        ],
+        expectedMachines: 15,
+    },
     { id: "cps1", sources: ["src/mame/drivers/cps1.c"], expectedMachines: 178 },
     { id: "cps2", sources: ["src/mame/drivers/cps2.c"], expectedMachines: 293 },
     {
