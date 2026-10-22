@@ -27,6 +27,11 @@ Status values: `todo`, `ready` (brief written, can be started),
 | M7 ROM supply and cabinet | W2 (romsets half), W9 (ROM store half), W10, W12, W13b | closed (picker path with synthetic archives and the real cabinet; preload path with the real build; audit agrees with MAME on every lawful local set) | 2026-10-20 |
 | M8 BIOS and DIP switches | W16 | done | 2026-10-21: `35-dip-switches.test.ts` against the namco-classic build; a BIOS option is exercised by the Neo Geo acceptance (`-bios`). |
 | M21 Family wave 2 | W19a–g | closed 2026-10-22: all seven merged 2026-10-21; F4–F6 and acceptance measured by the integrator (agents' sandbox cannot run Chromium): `sega-16`, `midway-mcr`, `konami-16`, `atari-classic`, `misc-16`, `taito-f3` new; `irem-m72` gains M92 and `taito-16` gains Z System. Decided 2026-10-21 to land before the 1.0.0 commit | |
+| M24 Retro desktop design system | W21 | todo: theme tokens and component kit from the mockups; see `docs/ui-roadmap.md` |
+| M25 Desktop library shell | W22 | todo: main screen on the existing library flow; favorites, recent, search, status bar |
+| M26 Dialogs (Import, Settings, Controls) | W23 | todo: Controls needs the keyboard half of M10 |
+| M27 Game metadata (year, manufacturer) | W24 | todo: additive `romsets/` fields from `-listxml` |
+| M28 Touch and small screens | W25 | todo: `TouchSource`, phone and tablet layouts; brings the mobile gates of M10 |
 | M9 v1.0.0 release gate | W17 | final verification run passed again 2026-10-22 on `b0eb45d` after family wave 2 | Fresh rebuild of fifteen families (build ids reproduced), `npm run check`, 512 spec cases, browser gate with one title from each of thirteen families (61 passed, 0 failed, 23 skipped by design); the §14.1 walkthrough was done by the release owner on 2026-10-21/22 (audio fix, heap fix and library view all exercised). Closing needs only the version-bump commit. |
 | M23 Audit strictness modes | W20 | closed 2026-10-22 (merge `76add8f`): `RomSetAudit` gains `strictness: "strict" \| "mame"` (default strict, today's behaviour) so a lawful archive whose only difference from 0.161 is a PLD dump MAME would merely warn about can start; metadata gains `region`. Decided 2026-10-22 to land before the 1.0.0 commit | |
 
@@ -35,7 +40,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 | Milestone | Packages | Status |
 | --------- | -------- | ------ |
 | M10 Mobile: touch, mapper, portrait | not yet cut | todo |
-| M11 Analog inputs | not yet cut | todo |
+| M11 Analog inputs | not yet cut | todo, **recommended before 1.0.0**: the measured Sega boards (`segaxbd.c`, `segaorun.c`, `segahang.c`) declare `AD_STICK`, `PADDLE` and `PEDAL` ports, and the bridge binds only digital joystick ports, so arrow keys and pad d-pads do nothing on them (hand test 2026-10-22: no movement on an X Board title). Needs `ArcadeAxis`/`web_set_axis`, keyboard-driven axis ramps like MAME's own increment/decrement, and gamepad stick binding |
 | M12 High-score bridge | not yet cut | todo |
 | M13 Local compatibility matrix | not yet cut | todo |
 | M14 Optional FBNeo probe | not yet cut | todo |
@@ -45,11 +50,6 @@ Status values: `todo`, `ready` (brief written, can be started),
 | M22 Coin hold length on the Atari vector board | not yet cut | todo: the acceptance test's 120 ms keyboard coin did not register on the 41 Hz vector title while the 200 ms pad coin did; find the board's coin debounce and either lengthen the test's hold or document a minimum press |
 | M20 Audio queue depth under load | not yet cut | todo: the 20 ms dry-restart lead gives zero dropouts on an idle desktop but 35 dropouts in 20 s with every core busy (measured 2026-10-21); a deeper lead needs the 120 ms cap to exclude scheduled lead, or it drops frames instead. The pinned-queue bug behind the sustained garble is fixed (see 2026-10-21 log); what remains is the one-off gap plus trim that each stall still costs |
 | M17 Deferred families | not yet cut | todo: namco-s1, namco-s2, taito-classic F4–F6 once a lawful set exists (§4.6) |
-| M24 Retro desktop design system | W21 | todo: theme tokens and component kit from the mockups; see `docs/ui-roadmap.md` |
-| M25 Desktop library shell | W22 | todo: main screen on the existing library flow; favorites, recent, search, status bar |
-| M26 Dialogs (Import, Settings, Controls) | W23 | todo: Controls needs the keyboard half of M10 |
-| M27 Game metadata (year, manufacturer) | W24 | todo: additive `romsets/` fields from `-listxml` |
-| M28 Touch and small screens | W25 | todo: `TouchSource`, phone and tablet layouts; brings the mobile gates of M10 |
 | M18 Six-button CPS-2 acceptance | not yet cut | todo: keyboard binds P1 buttons 1–6 and `GamepadSource` forwards six action buttons, so such titles are expected to play; the measured §14.1 flow-4 run awaits a lawful six-button parent set (deferred 2026-10-21) |
 
 ## Work packages
@@ -93,6 +93,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 
 ## Log
 
+- 2026-10-22 — Decision: the retro desktop UI (M24–M28) is part of 1.0.0, not post-1.0; rows moved. Hand test found no keyboard movement on an X Board title: those boards are analogue (`AD_STICK`/`PADDLE`/`PEDAL`), which is M11; recommended before 1.0.0 as well.
 - 2026-10-22 — UI roadmap drafted from the retro desktop-OS mockups (`docs/ui-roadmap.md`): M24–M28, W21–W25, all post-1.0; open decisions are the menu-versus-buttons split and whether the shell replaces the harness.
 - 2026-10-22 — Post-W20 browser gate on `69bcfa8`: Neo Geo preload plus twelve family configs, 58 passed, 23 skipped by design, one failure that is the open M22 item (the 41 Hz vector title's keyboard coin at the test's 120 ms hold); rerun with the family's non-vector title: 27 passed, 0 failed. Check clean, spec 523/523. Metadata for all fifteen families carries `roms[].region`.
 - 2026-10-22 — W20 merged: `RomSetAudit` strictness (`strict` default, `mame` tolerates PLD-region defects as warnings; pinned CPS-1 tags them `aboardplds`/`bboardplds`/`cboardplds`, so the policy keys on the `plds` suffix), `roms[].region` in metadata, `ArcadeGameConfig.auditStrictness`, harness "File check" setting, `arcade-audit-roms --strictness`. Integrator: exports, spec §9/§10.5/§10.6/§11, metadata regenerated for fifteen families. Follow-up noted: the audit accepts a parent-assigned file only from the parent archive while MAME searches the game's zip first (merged clone zips), and entry names must be flat.
