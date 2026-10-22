@@ -72,6 +72,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 | W13c | Harness: BIOS and DIP selectors | T | M8 | merged | `wp/w13c-harness-selectors` | `6cf1dea` |
 | W16 | BIOS and DIP switches | N+T | M8 | merged | `wp/w16-bios-dip` | `d5446ad` |
 | W17 | Release gate | T | M9 | merged | `wp/w17-release-gate` | 2026-10-21 |
+| W18 | Harness library view | T | M19 | merged | `wp/w18-harness-library` | 2026-10-21 (merge `04015f0`) |
 
 ## Log
 
