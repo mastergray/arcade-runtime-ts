@@ -1,4 +1,6 @@
-# Taito 16-bit family probe
+# Taito 16-bit incl. Z System family probe
+
+Family description: **Taito 16-bit incl. Z System**.
 
 Observed 2026-10-20 on Linux x86-64 with Node.js 22.22.2, npm 10.9.7,
 GNU gzip 1.10, the pinned MAME 0.161 source archive and Emscripten 1.38.31.
@@ -61,6 +63,66 @@ for loaded regions gives a conservative metadata-only peak estimate of
 24,248,320 bytes, 12.04% of the safe budget, leaving 177,078,272 bytes. No
 machine in the family fails the §5 estimate, so the build remains at 4,096
 pages.
+
+## 2026-10-21 — extended by W19f
+
+F1–F3 were re-recorded after adding the complete Taito Z driver list to the
+unchanged `taito-16` family id. The environment and measurement methods are the
+same as the original record above.
+
+### F1 — Does the target pair compile and expose every machine?
+
+```sh
+EMSDK_DIR="$PWD/res/emsdk" \
+  node --import tsx scripts/build-mame.ts taito-16 --jobs 4
+
+npm run probe:mame:threading -- \
+  "$PWD/dist/mame/taito-16/mametaito-16"
+```
+
+| Result | Successful cached-source wall time | `-listfull` machines | ROM-set metadata files |
+| ------ | ---------------------------------: | -------------------: | ---------------------: |
+| Pass | 47.16 s | 223 | 223 |
+
+The independently derived list adds all 34 public machines from `taito_z.c`
+to the prior 189 and matched the production count without a list correction.
+The existing Taito target already selected every CPU, sound, EEPROM, I/O,
+road, palette and tilemap dependency referenced by Taito Z. Its first complete
+link passed, so no additional shared unit or core was required.
+
+The pinned Node.js 8 runner has the same captured-stdio incompatibility noted
+for the Irem build. The ignored W19f process-local Emscripten config selected
+host Node.js 22 for compiler subprocesses only, without a tracked change.
+The resulting build identity is
+`ab64a8cf8311ab1ca1211b5415e6ca8e27073855ce381b2b9d517507b3fe6c1f`.
+
+### F2 — What are the raw, gzip and Brotli sizes of the Wasm and JavaScript?
+
+| Artifact | Raw bytes | gzip -9 | Brotli 11 |
+| -------- | --------: | -------: | ---------: |
+| Wasm | 7,074,473 | 1,772,767 | 1,313,884 |
+| JavaScript | 302,504 | 65,607 | 55,309 |
+
+### F3 — Does the largest ROM set fit in 4,096 pages, and what is the peak?
+
+Summing all 223 public metadata files still finds `dinorex` largest at
+12,124,160 bytes; no Taito Z set exceeds it. The 4,096-page safe adapter budget
+is 201,326,592 bytes (192 MiB). Counting the uncompressed ROM sum once for
+supplied archive bytes and once for loaded regions gives a conservative
+24,248,320-byte peak, 12.04% of the safe budget, leaving 177,078,272 bytes. No
+machine fails the §5 estimate, so the build remains at 4,096 pages.
+
+### New-driver F4–F6 status
+
+An ignored lawful preload config for a Taito Z title is present, but this
+sandbox cannot bind loopback or start Chromium, so the requested browser suite
+was not attempted.
+
+| Probe | Taito Z status |
+| ----- | -------------- |
+| F4 startup to first valid, non-blank frame | pending integrator browser run |
+| F5 native refresh and upright geometry | pending integrator browser run |
+| F6 sixty-second emulated-time ratio | pending integrator browser run |
 
 ## F4 — What is the slowest Chromium time from `callMain` to first frame?
 

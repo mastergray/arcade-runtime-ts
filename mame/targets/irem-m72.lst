@@ -1,33 +1,62 @@
 // Derived from pinned MAME 0.161 source (run at the source root):
-// comm -12 \
-//   <(sed -nE 's/^[[:space:]]*(GAME|GAMEL|GAME_CUSTOM)[[:space:]]*[(][^,]+,[[:space:]]*([a-z0-9_]+).*/\2/p' src/mame/drivers/m72.c | LC_ALL=C sort -u) \
-//   <(sed -nE 's/^([a-z0-9_]+)([[:space:]]*\/\/.*)?$/\1/p' src/mame/mame.lst | LC_ALL=C sort -u)
+// for driver in m72 m92; do
+//   comm -12 \
+//     <(sed -nE 's/^[[:space:]]*(GAME|GAMEL|GAME_CUSTOM)[[:space:]]*[(][^,]+,[[:space:]]*([a-z0-9_]+).*/\2/p' "src/mame/drivers/$driver.c" | LC_ALL=C sort -u) \
+//     <(sed -nE 's/^([a-z0-9_]+)([[:space:]]*\/\/.*)?$/\1/p' src/mame/mame.lst | LC_ALL=C sort -u) \
+//     | awk -v source="src/mame/drivers/$driver.c" '{ print $0 " // " source }'
+// done | LC_ALL=C sort -u
 
 airduel // src/mame/drivers/m72.c
 bchopper // src/mame/drivers/m72.c
+bmaster // src/mame/drivers/m92.c
 cosmccop // src/mame/drivers/m72.c
+crossbld // src/mame/drivers/m92.c
 dbreed // src/mame/drivers/m72.c
 dbreedm72 // src/mame/drivers/m72.c
 dkgensan // src/mame/drivers/m72.c
 dkgensanm72 // src/mame/drivers/m72.c
+dsoccr94j // src/mame/drivers/m92.c
 gallop // src/mame/drivers/m72.c
+geostorm // src/mame/drivers/m92.c
+gunforc2 // src/mame/drivers/m92.c
+gunforce // src/mame/drivers/m92.c
+gunforcej // src/mame/drivers/m92.c
+gunforceu // src/mame/drivers/m92.c
+gunhohki // src/mame/drivers/m92.c
 hharry // src/mame/drivers/m72.c
 hharryu // src/mame/drivers/m72.c
+hook // src/mame/drivers/m92.c
+hookj // src/mame/drivers/m92.c
+hooku // src/mame/drivers/m92.c
 imgfight // src/mame/drivers/m72.c
 imgfightj // src/mame/drivers/m72.c
+inthunt // src/mame/drivers/m92.c
+inthuntu // src/mame/drivers/m92.c
+kaiteids // src/mame/drivers/m92.c
 kengo // src/mame/drivers/m72.c
+leaguemn // src/mame/drivers/m92.c
+lethalth // src/mame/drivers/m92.c
 loht // src/mame/drivers/m72.c
 lohtb // src/mame/drivers/m72.c
 lohtb2 // src/mame/drivers/m72.c
 lohtj // src/mame/drivers/m72.c
+majtitl2 // src/mame/drivers/m92.c
+majtitl2j // src/mame/drivers/m92.c
 majtitle // src/mame/drivers/m72.c
 majtitlej // src/mame/drivers/m72.c
 mrheli // src/mame/drivers/m72.c
+mysticri // src/mame/drivers/m92.c
+mysticrib // src/mame/drivers/m92.c
+nbbatman // src/mame/drivers/m92.c
+nbbatman2bl // src/mame/drivers/m92.c
+nbbatmanu // src/mame/drivers/m92.c
 nspirit // src/mame/drivers/m72.c
 nspiritj // src/mame/drivers/m72.c
 poundfor // src/mame/drivers/m72.c
 poundforj // src/mame/drivers/m72.c
 poundforu // src/mame/drivers/m72.c
+ppan // src/mame/drivers/m92.c
+psoldier // src/mame/drivers/m92.c
 rtype // src/mame/drivers/m72.c
 rtype2 // src/mame/drivers/m72.c
 rtype2j // src/mame/drivers/m72.c
@@ -35,6 +64,16 @@ rtype2jc // src/mame/drivers/m72.c
 rtypeb // src/mame/drivers/m72.c
 rtypej // src/mame/drivers/m72.c
 rtypejp // src/mame/drivers/m72.c
+rtypeleo // src/mame/drivers/m92.c
+rtypeleoj // src/mame/drivers/m92.c
 rtypeu // src/mame/drivers/m72.c
+skingame // src/mame/drivers/m92.c
+skingame2 // src/mame/drivers/m92.c
+ssoldier // src/mame/drivers/m92.c
+thndblst // src/mame/drivers/m92.c
+uccops // src/mame/drivers/m92.c
+uccopsar // src/mame/drivers/m92.c
+uccopsj // src/mame/drivers/m92.c
+uccopsu // src/mame/drivers/m92.c
 xmultipl // src/mame/drivers/m72.c
 xmultiplm72 // src/mame/drivers/m72.c

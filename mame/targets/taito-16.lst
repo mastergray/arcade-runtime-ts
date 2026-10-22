@@ -1,11 +1,14 @@
 // Derived from pinned MAME 0.161 source (run at the source root):
-// for driver in rastan opwolf rainbow volfied asuka taito_l taito_x taito_b taito_f2 taito_h; do
+// for driver in rastan opwolf rainbow volfied asuka taito_l taito_x taito_b taito_f2 taito_h taito_z; do
 //   comm -12 \
 //     <(sed -nE 's/^[[:space:]]*(GAME|GAMEL|GAME_CUSTOM)[[:space:]]*[(][^,]+,[[:space:]]*([a-z0-9_]+).*/\2/p' "src/mame/drivers/$driver.c" | LC_ALL=C sort -u) \
 //     <(sed -nE 's/^([a-z0-9_]+)([[:space:]]*\/\/.*)?$/\1/p' src/mame/mame.lst | LC_ALL=C sort -u) \
 //     | awk -v source="src/mame/drivers/$driver.c" '{ print $0 " // " source }'
 // done | LC_ALL=C sort -u
 
+aquajack // src/mame/drivers/taito_z.c
+aquajackj // src/mame/drivers/taito_z.c
+aquajacku // src/mame/drivers/taito_z.c
 ashura // src/mame/drivers/taito_b.c
 ashuraj // src/mame/drivers/taito_b.c
 ashurau // src/mame/drivers/taito_b.c
@@ -16,6 +19,10 @@ bonzeadv // src/mame/drivers/asuka.c
 bonzeadvo // src/mame/drivers/asuka.c
 bonzeadvp // src/mame/drivers/asuka.c
 bonzeadvu // src/mame/drivers/asuka.c
+bshark // src/mame/drivers/taito_z.c
+bsharkj // src/mame/drivers/taito_z.c
+bsharkjjs // src/mame/drivers/taito_z.c
+bsharku // src/mame/drivers/taito_z.c
 cachat // src/mame/drivers/taito_l.c
 cadash // src/mame/drivers/asuka.c
 cadashf // src/mame/drivers/asuka.c
@@ -33,11 +40,21 @@ cameltryj // src/mame/drivers/taito_f2.c
 champwr // src/mame/drivers/taito_l.c
 champwrj // src/mame/drivers/taito_l.c
 champwru // src/mame/drivers/taito_l.c
+chasehq // src/mame/drivers/taito_z.c
+chasehqj // src/mame/drivers/taito_z.c
+chasehqju // src/mame/drivers/taito_z.c
+chasehqu // src/mame/drivers/taito_z.c
+contcirc // src/mame/drivers/taito_z.c
+contcircj // src/mame/drivers/taito_z.c
+contcircu // src/mame/drivers/taito_z.c
+contcircua // src/mame/drivers/taito_z.c
 crimec // src/mame/drivers/taito_b.c
 crimecj // src/mame/drivers/taito_b.c
 crimecu // src/mame/drivers/taito_b.c
 cubybop // src/mame/drivers/taito_l.c
 daisenpu // src/mame/drivers/taito_x.c
+dblaxle // src/mame/drivers/taito_z.c
+dblaxleu // src/mame/drivers/taito_z.c
 deadconx // src/mame/drivers/taito_f2.c
 deadconxj // src/mame/drivers/taito_f2.c
 dinorex // src/mame/drivers/taito_f2.c
@@ -53,6 +70,9 @@ driftoutj // src/mame/drivers/taito_f2.c
 driveout // src/mame/drivers/taito_f2.c
 earthjkr // src/mame/drivers/asuka.c
 earthjkrp // src/mame/drivers/asuka.c
+enforce // src/mame/drivers/taito_z.c
+enforcej // src/mame/drivers/taito_z.c
+enforceja // src/mame/drivers/taito_z.c
 eto // src/mame/drivers/asuka.c
 euroch92 // src/mame/drivers/taito_f2.c
 evilston // src/mame/drivers/taito_l.c
@@ -105,6 +125,9 @@ mjnquestb // src/mame/drivers/taito_f2.c
 mofflott // src/mame/drivers/asuka.c
 nastar // src/mame/drivers/taito_b.c
 nastarw // src/mame/drivers/taito_b.c
+nightstr // src/mame/drivers/taito_z.c
+nightstrj // src/mame/drivers/taito_z.c
+nightstru // src/mame/drivers/taito_z.c
 ninjak // src/mame/drivers/taito_f2.c
 ninjakj // src/mame/drivers/taito_f2.c
 ninjaku // src/mame/drivers/taito_f2.c
@@ -129,6 +152,7 @@ puzznicb // src/mame/drivers/taito_l.c
 puzznicba // src/mame/drivers/taito_l.c
 puzznici // src/mame/drivers/taito_l.c
 puzznicj // src/mame/drivers/taito_l.c
+pwheelsj // src/mame/drivers/taito_z.c
 qcrayon // src/mame/drivers/taito_f2.c
 qcrayon2 // src/mame/drivers/taito_f2.c
 qjinsei // src/mame/drivers/taito_f2.c
@@ -137,6 +161,8 @@ quizhq // src/mame/drivers/taito_f2.c
 qzchikyu // src/mame/drivers/taito_f2.c
 qzquest // src/mame/drivers/taito_f2.c
 qzshowby // src/mame/drivers/taito_b.c
+racingb // src/mame/drivers/taito_z.c
+racingbj // src/mame/drivers/taito_z.c
 raimais // src/mame/drivers/taito_l.c
 raimaisj // src/mame/drivers/taito_l.c
 raimaisjo // src/mame/drivers/taito_l.c
@@ -159,6 +185,11 @@ recordbr // src/mame/drivers/taito_h.c
 runark // src/mame/drivers/taito_f2.c
 ryujin // src/mame/drivers/taito_b.c
 sbm // src/mame/drivers/taito_b.c
+sci // src/mame/drivers/taito_z.c
+scia // src/mame/drivers/taito_z.c
+scij // src/mame/drivers/taito_z.c
+scin // src/mame/drivers/taito_z.c
+sciu // src/mame/drivers/taito_z.c
 selfeena // src/mame/drivers/taito_b.c
 silentd // src/mame/drivers/taito_b.c
 silentdj // src/mame/drivers/taito_b.c
@@ -167,6 +198,9 @@ solfigtr // src/mame/drivers/taito_f2.c
 spacedx // src/mame/drivers/taito_b.c
 spacedxj // src/mame/drivers/taito_b.c
 spacedxo // src/mame/drivers/taito_b.c
+spacegun // src/mame/drivers/taito_z.c
+spacegunj // src/mame/drivers/taito_z.c
+spacegunu // src/mame/drivers/taito_z.c
 ssi // src/mame/drivers/taito_f2.c
 ssia // src/mame/drivers/taito_f2.c
 superman // src/mame/drivers/taito_x.c

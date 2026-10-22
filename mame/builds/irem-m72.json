@@ -7,6 +7,8 @@
         "src/mame/drivers/m72.c",
         "src/mame/audio/m72.c",
         "src/mame/video/m72.c",
-        "src/mame/machine/irem_cpu.c"
+        "src/mame/machine/irem_cpu.c",
+        "src/mame/drivers/m92.c",
+        "src/mame/video/m92.c"
     ]
 }
