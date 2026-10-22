@@ -55,6 +55,25 @@ worktree, so they are if anything conservative.
 Desktop full speed holds for this family; the 4× CPU-throttled mobile proxy
 is deferred to M10 as §0.2 allows.
 
+## F3 measured (2026-10-21) — large sets need more than 4,096 pages
+
+The release owner's lawful library includes merged Neo Geo archives far
+larger than their machine's region sum. With the 4,096-page link the
+adapter's §5 pre-check rejected the two largest (estimates 204.6 and
+248.4 MiB against a 192 MiB budget) and a third (177.3 MiB) passed the
+check but would have aborted. Relinking the family bitcode at other fixed
+sizes and booting 330 frames headlessly gave:
+
+| Set (archive + regions) | 256 MiB | 384 MiB | 512 MiB | 1 GiB |
+| ----------------------- | :-----: | :-----: | :-----: | :---: |
+| 84.9 + 92.4 MiB | not tried | boots | boots | boots |
+| 112.5 + 92.1 MiB | rejected | boots | boots | boots |
+| 156.3 + 92.1 MiB | rejected | boots | boots | boots |
+
+`memoryPages` is raised to 8,192 (512 MiB) for this family, which leaves
+the 0.75 budget at 384 MiB: every set in the table passes the pre-check and
+boots with margin.
+
 ## F8 — memory card, NVRAM and state fidelity
 
 Observed 2026-10-20 with a fresh production build, headless Chromium and the

@@ -77,6 +77,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 
 ## Log
 
+- 2026-10-21 — Hand test found a CPS-2 title aborting with `OOM` at 256 MiB and the largest Neo Geo sets rejected by the memory pre-check. Measured by relinking at 384/512/1024 MiB: all boot at 384. `memoryPages` raised to 8,192 for `cps2` and `neogeo`; adapter maps an `OOM` abort to `MEMORY_EXCEEDED`. F3 records updated.
 - 2026-10-21 — Release-owner hand test: audio dropouts on a Neo Geo and a Namco classic title traced to the browser gate running concurrently on the same machine; audio clean once idle (probe: 0 gaps idle, 35 gaps fully loaded, 1 gap half loaded). M20 opened. Cabinet menu now lists the keyboard bindings.
 - 2026-10-21 — W18 merged: harness is a drop-first library (zip basename → family and title from served metadata, per-card audit verdict and Start, folded settings, `?family=` limit). Integrator follow-up folded selectors and fixed companion wording. §11 and §11.1 amended.
 - 2026-10-21 — **Final verification run** on `d09f540`: fresh nine-family rebuild; check and spec green; browser gate green with the Neo Geo preload and five family configs (F4 344–1173 ms, F5 worst 0.56 %, F6 0.9999–1.0002, audio peak 57–77 ms) and with the Namco classic DIP preload. Harness gained `--page` so a device-capability page is served at `/device-test` for other LAN devices. Six-button CPS-2 acceptance deferred to M18. Desktop walkthrough handed to the release owner.

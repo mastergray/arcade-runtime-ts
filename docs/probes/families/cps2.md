@@ -68,6 +68,26 @@ CPS-2 machine reaches the threshold under that estimate, so the build remains
 at 4,096 pages. At runtime the adapter uses the actual supplied archive byte
 lengths and rejects an unusually oversized input before module startup.
 
+### F3 measured (2026-10-21) — the paper estimate was wrong
+
+A lawful 40.3 MiB-region CPS-2 title (21.3 MiB archive) aborted with `OOM`
+inside `callMain` at 4,096 pages even though the §5 estimate (61.6 MiB)
+was far under the 192 MiB budget. Relinking the same bitcode at other fixed
+sizes and booting 330 frames headlessly gave:
+
+| Pages | Heap | Result |
+| ----: | ---: | ------ |
+| 4,096 | 256 MiB | abort("OOM") during ROM load |
+| 6,144 | 384 MiB | boots |
+| 8,192 | 512 MiB | boots |
+| 16,384 | 1 GiB | boots |
+
+CPS-2 loading decrypts the program region into a second copy and expands
+the planar graphics region for `gfx_element`, so its working set is several
+times the summed ROM sizes. `memoryPages` is raised to 8,192 (512 MiB) for
+this family; the adapter now reports an `OOM` abort as `MEMORY_EXCEEDED`
+naming the heap size instead of the generic adapter failure.
+
 ## F4 — What is the time from `callMain` to the first Chromium frame?
 
 **pending private set**

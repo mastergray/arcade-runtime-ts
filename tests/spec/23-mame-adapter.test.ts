@@ -567,6 +567,27 @@ const testFile: TestFile = {
                 .start(undefined),
         },
         {
+            label: "a fixed-heap exhaustion abort during start becomes MEMORY_EXCEEDED naming the build's heap size",
+            run: () => CTGTest.init("MAME out-of-memory classification")
+                .stage("abort callMain with OOM", async () => {
+                    const module = new FakeMameModule();
+                    module.onCallMain = () => { throw new Error('abort("OOM"). Build with -s ASSERTIONS=1 for more info.'); };
+                    const setup = adapterWith(module);
+                    const error = await rejectedBy(setup.adapter.start(startConfig()));
+                    return {
+                        identity: errorSnapshot(error, ArcadeRuntimeError),
+                        message: error instanceof Error ? error.message : String(error),
+                        memoryPages: ArcadeRuntimeError.is(error) ? (error.data as { memoryPages?: number }).memoryPages : null,
+                    };
+                })
+                .assert("classification", (state) => state.subject, P.equals<unknown>({
+                    identity: { isRuntimeError: true, code: 17, label: "MEMORY_EXCEEDED" },
+                    message: `The machine needs more memory than this family build provides (${Math.round((adapterBuild().memoryPages * 65_536) / 1_048_576)} MiB fixed heap).`,
+                    memoryPages: adapterBuild().memoryPages,
+                }))
+                .start(undefined),
+        },
+        {
             label: "native-period pacing stays within one frame at 59.637 and 60.606 Hz on 60 and 120 Hz hosts",
             run: () => CTGTest.init("MAME pacing accumulator")
                 .stage("simulate four ten-second combinations", async () => {

@@ -31,6 +31,8 @@ exactly which archive and file a set is missing.
 | `namco-s2` | Namco System 2 | builds; evidence deferred |
 | `taito-classic` | Taito 8-bit boards (`bublbobl.c`, `arkanoid.c`, `tnzs.c` and related) | builds; evidence deferred |
 
+The `neogeo` and `cps2` builds link a 512 MiB fixed heap because their largest sets need more than 256 MiB once loaded and decoded; the other families link 256 MiB. A browser must be able to reserve that much for the tab.
+
 "Measured" means the family's startup, pacing, sustained-speed and
 input/audio acceptance evidence was recorded from a lawful local set
 (`docs/probes/families/`). "Evidence deferred" families compile, pass the

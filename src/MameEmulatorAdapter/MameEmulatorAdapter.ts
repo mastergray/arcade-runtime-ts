@@ -268,6 +268,14 @@ const instantiateModule = (factory: Awaited<ReturnType<ModuleLoader>>, options: 
 // Serializes a fetched byte body as UTF-8 text.
 const utf8 = (bytes: ArrayBuffer): string => new TextDecoder("utf-8", { fatal: true }).decode(bytes);
 
+// PREDICATE :: UNKNOWN -> BOOLEAN
+// True when a module failure is Emscripten's fixed-heap exhaustion: abort("OOM") from the 1.38 runtime or the
+// "Cannot enlarge memory arrays" message of a fixed, non-growing heap. Any other abort stays ADAPTER_FAILED.
+const isOutOfMemoryAbort = (error: unknown): boolean => {
+    const text = error instanceof Error ? error.message : String(error);
+    return /abort\("?OOM"?\)|Cannot enlarge memory arrays|out of memory/i.test(text);
+};
+
 /**
  *
  * Class
@@ -469,6 +477,11 @@ export default class MameEmulatorAdapter implements ArcadeAdapter {
             router.target?.abort?.();
             dropModule();
             if (ArcadeRuntimeError.is(error)) throw error;
+            if (isOutOfMemoryAbort(error)) throw new ArcadeRuntimeError({
+                code: ArcadeRuntimeError.CODE.MEMORY_EXCEEDED,
+                message: `The machine needs more memory than this family build provides (${Math.round((this._build.memoryPages * 65_536) / 1_048_576)} MiB fixed heap).`,
+                data: { memoryPages: this._build.memoryPages, cause: error },
+            });
             throw new ArcadeRuntimeError({
                 code: ArcadeRuntimeError.CODE.ADAPTER_FAILED,
                 message: "The MAME module failed to load, instantiate or start.",
