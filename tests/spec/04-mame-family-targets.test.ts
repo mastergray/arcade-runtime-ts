@@ -45,6 +45,15 @@ const FAMILY_TARGETS: readonly FamilyTarget[] = [
         expectedMachines: 35,
     },
     {
+        id: "midway-mcr",
+        sources: [
+            "src/mame/drivers/mcr.c",
+            "src/mame/drivers/mcr3.c",
+            "src/mame/drivers/mcr68.c",
+        ],
+        expectedMachines: 54,
+    },
+    {
         id: "neogeo",
         sources: ["src/mame/drivers/neogeo.c", "src/mame/drivers/neogeo_noslot.c"],
         expectedMachines: 256,

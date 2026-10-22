@@ -1,0 +1,18 @@
+{
+    "family": "midway-mcr",
+    "target": "mame/targets/midway-mcr.lua",
+    "list": "mame/targets/midway-mcr.lst",
+    "memoryPages": 4096,
+    "sources": [
+        "src/mame/drivers/mcr.c",
+        "src/mame/machine/mcr.c",
+        "src/mame/video/mcr.c",
+        "src/mame/drivers/mcr3.c",
+        "src/mame/video/mcr3.c",
+        "src/mame/drivers/mcr68.c",
+        "src/mame/machine/mcr68.c",
+        "src/mame/video/mcr68.c",
+        "src/mame/audio/midway.c",
+        "src/mame/audio/williams.c"
+    ]
+}
