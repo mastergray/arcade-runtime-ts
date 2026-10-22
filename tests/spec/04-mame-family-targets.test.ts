@@ -63,6 +63,20 @@ const FAMILY_TARGETS: readonly FamilyTarget[] = [
         expectedMachines: 54,
     },
     {
+        id: "misc-16",
+        sources: [
+            "src/mame/drivers/dec0.c",
+            "src/mame/drivers/karnov.c",
+            "src/mame/drivers/raiden.c",
+            "src/mame/drivers/raiden2.c",
+            "src/mame/drivers/r2dx_v33.c",
+            "src/mame/drivers/snowbros.c",
+            "src/mame/drivers/shadfrce.c",
+            "src/mame/drivers/btoads.c",
+        ],
+        expectedMachines: 111,
+    },
+    {
         id: "konami-16",
         sources: [
             "src/mame/drivers/tmnt.c",

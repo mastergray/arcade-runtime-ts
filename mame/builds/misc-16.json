@@ -1,0 +1,32 @@
+{
+    "family": "misc-16",
+    "target": "mame/targets/misc-16.lua",
+    "list": "mame/targets/misc-16.lst",
+    "memoryPages": 4096,
+    "sources": [
+        "src/mame/drivers/dec0.c",
+        "src/mame/machine/dec0.c",
+        "src/mame/video/dec0.c",
+        "src/mame/drivers/karnov.c",
+        "src/mame/video/karnov.c",
+        "src/mame/video/decbac06.c",
+        "src/mame/video/decmxc06.c",
+        "src/mame/video/deckarn.c",
+        "src/mame/drivers/raiden.c",
+        "src/mame/video/raiden.c",
+        "src/mame/drivers/raiden2.c",
+        "src/mame/machine/r2crypt.c",
+        "src/mame/machine/raiden2cop.c",
+        "src/mame/machine/seibuspi.c",
+        "src/mame/drivers/r2dx_v33.c",
+        "src/mame/audio/seibu.c",
+        "src/mame/video/seibu_crtc.c",
+        "src/mame/drivers/snowbros.c",
+        "src/mame/video/kan_pand.c",
+        "src/mame/video/kan_panb.c",
+        "src/mame/drivers/shadfrce.c",
+        "src/mame/video/shadfrce.c",
+        "src/mame/drivers/btoads.c",
+        "src/mame/video/btoads.c"
+    ]
+}
