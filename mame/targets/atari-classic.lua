@@ -14,6 +14,9 @@ SOUNDS["POKEY"] = true
 SOUNDS["YM2413"] = true
 SOUNDS["OKIM6295"] = true
 
+MACHINES["EEPROMDEV"] = true
+MACHINES["ER2055"] = true
+
 -- The release-era generated project always archives the bus library, and its
 -- pinned llvm-ar cannot create an empty archive. Keep one harmless bus core.
 BUSES["CENTRONICS"] = true
