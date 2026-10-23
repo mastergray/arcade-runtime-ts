@@ -29,6 +29,7 @@ exactly which archive and file a set is missing.
 | `taito-f3` | Taito F3 (68EC020 with the Ensoniq sound board) | measured |
 | `irem-m72` | Irem M72 and M92 | measured |
 | `sega-16` | Sega `segahang.c`, `segaorun.c` and `segaxbd.c` boards | measured |
+| `sega-s16` | Sega System 16A, 16B and 18 (`segas16a.c`, `segas16b.c`, `segas18.c`) | measured |
 | `midway-mcr` | Bally/Midway MCR-1/2/3 and MCR-68k | measured |
 | `konami-16` | Konami 68000 boards (`tmnt.c`, `simpsons.c`, `xmen.c`, `gijoe.c`, `mystwarr.c`, `spy.c` hardware) | measured |
 | `atari-classic` | Atari vector boards (`bzone.c`, `tempest.c`) and `rampart.c` | measured |
