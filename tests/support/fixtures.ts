@@ -77,6 +77,7 @@ export const validMachineInfo = (): MachineInfo => ({
     aspectRatio: 4 / 3,
     players: 2,
     buttons: 6,
+    inputs: { analog: [], dualStick: false },
     bios: [{ name: "default", description: "Default BIOS", isDefault: true }],
     hasNvram: true,
 });

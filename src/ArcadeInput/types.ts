@@ -3,6 +3,7 @@
 // Type dependencies:
 import {
     isArcadeSession,                                               // Guards the session receiving control changes
+    type ArcadeAxis,                                              // Axis accepted by a channel
     type ArcadeControl,                                           // Control accepted by a channel
     type ArcadeSession,                                           // Session receiving control changes
 } from "../shared.types.js";
@@ -25,6 +26,7 @@ export interface ArcadeInputChannel {
     press(control: ArcadeControl): void;                           // Holds a control idempotently
     release(control: ArcadeControl): void;                         // Releases this channel's hold
     tap(control: ArcadeControl, holdFrames?: number): void;        // Holds through a number of emulated ticks
+    setAxis(axis: ArcadeAxis, value: number): void;                // Last-writer-wins absolute value or relative delta
     releaseAll(): void;                                           // Releases this channel's controls
     destroy(): void;                                              // Releases this channel and makes it unusable
 }
@@ -50,6 +52,7 @@ export function isArcadeInputChannel(value: unknown): value is ArcadeInputChanne
     return typeof channel.press === "function"
         && typeof channel.release === "function"
         && typeof channel.tap === "function"
+        && typeof channel.setAxis === "function"
         && typeof channel.releaseAll === "function"
         && typeof channel.destroy === "function";
 }

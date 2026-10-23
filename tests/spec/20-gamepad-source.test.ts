@@ -16,10 +16,10 @@ import {
 } from "../../src/GamepadSource/types.ts";
 import FakeArcadeSession, { type FakeSessionCall } from "../support/FakeArcadeSession.ts";   // Required W0 session double
 import FakeFrameScheduler from "../support/FakeFrameScheduler.ts";   // Required W0 polling-clock double
-import { errorSnapshot, thrownBy, type ErrorSnapshot } from "../support/fixtures.ts";   // Error capture helpers
+import { errorSnapshot, thrownBy, validMachineInfo, type ErrorSnapshot } from "../support/fixtures.ts";   // Error capture helpers
 
 // Type dependencies:
-import type { ArcadeControl } from "../../src/shared.types.ts";   // Expected control-call values
+import type { ArcadeAxis, ArcadeControl, MachineInputs } from "../../src/shared.types.ts";   // Expected input-call values
 import type {
     GamepadLike,                                                  // Scripted pad snapshots
     GamepadMapping,                                               // Mapping fixtures
@@ -89,6 +89,8 @@ const CUSTOM_MAPPING: GamepadMapping = Object.freeze({
     id: "custom pad",
     dpad: Object.freeze({ up: 0, down: 1, left: 2, right: 3 }),
     axes: Object.freeze([2, 3] as const),
+    rightAxes: Object.freeze([4, 5] as const),
+    pedals: Object.freeze([12, 13] as const),
     buttons: Object.freeze([6, 7, 8, 9, 10, 11] as const),
     coin: 4,
     start: 5,
@@ -106,7 +108,7 @@ const pad = (
     id: string,
     index: number,
     pressed: ReadonlyArray<number> = [],
-    axes: readonly [number, number] = [0, 0],
+    axes: ReadonlyArray<number> = [0, 0],
     mapping = "standard",
     connected = true,
 ): GamepadLike => ({
@@ -122,14 +124,24 @@ const pad = (
 // One expected session control call.
 const controlCall = (control: ArcadeControl, pressed: boolean): FakeSessionCall => ({ method: "setControl", args: [control, pressed] });
 
+// HELPER :: arcadeAxis, NUMBER -> fakeSessionCall
+// One expected session axis call.
+const axisCall = (axis: ArcadeAxis, value: number): FakeSessionCall => ({ method: "setAxis", args: [axis, value] });
+
 // HELPER :: UNKNOWN -> errorSnapshot
 // Runtime-error identity for a thrown value.
 const errorOf = (value: unknown): ErrorSnapshot => errorSnapshot(value, ArcadeRuntimeError);
 
 // HELPER :: fakeGamepadProvider, fakeFrameScheduler, fakeEventTarget, gamepadMapping? -> {source,input,session}
 // Creates and attaches one source over only the required W0 doubles.
-const attachedSource = (provider: FakeGamepadProvider, scheduler: FakeFrameScheduler, target: FakeEventTarget, mapping?: GamepadMapping) => {
-    const session = new FakeArcadeSession();
+const attachedSource = (
+    provider: FakeGamepadProvider,
+    scheduler: FakeFrameScheduler,
+    target: FakeEventTarget,
+    mapping?: GamepadMapping,
+    inputs: MachineInputs = { analog: [], dualStick: false },
+) => {
+    const session = new FakeArcadeSession({ ...validMachineInfo(), inputs });
     const input = new ArcadeInput({ session });
     const source = new GamepadSource({ input, provider, scheduler, target, mapping });
     source.attach();
@@ -186,6 +198,8 @@ const testFile: TestFile = {
                     badDpad: isGamepadMapping({ dpad: { up: 0, down: 1, left: 2, right: -1 } }),
                     shortAxes: isGamepadMapping({ axes: [0] }),
                     fractionalAxis: isGamepadMapping({ axes: [0, 1.5] }),
+                    shortRightAxes: isGamepadMapping({ rightAxes: [2] }),
+                    badPedals: isGamepadMapping({ pedals: [6, -1] }),
                     shortButtons: isGamepadMapping({ buttons: [0, 1, 2] }),
                     badCoin: isGamepadMapping({ coin: -1 }),
                     badStart: isGamepadMapping({ start: "9" }),
@@ -198,6 +212,8 @@ const testFile: TestFile = {
                     badDpad: false,
                     shortAxes: false,
                     fractionalAxis: false,
+                    shortRightAxes: false,
+                    badPedals: false,
                     shortButtons: false,
                     badCoin: false,
                     badStart: false,
@@ -297,6 +313,134 @@ const testFile: TestFile = {
                         { kind: "start", player: 2 },
                     ],
                 }))
+                .start(undefined),
+        },
+        {
+            label: "declared absolute, relative and pedal axes use dead-zone rescaling and release neutrals",
+            run: () => CTGTest.init("gamepad analogue bindings")
+                .stage("poll every bound axis kind, then disconnect", () => {
+                    const provider = new FakeGamepadProvider();
+                    const base = pad("pad", 0, [], [0.625, -1, 0, 0.625]);
+                    provider.pads = [{
+                        ...base,
+                        buttons: base.buttons.map((button, index) => index === 7
+                            ? { pressed: true, value: 0.75 }
+                            : index === 6 ? { pressed: false, value: 0.25 } : button),
+                    }];
+                    const scheduler = new FakeFrameScheduler();
+                    const inputs: MachineInputs = {
+                        analog: [
+                            { player: 1, kind: "stick-x" }, { player: 1, kind: "stick-y" }, { player: 1, kind: "stick-z" },
+                            { player: 1, kind: "pedal-1" }, { player: 1, kind: "pedal-2" },
+                            { player: 1, kind: "dial" }, { player: 1, kind: "trackball-y" },
+                        ],
+                        dualStick: false,
+                    };
+                    const { input, session } = attachedSource(provider, scheduler, new FakeEventTarget(), undefined, inputs);
+                    scheduler.tick(16);
+                    const active = input.axes;
+                    provider.pads = [];
+                    scheduler.tick(32);
+                    return { active, final: input.axes, calls: session.calls };
+                })
+                .assert("axis calls and disconnect recentering match", (state) => state.subject, P.equals<unknown>({
+                    active: [
+                        { axis: { player: 1, kind: "pedal-1" }, value: 0.5 },
+                        { axis: { player: 1, kind: "pedal-2" }, value: -0.5 },
+                        { axis: { player: 1, kind: "spin-x" }, value: 10 },
+                        { axis: { player: 1, kind: "spin-y" }, value: -20 },
+                        { axis: { player: 1, kind: "stick-x" }, value: 0.5 },
+                        { axis: { player: 1, kind: "stick-y" }, value: -1 },
+                        { axis: { player: 1, kind: "stick-z" }, value: 0.5 },
+                    ],
+                    final: [],
+                    calls: [
+                        axisCall({ player: 1, kind: "stick-x" }, 0.5),
+                        axisCall({ player: 1, kind: "stick-y" }, -1),
+                        axisCall({ player: 1, kind: "spin-x" }, 10),
+                        axisCall({ player: 1, kind: "spin-y" }, -20),
+                        axisCall({ player: 1, kind: "stick-z" }, 0.5),
+                        axisCall({ player: 1, kind: "pedal-1" }, 0.5),
+                        axisCall({ player: 1, kind: "pedal-2" }, -0.5),
+                        axisCall({ player: 1, kind: "pedal-1" }, -1),
+                        axisCall({ player: 1, kind: "pedal-2" }, -1),
+                        axisCall({ player: 1, kind: "stick-x" }, 0),
+                        axisCall({ player: 1, kind: "stick-y" }, 0),
+                        axisCall({ player: 1, kind: "stick-z" }, 0),
+                    ],
+                }))
+                .start(undefined),
+        },
+        {
+            label: "right-stick and pedal overrides select the configured physical indices",
+            run: () => CTGTest.init("gamepad analogue overrides")
+                .stage("poll a custom-mapped standard pad", () => {
+                    const provider = new FakeGamepadProvider();
+                    const base = pad("custom pad", 0, [], [1, 1, 0.625, 0, -1, 0.625]);
+                    provider.pads = [{
+                        ...base,
+                        buttons: base.buttons.map((button, index) => index === 12
+                            ? { pressed: true, value: 0.75 }
+                            : index === 13 ? { pressed: false, value: 0.25 } : button),
+                    }];
+                    const scheduler = new FakeFrameScheduler();
+                    const inputs: MachineInputs = {
+                        analog: [
+                            { player: 1, kind: "stick-x" }, { player: 1, kind: "stick-z" },
+                            { player: 1, kind: "pedal-1" }, { player: 1, kind: "pedal-2" },
+                        ],
+                        dualStick: false,
+                    };
+                    const { session } = attachedSource(provider, scheduler, new FakeEventTarget(), CUSTOM_MAPPING, inputs);
+                    scheduler.tick(16);
+                    return session.calls;
+                })
+                .assert("overridden indices drive all four axes", (state) => state.subject, P.equals<unknown>([
+                    axisCall({ player: 1, kind: "stick-x" }, 0.5),
+                    axisCall({ player: 1, kind: "stick-z" }, 0.5),
+                    axisCall({ player: 1, kind: "pedal-1" }, 0.5),
+                    axisCall({ player: 1, kind: "pedal-2" }, -0.5),
+                ]))
+                .start(undefined),
+        },
+        {
+            label: "dual-stick discovery maps both sticks separately while the d-pad remains ordinary",
+            run: () => CTGTest.init("gamepad dual-stick binding")
+                .stage("poll diagonal sticks and one d-pad direction", () => {
+                    const provider = new FakeGamepadProvider();
+                    provider.pads = [pad("pad", 0, [14], [-1, -1, 1, 1])];
+                    const scheduler = new FakeFrameScheduler();
+                    const { session } = attachedSource(provider, scheduler, new FakeEventTarget(), undefined, { analog: [], dualStick: true });
+                    scheduler.tick(16);
+                    return { held: session.held, calls: session.calls };
+                })
+                .assert("ordinary and separate-stick controls coexist", (state) => state.subject, P.equals<unknown>({
+                    held: ["p1:direction:left", "p1:stick:1:up", "p1:stick:1:left", "p1:stick:2:down", "p1:stick:2:right"],
+                    calls: [
+                        controlCall({ kind: "direction", player: 1, direction: "left" }, true),
+                        controlCall({ kind: "stick", player: 1, stick: 1, direction: "up" }, true),
+                        controlCall({ kind: "stick", player: 1, stick: 1, direction: "left" }, true),
+                        controlCall({ kind: "stick", player: 1, stick: 2, direction: "down" }, true),
+                        controlCall({ kind: "stick", player: 1, stick: 2, direction: "right" }, true),
+                    ],
+                }))
+                .start(undefined),
+        },
+        {
+            label: "a machine declaring no new inputs preserves the pre-W26 standard layout exactly",
+            run: () => CTGTest.init("gamepad no-declaration invariance")
+                .stage("poll a deflected standard pad", () => {
+                    const provider = new FakeGamepadProvider();
+                    provider.pads = [pad("pad", 0, [], [1, -1, 0, 1])];
+                    const scheduler = new FakeFrameScheduler();
+                    const { session } = attachedSource(provider, scheduler, new FakeEventTarget());
+                    scheduler.tick(16);
+                    return session.calls;
+                })
+                .assert("only the original digital directions are sent", (state) => state.subject, P.equals<unknown>([
+                    controlCall({ kind: "direction", player: 1, direction: "up" }, true),
+                    controlCall({ kind: "direction", player: 1, direction: "right" }, true),
+                ]))
                 .start(undefined),
         },
         {

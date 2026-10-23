@@ -106,7 +106,7 @@ const acceptance = async (audioWindowMs: number, audioSampleMs: number, audioCap
     keyboard.attach();
     const beforeKeys = snapshot();
     const key = (code: string, down: boolean): void => { window.dispatchEvent(new KeyboardEvent(down ? "keydown" : "keyup", { code, bubbles: true })); };
-    key("Digit5", true); await wait(120); key("Digit5", false); await wait(400);
+    for (let coin = 0; coin < 2; coin++) { key("Digit5", true); await wait(250); key("Digit5", false); await wait(400); }   // two coins: some boards default to two coins per play
     key("Digit1", true); await wait(120); key("Digit1", false); await wait(1500);
     const afterKeys = snapshot();
     key("ArrowLeft", true); await wait(100);
@@ -127,8 +127,10 @@ const acceptance = async (audioWindowMs: number, audioSampleMs: number, audioCap
     await wait(200);
     const gamepadPlayers = gamepads.players.map((entry) => entry.player);
     const beforePad = snapshot();
-    pads = [pad(0, [8]), pad(1, [])]; await wait(200);          // Select/Back → coin
-    pads = [pad(0, []), pad(1, [])]; await wait(400);
+    for (let coin = 0; coin < 2; coin++) {                      // Select/Back → coin, twice for two-coin boards
+        pads = [pad(0, [8]), pad(1, [])]; await wait(250);
+        pads = [pad(0, []), pad(1, [])]; await wait(400);
+    }
     pads = [pad(0, [9]), pad(1, [])]; await wait(200);          // Start
     pads = [pad(0, []), pad(1, [])]; await wait(1500);
     const afterPad = snapshot();

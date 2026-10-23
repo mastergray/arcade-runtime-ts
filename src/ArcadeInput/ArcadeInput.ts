@@ -6,10 +6,13 @@ import ArcadeRuntimeError from "../ArcadeRuntimeError/ArcadeRuntimeError.js";   
 // Type dependencies:
 import {
     arcadeControlKey,                                             // Canonical identity and release ordering
+    isArcadeAxis,                                                 // Guards every public axis argument
     isArcadeControl,                                              // Guards every public control argument
+    type ArcadeAxis,                                              // Absolute or relative logical axis
     type ArcadeControl,                                           // Digital arcade input vocabulary
     type ArcadeControlKey,                                        // Canonical key used by hold maps
     type ArcadeSession,                                           // Session receiving first-press and last-release changes
+    type MachineInfo,                                             // Session machine exposed to input sources
     type Unsubscribe,                                             // Tick subscription remover
 } from "../shared.types.js";
 import {
@@ -29,6 +32,7 @@ import {
 interface ChannelState {
     readonly held: Map<ArcadeControlKey, ArcadeControl>;           // This channel's controls by canonical key
     readonly taps: Map<ArcadeControlKey, number>;                  // Emulated ticks remaining for tap-created holds
+    readonly axes: Map<string, AxisValue>;                         // Axes whose last writer is this channel
     destroyed: boolean;                                           // Whether channel destroy() completed
 }
 
@@ -37,6 +41,14 @@ interface ChannelState {
 interface HeldControl {
     readonly control: ArcadeControl;                               // Stable copied control sent to the session
     readonly holders: Set<ChannelState>;                           // Channels currently holding it
+}
+
+// INTERFACE :: {axis:arcadeAxis, value:NUMBER, owner:channelState}
+// One effective last-writer-wins axis value and its owning channel.
+interface AxisValue {
+    readonly axis: ArcadeAxis;                                    // Stable copied axis sent to the session
+    readonly value: number;                                       // Clamped absolute value or finite relative delta
+    readonly owner: ChannelState;                                 // Sole channel recentering this axis
 }
 
 /**
@@ -55,6 +67,7 @@ export default class ArcadeInput {
     private readonly _session: ArcadeSession;                      // Session receiving first presses and last releases
     private readonly _channels = new Set<ChannelState>();          // Every live channel, including the default
     private readonly _held = new Map<ArcadeControlKey, HeldControl>();   // Globally held controls and reference owners
+    private readonly _axes = new Map<string, AxisValue>();        // Effective axes by canonical player/kind key
     private readonly _defaultChannel: ArcadeInputChannel;          // Channel behind the instance convenience methods
     private readonly _unsubscribeTick: Unsubscribe;                // Removes the tap clock subscription
     private _destroyed = false;                                    // Whether destroy() completed
@@ -81,6 +94,20 @@ export default class ArcadeInput {
         return [...this._held.values()]
             .sort((left, right) => arcadeControlKey(left.control).localeCompare(arcadeControlKey(right.control)))
             .map((entry) => entry.control);
+    }
+
+    // GETTER :: VOID -> [{axis:arcadeAxis,value:NUMBER}]
+    // Returns every effective axis in canonical player/kind order.
+    get axes(): ReadonlyArray<{ readonly axis: ArcadeAxis; readonly value: number }> {
+        return [...this._axes.entries()]
+            .sort(([left], [right]) => left.localeCompare(right))
+            .map(([, entry]) => ({ axis: entry.axis, value: entry.value }));
+    }
+
+    // GETTER :: VOID -> machineInfo
+    // Exposes the session's discovered controls to input sources.
+    get machine(): MachineInfo {
+        return this._session.machine;
     }
 
     /**
@@ -119,6 +146,13 @@ export default class ArcadeInput {
         this._defaultChannel.tap(control, holdFrames);
     }
 
+    // INSTANCE :: arcadeAxis, NUMBER -> VOID
+    // Writes an axis through the default channel, transferring ownership from any previous writer.
+    // NOTE: Absolute values are clamped and non-finite values throw INVALID_CONFIG.
+    setAxis(axis: ArcadeAxis, value: number): void {
+        this._defaultChannel.setAxis(axis, value);
+    }
+
     // INSTANCE :: VOID -> VOID
     // Releases every channel's holds in canonical order.
     // NOTE: Throws ArcadeRuntimeError DESTROYED after destroy().
@@ -136,6 +170,7 @@ export default class ArcadeInput {
         this._destroyed = true;
         for (const channel of this._channels) {
             channel.taps.clear();
+            channel.axes.clear();
             channel.destroyed = true;
         }
         this._channels.clear();
@@ -150,12 +185,13 @@ export default class ArcadeInput {
     // PRIVATE :: VOID -> arcadeInputChannel
     // Allocates one channel state and returns its closure-backed public operations.
     private newChannel(): ArcadeInputChannel {
-        const channel: ChannelState = { held: new Map(), taps: new Map(), destroyed: false };
+        const channel: ChannelState = { held: new Map(), taps: new Map(), axes: new Map(), destroyed: false };
         this._channels.add(channel);
         return {
             press: (control) => this.pressFor(channel, control),
             release: (control) => this.releaseFor(channel, control),
             tap: (control, holdFrames = ArcadeInput.DEFAULT_HOLD_FRAMES) => this.tapFor(channel, control, holdFrames),
+            setAxis: (axis, value) => this.setAxisFor(channel, axis, value),
             releaseAll: () => this.releaseChannel(channel),
             destroy: () => this.destroyChannel(channel),
         };
@@ -200,11 +236,28 @@ export default class ArcadeInput {
         channel.taps.set(key, holdFrames);
     }
 
+    // PRIVATE :: channelState, arcadeAxis, NUMBER -> VOID
+    // Validates, normalizes and forwards an axis while transferring sole recenter ownership.
+    private setAxisFor(channel: ChannelState, axis: ArcadeAxis, value: number): void {
+        this.assertChannelLive(channel);
+        if (!isArcadeAxis(axis) || !Number.isFinite(value)) throw ArcadeInput.invalidConfig("ArcadeInput setAxis requires an ArcadeAxis and finite value.", { axis, value });
+        const stable = Object.freeze({ player: axis.player, kind: axis.kind });
+        const normalized = axis.kind === "spin-x" || axis.kind === "spin-y" ? value : Math.max(-1, Math.min(1, value));
+        const key = ArcadeInput.axisKey(stable);
+        const previous = this._axes.get(key);
+        if (previous !== undefined && previous.owner !== channel) previous.owner.axes.delete(key);
+        const entry: AxisValue = { axis: stable, value: normalized, owner: channel };
+        this._session.setAxis(stable, normalized);
+        this._axes.set(key, entry);
+        channel.axes.set(key, entry);
+    }
+
     // PRIVATE :: channelState -> VOID
     // Releases one channel's holds in canonical order.
     private releaseChannel(channel: ChannelState): void {
         this.assertChannelLive(channel);
         for (const key of [...channel.held.keys()].sort((left, right) => left.localeCompare(right))) this.releaseKeyFor(channel, key);
+        for (const key of [...channel.axes.keys()].sort((left, right) => left.localeCompare(right))) this.releaseAxisFor(channel, key);
     }
 
     // PRIVATE :: channelState -> VOID
@@ -215,6 +268,7 @@ export default class ArcadeInput {
         this.releaseChannel(channel);
         channel.destroyed = true;
         channel.taps.clear();
+        channel.axes.clear();
         this._channels.delete(channel);
     }
 
@@ -255,10 +309,23 @@ export default class ArcadeInput {
         }
     }
 
+    // PRIVATE :: channelState, STRING -> VOID
+    // Removes one owned axis and returns absolute kinds to their documented neutral value.
+    private releaseAxisFor(channel: ChannelState, key: string): void {
+        const entry = channel.axes.get(key);
+        channel.axes.delete(key);
+        if (entry === undefined || this._axes.get(key)?.owner !== channel) return;
+        this._axes.delete(key);
+        if (entry.axis.kind.startsWith("spin-")) return;
+        this._session.setAxis(entry.axis, entry.axis.kind.startsWith("pedal-") ? -1 : 0);
+    }
+
     // PRIVATE :: VOID -> VOID
     // Releases every globally held control in canonical order and clears all channel references.
     private releaseEverything(): void {
         for (const key of [...this._held.keys()].sort((left, right) => left.localeCompare(right))) this.releaseEveryHolder(key);
+        for (const channel of this._channels)
+            for (const key of [...channel.axes.keys()].sort((left, right) => left.localeCompare(right))) this.releaseAxisFor(channel, key);
     }
 
     // PRIVATE :: VOID -> VOID
@@ -314,6 +381,8 @@ export default class ArcadeInput {
         switch (control.kind) {
             case "direction": return Object.freeze({ kind: control.kind, player: control.player, direction: control.direction });
             case "button": return Object.freeze({ kind: control.kind, player: control.player, button: control.button });
+            case "stick": return Object.freeze({ kind: control.kind, player: control.player, stick: control.stick, direction: control.direction });
+            case "pedal": return Object.freeze({ kind: control.kind, player: control.player, pedal: control.pedal });
             case "coin":
             case "start":
             case "select": return Object.freeze({ kind: control.kind, player: control.player });
@@ -324,9 +393,17 @@ export default class ArcadeInput {
     // STATIC :: arcadeControl -> arcadeControlKey?
     // Returns the same-player opposite direction key, or null for non-direction controls.
     private static oppositeKey(control: ArcadeControl): ArcadeControlKey | null {
-        if (control.kind !== "direction") return null;
+        if (control.kind !== "direction" && control.kind !== "stick") return null;
         const opposites = { up: "down", down: "up", left: "right", right: "left" } as const;
-        return arcadeControlKey({ kind: "direction", player: control.player, direction: opposites[control.direction] });
+        return control.kind === "direction"
+            ? arcadeControlKey({ kind: "direction", player: control.player, direction: opposites[control.direction] })
+            : arcadeControlKey({ kind: "stick", player: control.player, stick: control.stick, direction: opposites[control.direction] });
+    }
+
+    // STATIC :: arcadeAxis -> STRING
+    // Canonical identity for last-writer ownership and axes snapshots.
+    private static axisKey(axis: ArcadeAxis): string {
+        return `p${axis.player}:${axis.kind}`;
     }
 
     // STATIC :: STRING, UNKNOWN -> arcadeRuntimeError

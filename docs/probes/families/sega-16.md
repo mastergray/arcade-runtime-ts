@@ -122,3 +122,28 @@ Cadence tolerance 1 %, 60 s ratio tolerance 2 %.
 Analog steering and throttle on these boards take the digital fallback
 (M11); the acceptance's coin, start and direction inputs changed the picture
 from both keyboard and gamepad.
+
+## F11 — Which analogue ports occur?
+
+`segaxbd.c` declares `IPT_AD_STICK_X` at 0x20–0xe0, sensitivity 100 and key
+delta 4; `IPT_AD_STICK_Y` at 0x40–0xc0 with the same sensitivity/delta and
+reverse; and full 8-bit `IPT_AD_STICK_Z` at sensitivity 100 and key delta 79.
+It also declares `IPT_PADDLE` at 0x20–0xe0, sensitivity 100, key delta 4 and
+reverse, plus full 8-bit `IPT_PEDAL`/`IPT_PEDAL2` at sensitivity 100 and key
+deltas 20/40. Standard X/Y/Z/RX/RY axis rows bind them; `HAT1` ramps X/Y and
+the paddle, `BUTTON13/14` ramp Z, and `BUTTON13/14` press the two pedals.
+
+`segaorun.c` declares `IPT_PADDLE` at 0x20–0xe0, sensitivity 100 and key delta
+4, plus full 8-bit `IPT_PEDAL`/`IPT_PEDAL2` at sensitivity 100 and key deltas
+20/40. The paddle uses the standard X axis and `HAT1LEFT/RIGHT`; the pedals
+use RX/RY and `BUTTON13/14`.
+
+`segahang.c` has the same paddle and two-pedal values, with reverse on the
+paddle, and also declares reversed `IPT_AD_STICK_X/Y` at 0x20–0xe0,
+sensitivity 100 and key delta 4. Standard X/Y/RX/RY rows supply the analogue
+values, with the matching `HAT1` and pedal-button increment rows as digital
+fallbacks.
+
+`segaybd.c` declares `IPT_AD_STICK_X/Y/Z` over 0x01–0xff, all at sensitivity
+100; X/Y use key delta 4, Y is reversed, and Z uses key delta 79. Standard
+X/Y/Z axis rows bind them, `HAT1` ramps X/Y, and `BUTTON13/14` ramp Z.

@@ -90,7 +90,7 @@ const testFile: TestFile = {
                     memory: state.subject.includes("TOTAL_MEMORY=268435456"),
                     methods: ["FS", "callMain", "cwrap", "ccall", "UTF8ToString", "HEAPU8", "HEAPF32"].every((method) => EXPORTED_RUNTIME_METHODS.includes(method)
                         && state.subject.some((flag) => flag.includes(`"${method}"`))),
-                    exports: ["_web_run_frames", "_web_pump", "_web_set_control", "_web_pause", "_web_resume", "_web_reset", "_web_save_state", "_web_load_state", "_web_flush_nvram", "_web_exit", "_web_machine_info"]
+                    exports: ["_web_run_frames", "_web_pump", "_web_set_control", "_web_set_axis", "_web_pause", "_web_resume", "_web_reset", "_web_save_state", "_web_load_state", "_web_flush_nvram", "_web_exit", "_web_machine_info"]
                         .every((name) => state.subject.some((flag) => flag.startsWith("EXPORTED_FUNCTIONS=") && flag.includes(`"${name}"`))),
                     noPthreads: state.subject.includes("USE_PTHREADS=0") && state.subject.includes("NO_EXIT_RUNTIME=1") && state.subject.includes("ALLOW_MEMORY_GROWTH=0"),
                 }), P.equals<{ modularize: boolean; name: boolean; memory: boolean; methods: boolean; exports: boolean; noPthreads: boolean }>({ modularize: true, name: true, memory: true, methods: true, exports: true, noPthreads: true }))

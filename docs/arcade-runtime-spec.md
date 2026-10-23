@@ -358,8 +358,30 @@ type FetchLike = (url: string) => Promise<FetchResponseLike>;
 boards have no action buttons. `select` and `tilt` exist so the vocabulary
 covers Neo Geo AES mode and the older boards' tilt switch; a session whose
 machine has no such port accepts the control and does nothing (§5).
-Analog controls (steering, spinner, trackball, paddle) are added in M11 as a
-separate `ArcadeAxis` type and are not part of `ArcadeControl`.
+Analogue controls (M11, W26) are a separate `ArcadeAxis` vocabulary, not
+part of `ArcadeControl`, with two digital additions:
+
+```ts
+type ArcadeControl = … the variants above …
+    | { readonly kind: "stick"; readonly player: PlayerIndex; readonly stick: 1 | 2; readonly direction: ArcadeDirection }   // one physical stick of a dual-stick board
+    | { readonly kind: "pedal"; readonly player: PlayerIndex; readonly pedal: 1 | 2 | 3 };                                    // digital pedal press
+
+type ArcadeAxisKind = "stick-x" | "stick-y" | "stick-z" | "pedal-1" | "pedal-2" | "spin-x" | "spin-y";
+interface ArcadeAxis { readonly player: PlayerIndex; readonly kind: ArcadeAxisKind; }
+
+type MachineAnalogKind = "stick-x" | "stick-y" | "stick-z" | "paddle" | "paddle-v" | "pedal-1" | "pedal-2" | "pedal-3"
+    | "dial" | "dial-v" | "trackball-x" | "trackball-y" | "lightgun-x" | "lightgun-y" | "mouse-x" | "mouse-y" | "positional" | "positional-v";
+interface MachineInputs { readonly analog: ReadonlyArray<{ readonly player: PlayerIndex; readonly kind: MachineAnalogKind }>; readonly dualStick: boolean; }
+```
+
+`arcadeControlKey` assigns the `stick` and `pedal` variants distinct
+canonical keys. Absolute axis values use [−1, 1], with sticks centred at 0
+and pedals ranging from −1 released to +1 floored; `spin-*` values are
+signed pixel deltas per call. `MachineInfo.inputs` reports one analogue row
+per distinct player and kind plus `dualStick`, and
+`ArcadeSession.setAxis(axis, value)` writes an absolute normalized value or
+a relative pixel delta: out-of-range absolute values are clamped and a
+non-finite value throws `INVALID_CONFIG`.
 
 The pointer primitives retain the DOS runtime's complete `PointerEventLike`,
 `InputSurface`, geometry, scheduler and timer types. Those types and
@@ -613,7 +635,13 @@ set to `web`.
   Pad 1"…"Web Pad 4"), each with four digital directions and twelve buttons
   (six action, coin, start, select, and on pad 1 service, test and tilt).
   Its state lives in a static array the bridge writes into; MAME polls it
-  like any other device. M11 adds up to four analog axes per pad.
+  like any other device. Since M11 (W26) items 0–15 keep their meanings,
+  items 16–19 are `HAT2UP/DOWN/LEFT/RIGHT` (stick 2), items 20–23 are
+  `HAT3UP/DOWN/LEFT/RIGHT` (stick 1) and items 24–26 are
+  `BUTTON13/14/15` (digital pedal presses); each pad also registers
+  `XAXIS`, `YAXIS`, `ZAXIS`, `RXAXIS`, `RYAXIS`, `ADD_RELATIVE1` and
+  `ADD_RELATIVE2` at axis indices 0–6, the first five absolute and the last
+  two relative read-and-clear accumulators.
 
 ### 4.3 Bridge exports (`0002-web-bridge-exports.patch`)
 
@@ -622,7 +650,7 @@ C functions marked `EMSCRIPTEN_KEEPALIVE`, called through `cwrap`:
 | Export | Does |
 | ------ | ---- |
 | `web_set_control(pad, control, pressed)` | Writes the virtual device state |
-| `web_set_axis(pad, axis, value)` | Writes an analog axis (M11) |
+| `web_set_axis(pad, axis, value)` | Writes a virtual-pad axis (M11): ignores an out-of-range pad or axis; an absolute axis clamps `value` to [−1, 1] and stores `value × INPUT_ABSOLUTE_MAX`; a relative axis treats `value` as pixels and adds `value × INPUT_RELATIVE_PER_PIXEL` to an accumulator the item callback returns and clears |
 | `web_pause()` / `web_resume()` | `machine().pause()` / `resume()` |
 | `web_reset(hard)` | Schedules a soft or hard reset |
 | `web_save_state(name)` / `web_load_state(name)` | `schedule_save` / `schedule_load`; completion through a callback |
@@ -671,12 +699,13 @@ the machine is advanced only by `web_run_frames`.
 | `web_run_frames` | `(count: i32) → i32` | Advances the device scheduler until `count` emulated screen frames have elapsed, or fewer if exit became pending; services at most one pending scheduled state operation at the between-timeslice boundary before the first frame. Returns frames actually run. A no-op returning 0 while paused. |
 | `web_pump` | `() → void` | Runs the video/OSD boundary once without advancing the scheduler (used while paused so the last frame can be redrawn). |
 | `web_set_control` | `(pad: i32, item: i32, pressed: i32) → void` | Writes virtual device state. `pad` is 0–3; `item` is the §4.4 row order: 0–3 hat up/down/left/right, 4–9 buttons 1–6, 10 coin, 11 start, 12 select, 13 service, 14 test, 15 tilt. |
+| `web_set_axis` | `(pad: i32, axis: i32, value: f32) → void` | Writes a virtual-pad axis (M11); `axis` is the §4.2 axis index 0–6, absolute values are clamped to [−1, 1], relative values are pixel deltas accumulated until the next sample. |
 | `web_pause` / `web_resume` | `() → void` | `machine().pause()` / `resume()`. |
 | `web_reset` | `(hard: i32) → void` | Schedules a soft reset; `hard` is accepted and ignored because a hard reset is a fresh module (§5). |
 | `web_save_state` / `web_load_state` | `(name: char*) → void` | Schedules save/load of `/mame/sta/<name>.sta`; completion arrives on `onStateDone`. |
 | `web_flush_nvram` | `() → i32` | Flushes NVRAM (and memory card, F8) to MEMFS without exiting; returns 0 on success. |
 | `web_exit` | `() → void` | Schedules exit; `onExit` fires once the bridge has stopped and flushed. |
-| `web_machine_info` | `() → char*` | Returns a NUL-terminated JSON string owned by the bridge, valid until the next call: `{ name, description, width, height, refreshHz, orientation, aspectRatio, players, buttons, bios: [{name, description, isDefault}], hasNvram }`. The adapter adds `family` from `build.json`. `width` and `height` are valid from the first `onFrame` onward (the 0.161 render target has no size before it first rasterizes), so the adapter reads this inside its first-frame callback. |
+| `web_machine_info` | `() → char*` | Returns a NUL-terminated JSON string owned by the bridge, valid until the next call: `{ name, description, width, height, refreshHz, orientation, aspectRatio, players, buttons, inputs: { analog: [{player, kind}], dualStick }, bios: [{name, description, isDefault}], hasNvram }`. The adapter adds `family` from `build.json`. `width` and `height` are valid from the first `onFrame` onward (the 0.161 render target has no size before it first rasterizes), so the adapter reads this inside its first-frame callback. |
 
 **Callbacks** read from `Module.web` at the moment each fires:
 
@@ -743,7 +772,19 @@ In 0.161 `SERVICE` is the test-mode toggle and `SERVICE1` the service button, so
 the extra line is harmless and covers drivers that declare either form.
 The generator emits ports for players 1 through the requested count only,
 and omits `Pn_SELECT` lines unless the machine reports a select port
-(F10). Analog items (M11) extend this table rather than replacing it.
+(F10). Since M11 (W26) the file also binds, unconditionally for each
+player, the X/Y/Z, RX/RY and two relative Web Pad axes to their analogue
+port types (`AD_STICK_X` and `PADDLE` → `XAXIS`; `AD_STICK_Y` and `PADDLE_V`
+→ `YAXIS`; `AD_STICK_Z` → `ZAXIS`; `PEDAL` → `RXAXIS`; `PEDAL2` → `RYAXIS`;
+`DIAL` and `TRACKBALL_X` → `ADDREL1`; `DIAL_V` and `TRACKBALL_Y` →
+`ADDREL2`), and supplies `increment` and `decrement` sequences from `HAT1`
+(X-like ports on left/right, Y-like ports on up/down) and from
+`BUTTON13`–`BUTTON15` (`AD_STICK_Z` and the three pedals), so MAME's own
+driver key delta and centre delta provide the digital ramps. A standard
+`HAT1` synthesizes dual-stick forward, reverse and tank turns
+(`Pn_JOYSTICKLEFT_UP` is `HAT1UP OR HAT1RIGHT OR HAT3UP`, and so on), while
+`HAT3` independently drives the left stick and `HAT2` the right stick.
+MAME 0.161 ignores a configured port type absent from the running machine.
 
 ### 4.5 Start options
 
@@ -966,6 +1007,13 @@ class ArcadeInput {
   no-op.
 - `releaseAll` on blur, visibility loss, pause and destroy, as in the DOS
   runtime.
+- **Axes (M11).** `ArcadeInput` and every channel expose
+  `setAxis(axis, value)`. Axis writes are last-writer-wins rather than
+  reference-counted; releasing or destroying the owning channel writes 0
+  for stick axes, −1 for pedal axes and nothing for spin axes.
+  `ArcadeInput.axes` returns the effective last values and
+  `ArcadeInput.machine` exposes the session's `MachineInfo` so sources can
+  see which analogue kinds the board declares.
 
 Tests (`spec/13-arcade-input.test.ts`) against `FakeArcadeSession`:
 per-channel idempotency and reference counting, channel destruction, `tap`
@@ -1135,7 +1183,10 @@ constant**, `DEFAULT_KEYBOARD_MAP`, with MAME's familiar layout (arrows,
 `ControlLeft`/`AltLeft`/`Space`/`ShiftLeft`/`KeyZ`/`KeyX`, `Digit5` coin,
 `Digit1` start, `F2` test, `Digit9` service) that `ArcadeCabinet` applies
 when a page gives none. Repeat ignored, blur and visibility release,
-`enabled` gate, as in the DOS runtime.
+`enabled` gate, as in the DOS runtime. Since M11 the default map also binds
+player-one `KeyC` to pedal 1 and `KeyV` to pedal 2; analogue arrow-key
+ramps and the second stick come from the generated controller
+configuration (§4.4), not from `KeyboardSource`.
 
 ### 10.4 `GamepadSource`
 
@@ -1147,6 +1198,19 @@ assignment held until disconnect; disconnect releases every held control;
 d-pad precedence over axes; dead zone; deduplicated transitions; release on
 blur, visibility loss, disable, pause and destroy. Non-standard mappings are
 ignored unless a page supplies an explicit mapping.
+
+Since M11, on a standard-layout pad only the analogue kinds the machine
+declares for the assigned player are written: the dead-zone-rescaled left
+stick supplies `stick-x`/`stick-y` (also for paddles) or `spin-x`/`spin-y`
+deltas for dials and trackballs (20 pixels per poll at full deflection,
+the order of the key delta the pinned dial and trackball drivers declare),
+the right stick's vertical axis supplies `stick-z`, and trigger buttons 7
+and 6 map their [0, 1] values to pedal values in [−1, 1]. When `dualStick`
+is true the left and right physical sticks are quantized independently
+into logical sticks 1 and 2 while the d-pad keeps emitting ordinary
+directions. `GamepadMapping.rightAxes` and `GamepadMapping.pedals`
+override the standard indices. A board that declares nothing behaves
+exactly as before.
 
 ### 10.5 `RomSetAudit` and `romsets/` metadata
 
@@ -1456,7 +1520,7 @@ row passes on `main`.
 | M8 | **BIOS and DIP switches.** `MachineInfo.bios`, `-bios` selection, generated DIP cfg, harness selectors; answer F7. | Neo Geo switches region and MVS/AES without a rebuild; a Namco classic's lives/difficulty DIP change is visible. DIP and BIOS choices are page state passed on every start (`ArcadeStartConfig`), not overlay state: the generated cfg is excluded from dirty detection so an explicit selection always wins |
 | M9 | **v1.0.0 release gate.** Licence review of distributed emulator artifacts, `npm pack` contents, hosted-harness policy, the §14.1 flows. | A tagged `v1.0.0` whose tarball contains no ROM, cache, `res/`, harness or WASM, with a written decision on whether family builds are published separately |
 | M10 | **Mobile: touch primitives + `ArcadeMapper` + portrait layouts.** | Playable with d-pad, buttons, coin and start while sustaining full speed for 60 s on a documented mid-range physical phone, for one vertical and one horizontal title; F6 labels updated from measured phones |
-| M11 | **Analog inputs.** `ArcadeAxis`, `web_set_axis`, gamepad axis binding, `bindTrackpad`; answer F11. | A `polepos.c` title steers from a gamepad stick and an `arkanoid.c` title plays from a spinner binding |
+| M11 | **Analogue inputs** (W26). `ArcadeAxis` and `setAxis`, `web_set_axis`, machine input discovery, controller-config analogue and dual-stick sequences, gamepad axis binding, keyboard pedal keys; answer F11. | Through the production bridge: a `tempest.c` dial turns from a relative axis and from a held hat; a `rampart.c` trackball moves; the `bzone.c` tank drives from one hat and from the second stick alone; the controller file loads without warnings; the `segaxbd.c`, `segaorun.c`, `segahang.c`, `polepos.c` and `taito_z.c` boards steer by hand after the family rebuilds |
 | M12 | **High-score persistence bridge.** RAM-range read/write exports and a per-machine range table (§12.2); answer H1–H4. | A `pacman.c`-class title's high-score table survives exit and reload through the overlay without NVRAM, and a title with no table entry is unaffected |
 | M13 | **Local compatibility matrix.** Audit and manually verify user-supplied local sets per family, parents/BIOS/samples supplied by the user. | Each set either boots with verified metadata or has a precise audit/driver blocker recorded under `docs/probes/families/`; no local ROM or set identity enters source or CI |
 | M14 | **Optional FBNeo probe.** Parent spec L1–L8. | Written evidence of a measured benefit worth the separate ROM lineage and licence constraints |
@@ -1557,7 +1621,7 @@ already require.
 | F8 | Where does 0.161 persist each family's state: NVRAM files, EEPROM, Neo Geo memory cards, Timekeeper? Does `web_flush_nvram()` cover all of them mid-run? After a scheduled state load, is the next rendered frame byte-identical to the frame after the save, and if not which screen or device state the 0.161 driver omits? | Overlay roots, the scope of patch 0003, and the M6 state-fidelity acceptance per family |
 | F9 | Which titles reference sample sets, what does the auditor report when a sample zip is absent, and does the title run without it? | `samples` role handling and optional-missing reporting |
 | F10 | How does each family name its input ports (`P1_BUTTON1`, `COIN1`, `SELECT1`, `TILT`, shared-stick alternating boards, cocktail DIPs), and how many frames must a coin be held to register? | Controller-config generator coverage and per-family `tap` minimum |
-| F11 | Which analog port types occur (steering, pedal, spinner, dial, trackball, light gun), with what ranges and sensitivities? | M10 `ArcadeAxis` design |
+| F11 | Which analogue and dual-stick port types does each family driver declare, with what min/max, sensitivity, key delta, centre delta and reverse attributes, and which generated standard, increment, decrement or synthesized sequence binds each? Answered per family in `docs/probes/families/` by driver source file and port type. | M11 `ArcadeAxis` design and the §4.4 generator |
 
 M2 passes for a family only when F1–F6 have evidence. F7–F11 are answered
 by the milestone that consumes them (M8, M6, M7, M4, M11) but are recorded

@@ -41,6 +41,8 @@ export const DEFAULT_KEYBOARD_MAP: KeyboardMap = Object.freeze({
     ShiftLeft: frozenControl({ kind: "button", player: 1, button: 4 }),
     KeyZ: frozenControl({ kind: "button", player: 1, button: 5 }),
     KeyX: frozenControl({ kind: "button", player: 1, button: 6 }),
+    KeyC: frozenControl({ kind: "pedal", player: 1, pedal: 1 }),
+    KeyV: frozenControl({ kind: "pedal", player: 1, pedal: 2 }),
     Digit5: frozenControl({ kind: "coin", player: 1 }),
     Digit1: frozenControl({ kind: "start", player: 1 }),
     F2: frozenControl({ kind: "test" }),

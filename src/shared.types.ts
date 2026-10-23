@@ -135,6 +135,8 @@ export type ArcadeButtonCount = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 export type ArcadeControl =
     | { readonly kind: "direction"; readonly player: PlayerIndex; readonly direction: ArcadeDirection }
     | { readonly kind: "button"; readonly player: PlayerIndex; readonly button: ArcadeButtonIndex }
+    | { readonly kind: "stick"; readonly player: PlayerIndex; readonly stick: 1 | 2; readonly direction: ArcadeDirection }
+    | { readonly kind: "pedal"; readonly player: PlayerIndex; readonly pedal: 1 | 2 | 3 }
     | { readonly kind: "coin"; readonly player: PlayerIndex }
     | { readonly kind: "start"; readonly player: PlayerIndex }
     | { readonly kind: "select"; readonly player: PlayerIndex }
@@ -145,6 +147,17 @@ export type ArcadeControl =
 // TYPE :: STRING
 // Canonical string form of an ArcadeControl, e.g. "p1:direction:up", "p2:coin", "service"; arcadeControlKey is its meaning.
 export type ArcadeControlKey = string;
+
+// TYPE :: "stick-x" | "stick-y" | "stick-z" | "pedal-1" | "pedal-2" | "spin-x" | "spin-y"
+// Logical absolute and relative axes accepted by ArcadeInput and ArcadeSession.
+export type ArcadeAxisKind = "stick-x" | "stick-y" | "stick-z" | "pedal-1" | "pedal-2" | "spin-x" | "spin-y";
+
+// INTERFACE :: {player:playerIndex, kind:arcadeAxisKind}
+// One player axis; absolute values are normalized while spin values are pixel deltas.
+export interface ArcadeAxis {
+    readonly player: PlayerIndex;                                 // Virtual pad receiving the value
+    readonly kind: ArcadeAxisKind;                                // Native bridge axis role
+}
 
 /**
  *
@@ -164,6 +177,21 @@ export interface BiosOption {
     readonly isDefault: boolean;                                   // Selected when ArcadeStartConfig.bios is omitted
 }
 
+// TYPE :: every analog port kind reported by the pinned MAME bridge
+// Machine discovery vocabulary, including kinds that W26 reports but does not yet bind.
+export type MachineAnalogKind =
+    | "stick-x" | "stick-y" | "stick-z" | "paddle" | "paddle-v"
+    | "pedal-1" | "pedal-2" | "pedal-3" | "dial" | "dial-v"
+    | "trackball-x" | "trackball-y" | "lightgun-x" | "lightgun-y"
+    | "mouse-x" | "mouse-y" | "positional" | "positional-v";
+
+// INTERFACE :: discovered analog and dual-stick input capabilities
+// One analog row is reported per distinct player/kind pair.
+export interface MachineInputs {
+    readonly analog: ReadonlyArray<{ readonly player: PlayerIndex; readonly kind: MachineAnalogKind }>;   // Declared analog ports
+    readonly dualStick: boolean;                                  // Any JOYSTICKLEFT/JOYSTICKRIGHT field exists
+}
+
 // INTERFACE :: what the adapter learned about the machine at boot
 // Width and height describe upright frames; rotation has already been applied.
 export interface MachineInfo {
@@ -177,6 +205,7 @@ export interface MachineInfo {
     readonly aspectRatio: FiniteNumber;                            // Display aspect after rotation; not width/height
     readonly players: PlayerCount;                                 // Players the machine supports
     readonly buttons: ArcadeButtonCount;                           // Action buttons per player
+    readonly inputs: MachineInputs;                                // Discovered analog and dual-stick ports
     readonly bios: ReadonlyArray<BiosOption>;                      // Selectable BIOS options; empty when none
     readonly hasNvram: boolean;                                    // Whether the board persists anything itself
 }
@@ -250,6 +279,7 @@ export interface ArcadeSession {
     readonly machine: MachineInfo;                                 // Discovered at boot
     readonly sampleRate: number;                                   // Hz of onSound samples; 48000 unless overridden
     setControl(control: ArcadeControl, pressed: boolean): void;    // Presses or releases a control
+    setAxis(axis: ArcadeAxis, value: number): void;                // Writes a normalized absolute axis or relative pixel delta
     pause(): void;                                                 // Stops emulation
     resume(): void;                                                // Continues emulation
     reset(kind: "soft" | "hard"): void;                            // Schedules a reset
@@ -303,10 +333,16 @@ export interface BuildInfo {
 const POINTER_TYPES = ["pointerdown", "pointermove", "pointerup", "pointercancel", "lostpointercapture"] as const;   // PointerEventLike.type set
 const POINTER_SOURCES = ["mouse", "touch", "pen"] as const;                                                         // PointerEventLike.pointerType set
 const DIRECTIONS = ["up", "down", "left", "right"] as const;                                                         // ArcadeDirection set
+const ARCADE_AXIS_KINDS = ["stick-x", "stick-y", "stick-z", "pedal-1", "pedal-2", "spin-x", "spin-y"] as const;   // ArcadeAxisKind set
+const MACHINE_ANALOG_KINDS = [                                                                                     // MachineAnalogKind set
+    "stick-x", "stick-y", "stick-z", "paddle", "paddle-v", "pedal-1", "pedal-2", "pedal-3",
+    "dial", "dial-v", "trackball-x", "trackball-y", "lightgun-x", "lightgun-y", "mouse-x", "mouse-y",
+    "positional", "positional-v",
+] as const;
 const PLAYER_KINDS = ["coin", "start", "select"] as const;                                                           // Control kinds carrying only a player
 const GLOBAL_KINDS = ["service", "test", "tilt"] as const;                                                           // Control kinds carrying nothing
 const SESSION_METHODS = [                                                                                            // Every ArcadeSession method
-    "setControl", "pause", "resume", "reset", "saveState", "loadState", "persist", "exit", "onTick", "onFrame", "onSound", "onExit",
+    "setControl", "setAxis", "pause", "resume", "reset", "saveState", "loadState", "persist", "exit", "onTick", "onFrame", "onSound", "onExit",
 ] as const;
 const BUILD_ID_PATTERN = /^[0-9a-f]{64}$/;                                                                           // SHA-256 hex
 const ROM_NAME_PATTERN = /^[^/\\\0]+$/;                                                                              // No separators or NUL
@@ -339,6 +375,8 @@ export const arcadeControlKey = (control: ArcadeControl): ArcadeControlKey => {
     switch (control.kind) {
         case "direction": return `p${control.player}:direction:${control.direction}`;
         case "button": return `p${control.player}:button:${control.button}`;
+        case "stick": return `p${control.player}:stick:${control.stick}:${control.direction}`;
+        case "pedal": return `p${control.player}:pedal:${control.pedal}`;
         case "coin":
         case "start":
         case "select": return `p${control.player}:${control.kind}`;
@@ -455,6 +493,21 @@ export function isArcadeDirection(value: unknown): value is ArcadeDirection {
 }
 
 // PREDICATE :: UNKNOWN -> BOOLEAN
+// True when value is one of the logical absolute or relative axis kinds.
+export function isArcadeAxisKind(value: unknown): value is ArcadeAxisKind {
+    return (ARCADE_AXIS_KINDS as readonly unknown[]).includes(value);
+}
+
+// PREDICATE :: UNKNOWN -> BOOLEAN
+// True when value names a supported player and logical axis kind, with no extra fields.
+export function isArcadeAxis(value: unknown): value is ArcadeAxis {
+    return isObject(value)
+        && Object.keys(value).sort().join() === "kind,player"
+        && isPlayerIndex(value.player)
+        && isArcadeAxisKind(value.kind);
+}
+
+// PREDICATE :: UNKNOWN -> BOOLEAN
 // True when value is an integer from 1 to 6
 export function isArcadeButtonIndex(value: unknown): value is ArcadeButtonIndex {
     return typeof value === "number" && Number.isInteger(value) && value >= 1 && value <= 6;
@@ -474,6 +527,10 @@ export function isArcadeControl(value: unknown): value is ArcadeControl {
     switch (value.kind) {
         case "direction": return keys.join() === "direction,kind,player" && isPlayerIndex(value.player) && isArcadeDirection(value.direction);
         case "button": return keys.join() === "button,kind,player" && isPlayerIndex(value.player) && isArcadeButtonIndex(value.button);
+        case "stick": return keys.join() === "direction,kind,player,stick" && isPlayerIndex(value.player)
+            && (value.stick === 1 || value.stick === 2) && isArcadeDirection(value.direction);
+        case "pedal": return keys.join() === "kind,pedal,player" && isPlayerIndex(value.player)
+            && (value.pedal === 1 || value.pedal === 2 || value.pedal === 3);
         default:
             if ((PLAYER_KINDS as readonly unknown[]).includes(value.kind)) return keys.join() === "kind,player" && isPlayerIndex(value.player);
             if ((GLOBAL_KINDS as readonly unknown[]).includes(value.kind)) return keys.join() === "kind";
@@ -494,6 +551,28 @@ export function isBiosOption(value: unknown): value is BiosOption {
 }
 
 // PREDICATE :: UNKNOWN -> BOOLEAN
+// True when value is one of the analog kinds emitted by machine discovery.
+export function isMachineAnalogKind(value: unknown): value is MachineAnalogKind {
+    return (MACHINE_ANALOG_KINDS as readonly unknown[]).includes(value);
+}
+
+// PREDICATE :: UNKNOWN -> BOOLEAN
+// True when value carries a deduplicated array of player/kind rows and a dual-stick flag.
+export function isMachineInputs(value: unknown): value is MachineInputs {
+    if (!isObject(value) || !Array.isArray(value.analog) || typeof value.dualStick !== "boolean") return false;
+    const rows = value.analog as unknown[];
+    if (!rows.every((row) => isObject(row)
+        && Object.keys(row).sort().join() === "kind,player"
+        && isPlayerIndex(row.player)
+        && isMachineAnalogKind(row.kind))) return false;
+    const keys = rows.map((row) => {
+        const input = row as { readonly player: PlayerIndex; readonly kind: MachineAnalogKind };
+        return `${input.player}:${input.kind}`;
+    });
+    return new Set(keys).size === keys.length;
+}
+
+// PREDICATE :: UNKNOWN -> BOOLEAN
 // True when value meets every MachineInfo condition: positive integer size, positive finite refresh and aspect, valid counts, at most one default BIOS
 export function isMachineInfo(value: unknown): value is MachineInfo {
     if (!isObject(value)) return false;
@@ -507,6 +586,7 @@ export function isMachineInfo(value: unknown): value is MachineInfo {
         && isFiniteNumber(value.aspectRatio) && value.aspectRatio > 0
         && isPlayerCount(value.players)
         && isArcadeButtonCount(value.buttons)
+        && isMachineInputs(value.inputs)
         && isArrayOf(value.bios, isBiosOption)
         && (value.bios as BiosOption[]).filter((option) => option.isDefault).length <= 1
         && uniqueCaseFolded((value.bios as BiosOption[]).map((option) => option.name))

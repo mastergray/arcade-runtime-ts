@@ -103,6 +103,7 @@ class FakeMameModule {
     readonly mainCalls: string[][] = [];
     readonly runCalls: number[] = [];
     readonly controlCalls: Array<readonly [number, number, number]> = [];
+    readonly axisCalls: Array<readonly [number, number, number]> = [];
     readonly stateCalls: Array<readonly ["save" | "load", string]> = [];
     pumpCalls = 0;
     pauseCalls = 0;
@@ -132,6 +133,7 @@ class FakeMameModule {
             web_run_frames: (count) => { this.runCalls.push(Number(count)); return Number(count); },
             web_pump: () => { this.pumpCalls++; },
             web_set_control: (pad, item, pressed) => { this.controlCalls.push([Number(pad), Number(item), Number(pressed)]); },
+            web_set_axis: (pad, axis, value) => { this.axisCalls.push([Number(pad), Number(axis), Number(value)]); },
             web_pause: () => { this.pauseCalls++; },
             web_resume: () => { this.resumeCalls++; },
             web_reset: () => { this.resetCalls++; },
@@ -662,13 +664,21 @@ const testFile: TestFile = {
                     session.setControl({ kind: "coin", player: 3 }, true);
                     session.setControl({ kind: "select", player: 1 }, true);
                     session.setControl({ kind: "service" }, true);
-                    return { tickCount, frame, sound, controls: module.controlCalls };
+                    session.setControl({ kind: "stick", player: 1, stick: 1, direction: "up" }, true);
+                    session.setControl({ kind: "stick", player: 2, stick: 2, direction: "left" }, false);
+                    session.setControl({ kind: "pedal", player: 1, pedal: 3 }, true);
+                    session.setAxis({ player: 1, kind: "stick-x" }, 2);
+                    session.setAxis({ player: 2, kind: "pedal-2" }, -2);
+                    session.setAxis({ player: 2, kind: "spin-y" }, 3.5);
+                    session.setAxis({ player: 3, kind: "stick-y" }, 1);
+                    return { tickCount, frame, sound, controls: module.controlCalls, axes: module.axisCalls };
                 })
                 .assert("copies and mappings", (state) => state.subject, P.equals<unknown>({
                     tickCount: 1,
                     frame: [1, 2, 3, 4],
                     sound: [0.25, -0.5],
-                    controls: [[0, 3, 1], [1, 5, 0], [0, 13, 1]],
+                    controls: [[0, 3, 1], [1, 5, 0], [0, 13, 1], [0, 20, 1], [1, 18, 0], [0, 26, 1]],
+                    axes: [[0, 0, 1], [1, 4, -1], [1, 6, 3.5]],
                 }))
                 .start(undefined),
         },
@@ -742,6 +752,7 @@ const testFile: TestFile = {
                     await session.exit();
                     const sync = [
                         () => session.setControl({ kind: "service" }, true),
+                        () => session.setAxis({ player: 1, kind: "stick-x" }, 0),
                         () => session.pause(), () => session.resume(), () => session.reset("soft"),
                         () => session.saveState("slot"), () => session.loadState("slot"),
                         () => session.onTick(() => {}), () => session.onFrame(() => {}), () => session.onSound(() => {}), () => session.onExit(() => {}),
@@ -754,7 +765,7 @@ const testFile: TestFile = {
                     exits: 1,
                     pending: 0,
                     exitCalls: 1,
-                    sync: Array.from({ length: 11 }, () => ({ isRuntimeError: true, code: 10, label: "DESTROYED" })),
+                    sync: Array.from({ length: 12 }, () => ({ isRuntimeError: true, code: 10, label: "DESTROYED" })),
                     persist: { isRuntimeError: true, code: 10, label: "DESTROYED" },
                 }))
                 .start(undefined),

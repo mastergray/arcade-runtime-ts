@@ -94,6 +94,27 @@ const EXPECTED_INPUT_ITEMS = [
     "ITEM_ID_BUTTON10",
     "ITEM_ID_BUTTON11",
     "ITEM_ID_BUTTON12",
+    "ITEM_ID_HAT2UP",
+    "ITEM_ID_HAT2DOWN",
+    "ITEM_ID_HAT2LEFT",
+    "ITEM_ID_HAT2RIGHT",
+    "ITEM_ID_HAT3UP",
+    "ITEM_ID_HAT3DOWN",
+    "ITEM_ID_HAT3LEFT",
+    "ITEM_ID_HAT3RIGHT",
+    "ITEM_ID_BUTTON13",
+    "ITEM_ID_BUTTON14",
+    "ITEM_ID_BUTTON15",
+] as const;
+
+const EXPECTED_AXIS_ITEMS = [
+    "ITEM_ID_XAXIS",
+    "ITEM_ID_YAXIS",
+    "ITEM_ID_ZAXIS",
+    "ITEM_ID_RXAXIS",
+    "ITEM_ID_RYAXIS",
+    "ITEM_ID_ADD_RELATIVE1",
+    "ITEM_ID_ADD_RELATIVE2",
 ] as const;
 
 const EXPECTED_EXPORTS = [
@@ -107,6 +128,7 @@ const EXPECTED_EXPORTS = [
     "web_resume",
     "web_run_frames",
     "web_save_state",
+    "web_set_axis",
     "web_set_control",
 ] as const;
 
@@ -188,7 +210,15 @@ process.once("exit", () => {
 const inputItems = (): string[] => {
     const source = readFileSync(join(BRIDGE_ROOT, "web_input.cpp"), "utf8");
     const initializer = /static const input_item_id item_ids\[WEB_CONTROL_COUNT\]\s*=\s*\{([\s\S]*?)\};/.exec(source)?.[1] ?? "";
-    return [...initializer.matchAll(/ITEM_ID_[A-Z0-9]+/g)].map((match) => match[0]);
+    return [...initializer.matchAll(/ITEM_ID_[A-Z0-9_]+/g)].map((match) => match[0]);
+};
+
+// HELPER :: VOID -> [STRING]
+// Reads the exact axis item-id sequence from the reviewable input source.
+const axisItems = (): string[] => {
+    const source = readFileSync(join(BRIDGE_ROOT, "web_input.cpp"), "utf8");
+    const initializer = /static const input_item_id axis_ids\[WEB_AXIS_COUNT\]\s*=\s*\{([\s\S]*?)\};/.exec(source)?.[1] ?? "";
+    return [...initializer.matchAll(/ITEM_ID_[A-Z0-9_]+/g)].map((match) => match[0]);
 };
 
 // HELPER :: VOID -> [STRING]
@@ -235,6 +265,7 @@ const testFile: TestFile = {
                 )
                 .assert("keepalive exports match §4.3.1", bridgeExports, P.equals<readonly string[]>(EXPECTED_EXPORTS))
                 .assert("input items match the §4.4 row order", inputItems, P.equals<readonly string[]>(EXPECTED_INPUT_ITEMS))
+                .assert("axis items match the W26 row order", axisItems, P.equals<readonly string[]>(EXPECTED_AXIS_ITEMS))
                 .assert(
                     "four pads use the stable Web Pad names",
                     () => {
@@ -249,17 +280,19 @@ const testFile: TestFile = {
                         const source = readFileSync(join(BRIDGE_ROOT, "web_input.cpp"), "utf8");
                         return source.includes("web_control_state, &s_controls[pad][item]")
                             && source.includes("return *reinterpret_cast<INT32 *>(item_internal)")
-                            && source.includes("s_controls[pad][item] = pressed ? 0x80 : 0");
+                            && source.includes("s_controls[pad][item] = pressed ? 0x80 : 0")
+                            && source.includes("*state = 0")
+                            && source.includes("value * INPUT_RELATIVE_PER_PIXEL");
                     },
                     P.equals(true),
                 )
                 .assert(
-                    "all callbacks are read from Module.web and no M11 axis export leaks into M1",
+                    "all callbacks are read from Module.web and the M11 axis export is present",
                     () => {
                         const source = readFileSync(join(BRIDGE_ROOT, "web_bridge.cpp"), "utf8");
                         return ["onTick", "onFrame", "onSound", "onStateDone", "onExit", "onFrontendDone", "onLog"]
                             .every((name) => source.includes(`web['${name}']`))
-                            && !source.includes("web_set_axis");
+                            && source.includes("EMSCRIPTEN_KEEPALIVE void web_set_axis");
                     },
                     P.equals(true),
                 )

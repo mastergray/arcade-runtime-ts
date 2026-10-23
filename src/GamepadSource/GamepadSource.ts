@@ -4,7 +4,14 @@
 import ArcadeRuntimeError from "../ArcadeRuntimeError/ArcadeRuntimeError.js";   // Typed config and lifecycle failures
 
 // Type dependencies:
-import { arcadeControlKey, type ArcadeControl, type ArcadeControlKey, type PlayerIndex } from "../shared.types.js";   // Transition identity and player slots
+import {
+    arcadeControlKey,
+    type ArcadeControl,
+    type ArcadeControlKey,
+    type ArcadeDirection,
+    type MachineAnalogKind,
+    type PlayerIndex,
+} from "../shared.types.js";                                     // Transition identity, machine declarations and player slots
 import type { ArcadeInputChannel } from "../ArcadeInput/types.js";   // Independently releasable per-pad channel
 import type {
     KeyboardEventTargetLike,                                     // Injected blur boundary
@@ -52,6 +59,49 @@ interface PollablePad {
 
 const PLAYER_SLOTS = [1, 2, 3, 4] as const;                       // Assignment order and hard v1 player limit
 const DEFAULT_MAPPING: GamepadMapping = Object.freeze({});        // Empty overrides mean W3C standard indices
+const DEFAULT_DPAD = Object.freeze({ up: 12, down: 13, left: 14, right: 15 });   // W3C standard buttons
+const DEFAULT_LEFT_AXES = Object.freeze([0, 1] as const);          // W3C standard left stick
+const DEFAULT_RIGHT_AXES = Object.freeze([2, 3] as const);         // W3C standard right stick
+const DEFAULT_PEDALS = Object.freeze([7, 6] as const);             // Right then left trigger
+const DIRECTIONS = ["up", "down", "left", "right"] as const;   // Stable directional order
+const SPIN_PIXELS_PER_POLL = 20;                                  // Full deflection; matches the 20–30 px key delta the pinned dial and trackball drivers declare
+
+// HELPER :: gamepadLike, NUMBER -> BOOLEAN
+// Digital/analog button threshold used for d-pad-only snapshots.
+const pressed = (pad: GamepadLike, index: number): boolean => {
+    const button = pad.buttons[index];
+    return button !== undefined && (button.pressed || button.value >= 0.5);
+};
+
+// HELPER :: gamepadLike, gamepadMapping -> Set<arcadeDirection>
+// Reads only the d-pad, leaving analog sticks available for machine-declared axes.
+const dpadDirections = (pad: GamepadLike, mapping: GamepadMapping): Set<ArcadeDirection> => {
+    const indices = mapping.dpad ?? DEFAULT_DPAD;
+    const result = new Set<ArcadeDirection>();
+    for (const direction of DIRECTIONS) if (pressed(pad, indices[direction])) result.add(direction);
+    return result;
+};
+
+// HELPER :: gamepadLike, [NUMBER,NUMBER], NUMBER -> Set<arcadeDirection>
+// Applies the existing independent-axis direction quantizer to one physical stick.
+const stickDirections = (pad: GamepadLike, axes: readonly [number, number], deadZone: number): Set<ArcadeDirection> => {
+    const horizontal = pad.axes[axes[0]] ?? 0;
+    const vertical = pad.axes[axes[1]] ?? 0;
+    const result = new Set<ArcadeDirection>();
+    if (vertical < 0 && Math.abs(vertical) >= deadZone) result.add("up");
+    if (vertical > 0 && Math.abs(vertical) >= deadZone) result.add("down");
+    if (horizontal < 0 && Math.abs(horizontal) >= deadZone) result.add("left");
+    if (horizontal > 0 && Math.abs(horizontal) >= deadZone) result.add("right");
+    return result;
+};
+
+// HELPER :: NUMBER, NUMBER -> NUMBER
+// Removes the dead zone and rescales the remaining physical travel to the full normalized range.
+const rescaledAxis = (value: number, deadZone: number): number => {
+    const magnitude = Math.abs(value);
+    if (magnitude <= deadZone) return 0;
+    return Math.sign(value) * ((magnitude - deadZone) / (1 - deadZone));
+};
 
 /**
  *
@@ -241,7 +291,7 @@ export default class GamepadSource {
 
         for (const entry of pollable) {
             const assignment = this._assignments.get(entry.pad.index);
-            if (assignment !== undefined) this.forward(assignment, controlsFor(entry.pad, assignment.player, this._deadZone, entry.mapping));
+            if (assignment !== undefined) this.forward(assignment, entry.pad, entry.mapping);
         }
     }
 
@@ -262,9 +312,39 @@ export default class GamepadSource {
         return PLAYER_SLOTS.find((player) => !used.has(player)) ?? null;
     }
 
+    // PRIVATE :: assignedPad, gamepadLike, gamepadMapping -> VOID
+    // Builds machine-aware digital controls, reconciles their edges, then writes declared analog axes.
+    private forward(assignment: AssignedPad, pad: GamepadLike, mapping: GamepadMapping): void {
+        const inputs = this._input.machine.inputs;
+        const declared = new Set<MachineAnalogKind>(inputs.analog
+            .filter((input) => input.player === assignment.player)
+            .map((input) => input.kind));
+        const leftAnalog = ["stick-x", "stick-y", "paddle", "paddle-v", "dial", "dial-v", "trackball-x", "trackball-y"]
+            .some((kind) => declared.has(kind as MachineAnalogKind));
+        const base = controlsFor(pad, assignment.player, this._deadZone, mapping);
+        let controls: ArcadeControl[] = [...base];
+        if (leftAnalog || inputs.dualStick) {
+            controls = [];
+            const ordinaryDirections = dpadDirections(pad, mapping);
+            for (const direction of DIRECTIONS)
+                if (ordinaryDirections.has(direction)) controls.push({ kind: "direction", player: assignment.player, direction });
+            if (inputs.dualStick) {
+                for (const direction of DIRECTIONS)
+                    if (stickDirections(pad, mapping.axes ?? DEFAULT_LEFT_AXES, this._deadZone).has(direction))
+                        controls.push({ kind: "stick", player: assignment.player, stick: 1, direction });
+                for (const direction of DIRECTIONS)
+                    if (stickDirections(pad, mapping.rightAxes ?? DEFAULT_RIGHT_AXES, this._deadZone).has(direction))
+                        controls.push({ kind: "stick", player: assignment.player, stick: 2, direction });
+            }
+            controls.push(...base.filter((control) => control.kind !== "direction"));
+        }
+        this.forwardControls(assignment, controls);
+        this.forwardAxes(assignment, pad, mapping, declared);
+    }
+
     // PRIVATE :: assignedPad, [arcadeControl] -> VOID
     // Applies falling edges before rising edges, with tap semantics for coin and start.
-    private forward(assignment: AssignedPad, controls: ReadonlyArray<ArcadeControl>): void {
+    private forwardControls(assignment: AssignedPad, controls: ReadonlyArray<ArcadeControl>): void {
         const next = new Map(controls.map((control) => [arcadeControlKey(control), control]));
         for (const [key, control] of assignment.active) {
             if (next.has(key)) continue;
@@ -277,6 +357,28 @@ export default class GamepadSource {
         }
         assignment.active.clear();
         for (const [key, control] of next) assignment.active.set(key, control);
+    }
+
+    // PRIVATE :: assignedPad, gamepadLike, gamepadMapping, Set<machineAnalogKind> -> VOID
+    // Writes only axes declared for this pad's player; relative axes emit one finite per-poll pixel delta.
+    private forwardAxes(assignment: AssignedPad, pad: GamepadLike, mapping: GamepadMapping, declared: ReadonlySet<MachineAnalogKind>): void {
+        const left = mapping.axes ?? DEFAULT_LEFT_AXES;
+        const right = mapping.rightAxes ?? DEFAULT_RIGHT_AXES;
+        const pedals = mapping.pedals ?? DEFAULT_PEDALS;
+        const horizontal = rescaledAxis(pad.axes[left[0]] ?? 0, this._deadZone);
+        const vertical = rescaledAxis(pad.axes[left[1]] ?? 0, this._deadZone);
+        if (declared.has("stick-x") || declared.has("paddle")) assignment.channel.setAxis({ player: assignment.player, kind: "stick-x" }, horizontal);
+        if (declared.has("stick-y") || declared.has("paddle-v")) assignment.channel.setAxis({ player: assignment.player, kind: "stick-y" }, vertical);
+        if ((declared.has("dial") || declared.has("trackball-x")) && horizontal !== 0)
+            assignment.channel.setAxis({ player: assignment.player, kind: "spin-x" }, horizontal * SPIN_PIXELS_PER_POLL);
+        if ((declared.has("dial-v") || declared.has("trackball-y")) && vertical !== 0)
+            assignment.channel.setAxis({ player: assignment.player, kind: "spin-y" }, vertical * SPIN_PIXELS_PER_POLL);
+        if (declared.has("stick-z"))
+            assignment.channel.setAxis({ player: assignment.player, kind: "stick-z" }, rescaledAxis(pad.axes[right[1]] ?? 0, this._deadZone));
+        if (declared.has("pedal-1"))
+            assignment.channel.setAxis({ player: assignment.player, kind: "pedal-1" }, (pad.buttons[pedals[0]]?.value ?? 0) * 2 - 1);
+        if (declared.has("pedal-2"))
+            assignment.channel.setAxis({ player: assignment.player, kind: "pedal-2" }, (pad.buttons[pedals[1]]?.value ?? 0) * 2 - 1);
     }
 
     // PRIVATE :: assignedPad -> VOID

@@ -128,6 +128,14 @@ worktree, so they are if anything conservative.
 Desktop full speed holds for this family; the 4× CPU-throttled mobile proxy
 is deferred to M10 as §0.2 allows.
 
+## F11 — Which analogue ports occur?
+
+`polepos.c` declares `IPT_DIAL` over the full 8-bit mask at sensitivity 30 and
+key delta 4, plus `IPT_PEDAL` and `IPT_PEDAL2` at 0–0x90, sensitivity 100 and
+key delta 16. The dial is bound to `JOYCODE_n_ADDREL1`, with
+`HAT1LEFT/RIGHT` as decrement/increment. The pedals use RX/RY absolute axes
+and `BUTTON13/14` increment sequences.
+
 
 ## M3, M4 and M5 acceptance — 1-button Namco WSG title (the vertical title of the F4–F6 run)
 

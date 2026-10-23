@@ -39,6 +39,12 @@ import {
     isVector2,                                                   // Predicate under test
     romNameKey,                                                  // Helper under test
 } from "../../src/index.ts";
+import {
+    isArcadeAxis,
+    isArcadeAxisKind,
+    isMachineAnalogKind,
+    isMachineInputs,
+} from "../../src/shared.types.ts";                              // W26 predicates pending integrator root exports
 import FakeArcadeAdapter from "../support/FakeArcadeAdapter.ts";   // Accepted input for isArcadeAdapter
 import FakeArcadeSession from "../support/FakeArcadeSession.ts";   // Accepted input for isArcadeSession
 import FakeFrameScheduler from "../support/FakeFrameScheduler.ts"; // Accepted input for isFrameScheduler
@@ -75,7 +81,7 @@ interface PredicateSnapshot {
 const NOOP = (): void => {};                                     // Placeholder function for method-shaped inputs
 
 const SESSION_METHODS = [                                        // Every method isArcadeSession requires
-    "setControl", "pause", "resume", "reset", "saveState", "loadState", "persist", "exit", "onTick", "onFrame", "onSound", "onExit",
+    "setControl", "setAxis", "pause", "resume", "reset", "saveState", "loadState", "persist", "exit", "onTick", "onFrame", "onSound", "onExit",
 ] as const;
 
 // HELPER :: STRING, (UNKNOWN -> BOOLEAN), UNKNOWN, BOOLEAN -> testCase
@@ -185,6 +191,11 @@ const testFile: TestFile = {
         predicateCase("isPlayerCount rejects the string \"1\"", isPlayerCount, "1", false),
         predicateCase("isArcadeDirection accepts \"left\"", isArcadeDirection, "left", true),
         predicateCase("isArcadeDirection rejects \"upleft\"", isArcadeDirection, "upleft", false),
+        predicateCase("isArcadeAxisKind accepts a relative axis", isArcadeAxisKind, "spin-x", true),
+        predicateCase("isArcadeAxisKind rejects an unbound machine kind", isArcadeAxisKind, "paddle", false),
+        predicateCase("isArcadeAxis accepts a player and axis kind", isArcadeAxis, { player: 4, kind: "pedal-2" }, true),
+        predicateCase("isArcadeAxis rejects an invalid player", isArcadeAxis, { player: 0, kind: "stick-x" }, false),
+        predicateCase("isArcadeAxis rejects an extra field", isArcadeAxis, { player: 1, kind: "stick-x", value: 0 }, false),
         predicateCase("isArcadeButtonIndex accepts 6", isArcadeButtonIndex, 6, true),
         predicateCase("isArcadeButtonIndex rejects 0", isArcadeButtonIndex, 0, false),
         predicateCase("isArcadeButtonIndex rejects 7", isArcadeButtonIndex, 7, false),
@@ -197,6 +208,8 @@ const testFile: TestFile = {
         // isArcadeControl: every kind with exactly its fields
         predicateCase("isArcadeControl accepts a direction", isArcadeControl, { kind: "direction", player: 1, direction: "up" }, true),
         predicateCase("isArcadeControl accepts a button", isArcadeControl, { kind: "button", player: 4, button: 6 }, true),
+        predicateCase("isArcadeControl accepts one stick of a dual-stick board", isArcadeControl, { kind: "stick", player: 2, stick: 1, direction: "left" }, true),
+        predicateCase("isArcadeControl accepts a digital pedal", isArcadeControl, { kind: "pedal", player: 1, pedal: 3 }, true),
         predicateCase("isArcadeControl accepts coin", isArcadeControl, { kind: "coin", player: 2 }, true),
         predicateCase("isArcadeControl accepts start", isArcadeControl, { kind: "start", player: 1 }, true),
         predicateCase("isArcadeControl accepts select", isArcadeControl, { kind: "select", player: 1 }, true),
@@ -207,6 +220,8 @@ const testFile: TestFile = {
         predicateCase("isArcadeControl rejects a direction with player 0", isArcadeControl, { kind: "direction", player: 0, direction: "up" }, false),
         predicateCase("isArcadeControl rejects a direction outside the set", isArcadeControl, { kind: "direction", player: 1, direction: "north" }, false),
         predicateCase("isArcadeControl rejects a button 7", isArcadeControl, { kind: "button", player: 1, button: 7 }, false),
+        predicateCase("isArcadeControl rejects stick 3", isArcadeControl, { kind: "stick", player: 1, stick: 3, direction: "up" }, false),
+        predicateCase("isArcadeControl rejects pedal 4", isArcadeControl, { kind: "pedal", player: 1, pedal: 4 }, false),
         predicateCase("isArcadeControl rejects a button with an extra field", isArcadeControl, { kind: "button", player: 1, button: 1, direction: "up" }, false),
         predicateCase("isArcadeControl rejects coin without a player", isArcadeControl, { kind: "coin" }, false),
         predicateCase("isArcadeControl rejects service with a player", isArcadeControl, { kind: "service", player: 1 }, false),
@@ -219,6 +234,8 @@ const testFile: TestFile = {
                 .assert("keys match the documented forms", () => ([
                     { kind: "direction", player: 1, direction: "up" },
                     { kind: "button", player: 2, button: 3 },
+                    { kind: "stick", player: 3, stick: 2, direction: "right" },
+                    { kind: "pedal", player: 1, pedal: 2 },
                     { kind: "coin", player: 1 },
                     { kind: "start", player: 4 },
                     { kind: "select", player: 2 },
@@ -226,7 +243,7 @@ const testFile: TestFile = {
                     { kind: "test" },
                     { kind: "tilt" },
                 ] as ArcadeControl[]).map(arcadeControlKey), P.equals<string[]>([
-                    "p1:direction:up", "p2:button:3", "p1:coin", "p4:start", "p2:select", "service", "test", "tilt",
+                    "p1:direction:up", "p2:button:3", "p3:stick:2:right", "p1:pedal:2", "p1:coin", "p4:start", "p2:select", "service", "test", "tilt",
                 ]))
                 .start(undefined),
         },
@@ -236,6 +253,15 @@ const testFile: TestFile = {
         predicateCase("isOrientation rejects \"portrait\"", isOrientation, "portrait", false),
         predicateCase("isBiosOption accepts name, description and isDefault", isBiosOption, { name: "euro", description: "Europe MVS", isDefault: true }, true),
         predicateCase("isBiosOption rejects a non-boolean isDefault", isBiosOption, { name: "euro", description: "Europe MVS", isDefault: "yes" }, false),
+
+        // Machine input discovery
+        predicateCase("isMachineAnalogKind accepts every bound family kind", isMachineAnalogKind, "trackball-y", true),
+        predicateCase("isMachineAnalogKind accepts a reported unbound kind", isMachineAnalogKind, "lightgun-x", true),
+        predicateCase("isMachineAnalogKind rejects an axis-only name", isMachineAnalogKind, "spin-x", false),
+        predicateCase("isMachineInputs accepts distinct analog rows", isMachineInputs, { analog: [{ player: 1, kind: "dial" }, { player: 2, kind: "pedal-1" }], dualStick: true }, true),
+        predicateCase("isMachineInputs rejects duplicate player-kind rows", isMachineInputs, { analog: [{ player: 1, kind: "dial" }, { player: 1, kind: "dial" }], dualStick: false }, false),
+        predicateCase("isMachineInputs rejects an invalid analog kind", isMachineInputs, { analog: [{ player: 1, kind: "spin-x" }], dualStick: false }, false),
+        predicateCase("isMachineInputs rejects a non-boolean dual-stick flag", isMachineInputs, { analog: [], dualStick: 0 }, false),
 
         // isMachineInfo
         predicateCase("isMachineInfo accepts the fixture machine", isMachineInfo, validMachineInfo(), true),
@@ -249,6 +275,7 @@ const testFile: TestFile = {
         predicateCase("isMachineInfo rejects a negative aspectRatio", isMachineInfo, withKey(machineLike(), "aspectRatio", -1), false),
         predicateCase("isMachineInfo rejects players 5", isMachineInfo, withKey(machineLike(), "players", 5), false),
         predicateCase("isMachineInfo rejects buttons 7", isMachineInfo, withKey(machineLike(), "buttons", 7), false),
+        predicateCase("isMachineInfo rejects missing input discovery", isMachineInfo, withKey(machineLike(), "inputs"), false),
         predicateCase("isMachineInfo rejects a non-array bios", isMachineInfo, withKey(machineLike(), "bios", {}), false),
         predicateCase("isMachineInfo rejects two default BIOS options", isMachineInfo, withKey(machineLike(), "bios", [{ name: "a", description: "A", isDefault: true }, { name: "b", description: "B", isDefault: true }]), false),
         predicateCase("isMachineInfo rejects BIOS names equal after case folding", isMachineInfo, withKey(machineLike(), "bios", [{ name: "Euro", description: "A", isDefault: true }, { name: "euro", description: "B", isDefault: false }]), false),

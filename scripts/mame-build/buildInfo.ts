@@ -56,7 +56,7 @@ export const EXPORTED_RUNTIME_METHODS: ReadonlyArray<string> = ["FS", "callMain"
 
 // C exports the bridge keeps alive (§4.3.1), exactly as mame/bridge/README.md links them.
 export const EXPORTED_FUNCTIONS: ReadonlyArray<string> = [
-    "_main", "_web_run_frames", "_web_pump", "_web_set_control", "_web_pause", "_web_resume", "_web_reset",
+    "_main", "_web_run_frames", "_web_pump", "_web_set_control", "_web_set_axis", "_web_pause", "_web_resume", "_web_reset",
     "_web_save_state", "_web_load_state", "_web_flush_nvram", "_web_exit", "_web_machine_info",
 ];
 
