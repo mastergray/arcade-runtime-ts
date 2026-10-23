@@ -156,3 +156,24 @@ correctly, so the keyboard input path itself works. The test holds the
 keyboard coin for 120 ms and the pad coin for 200 ms; the board's coin
 input is the likely difference. Logged on the roadmap as a post-1.0 check
 rather than a runtime defect.
+
+## F11 — Which analogue and dual-stick ports occur?
+
+`bzone.c` declares one board with `IPT_JOYSTICKLEFT_UP/DOWN` and
+`IPT_JOYSTICKRIGHT_UP/DOWN`, all 2-way. The generated
+`Pn_JOYSTICKLEFT_*`/`Pn_JOYSTICKRIGHT_*` standard sequences synthesize both
+sticks from `HAT1` and also bind them independently to `HAT3` and `HAT2`.
+Other declarations in that driver use `IPT_AD_STICK_X/Y` at 64–192,
+sensitivity 25 and key delta 10, or at 0x48–0xc8 and 0x46–0xc6 with the same
+sensitivity and delta; `IPT_AD_STICK_Z` uses 0x10–0xf0, sensitivity 25, key
+delta 10, centre delta 0 and reverse. The standard X/Y/Z axis rows bind these
+ports, while `HAT1` ramps X/Y and `BUTTON13/14` ramp Z.
+
+`tempest.c` declares `IPT_DIAL` for players 1 and 2 over the 0x0f mask, with
+sensitivity 100, key delta 20 and full-turn count 72. `JOYCODE_n_ADDREL1`
+supplies relative pixels; `HAT1LEFT/RIGHT` supplies decrement/increment.
+
+`rampart.c` declares `IPT_TRACKBALL_X/Y` for players 1–3 over 8-bit halves of
+the input words, all sensitivity 100, key delta 30 and reverse. X uses
+`JOYCODE_n_ADDREL1` plus `HAT1LEFT/RIGHT`; Y uses `JOYCODE_n_ADDREL2` plus
+`HAT1UP/DOWN`.

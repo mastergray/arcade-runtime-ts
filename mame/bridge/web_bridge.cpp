@@ -12,10 +12,14 @@
 #include <emscripten.h>
 #include <sstream>
 #include <string>
+#include <utility>
+#include <vector>
 
 #if defined(EMSCRIPTEN)
 
 extern void web_input_set_control(int pad, int item, int pressed);
+extern void web_input_set_axis(int pad, int axis, float value);
+extern void web_input_exit();
 extern int web_video_width();
 extern int web_video_height();
 extern void web_video_render();
@@ -109,6 +113,50 @@ static bool valid_state_name(const char *name)
 		if (!(isalnum(*cursor) || *cursor == '-' || *cursor == '_'))
 			return false;
 	return true;
+}
+
+static const char *web_analog_kind(ioport_type type)
+{
+	switch (type)
+	{
+		case IPT_AD_STICK_X: return "stick-x";
+		case IPT_AD_STICK_Y: return "stick-y";
+		case IPT_AD_STICK_Z: return "stick-z";
+		case IPT_PADDLE: return "paddle";
+		case IPT_PADDLE_V: return "paddle-v";
+		case IPT_PEDAL: return "pedal-1";
+		case IPT_PEDAL2: return "pedal-2";
+		case IPT_PEDAL3: return "pedal-3";
+		case IPT_DIAL: return "dial";
+		case IPT_DIAL_V: return "dial-v";
+		case IPT_TRACKBALL_X: return "trackball-x";
+		case IPT_TRACKBALL_Y: return "trackball-y";
+		case IPT_LIGHTGUN_X: return "lightgun-x";
+		case IPT_LIGHTGUN_Y: return "lightgun-y";
+		case IPT_MOUSE_X: return "mouse-x";
+		case IPT_MOUSE_Y: return "mouse-y";
+		case IPT_POSITIONAL: return "positional";
+		case IPT_POSITIONAL_V: return "positional-v";
+		default: return NULL;
+	}
+}
+
+static bool web_dual_stick_type(ioport_type type)
+{
+	switch (type)
+	{
+		case IPT_JOYSTICKLEFT_UP:
+		case IPT_JOYSTICKLEFT_DOWN:
+		case IPT_JOYSTICKLEFT_LEFT:
+		case IPT_JOYSTICKLEFT_RIGHT:
+		case IPT_JOYSTICKRIGHT_UP:
+		case IPT_JOYSTICKRIGHT_DOWN:
+		case IPT_JOYSTICKRIGHT_LEFT:
+		case IPT_JOYSTICKRIGHT_RIGHT:
+			return true;
+		default:
+			return false;
+	}
 }
 
 static void schedule_state(const char *name, bool save)
@@ -247,6 +295,11 @@ extern "C" EMSCRIPTEN_KEEPALIVE void web_set_control(int pad, int item, int pres
 	web_input_set_control(pad, item, pressed);
 }
 
+extern "C" EMSCRIPTEN_KEEPALIVE void web_set_axis(int pad, int axis, float value)
+{
+	web_input_set_axis(pad, axis, value);
+}
+
 extern "C" EMSCRIPTEN_KEEPALIVE void web_pause()
 {
 	if (s_machine != NULL && !s_stopped)
@@ -280,6 +333,7 @@ extern "C" EMSCRIPTEN_KEEPALIVE void web_exit()
 	if (s_machine == NULL || s_stopped)
 		return;
 	s_stopped = true;
+	web_input_exit();
 	s_machine->schedule_exit();
 	web_flush_nvram();
 	if (!s_exit_reported)
@@ -319,12 +373,29 @@ extern "C" EMSCRIPTEN_KEEPALIVE const char *web_machine_info()
 
 	int players = 0;
 	int buttons = 0;
+	bool dual_stick = false;
+	std::vector<std::pair<int, const char *> > analog_inputs;
 	for (ioport_port *port = s_machine->ioport().first_port(); port != NULL; port = port->next())
 		for (ioport_field *field = port->first_field(); field != NULL; field = field->next())
 		{
 			players = MAX(players, field->player() + 1);
 			if (field->type() >= IPT_BUTTON1 && field->type() <= IPT_BUTTON6)
 				buttons = MAX(buttons, int(field->type() - IPT_BUTTON1 + 1));
+			dual_stick = dual_stick || web_dual_stick_type(field->type());
+			const char *kind = web_analog_kind(field->type());
+			int player = field->player() + 1;
+			if (kind != NULL && player >= 1 && player <= 4)
+			{
+				bool duplicate = false;
+				for (std::vector<std::pair<int, const char *> >::const_iterator item = analog_inputs.begin(); item != analog_inputs.end(); item++)
+					if (item->first == player && strcmp(item->second, kind) == 0)
+					{
+						duplicate = true;
+						break;
+					}
+				if (!duplicate)
+					analog_inputs.push_back(std::make_pair(player, kind));
+			}
 		}
 	players = MIN(4, MAX(1, players));
 
@@ -355,6 +426,17 @@ extern "C" EMSCRIPTEN_KEEPALIVE const char *web_machine_info()
 		<< ",\"aspectRatio\":" << (vertical ? 0.75 : (4.0 / 3.0))
 		<< ",\"players\":" << players
 		<< ",\"buttons\":" << buttons
+		<< ",\"inputs\":{\"analog\":[";
+
+	for (size_t index = 0; index < analog_inputs.size(); index++)
+	{
+		if (index != 0)
+			json << ',';
+		json << "{\"player\":" << analog_inputs[index].first
+			<< ",\"kind\":" << json_string(analog_inputs[index].second) << '}';
+	}
+
+	json << "],\"dualStick\":" << (dual_stick ? "true" : "false") << '}'
 		<< ",\"bios\":[";
 
 	bool first_bios = true;

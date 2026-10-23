@@ -5,11 +5,13 @@ import ArcadeRuntimeError from "../ArcadeRuntimeError/ArcadeRuntimeError.js";   
 import OverlayCodec, { type OverlayHeader, type OverlayTree } from "./OverlayCodec.js";   // Cumulative persistence codec and hash
 import {
     arcadeControlKey,                                             // Canonical control-to-bridge lookup key
+    isArcadeAxis,                                                 // Guards session axis calls
     isArcadeControl,                                              // Guards session input calls
 } from "../shared.types.js";
 
 // Type dependencies:
 import type {
+    ArcadeAxis,                                                   // Axis vocabulary mapped to web-pad axes
     ArcadeControl,                                                // Input vocabulary mapped to web-pad items
     ArcadeSession,                                                // Contract this session implements
     FrameEvent,                                                   // Copied video callback payload
@@ -102,10 +104,33 @@ const CONTROL_ITEMS: Readonly<Record<string, readonly [number, number]>> = Objec
         [`p${player + 1}:start`, [player, 11] as const],
         [`p${player + 1}:select`, [player, 12] as const],
     ]).flat()),
+    ...Object.fromEntries(Array.from({ length: 4 }, (_, player) => [
+        [`p${player + 1}:stick:1:up`, [player, 20] as const],
+        [`p${player + 1}:stick:1:down`, [player, 21] as const],
+        [`p${player + 1}:stick:1:left`, [player, 22] as const],
+        [`p${player + 1}:stick:1:right`, [player, 23] as const],
+        [`p${player + 1}:stick:2:up`, [player, 16] as const],
+        [`p${player + 1}:stick:2:down`, [player, 17] as const],
+        [`p${player + 1}:stick:2:left`, [player, 18] as const],
+        [`p${player + 1}:stick:2:right`, [player, 19] as const],
+        [`p${player + 1}:pedal:1`, [player, 24] as const],
+        [`p${player + 1}:pedal:2`, [player, 25] as const],
+        [`p${player + 1}:pedal:3`, [player, 26] as const],
+    ]).flat()),
     service: [0, 13],
     test: [0, 14],
     tilt: [0, 15],
 });                                                               // §4.3.1 item order, indexed through arcadeControlKey
+
+const AXIS_ITEMS: Readonly<Record<ArcadeAxis["kind"], number>> = Object.freeze({
+    "stick-x": 0,
+    "stick-y": 1,
+    "stick-z": 2,
+    "pedal-1": 3,
+    "pedal-2": 4,
+    "spin-x": 5,
+    "spin-y": 6,
+});                                                               // §4.3.1 axis order
 
 /**
  *
@@ -217,6 +242,7 @@ export default class MameSession implements ArcadeSession, MameWebCallbacks {
     private readonly _runFrames: (count: number) => number;       // Advances complete primary-screen periods
     private readonly _pump: () => void;                           // Redraws OSD while paused
     private readonly _setControl: (pad: number, item: number, pressed: number) => void;
+    private readonly _setAxis: (pad: number, axis: number, value: number) => void;
     private readonly _webPause: () => void;
     private readonly _webResume: () => void;
     private readonly _webReset: (hard: number) => void;
@@ -260,6 +286,7 @@ export default class MameSession implements ArcadeSession, MameWebCallbacks {
         this._runFrames = wrapped("web_run_frames", "number", ["number"]) as (count: number) => number;
         this._pump = wrapped("web_pump", null, []) as () => void;
         this._setControl = wrapped("web_set_control", null, ["number", "number", "number"]) as (pad: number, item: number, pressed: number) => void;
+        this._setAxis = wrapped("web_set_axis", null, ["number", "number", "number"]) as (pad: number, axis: number, value: number) => void;
         this._webPause = wrapped("web_pause", null, []) as () => void;
         this._webResume = wrapped("web_resume", null, []) as () => void;
         this._webReset = wrapped("web_reset", null, ["number"]) as (hard: number) => void;
@@ -295,6 +322,16 @@ export default class MameSession implements ArcadeSession, MameWebCallbacks {
         if (control.kind === "select") return;                    // M1 MachineInfo has no select-port field; enabled by W16
         const mapped = CONTROL_ITEMS[arcadeControlKey(control)];
         if (mapped !== undefined) this._setControl(mapped[0], mapped[1], pressed ? 1 : 0);
+    }
+
+    // INSTANCE :: arcadeAxis, NUMBER -> VOID
+    // Maps one logical axis to its virtual pad index and clamps normalized absolute values.
+    setAxis(axis: ArcadeAxis, value: number): void {
+        this.assertLive();
+        if (!isArcadeAxis(axis) || !Number.isFinite(value)) throw invalid({ axis, value });
+        if (axis.player > this.machine.players) return;
+        const normalized = axis.kind === "spin-x" || axis.kind === "spin-y" ? value : Math.max(-1, Math.min(1, value));
+        this._setAxis(axis.player - 1, AXIS_ITEMS[axis.kind], normalized);
     }
 
     // INSTANCE :: VOID -> VOID

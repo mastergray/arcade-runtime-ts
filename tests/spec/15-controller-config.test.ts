@@ -17,92 +17,79 @@ import type { TestFile } from "../run.ts";                       // Manifest con
  *
  */
 
-const ONE_PLAYER = `<?xml version="1.0"?>
-<mameconfig version="10">
-    <system name="default">
-        <input>
-            <port type="P1_JOYSTICK_UP"><newseq type="standard">JOYCODE_1_HAT1UP</newseq></port>
-            <port type="P1_JOYSTICK_DOWN"><newseq type="standard">JOYCODE_1_HAT1DOWN</newseq></port>
-            <port type="P1_JOYSTICK_LEFT"><newseq type="standard">JOYCODE_1_HAT1LEFT</newseq></port>
-            <port type="P1_JOYSTICK_RIGHT"><newseq type="standard">JOYCODE_1_HAT1RIGHT</newseq></port>
-            <port type="P1_BUTTON1"><newseq type="standard">JOYCODE_1_BUTTON1</newseq></port>
-            <port type="P1_BUTTON2"><newseq type="standard">JOYCODE_1_BUTTON2</newseq></port>
-            <port type="P1_BUTTON3"><newseq type="standard">JOYCODE_1_BUTTON3</newseq></port>
-            <port type="P1_BUTTON4"><newseq type="standard">JOYCODE_1_BUTTON4</newseq></port>
-            <port type="P1_BUTTON5"><newseq type="standard">JOYCODE_1_BUTTON5</newseq></port>
-            <port type="P1_BUTTON6"><newseq type="standard">JOYCODE_1_BUTTON6</newseq></port>
-            <port type="COIN1"><newseq type="standard">JOYCODE_1_BUTTON7</newseq></port>
-            <port type="START1"><newseq type="standard">JOYCODE_1_BUTTON8</newseq></port>
-            <port type="P1_SELECT"><newseq type="standard">JOYCODE_1_BUTTON9</newseq></port>
-            <port type="SERVICE1"><newseq type="standard">JOYCODE_1_BUTTON10</newseq></port>
-            <port type="SERVICE"><newseq type="standard">JOYCODE_1_BUTTON11</newseq></port>
-            <port type="TILT"><newseq type="standard">JOYCODE_1_BUTTON12</newseq></port>
-            <port type="TILT1"><newseq type="standard">JOYCODE_1_BUTTON12</newseq></port>
-        </input>
-    </system>
-</mameconfig>
-`;                                                                 // Exact one-player output with select
+// HELPER :: STRING, STRING, STRING? -> STRING
+// One exact expected controller-config row.
+const expectedPort = (type: string, code: string, sequence = "standard"): string =>
+    `            <port type="${type}"><newseq type="${sequence}">${code}</newseq></port>`;
 
-const FOUR_PLAYERS = `<?xml version="1.0"?>
-<mameconfig version="10">
-    <system name="default">
-        <input>
-            <port type="P1_JOYSTICK_UP"><newseq type="standard">JOYCODE_1_HAT1UP</newseq></port>
-            <port type="P1_JOYSTICK_DOWN"><newseq type="standard">JOYCODE_1_HAT1DOWN</newseq></port>
-            <port type="P1_JOYSTICK_LEFT"><newseq type="standard">JOYCODE_1_HAT1LEFT</newseq></port>
-            <port type="P1_JOYSTICK_RIGHT"><newseq type="standard">JOYCODE_1_HAT1RIGHT</newseq></port>
-            <port type="P1_BUTTON1"><newseq type="standard">JOYCODE_1_BUTTON1</newseq></port>
-            <port type="P1_BUTTON2"><newseq type="standard">JOYCODE_1_BUTTON2</newseq></port>
-            <port type="P1_BUTTON3"><newseq type="standard">JOYCODE_1_BUTTON3</newseq></port>
-            <port type="P1_BUTTON4"><newseq type="standard">JOYCODE_1_BUTTON4</newseq></port>
-            <port type="P1_BUTTON5"><newseq type="standard">JOYCODE_1_BUTTON5</newseq></port>
-            <port type="P1_BUTTON6"><newseq type="standard">JOYCODE_1_BUTTON6</newseq></port>
-            <port type="COIN1"><newseq type="standard">JOYCODE_1_BUTTON7</newseq></port>
-            <port type="START1"><newseq type="standard">JOYCODE_1_BUTTON8</newseq></port>
-            <port type="P2_JOYSTICK_UP"><newseq type="standard">JOYCODE_2_HAT1UP</newseq></port>
-            <port type="P2_JOYSTICK_DOWN"><newseq type="standard">JOYCODE_2_HAT1DOWN</newseq></port>
-            <port type="P2_JOYSTICK_LEFT"><newseq type="standard">JOYCODE_2_HAT1LEFT</newseq></port>
-            <port type="P2_JOYSTICK_RIGHT"><newseq type="standard">JOYCODE_2_HAT1RIGHT</newseq></port>
-            <port type="P2_BUTTON1"><newseq type="standard">JOYCODE_2_BUTTON1</newseq></port>
-            <port type="P2_BUTTON2"><newseq type="standard">JOYCODE_2_BUTTON2</newseq></port>
-            <port type="P2_BUTTON3"><newseq type="standard">JOYCODE_2_BUTTON3</newseq></port>
-            <port type="P2_BUTTON4"><newseq type="standard">JOYCODE_2_BUTTON4</newseq></port>
-            <port type="P2_BUTTON5"><newseq type="standard">JOYCODE_2_BUTTON5</newseq></port>
-            <port type="P2_BUTTON6"><newseq type="standard">JOYCODE_2_BUTTON6</newseq></port>
-            <port type="COIN2"><newseq type="standard">JOYCODE_2_BUTTON7</newseq></port>
-            <port type="START2"><newseq type="standard">JOYCODE_2_BUTTON8</newseq></port>
-            <port type="P3_JOYSTICK_UP"><newseq type="standard">JOYCODE_3_HAT1UP</newseq></port>
-            <port type="P3_JOYSTICK_DOWN"><newseq type="standard">JOYCODE_3_HAT1DOWN</newseq></port>
-            <port type="P3_JOYSTICK_LEFT"><newseq type="standard">JOYCODE_3_HAT1LEFT</newseq></port>
-            <port type="P3_JOYSTICK_RIGHT"><newseq type="standard">JOYCODE_3_HAT1RIGHT</newseq></port>
-            <port type="P3_BUTTON1"><newseq type="standard">JOYCODE_3_BUTTON1</newseq></port>
-            <port type="P3_BUTTON2"><newseq type="standard">JOYCODE_3_BUTTON2</newseq></port>
-            <port type="P3_BUTTON3"><newseq type="standard">JOYCODE_3_BUTTON3</newseq></port>
-            <port type="P3_BUTTON4"><newseq type="standard">JOYCODE_3_BUTTON4</newseq></port>
-            <port type="P3_BUTTON5"><newseq type="standard">JOYCODE_3_BUTTON5</newseq></port>
-            <port type="P3_BUTTON6"><newseq type="standard">JOYCODE_3_BUTTON6</newseq></port>
-            <port type="COIN3"><newseq type="standard">JOYCODE_3_BUTTON7</newseq></port>
-            <port type="START3"><newseq type="standard">JOYCODE_3_BUTTON8</newseq></port>
-            <port type="P4_JOYSTICK_UP"><newseq type="standard">JOYCODE_4_HAT1UP</newseq></port>
-            <port type="P4_JOYSTICK_DOWN"><newseq type="standard">JOYCODE_4_HAT1DOWN</newseq></port>
-            <port type="P4_JOYSTICK_LEFT"><newseq type="standard">JOYCODE_4_HAT1LEFT</newseq></port>
-            <port type="P4_JOYSTICK_RIGHT"><newseq type="standard">JOYCODE_4_HAT1RIGHT</newseq></port>
-            <port type="P4_BUTTON1"><newseq type="standard">JOYCODE_4_BUTTON1</newseq></port>
-            <port type="P4_BUTTON2"><newseq type="standard">JOYCODE_4_BUTTON2</newseq></port>
-            <port type="P4_BUTTON3"><newseq type="standard">JOYCODE_4_BUTTON3</newseq></port>
-            <port type="P4_BUTTON4"><newseq type="standard">JOYCODE_4_BUTTON4</newseq></port>
-            <port type="P4_BUTTON5"><newseq type="standard">JOYCODE_4_BUTTON5</newseq></port>
-            <port type="P4_BUTTON6"><newseq type="standard">JOYCODE_4_BUTTON6</newseq></port>
-            <port type="COIN4"><newseq type="standard">JOYCODE_4_BUTTON7</newseq></port>
-            <port type="START4"><newseq type="standard">JOYCODE_4_BUTTON8</newseq></port>
-            <port type="SERVICE1"><newseq type="standard">JOYCODE_1_BUTTON10</newseq></port>
-            <port type="SERVICE"><newseq type="standard">JOYCODE_1_BUTTON11</newseq></port>
-            <port type="TILT"><newseq type="standard">JOYCODE_1_BUTTON12</newseq></port>
-            <port type="TILT1"><newseq type="standard">JOYCODE_1_BUTTON12</newseq></port>
-        </input>
-    </system>
-</mameconfig>
-`;                                                                 // Exact four-player output without select
+// HELPER :: NUMBER -> [STRING]
+// Every W26 row for one player, independent of the production generator.
+const expectedExtended = (player: number): string[] => {
+    const p = `P${player}_`;
+    const j = `JOYCODE_${player}_`;
+    const lines = [
+        expectedPort(`${p}AD_STICK_X`, `${j}XAXIS`),
+        expectedPort(`${p}PADDLE`, `${j}XAXIS`),
+        expectedPort(`${p}AD_STICK_Y`, `${j}YAXIS`),
+        expectedPort(`${p}PADDLE_V`, `${j}YAXIS`),
+        expectedPort(`${p}AD_STICK_Z`, `${j}ZAXIS`),
+        expectedPort(`${p}PEDAL`, `${j}RXAXIS`),
+        expectedPort(`${p}PEDAL2`, `${j}RYAXIS`),
+        expectedPort(`${p}DIAL`, `${j}ADDREL1`),
+        expectedPort(`${p}TRACKBALL_X`, `${j}ADDREL1`),
+        expectedPort(`${p}DIAL_V`, `${j}ADDREL2`),
+        expectedPort(`${p}TRACKBALL_Y`, `${j}ADDREL2`),
+    ];
+    for (const type of ["AD_STICK_X", "PADDLE", "DIAL", "TRACKBALL_X", "POSITIONAL"]) {
+        lines.push(expectedPort(`${p}${type}`, `${j}HAT1LEFT`, "decrement"));
+        lines.push(expectedPort(`${p}${type}`, `${j}HAT1RIGHT`, "increment"));
+    }
+    for (const type of ["AD_STICK_Y", "PADDLE_V", "DIAL_V", "TRACKBALL_Y", "POSITIONAL_V"]) {
+        lines.push(expectedPort(`${p}${type}`, `${j}HAT1UP`, "decrement"));
+        lines.push(expectedPort(`${p}${type}`, `${j}HAT1DOWN`, "increment"));
+    }
+    lines.push(
+        expectedPort(`${p}AD_STICK_Z`, `${j}BUTTON14`, "decrement"),
+        expectedPort(`${p}AD_STICK_Z`, `${j}BUTTON13`, "increment"),
+        expectedPort(`${p}PEDAL`, `${j}BUTTON13`, "increment"),
+        expectedPort(`${p}PEDAL2`, `${j}BUTTON14`, "increment"),
+        expectedPort(`${p}PEDAL3`, `${j}BUTTON15`, "increment"),
+        expectedPort(`${p}JOYSTICKLEFT_UP`, `${j}HAT1UP OR ${j}HAT1RIGHT OR ${j}HAT3UP`),
+        expectedPort(`${p}JOYSTICKLEFT_DOWN`, `${j}HAT1DOWN OR ${j}HAT1LEFT OR ${j}HAT3DOWN`),
+        expectedPort(`${p}JOYSTICKRIGHT_UP`, `${j}HAT1UP OR ${j}HAT1LEFT OR ${j}HAT2UP`),
+        expectedPort(`${p}JOYSTICKRIGHT_DOWN`, `${j}HAT1DOWN OR ${j}HAT1RIGHT OR ${j}HAT2DOWN`),
+        expectedPort(`${p}JOYSTICKLEFT_LEFT`, `${j}HAT3LEFT`),
+        expectedPort(`${p}JOYSTICKLEFT_RIGHT`, `${j}HAT3RIGHT`),
+        expectedPort(`${p}JOYSTICKRIGHT_LEFT`, `${j}HAT2LEFT`),
+        expectedPort(`${p}JOYSTICKRIGHT_RIGHT`, `${j}HAT2RIGHT`),
+    );
+    return lines;
+};
+
+// HELPER :: NUMBER, BOOLEAN -> STRING
+// Exact complete expected XML for the requested player count.
+const expectedConfig = (players: number, select: boolean): string => {
+    const lines = ["<?xml version=\"1.0\"?>", "<mameconfig version=\"10\">", "    <system name=\"default\">", "        <input>"];
+    for (let player = 1; player <= players; player++) {
+        for (const direction of ["UP", "DOWN", "LEFT", "RIGHT"]) lines.push(expectedPort(`P${player}_JOYSTICK_${direction}`, `JOYCODE_${player}_HAT1${direction}`));
+        for (let button = 1; button <= 6; button++) lines.push(expectedPort(`P${player}_BUTTON${button}`, `JOYCODE_${player}_BUTTON${button}`));
+        lines.push(expectedPort(`COIN${player}`, `JOYCODE_${player}_BUTTON7`));
+        lines.push(expectedPort(`START${player}`, `JOYCODE_${player}_BUTTON8`));
+        if (select) lines.push(expectedPort(`P${player}_SELECT`, `JOYCODE_${player}_BUTTON9`));
+        lines.push(...expectedExtended(player));
+    }
+    lines.push(
+        expectedPort("SERVICE1", "JOYCODE_1_BUTTON10"),
+        expectedPort("SERVICE", "JOYCODE_1_BUTTON11"),
+        expectedPort("TILT", "JOYCODE_1_BUTTON12"),
+        expectedPort("TILT1", "JOYCODE_1_BUTTON12"),
+        "        </input>", "    </system>", "</mameconfig>",
+    );
+    return `${lines.join("\n")}\n`;
+};
+
+const ONE_PLAYER = expectedConfig(1, true);                       // Exact one-player output with select
+const FOUR_PLAYERS = expectedConfig(4, false);                    // Exact four-player output without select
 
 /**
  *
@@ -115,6 +102,12 @@ const FOUR_PLAYERS = `<?xml version="1.0"?>
 const portsOf = (xml: string): Array<{ type: string; code: string }> =>
     [...xml.matchAll(/<port type="([^"]+)"><newseq type="standard">([^<]+)<\/newseq><\/port>/g)]
         .map((match) => ({ type: match[1] ?? "", code: match[2] ?? "" }));
+
+// HELPER :: STRING -> [{type:STRING,sequence:STRING,code:STRING}]
+// Extracts all three 0.161 sequence types without losing repeated port rows.
+const sequencesOf = (xml: string): Array<{ type: string; sequence: string; code: string }> =>
+    [...xml.matchAll(/<port type="([^"]+)"><newseq type="([^"]+)">([^<]+)<\/newseq><\/port>/g)]
+        .map((match) => ({ type: match[1] ?? "", sequence: match[2] ?? "", code: match[3] ?? "" }));
 
 const testFile: TestFile = {
     label: "ControllerConfig",
@@ -184,6 +177,20 @@ const testFile: TestFile = {
                         { type: "TILT1", code: "JOYCODE_1_BUTTON12" },
                     ],
                 }))
+                .start(undefined),
+        },
+        {
+            label: "every analogue ramp, relative token and dual-stick sequence matches the W26 contract",
+            run: () => CTGTest.init("extended controller token vocabulary")
+                .assert("all W26 rows match in order", () => {
+                    const actual = sequencesOf(controllerConfigFor({ players: 1, select: false }));
+                    const oldTypes = new Set([
+                        "P1_JOYSTICK_UP", "P1_JOYSTICK_DOWN", "P1_JOYSTICK_LEFT", "P1_JOYSTICK_RIGHT",
+                        "P1_BUTTON1", "P1_BUTTON2", "P1_BUTTON3", "P1_BUTTON4", "P1_BUTTON5", "P1_BUTTON6",
+                        "COIN1", "START1", "SERVICE1", "SERVICE", "TILT", "TILT1",
+                    ]);
+                    return actual.filter((entry) => !oldTypes.has(entry.type));
+                }, P.equals<unknown>(sequencesOf(expectedExtended(1).join("\n"))))
                 .start(undefined),
         },
         {

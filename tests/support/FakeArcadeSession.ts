@@ -2,6 +2,9 @@
 import { arcadeControlKey } from "../../src/index.ts";            // Canonical control key for the held set
 import { validMachineInfo } from "./fixtures.ts";                 // Default machine when none is given
 
+// Type dependencies owned by W26 until the integrator adds the root exports:
+import type { ArcadeAxis } from "../../src/shared.types.ts";       // Argument of setAxis
+
 // Type dependencies:
 import type {
     ArcadeControl,                                                 // Argument of setControl
@@ -45,6 +48,7 @@ export default class FakeArcadeSession implements ArcadeSession {
     readonly sampleRate: number = 48000;                                           // Matches the P10 mixer rate
     readonly calls: FakeSessionCall[] = [];                                        // Every call, in order
     private readonly _held = new Set<ArcadeControlKey>();                          // Controls currently pressed, by canonical key
+    private readonly _axes = new Map<string, { readonly axis: ArcadeAxis; readonly value: number }>();   // Last axis writes
     private readonly _scripts = new Map<string, { mode: FakeSessionMode; value: unknown }>();   // Scripted outcomes by method
     private readonly _tickListeners = new Set<Listener<void>>();                   // onTick subscribers
     private readonly _frameListeners = new Set<Listener<FrameEvent>>();            // onFrame subscribers
@@ -67,6 +71,12 @@ export default class FakeArcadeSession implements ArcadeSession {
     // Canonical keys of every control currently pressed, in insertion order
     get held(): ReadonlyArray<ArcadeControlKey> {
         return [...this._held];
+    }
+
+    // GETTER :: VOID -> [{axis:arcadeAxis,value:NUMBER}]
+    // Last value recorded for each player/kind pair, in insertion order.
+    get axes(): ReadonlyArray<{ readonly axis: ArcadeAxis; readonly value: number }> {
+        return [...this._axes.values()];
     }
 
     /**
@@ -113,6 +123,13 @@ export default class FakeArcadeSession implements ArcadeSession {
         const key = arcadeControlKey(control);
         if (pressed) this._held.add(key);
         else this._held.delete(key);
+    }
+
+    // INSTANCE :: arcadeAxis, NUMBER -> VOID
+    // Records the call and latest player/kind value.
+    setAxis(axis: ArcadeAxis, value: number): void {
+        this.apply("setAxis", [axis, value]);
+        this._axes.set(`p${axis.player}:${axis.kind}`, { axis, value });
     }
 
     // INSTANCE :: VOID -> VOID

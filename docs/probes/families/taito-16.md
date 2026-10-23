@@ -192,3 +192,18 @@ are conservative; the 60 s ratio tolerance is 2 %, the cadence tolerance 1 %.
 | Title | F4 | F5 | F6 | Acceptance |
 | ----- | -- | -- | -- | ---------- |
 | Z System: 320×240 at 60.000 Hz | 496 ms | 60 → 59.66 (−0.56 %), 90 → 59.87 (−0.21 %), 120 → 59.85 (−0.24 %), 144 → 59.98 (−0.03 %) | 1.0000 | pass |
+
+## F11 — Which analogue ports occur?
+
+`taito_z.c` conditionally declares `IPT_PADDLE` at 0x20–0xe0, sensitivity
+100, key delta 4 and reverse, or `IPT_DIAL` over a 16-bit mask at sensitivity
+100, key delta 2 and reverse. It also conditionally declares 3-bit
+`IPT_PEDAL`/`IPT_PEDAL2` at sensitivity 25 and key delta 1. Conditional fields
+remain visible in machine discovery. The paddle uses the standard X axis and
+`HAT1LEFT/RIGHT`; the dial uses `JOYCODE_n_ADDREL1` with the same digital
+fallback; and the pedals use RX/RY plus `BUTTON13/14` increment sequences.
+
+`superchs.c` declares reversed full-range `IPT_PADDLE` at sensitivity 100 and
+key delta 4, plus full-range `IPT_PEDAL` at sensitivity 100 and key delta 15.
+The paddle uses the standard X axis and `HAT1LEFT/RIGHT`; the pedal uses RX
+and the `BUTTON13` increment sequence.

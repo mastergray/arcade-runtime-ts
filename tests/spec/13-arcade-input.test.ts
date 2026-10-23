@@ -12,7 +12,7 @@ import FakeArcadeSession, { type FakeSessionCall } from "../support/FakeArcadeSe
 import { errorSnapshot, thrownBy, type ErrorSnapshot } from "../support/fixtures.ts";   // Error capture helpers
 
 // Type dependencies:
-import type { ArcadeControl } from "../../src/shared.types.ts";   // Control fixtures
+import type { ArcadeAxis, ArcadeControl } from "../../src/shared.types.ts";   // Control and axis fixtures
 import type { ArcadeInputConfig } from "../../src/ArcadeInput/types.ts";   // Invalid construction casts
 import type { TestCase, TestFile } from "../run.ts";              // Manifest contract consumed by the runner
 
@@ -44,6 +44,9 @@ const BUTTON_2 = { kind: "button", player: 2, button: 6 } as const satisfies Arc
 const COIN_1 = { kind: "coin", player: 1 } as const satisfies ArcadeControl;
 const START_2 = { kind: "start", player: 2 } as const satisfies ArcadeControl;
 const SERVICE = { kind: "service" } as const satisfies ArcadeControl;
+const STICK_X_1 = { player: 1, kind: "stick-x" } as const satisfies ArcadeAxis;
+const PEDAL_1 = { player: 1, kind: "pedal-1" } as const satisfies ArcadeAxis;
+const SPIN_X_1 = { player: 1, kind: "spin-x" } as const satisfies ArcadeAxis;
 const DESTROYED: ErrorSnapshot = { isRuntimeError: true, code: 10, label: "DESTROYED" };
 
 /**
@@ -62,6 +65,10 @@ const rig = (): Rig => {
 // HELPER :: arcadeControl, BOOLEAN -> fakeSessionCall
 // One expected session control call.
 const controlCall = (control: ArcadeControl, pressed: boolean): FakeSessionCall => ({ method: "setControl", args: [control, pressed] });
+
+// HELPER :: arcadeAxis, NUMBER -> fakeSessionCall
+// One expected session axis call.
+const axisCall = (axis: ArcadeAxis, value: number): FakeSessionCall => ({ method: "setAxis", args: [axis, value] });
 
 // HELPER :: UNKNOWN -> errorSnapshot
 // Runtime-error identity for a thrown value.
@@ -165,6 +172,7 @@ const testFile: TestFile = {
                         thrownBy(() => channel.press(COIN_1)),
                         thrownBy(() => channel.release(COIN_1)),
                         thrownBy(() => channel.tap(COIN_1)),
+                        thrownBy(() => channel.setAxis(STICK_X_1, 0)),
                         thrownBy(() => channel.releaseAll()),
                     ].map(errorOf);
                     return { calls: session.calls, snapshot: input.snapshot, errors };
@@ -172,7 +180,72 @@ const testFile: TestFile = {
                 .assert("one release and DESTROYED thereafter", (state) => state.subject, P.equals<unknown>({
                     calls: [controlCall(COIN_1, true), controlCall(COIN_1, false)],
                     snapshot: [],
-                    errors: [DESTROYED, DESTROYED, DESTROYED, DESTROYED],
+                    errors: [DESTROYED, DESTROYED, DESTROYED, DESTROYED, DESTROYED],
+                }))
+                .start(undefined),
+        },
+        {
+            label: "axes are last-writer-owned, clamp absolute values and recenter only the current owner",
+            run: () => CTGTest.init("axis ownership")
+                .stage("write absolute and relative axes through three channels", () => {
+                    const { input, session } = rig();
+                    const first = input.createChannel();
+                    const second = input.createChannel();
+                    const spinner = input.createChannel();
+                    input.setAxis(STICK_X_1, 2);
+                    first.setAxis(PEDAL_1, 0.5);
+                    second.setAxis(PEDAL_1, 0.25);
+                    const owned = input.axes;
+                    first.releaseAll();
+                    const afterOldOwner = input.axes;
+                    second.releaseAll();
+                    spinner.setAxis(SPIN_X_1, 3.5);
+                    spinner.destroy();
+                    const afterRelativeRelease = input.axes;
+                    input.releaseAll();
+                    return {
+                        machineMatches: input.machine === session.machine,
+                        owned,
+                        afterOldOwner,
+                        afterRelativeRelease,
+                        final: input.axes,
+                        calls: session.calls,
+                    };
+                })
+                .assert("ownership transfer and neutral values match", (state) => state.subject, P.equals<unknown>({
+                    machineMatches: true,
+                    owned: [{ axis: PEDAL_1, value: 0.25 }, { axis: STICK_X_1, value: 1 }],
+                    afterOldOwner: [{ axis: PEDAL_1, value: 0.25 }, { axis: STICK_X_1, value: 1 }],
+                    afterRelativeRelease: [{ axis: STICK_X_1, value: 1 }],
+                    final: [],
+                    calls: [
+                        axisCall(STICK_X_1, 1),
+                        axisCall(PEDAL_1, 0.5),
+                        axisCall(PEDAL_1, 0.25),
+                        axisCall(PEDAL_1, -1),
+                        axisCall(SPIN_X_1, 3.5),
+                        axisCall(STICK_X_1, 0),
+                    ],
+                }))
+                .start(undefined),
+        },
+        {
+            label: "axis writes reject malformed axes and non-finite values before reaching the session",
+            run: () => CTGTest.init("axis validation")
+                .stage("write two invalid axis arguments", () => {
+                    const { input, session } = rig();
+                    const malformed = { player: 1, kind: "paddle" } as unknown as ArcadeAxis;
+                    return {
+                        errors: [thrownBy(() => input.setAxis(malformed, 0)), thrownBy(() => input.setAxis(STICK_X_1, Number.NaN))].map(errorOf),
+                        calls: session.calls,
+                    };
+                })
+                .assert("both reject as INVALID_CONFIG", (state) => state.subject, P.equals<unknown>({
+                    errors: [
+                        { isRuntimeError: true, code: 1, label: "INVALID_CONFIG" },
+                        { isRuntimeError: true, code: 1, label: "INVALID_CONFIG" },
+                    ],
+                    calls: [],
                 }))
                 .start(undefined),
         },
@@ -381,6 +454,7 @@ const testFile: TestFile = {
         destroyedCase("press throws DESTROYED after destroy", (input) => input.press(BUTTON_1)),
         destroyedCase("release throws DESTROYED after destroy", (input) => input.release(BUTTON_1)),
         destroyedCase("tap throws DESTROYED after destroy", (input) => input.tap(BUTTON_1)),
+        destroyedCase("setAxis throws DESTROYED after destroy", (input) => input.setAxis(STICK_X_1, 0)),
         destroyedCase("releaseAll throws DESTROYED after destroy", (input) => input.releaseAll()),
     ],
 };

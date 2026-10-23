@@ -55,6 +55,8 @@ export interface GamepadMapping {
         readonly right: number;
     }>;
     readonly axes?: readonly [number, number];                     // Left-stick [horizontal, vertical] axis indices
+    readonly rightAxes?: readonly [number, number];                // Right-stick [horizontal, vertical] axis indices
+    readonly pedals?: readonly [number, number];                   // Analog button indices for pedals 1 and 2
     readonly buttons?: readonly [number, number, number, number, number, number];   // Physical indices for logical buttons 1–6
     readonly coin?: number;                                       // Physical coin/select button index
     readonly start?: number;                                      // Physical start button index
@@ -148,6 +150,8 @@ export function isGamepadMapping(value: unknown): value is GamepadMapping {
             && isPhysicalIndex(dpad.up) && isPhysicalIndex(dpad.down)
             && isPhysicalIndex(dpad.left) && isPhysicalIndex(dpad.right)))
         && (mapping.axes === undefined || (Array.isArray(mapping.axes) && mapping.axes.length === 2 && mapping.axes.every(isPhysicalIndex)))
+        && (mapping.rightAxes === undefined || (Array.isArray(mapping.rightAxes) && mapping.rightAxes.length === 2 && mapping.rightAxes.every(isPhysicalIndex)))
+        && (mapping.pedals === undefined || (Array.isArray(mapping.pedals) && mapping.pedals.length === 2 && mapping.pedals.every(isPhysicalIndex)))
         && (mapping.buttons === undefined || (Array.isArray(mapping.buttons) && mapping.buttons.length === 6 && mapping.buttons.every(isPhysicalIndex)))
         && (mapping.coin === undefined || isPhysicalIndex(mapping.coin))
         && (mapping.start === undefined || isPhysicalIndex(mapping.start));

@@ -155,6 +155,8 @@ const testFile: TestFile = {
                         ["ShiftLeft", "p1:button:4"],
                         ["KeyZ", "p1:button:5"],
                         ["KeyX", "p1:button:6"],
+                        ["KeyC", "p1:pedal:1"],
+                        ["KeyV", "p1:pedal:2"],
                         ["Digit5", "p1:coin"],
                         ["Digit1", "p1:start"],
                         ["F2", "test"],
