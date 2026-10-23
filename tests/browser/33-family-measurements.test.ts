@@ -30,7 +30,8 @@ interface FamilyMeasurement {
     readonly width: number;                                        // MachineInfo.width
     readonly height: number;                                       // MachineInfo.height
     readonly orientation: string;                                  // MachineInfo.orientation
-    readonly frameGeometryOk: boolean;                             // Every frame matched MachineInfo width × height
+    readonly frameGeometryOk: boolean;                             // Every frame carried a positive integer size
+    readonly frameSizes: ReadonlyArray<string>;                    // Distinct frame sizes seen, first one is MachineInfo's; boards with a mode-switching video chip report more than one
     readonly cadences: ReadonlyArray<CadenceResult>;               // F5: 60, 90, 120 and 144 Hz
     readonly sustainedRatio: number;                               // F6: 60-second emulated-time ratio at the 60 Hz cadence
 }
@@ -92,7 +93,12 @@ const measureFamily = async (cadences: number[], warmupMs: number, measureMs: nu
     const startMs = performance.now() - startedAt;
     const { machine } = session;
     let frameGeometryOk = true;
-    session.onFrame((frame) => { if (frame.width !== machine.width || frame.height !== machine.height) frameGeometryOk = false; });
+    const frameSizes: string[] = [`${machine.width}x${machine.height}`];
+    session.onFrame((frame) => {
+        if (!Number.isInteger(frame.width) || !Number.isInteger(frame.height) || frame.width <= 0 || frame.height <= 0) frameGeometryOk = false;
+        const size = `${frame.width}x${frame.height}`;
+        if (!frameSizes.includes(size)) frameSizes.push(size);
+    });
     const wait = (ms: number): Promise<void> => new Promise((done) => setTimeout(done, ms));
     const measure = async (ms: number): Promise<number> => {
         let ticks = 0;
@@ -122,6 +128,7 @@ const measureFamily = async (cadences: number[], warmupMs: number, measureMs: nu
         height: machine.height,
         orientation: machine.orientation,
         frameGeometryOk,
+        frameSizes,
         cadences: results,
         sustainedRatio: sustained / machine.refreshHz,
     };
@@ -151,7 +158,7 @@ const testFile: TestFile = {
                     const measure = new Function("cadences", "warmupMs", "measureMs", "sustainedMs", `return (${source})(cadences, warmupMs, measureMs, sustainedMs);`) as (c: number[], w: number, m: number, s: number) => Promise<FamilyMeasurement>;
                     return measure(cadences, warmupMs, measureMs, sustainedMs);
                 }, { source: measureFamily.toString(), cadences: CADENCES, warmupMs: CADENCE_WARMUP_MS, measureMs: CADENCE_MEASURE_MS, sustainedMs: SUSTAINED_MS });
-                console.log(`FAMILY-MEASURE ${result.family}: F4 start ${result.startMs.toFixed(0)} ms; ${result.width}x${result.height} ${result.orientation} at ${result.refreshHz.toFixed(3)} Hz, geometry ${result.frameGeometryOk ? "ok" : "MISMATCH"}; F5 ${result.cadences.map((c) => `${c.cadenceHz}Hz→${c.ticksPerSecond.toFixed(2)}fps (${((c.speedRatio - 1) * 100).toFixed(2)}%)`).join(", ")}; F6 60s ratio ${result.sustainedRatio.toFixed(4)}`);
+                console.log(`FAMILY-MEASURE ${result.family}: F4 start ${result.startMs.toFixed(0)} ms; ${result.width}x${result.height} ${result.orientation} at ${result.refreshHz.toFixed(3)} Hz, frames ${result.frameGeometryOk ? "ok" : "INVALID"} (sizes ${result.frameSizes.join("/")}); F5 ${result.cadences.map((c) => `${c.cadenceHz}Hz→${c.ticksPerSecond.toFixed(2)}fps (${((c.speedRatio - 1) * 100).toFixed(2)}%)`).join(", ")}; F6 60s ratio ${result.sustainedRatio.toFixed(4)}`);
                 await page.evaluate((verdict) => { (window as unknown as { verdict: MeasurementVerdict }).verdict = verdict; }, {
                     started: result.startMs > 0,
                     geometryOk: result.frameGeometryOk,

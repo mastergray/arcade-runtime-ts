@@ -1,0 +1,24 @@
+{
+    "family": "sega-s16",
+    "target": "mame/targets/sega-s16.lua",
+    "list": "mame/targets/sega-s16.lst",
+    "memoryPages": 4096,
+    "sources": [
+        "src/mame/drivers/segas16a.c",
+        "src/mame/video/segas16a.c",
+        "src/mame/drivers/segas16b.c",
+        "src/mame/video/segas16b.c",
+        "src/mame/drivers/segas18.c",
+        "src/mame/video/segas18.c",
+        "src/mame/machine/315_5296.c",
+        "src/mame/machine/fd1089.c",
+        "src/mame/machine/fd1094.c",
+        "src/mame/machine/mc8123.c",
+        "src/mame/machine/segacrpt.c",
+        "src/mame/machine/segacrp2.c",
+        "src/mame/machine/segaic16.c",
+        "src/mame/video/segaic16.c",
+        "src/mame/video/segaic16_road.c",
+        "src/mame/video/sega16sp.c"
+    ]
+}
