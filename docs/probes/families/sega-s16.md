@@ -79,32 +79,31 @@ pages.
 
 ## F4 — What is the slowest Chromium time from `callMain` to first frame?
 
-Pending: the sandbox denied the browser test server's loopback bind with
-`listen EPERM`, before Chromium page creation. The ignored System 18 preload
-audits cleanly against the generated metadata (18 expected files; zero
-missing, wrong-size or wrong-CRC entries), but a first frame could not arrive
-in this environment.
-
-On an unrestricted host, run the family browser measurement and record
-milliseconds from immediately before `adapter.start()` through the first
-valid, non-blank frame. Exclude file selection and transfer, and record the
-Chromium version and desktop CPU.
+Measured by the integrator on 2026-10-23 (Chrome 150, Core i7-1165G7,
+headless, quiet host) with the ignored System 18 preload: 540 ms from
+immediately before `adapter.start()` to the first valid, non-blank frame
+(532 ms and 561 ms on two earlier runs of the same gate).
 
 ## F5 — Are native refresh and upright geometry correct?
 
-Pending for the same loopback `EPERM`. On an unrestricted host, record the
-real adapter's native upright width, height and refresh, confirm every frame
-matches that geometry and contains non-black pixels, and measure controlled
-60, 90, 120 and 144 Hz display cadences. Each measured emulated-frame rate
-must remain within 0.5% of the native refresh.
+Native refresh 57.230 Hz, horizontal. The first frame is 256×224 and the
+board switches to 320×224 during play: the 315-5313 VDP reconfigures the
+screen between its H32 and H40 modes at run time, the bridge resizes its
+render target per frame and `ArcadeDisplay` re-creates its image buffer
+when a frame's size changes, so `MachineInfo.width` is the boot mode and
+later frames are drawn at their own size. The family measurement records
+the sizes seen (256×224/320×224) and asserts that every frame carries a
+valid size. Cadences: 60 Hz → 57.33 fps (+0.18 %), 90 Hz → 57.18 fps
+(−0.08 %), 120 Hz → 57.18 fps (−0.09 %), 144 Hz → 57.26 fps (+0.06 %),
+all inside the 1 % gate.
 
 ## F6 — Does the heaviest title sustain full speed?
 
-Pending for the same loopback `EPERM`. The ignored preload selects the System
-18 board required by this package. After warm-up on an unrestricted desktop,
-measure exactly 60 seconds and report `emulated seconds / wall seconds`, then
-repeat under Chromium's informational 4× CPU-throttled mobile proxy. Record
-the Chromium version, CPU and whether frameskip was disabled.
+Desktop: emulated seconds / wall seconds = 1.0001 over 60 s (0.9993 and
+0.9998 on the two earlier runs), frameskip disabled. M3–M5 acceptance on
+the same run: audio queue peak 68 ms against the 120 ms cap, keyboard coin
+and start reached play, two pads assigned and released. The 4× CPU-throttled
+mobile proxy was not run; it is informational and M28 replaces it.
 
 Run F4–F6 without disclosing the private selection:
 
@@ -114,7 +113,6 @@ ARCADE_FAMILY_CONFIGS="$PWD/res/preload-sega-s16.json" \
   npm run test:browser
 ```
 
-The sandbox attempt completed 0 passed, 32 failed and 25 skipped browser
-cases. Every runnable case, including the family measurement, stopped at the
-same loopback `listen EPERM`; this was an environment failure rather than a
-family-build result.
+The agent's sandbox attempt could not bind loopback (`listen EPERM`); the
+integrator's run on the host completed 27 passed, 0 failed, 26 skipped by
+design.

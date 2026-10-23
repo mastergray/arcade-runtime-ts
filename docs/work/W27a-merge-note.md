@@ -1,6 +1,6 @@
 # W27a merge note — `sega-s16`
 
-Status: production deliverables complete; F4–F6 pending the integrator's
+Status: complete; F4–F6 measured by the integrator on the host (see the
 browser run. The family build, metadata extraction, threading gate, type
 checks and full spec suite pass. The ignored System 18 preload audits cleanly,
 but this sandbox denies the loopback bind required by every browser case.
