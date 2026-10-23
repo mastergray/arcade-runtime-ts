@@ -6,6 +6,9 @@ import { existsSync, readFileSync } from "node:fs";              // Reads ignore
 import { dirname, extname, resolve } from "node:path";           // Resolves config-relative files without exposing their paths
 import { fileURLToPath } from "node:url";                        // Resolves the ignored default artifact directory
 import CTGBrowserTest from "ctg-js-browser-test";                 // Chromium pipeline
+import { CTGTest, CTGTestPredicates as P } from "ctg-js-test";   // Socket-free browser evidence pipeline
+import { chromium } from "playwright";                            // Headless production-module execution
+import { controllerConfigFor } from "../../src/ControllerConfig/controllerConfigFor.ts";   // Production analogue and dual-stick sequences
 
 // Type dependencies:
 import type { TestFile } from "../run.ts";                       // Manifest contract consumed by the runner
@@ -18,7 +21,7 @@ import type { TestFile } from "../run.ts";                       // Manifest con
 
 // INTERFACE :: validated private preload details used only by the local server
 interface PreloadConfig {
-    readonly family: "neogeo" | "cps1";
+    readonly family: "neogeo" | "cps1" | "atari-classic";
     readonly machine: string;
     readonly bios?: string;
     readonly roms: readonly string[];
@@ -28,6 +31,46 @@ interface PreloadConfig {
 interface BridgePageServer {
     readonly server: Server;
     readonly url: string;
+}
+
+interface AnalogBridgeResult {
+    readonly analogCount: number;
+    readonly controllerWarnings: number;
+    readonly dial: boolean;
+    readonly dialAxisBefore: number;
+    readonly dialAxisAfter: number;
+    readonly dialAxisChanged: boolean;
+    readonly dialRampBefore: number;
+    readonly dialRampAfter: number;
+    readonly dialRampChanged: boolean;
+    readonly dualStick: boolean;
+    readonly tankBothBefore: number;
+    readonly tankBothAfter: number;
+    readonly tankBothChanged: boolean;
+    readonly tankSecondBefore: number;
+    readonly tankSecondAfter: number;
+    readonly tankSecondChanged: boolean;
+    readonly trackball: boolean;
+    readonly trackballBefore: number;
+    readonly trackballAfter: number;
+    readonly trackballChanged: boolean;
+}
+
+interface AnalogVerdict {
+    readonly warnings: number;
+    readonly dialDeclared: boolean;
+    readonly dialAxisChanged: boolean;
+    readonly dialRampChanged: boolean;
+    readonly trackballDeclared: boolean;
+    readonly trackballChanged: boolean;
+    readonly dualStickDeclared: boolean;
+    readonly tankBothChanged: boolean;
+    readonly tankSecondChanged: boolean;
+}
+
+interface AnalogEvidence {
+    readonly observations: ReadonlyArray<AnalogBridgeResult>;
+    readonly verdict: AnalogVerdict;
 }
 
 interface MainBridgeResult {
@@ -61,11 +104,13 @@ interface MissingBiosResult {
 }
 
 interface BridgeBrowserApi {
+    analog?: AnalogBridgeResult;
     error?: string;
     main?: MainBridgeResult;
     missing?: MissingBiosResult;
     runMain: () => Promise<void>;
     runMissingBios: () => Promise<void>;
+    runAnalog: () => Promise<void>;
 }
 
 interface RawPreloadConfig {
@@ -83,9 +128,10 @@ interface RawPreloadConfig {
 
 const WORKSPACE = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const CONFIG_ARGUMENT = process.env.ARCADE_PRELOAD_CONFIG;
+const FAMILY_CONFIG_ARGUMENTS = (process.env.ARCADE_FAMILY_CONFIGS ?? "")
+    .split(",").map((entry) => entry.trim()).filter((entry) => entry !== "");
 const DEFAULT_ARTIFACT = resolve(WORKSPACE, "dist", "mame", "neogeo", "mameneogeo.js");   // The build-mame output for the M1 family
 const ARTIFACT = resolve(process.env.ARCADE_WEB_BRIDGE_ARTIFACT ?? DEFAULT_ARTIFACT);
-const WASM_ARTIFACT = `${ARTIFACT.slice(0, -extname(ARTIFACT).length)}.wasm`;
 const TIMEOUT = 90_000;
 
 const PAGE = `<!doctype html>
@@ -121,11 +167,15 @@ const PAGE = `<!doctype html>
             frames++;
             var bytes = module.HEAPU8.subarray(pointer, pointer + width * height * 4);
             var visible = 0;
+            var fingerprint = 2166136261;
             for (var offset = 0; offset < bytes.length; offset += 4) {
               if ((bytes[offset] | bytes[offset + 1] | bytes[offset + 2]) !== 0) visible++;
+              fingerprint = Math.imul(fingerprint ^ bytes[offset], 16777619);
+              fingerprint = Math.imul(fingerprint ^ bytes[offset + 1], 16777619);
+              fingerprint = Math.imul(fingerprint ^ bytes[offset + 2], 16777619);
             }
             if (visible > 0) nonBlack = true;
-            lastFrame = { width: width, height: height, visible: visible };
+            lastFrame = { width: width, height: height, visible: visible, fingerprint: fingerprint >>> 0 };
           },
           onSound: function (pointer, count) {
             var samples = module.HEAPF32.subarray(pointer >>> 2, (pointer >>> 2) + count * 2);
@@ -173,6 +223,8 @@ const PAGE = `<!doctype html>
     module.FS.mkdirTree('/mame/sta');
     module.FS.mkdirTree('/mame/nvram');
     module.FS.mkdirTree('/mame/cfg');
+    module.FS.mkdirTree('/mame/ctrlr');
+    module.FS.writeFile('/mame/ctrlr/web.cfg', config.controllerConfig);
     return Promise.all(config.roms.map(function (rom, index) {
       if (omitBios && index === config.biosRomIndex) return null;
       return fetch(rom.url).then(function (response) {
@@ -197,6 +249,8 @@ const PAGE = `<!doctype html>
       '-nvram_directory', '/mame/nvram',
       '-state_directory', '/mame/sta',
       '-cfg_directory', '/mame/cfg',
+      '-ctrlr', 'web',
+      '-ctrlrpath', '/mame/ctrlr',
       '-skip_gameinfo'
     ];
     if (config.bios) args.push('-bios', config.bios);
@@ -330,6 +384,8 @@ const PAGE = `<!doctype html>
           && typeof info.aspectRatio === 'number' && info.aspectRatio > 0
           && Number.isInteger(info.players) && info.players >= 1 && info.players <= 4
           && Number.isInteger(info.buttons) && info.buttons >= 0 && info.buttons <= 6
+          && info.inputs !== null && typeof info.inputs === 'object'
+          && Array.isArray(info.inputs.analog) && typeof info.inputs.dualStick === 'boolean'
           && Array.isArray(info.bios) && typeof info.hasNvram === 'boolean',
         loadOk: loadOk,
         nonBlack: values.nonBlack,
@@ -375,6 +431,131 @@ const PAGE = `<!doctype html>
       throw error;
     }
   };
+
+  api.runAnalog = async function () {
+    var stage = 'config';
+    try {
+      var caseIndex = new URL(location.href).searchParams.get('case') || '0';
+      var config = await fetch('/preload.json?case=' + caseIndex).then(function (response) { return response.json(); });
+      stage = 'runtime';
+      var active = await runtime(config, false);
+      stage = 'mount';
+      await mountInputs(active.module, config, false);
+      stage = 'callMain';
+      active.module.callMain(argv(config));
+      await new Promise(function (resolveTurn) { setTimeout(resolveTurn, 0); });
+
+      var run = active.module.cwrap('web_run_frames', 'number', ['number']);
+      var setControl = active.module.cwrap('web_set_control', null, ['number', 'number', 'number']);
+      var setAxis = active.module.cwrap('web_set_axis', null, ['number', 'number', 'number']);
+      var save = active.module.cwrap('web_save_state', null, ['string']);
+      var load = active.module.cwrap('web_load_state', null, ['string']);
+      var exit = active.module.cwrap('web_exit', null, []);
+      var machineInfo = active.module.cwrap('web_machine_info', 'number', []);
+      var info = JSON.parse(active.module.UTF8ToString(machineInfo()));
+      var hasKind = function (kind) {
+        return info.inputs.analog.some(function (input) { return input.player === 1 && input.kind === kind; });
+      };
+      var dial = hasKind('dial');
+      var trackball = hasKind('trackball-x') && hasKind('trackball-y');
+      var dualStick = info.inputs.dualStick === true;
+      if (!dial && !trackball && !dualStick) throw new Error('configured board has no W26 input declaration');
+
+      stage = 'start controls';
+      for (var warmup = 0; warmup < 90; warmup++) run(1);
+      setControl(0, 10, 1); run(4); setControl(0, 10, 0); run(20);
+      setControl(0, 11, 1); run(4); setControl(0, 11, 0); run(120);
+
+      var checkpoint = function () {
+        var index = active.values().stateDone.length;
+        save('w26-input');
+        if (!waitForState(run, active.values, index)) throw new Error('checkpoint save failed');
+      };
+      var restore = function () {
+        var index = active.values().stateDone.length;
+        load('w26-input');
+        if (!waitForState(run, active.values, index)) throw new Error('checkpoint load failed');
+        run(1);
+      };
+      var fingerprint = function () {
+        var frame = active.values().lastFrame;
+        return frame === null ? 0 : frame.fingerprint;
+      };
+      var baseline = function (frames) {
+        restore();
+        run(frames);
+        return fingerprint();
+      };
+      var axisBranch = function (x, y, frames) {
+        restore();
+        for (var frame = 0; frame < frames; frame++) {
+          if (x !== 0) setAxis(0, 5, x);
+          if (y !== 0) setAxis(0, 6, y);
+          run(1);
+        }
+        return fingerprint();
+      };
+      var heldBranch = function (item, frames) {
+        restore();
+        setControl(0, item, 1);
+        run(frames);
+        setControl(0, item, 0);
+        return fingerprint();
+      };
+
+      checkpoint();
+      var branchFrames = 30;
+      var dialAxisBefore = 0, dialAxisAfter = 0, dialRampBefore = 0, dialRampAfter = 0;
+      var trackballBefore = 0, trackballAfter = 0;
+      var tankBothBefore = 0, tankBothAfter = 0, tankSecondBefore = 0, tankSecondAfter = 0;
+      if (dial) {
+        dialAxisBefore = baseline(branchFrames);
+        dialAxisAfter = axisBranch(2, 0, branchFrames);
+        dialRampBefore = baseline(branchFrames);
+        dialRampAfter = heldBranch(3, branchFrames);
+      }
+      if (trackball) {
+        trackballBefore = baseline(branchFrames);
+        trackballAfter = axisBranch(2, -2, branchFrames);
+      }
+      if (dualStick) {
+        tankBothBefore = baseline(branchFrames);
+        tankBothAfter = heldBranch(0, branchFrames);
+        tankSecondBefore = baseline(branchFrames);
+        tankSecondAfter = heldBranch(16, branchFrames);
+      }
+
+      var controllerWarnings = active.values().logs.filter(function (record) {
+        return record.level <= 1 && /(?:ctrlr|controller|newseq|JOYCODE|HAT[123]|ADDREL|XAXIS|YAXIS)/i.test(record.text);
+      }).length;
+      exit();
+      api.analog = {
+        analogCount: info.inputs.analog.length,
+        controllerWarnings: controllerWarnings,
+        dial: dial,
+        dialAxisBefore: dialAxisBefore,
+        dialAxisAfter: dialAxisAfter,
+        dialAxisChanged: !dial || dialAxisBefore !== dialAxisAfter,
+        dialRampBefore: dialRampBefore,
+        dialRampAfter: dialRampAfter,
+        dialRampChanged: !dial || dialRampBefore !== dialRampAfter,
+        dualStick: dualStick,
+        tankBothBefore: tankBothBefore,
+        tankBothAfter: tankBothAfter,
+        tankBothChanged: !dualStick || tankBothBefore !== tankBothAfter,
+        tankSecondBefore: tankSecondBefore,
+        tankSecondAfter: tankSecondAfter,
+        tankSecondChanged: !dualStick || tankSecondBefore !== tankSecondAfter,
+        trackball: trackball,
+        trackballBefore: trackballBefore,
+        trackballAfter: trackballAfter,
+        trackballChanged: !trackball || trackballBefore !== trackballAfter
+      };
+    } catch (error) {
+      api.error = stage + ': ' + (error && error.stack ? error.stack : String(error));
+      throw error;
+    }
+  };
 })();
 </script>`;
 
@@ -390,7 +571,7 @@ const loadConfig = (argument: string): PreloadConfig => {
     const configPath = resolve(argument);
     const directory = dirname(configPath);
     const parsed = JSON.parse(readFileSync(configPath, "utf8")) as RawPreloadConfig;
-    if ((parsed.family !== "neogeo" && parsed.family !== "cps1")
+    if ((parsed.family !== "neogeo" && parsed.family !== "cps1" && parsed.family !== "atari-classic")
         || typeof parsed.machine !== "string"
         || !/^[a-z0-9_]+$/.test(parsed.machine)
         || (parsed.bios !== undefined && typeof parsed.bios !== "string")
@@ -410,47 +591,80 @@ const loadConfig = (argument: string): PreloadConfig => {
 // A config for another family skips this file rather than failing it; the skip reason names what it needs.
 const preload = ((): PreloadConfig | undefined => {
     if (CONFIG_ARGUMENT === undefined) return undefined;
-    try { return loadConfig(CONFIG_ARGUMENT); } catch { return undefined; }
+    try {
+        const loaded = loadConfig(CONFIG_ARGUMENT);
+        return loaded.family === "neogeo" || loaded.family === "cps1" ? loaded : undefined;
+    } catch { return undefined; }
 })();
+
+// W26's ignored family configs are selected by declared input kind inside the page, never by private machine identity.
+const analogPreloads = FAMILY_CONFIG_ARGUMENTS.flatMap((argument) => {
+    try {
+        const loaded = loadConfig(argument);
+        return loaded.family === "atari-classic" ? [loaded] : [];
+    } catch {
+        return [];
+    }
+});
+
+// HELPER :: [preloadConfig] -> [OBJECT]
+// Converts private paths to index-only browser URLs while adding the production controller config.
+const browserConfigsFor = (preloads: readonly PreloadConfig[]) => preloads.map((entry, caseIndex) => {
+    const romNames = entry.roms.map((path) => path.slice(Math.max(path.lastIndexOf("/"), path.lastIndexOf("\\")) + 1));
+    const biosRomIndex = romNames.findIndex((name) => name.toLowerCase() === `${entry.family}.zip`);
+    return {
+        family: entry.family,
+        machine: entry.machine,
+        ...(entry.bios === undefined ? {} : { bios: entry.bios }),
+        biosRomIndex,
+        controllerConfig: controllerConfigFor({ players: 4, select: false }),
+        roms: romNames.map((name, index) => ({ name, url: `/rom/${index}?case=${caseIndex}` })),
+    };
+});
 
 // HELPER :: VOID -> PROMISE(bridgePageServer)
 // Serves only the generated module, its wasm, and files named by the ignored config.
-const startBridgePageServer = async (): Promise<BridgePageServer> => {
-    if (preload === undefined) throw new Error("preload config is unavailable");
-    if (!existsSync(ARTIFACT) || !existsSync(WASM_ARTIFACT)) {
+const startBridgePageServer = async (preloads: readonly PreloadConfig[]): Promise<BridgePageServer> => {
+    if (preloads.length === 0) throw new Error("preload config is unavailable");
+    const family = preloads[0]?.family;
+    if (family === undefined || preloads.some((entry) => entry.family !== family)) throw new Error("bridge cases must share one family");
+    const defaultArtifact = resolve(WORKSPACE, "dist", "mame", family, `mame${family}.js`);
+    const artifact = preloads.length === 1 && preload === preloads[0] ? ARTIFACT : defaultArtifact;
+    const wasmArtifact = `${artifact.slice(0, -extname(artifact).length)}.wasm`;
+    if (!existsSync(artifact) || !existsSync(wasmArtifact)) {
         throw new Error("Build the production web bridge under .cache/w3-web before running this case");
     }
 
-    const romNames = preload.roms.map((path) => path.slice(Math.max(path.lastIndexOf("/"), path.lastIndexOf("\\")) + 1));
-    const biosRomIndex = romNames.findIndex((name) => name.toLowerCase() === `${preload.family}.zip`);
-    const browserConfig = {
-        family: preload.family,
-        machine: preload.machine,
-        ...(preload.bios === undefined ? {} : { bios: preload.bios }),
-        biosRomIndex,
-        roms: romNames.map((name, index) => ({ name, url: `/rom/${index}` })),
-    };
+    const browserConfigs = browserConfigsFor(preloads);
 
     const server = createServer((request, response) => {
-        const pathname = new URL(request.url ?? "/", "http://127.0.0.1").pathname;
+        const requestUrl = new URL(request.url ?? "/", "http://127.0.0.1");
+        const pathname = requestUrl.pathname;
+        const caseIndex = Number(requestUrl.searchParams.get("case") ?? "0");
+        const selected = Number.isInteger(caseIndex) ? preloads[caseIndex] : undefined;
+        const browserConfig = Number.isInteger(caseIndex) ? browserConfigs[caseIndex] : undefined;
         if (pathname === "/") {
             response.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
             response.end(PAGE);
             return;
         }
         if (pathname === "/preload.json") {
+            if (browserConfig === undefined) {
+                response.writeHead(404).end();
+                return;
+            }
             response.writeHead(200, { "content-type": "application/json", "cache-control": "no-store" });
             response.end(JSON.stringify(browserConfig));
             return;
         }
         const romMatch = /^\/rom\/(\d+)$/.exec(pathname);
         const path = pathname === "/mame.js"
-            ? ARTIFACT
+            ? artifact
             : pathname === "/mame.wasm"
-                ? WASM_ARTIFACT
+                ? wasmArtifact
                 : romMatch === null
                     ? undefined
-                    : preload.roms[Number(romMatch[1])];
+                    : selected?.roms[Number(romMatch[1])];
         if (path === undefined || !existsSync(path)) {
             response.writeHead(404).end();
             return;
@@ -478,8 +692,8 @@ const startBridgePageServer = async (): Promise<BridgePageServer> => {
 
 // HELPER :: (STRING -> PROMISE(T)) -> PROMISE(T)
 // Runs a browser pipeline and always releases the private local server.
-const withBridgePage = async <T>(run: (url: string) => Promise<T>): Promise<T> => {
-    const page = await startBridgePageServer();
+const withBridgePage = async <T>(preloads: readonly PreloadConfig[], run: (url: string) => Promise<T>): Promise<T> => {
+    const page = await startBridgePageServer(preloads);
     try {
         return await run(page.url);
     } finally {
@@ -488,15 +702,99 @@ const withBridgePage = async <T>(run: (url: string) => Promise<T>): Promise<T> =
     }
 };
 
+// HELPER :: [preloadConfig] -> PROMISE(analogEvidence)
+// Runs the rebuilt binary in headless Chromium with request interception, avoiding a sandbox-denied loopback socket.
+const runAnalogEvidence = async (preloads: readonly PreloadConfig[]): Promise<AnalogEvidence> => {
+    const family = preloads[0]?.family;
+    if (family === undefined || preloads.some((entry) => entry.family !== family)) throw new Error("analogue bridge cases must share one family");
+    const artifact = resolve(WORKSPACE, "dist", "mame", family, `mame${family}.js`);
+    const wasmArtifact = `${artifact.slice(0, -extname(artifact).length)}.wasm`;
+    if (!existsSync(artifact) || !existsSync(wasmArtifact)) throw new Error("rebuilt family artifact is unavailable");
+    const browserConfigs = browserConfigsFor(preloads);
+    const browser = await chromium.launch({ headless: true });
+    try {
+        const context = await browser.newContext();
+        const page = await context.newPage();
+        page.setDefaultTimeout(TIMEOUT);
+        await page.route("http://w26.invalid/**", async (route) => {
+            const requestUrl = new URL(route.request().url());
+            const caseIndex = Number(requestUrl.searchParams.get("case") ?? "0");
+            const selected = Number.isInteger(caseIndex) ? preloads[caseIndex] : undefined;
+            const browserConfig = Number.isInteger(caseIndex) ? browserConfigs[caseIndex] : undefined;
+            if (requestUrl.pathname === "/") {
+                await route.fulfill({ status: 200, contentType: "text/html; charset=utf-8", body: PAGE });
+                return;
+            }
+            if (requestUrl.pathname === "/preload.json" && browserConfig !== undefined) {
+                await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(browserConfig) });
+                return;
+            }
+            if (requestUrl.pathname === "/mame.js") {
+                await route.fulfill({ status: 200, contentType: "text/javascript; charset=utf-8", path: artifact });
+                return;
+            }
+            if (requestUrl.pathname === "/mame.wasm") {
+                await route.fulfill({ status: 200, contentType: "application/wasm", path: wasmArtifact });
+                return;
+            }
+            const romMatch = /^\/rom\/(\d+)$/.exec(requestUrl.pathname);
+            const path = romMatch === null ? undefined : selected?.roms[Number(romMatch[1])];
+            if (path !== undefined && existsSync(path)) {
+                await route.fulfill({ status: 200, contentType: "application/zip", path });
+                return;
+            }
+            await route.fulfill({ status: 404, body: "" });
+        });
+
+        const observations: AnalogBridgeResult[] = [];
+        for (let index = 0; index < preloads.length; index++) {
+            await page.goto(`http://w26.invalid/?case=${index}`);
+            await page.waitForFunction(() =>
+                typeof (window as unknown as { bridgeTest?: BridgeBrowserApi }).bridgeTest?.runAnalog === "function");
+            const result = await page.evaluate(async () => {
+                const bridge = (window as unknown as { bridgeTest: BridgeBrowserApi }).bridgeTest;
+                try {
+                    await bridge.runAnalog();
+                } catch {
+                    throw new Error(bridge.error ?? "analogue bridge run failed");
+                }
+                return bridge.analog;
+            });
+            if (result === undefined) throw new Error("analogue bridge produced no result");
+            observations.push(result);
+        }
+        const dial = observations.find((result) => result.dial);
+        const trackball = observations.find((result) => result.trackball);
+        const dualStick = observations.find((result) => result.dualStick);
+        const verdict: AnalogVerdict = {
+            warnings: observations.reduce((total, result) => total + result.controllerWarnings, 0),
+            dialDeclared: dial !== undefined,
+            dialAxisChanged: dial?.dialAxisChanged === true,
+            dialRampChanged: dial?.dialRampChanged === true,
+            trackballDeclared: trackball !== undefined,
+            trackballChanged: trackball?.trackballChanged === true,
+            dualStickDeclared: dualStick !== undefined,
+            tankBothChanged: dualStick?.tankBothChanged === true,
+            tankSecondChanged: dualStick?.tankSecondChanged === true,
+        };
+        console.log(`W26-EVIDENCE ${JSON.stringify({ observations, verdict })}`);
+        await context.close();
+        return { observations, verdict };
+    } finally {
+        await browser.close();
+    }
+};
+
 const testFile: TestFile = {
     label: "MAME 0.161 production web bridge",
-    skip: preload === undefined
-        ? "set ARCADE_PRELOAD_CONFIG to an ignored §11.1 preload config"
+    skip: preload === undefined && analogPreloads.length === 0
+        ? "set ARCADE_PRELOAD_CONFIG or ARCADE_FAMILY_CONFIGS to ignored §11.1 preload configs"
         : undefined,
     cases: [
+        ...(preload === undefined ? [] : [
         {
             label: "drives frames, media, controls, state and exit through §4.3.1",
-            run: () => withBridgePage((url) => CTGBrowserTest.init("production bridge happy path")
+            run: () => withBridgePage([preload], (url) => CTGBrowserTest.init("production bridge happy path")
                 .interact("run the production module by hand", async ({ page }) => {
                     await page.waitForFunction(() =>
                         typeof (window as unknown as { bridgeTest?: BridgeBrowserApi }).bridgeTest?.runMain === "function");
@@ -551,7 +849,7 @@ const testFile: TestFile = {
         },
         {
             label: "reports a missing BIOS before any emulated frame",
-            run: () => withBridgePage((url) => CTGBrowserTest.init("production bridge audit failure")
+            run: () => withBridgePage([preload], (url) => CTGBrowserTest.init("production bridge audit failure")
                 .interact("omit the configured family BIOS archive", async ({ page }) => {
                     await page.waitForFunction(() =>
                         typeof (window as unknown as { bridgeTest?: BridgeBrowserApi }).bridgeTest?.runMissingBios === "function");
@@ -584,6 +882,25 @@ const testFile: TestFile = {
                 )
                 .start(url, { headless: true, timeout: TIMEOUT })),
         },
+        ]),
+        ...(analogPreloads.length === 0 ? [] : [{
+            label: "drives relative axes, digital ramps and independent sticks through the rebuilt family",
+            run: () => CTGTest.init("analogue and dual-stick bridge contract")
+                .stage("exercise each declared input shape", () => runAnalogEvidence(analogPreloads))
+                .assert("all declared input shapes move and the controller config is accepted", (state) => state.subject.verdict,
+                    P.equals<AnalogVerdict>({
+                        warnings: 0,
+                        dialDeclared: true,
+                        dialAxisChanged: true,
+                        dialRampChanged: true,
+                        trackballDeclared: true,
+                        trackballChanged: true,
+                        dualStickDeclared: true,
+                        tankBothChanged: true,
+                        tankSecondChanged: true,
+                    }))
+                .start(undefined),
+        }]),
     ],
 };
 
