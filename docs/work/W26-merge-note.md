@@ -342,8 +342,8 @@ zero controller-config warnings.
   every regular browser case was blocked by loopback `EPERM`, and the W26
   socket-free case was blocked by denied Chromium IPC.
 - The attempted `git commit --amend` for the checkpoint message and later
-  combined `git add ... && git commit ...` commands were refused before changing the
-  repository because Git could not create the external worktree's
+  combined `git add ... && git commit ...` commands were refused before
+  changing the repository because Git could not create the external worktree's
   `index.lock`. Normal `git add` and `git commit` retries later succeeded; the
   checkpoint message remained unchanged, and the browser case and this note
   are committed.
