@@ -232,8 +232,9 @@ Driver file names and port types only: no title and no set name.
 
 1. `npm run check`, `npm test`.
 2. Rebuild **one** family, `atari-classic`, with
-   `EMSDK_DIR="$PWD/res/emsdk" node --import tsx scripts/build-mame.ts atari-classic --jobs 4`
-   (never `--all`, never `npm run build`), so the bridge change compiles
+   `EMSDK_DIR="$PWD/res/emsdk" node --import tsx scripts/build-mame.ts atari-classic --jobs 4 --fresh`
+   (never `--all`, never `npm run build`; `--fresh` only re-unpacks your
+   worktree's own source tree, see §6), so the bridge change compiles
    and the §4.3.1 contract test in `tests/browser/22-web-bridge.test.ts`
    runs against it. Ignored preload configs for that family's three boards
    are in your worktree under `res/`; `ls res/preload-*.json`.
@@ -266,7 +267,14 @@ the `src/index.ts` exports needed, and gives the §4.3 evidence.
   in tracked files, test names or commit messages; refer to boards by
   driver file (`tempest.c`) and port type (`IPT_DIAL`).
 - Build only `atari-classic`, with `--jobs 4`; never `npm run build`,
-  `npm run clean`, `build-mame --all` or `--fresh`.
+  `npm run clean` or `build-mame --all`. Because this package changes the
+  patch set, `build-mame` refuses a source tree unpacked with the old set;
+  your worktree's `.cache/mame0161-source` is therefore **your own** tree
+  (not the shared link the other lanes use), unpacked from
+  `res/mame0161s.zip` on the first build, and `--fresh` is allowed there.
+  For reading the pinned source before you build, the shared tree at
+  `/home/mastergray/dev/arcade-runtime-ts/.cache/mame0161-source` is
+  readable; never write to it.
 - No attribution lines in commits. Do not rebase; do not stop on a refused
   git command, report it in the merge note instead.
 
@@ -275,6 +283,6 @@ the `src/index.ts` exports needed, and gives the §4.3 evidence.
 ```sh
 npm install
 npm run check && npm test
-EMSDK_DIR="$PWD/res/emsdk" node --import tsx scripts/build-mame.ts atari-classic --jobs 4
+EMSDK_DIR="$PWD/res/emsdk" node --import tsx scripts/build-mame.ts atari-classic --jobs 4 --fresh
 ARCADE_FAMILY_CONFIGS=$(ls res/preload-*.json | paste -sd,) npm run test:browser
 ```
