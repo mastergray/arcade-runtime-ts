@@ -27,6 +27,7 @@ An agent handed a brief works from the brief and the spec alone.
 | [W18 — harness drop-first library view](W18-harness-library.md) | TypeScript |
 | [W19a–g — family wave 2](W19-family-wave-2.md) | Native |
 | [W20 — audit strictness modes](W20-audit-strictness.md) | TypeScript |
+| [W26 — analogue and dual-stick input](W26-analog-input.md) | Native + TypeScript |
 
 Package and milestone status is tracked in one place,
 [`docs/ROADMAP.md`](../ROADMAP.md); this list only links the briefs.
