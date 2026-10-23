@@ -189,3 +189,16 @@ and machine identities remain solely in ignored local JSON build configs.
 The repository does not redistribute prebuilt executables from `res/`, and it
 does not vendor ROMs, SDK files, generated emulator artifacts or a MAME source
 checkout.
+
+## Patch 0005: `ioport_array_finder` tag lifetime
+
+`src/emu/devfind.h` built each port-array tag with `strformat()` and handed
+the finder the `c_str()` of the *returned copy*, a temporary destroyed at the
+end of the statement. Natively the freed buffer usually still holds the text,
+so the lookup works by accident; under the Emscripten allocator the buffer is
+reused at once, every port declared through a basetag array (`segaorun.c`
+ADC ports, `segaybd.c`, `namcona1.c`, `midyunit.c`, `midwunit.c` and others)
+resolves to NULL, `read_safe()` returns its default, and the analogue inputs
+never reach the game although MAME's input layer holds the right values.
+Found 2026-10-23 during the M11 hand test; the patch formats into the member
+string first and passes its own buffer.

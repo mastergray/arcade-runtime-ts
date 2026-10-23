@@ -1,0 +1,25 @@
+From: arcade-runtime-ts
+Subject: [PATCH] devfind: keep ioport_array_finder tags alive
+
+ioport_array_finder built each tag with strformat() and handed the
+finder the c_str() of the returned temporary copy, which is destroyed at
+the end of the statement. Natively the freed buffer usually still holds
+the text, so the lookup works by accident; under the Emscripten
+allocator it is reused at once and every port found through a basetag
+array (for example the segaorun.c ADC ports) resolves to NULL, so
+read_safe() returns its default and the analogue inputs never reach the
+game. Format into the member string first and pass its own buffer.
+
+--- a/src/emu/devfind.h
++++ b/src/emu/devfind.h
+@@ -268,7 +268,9 @@
+ 	ioport_array_finder(device_t &base, const char *basetag)
+ 	{
+ 		for (int index = 0; index < _Count; index++) {
+-			m_array[index].reset(global_alloc(ioport_finder_type(base, strformat(m_tag[index], "%s.%d", basetag, index).c_str())));
++			// strformat returns a copy; taking c_str() of that temporary left the finder with a dangling tag pointer
++			strformat(m_tag[index], "%s.%d", basetag, index);
++			m_array[index].reset(global_alloc(ioport_finder_type(base, m_tag[index].c_str())));
+ 		}
+ 	}
+ 

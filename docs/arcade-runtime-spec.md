@@ -189,6 +189,7 @@ arcade-runtime-ts/
             0002-web-bridge-exports.patch
             0003-nvram-flush.patch
             0004-qsound-rom-optional.patch
+            0005-devfind-ioport-array-tag.patch
         probes/
             patches/            # the inherited M0 diagnostic patches 0001–0010; never applied to production builds
         bridge/                 # C++ sources the production patches add
