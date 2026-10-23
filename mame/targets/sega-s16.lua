@@ -20,6 +20,7 @@ SOUNDS["UPD7759"] = true
 SOUNDS["RF5C68"] = true
 SOUNDS["SN76496"] = true
 
+VIDEOS["SEGA315_5124"] = true
 VIDEOS["SEGA315_5313"] = true
 
 MACHINES["I8243"] = true
