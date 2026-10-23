@@ -1202,7 +1202,8 @@ ignored unless a page supplies an explicit mapping.
 Since M11, on a standard-layout pad only the analogue kinds the machine
 declares for the assigned player are written: the dead-zone-rescaled left
 stick supplies `stick-x`/`stick-y` (also for paddles) or `spin-x`/`spin-y`
-deltas for dials and trackballs (2 pixels per poll at full deflection),
+deltas for dials and trackballs (20 pixels per poll at full deflection,
+the order of the key delta the pinned dial and trackball drivers declare),
 the right stick's vertical axis supplies `stick-z`, and trigger buttons 7
 and 6 map their [0, 1] values to pedal values in [−1, 1]. When `dualStick`
 is true the left and right physical sticks are quantized independently

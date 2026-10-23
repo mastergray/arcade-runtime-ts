@@ -126,7 +126,7 @@ const testFile: TestFile = {
                 .interact("construct with browser defaults", async ({ page }) => { await page.evaluate(setupDefaultSource); })
                 .assertPage("default source handles only mapped non-repeat events", (page) => page.evaluate(() => {
                     const repeat = new KeyboardEvent("keydown", { code: "KeyA", repeat: true, cancelable: true });
-                    const unmapped = new KeyboardEvent("keydown", { code: "KeyV", cancelable: true });
+                    const unmapped = new KeyboardEvent("keydown", { code: "KeyB", cancelable: true });
                     const mapped = new KeyboardEvent("keydown", { code: "Space", cancelable: true });
                     window.dispatchEvent(repeat);
                     window.dispatchEvent(unmapped);

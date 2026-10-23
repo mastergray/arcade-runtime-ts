@@ -131,10 +131,12 @@ const SCRIPTED_ADAPTER = `
                     players: 2,
                     buttons: 2,
                     bios: [],
+                    inputs: { analog: [], dualStick: false },
                     hasNvram: true
                 },
                 sampleRate: 48000,
                 setControl: () => undefined,
+                setAxis: () => undefined,
                 pause: () => undefined,
                 resume: () => undefined,
                 reset: () => undefined,

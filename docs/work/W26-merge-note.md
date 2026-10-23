@@ -351,3 +351,30 @@ zero controller-config warnings.
 No build-all, package build, clean, rebase or push command was run. Ignored
 family artifacts, source extraction and Emscripten configuration remain
 untracked.
+
+## Integrator notes (2026-10-22)
+
+- Browser evidence was collected on the integration host after the merge
+  note above was written; the sandbox had blocked it for the agent. On the
+  rebuilt `atari-classic` family: the `tempest.c` dial moves the player
+  from a relative-axis stream and from a held hat (keyboard ramp); the
+  `bzone.c` tank drives from one hat (synthesized both-sticks-forward) and
+  from the second stick alone; the controller file loads with zero
+  warnings. The `rampart.c` trackball branches are logged but not asserted:
+  that board's coin inputs do not register through the virtual pad on a
+  pristine EEPROM (20-frame holds, 60-frame holds and the harness's keyboard
+  coin all leave the credit counter at zero), so its branches run in
+  attract mode, where the demo ignores the trackball. Tracked on the
+  roadmap.
+- Coin timing learned on the way: these Atari boards miss a coin held
+  under about 10 frames and ignore one held 60 frames as a jammed switch;
+  20–30 frames register. The vector tank board defaults to two coins per
+  play, which was the whole of the former M22 item; the acceptance test now
+  inserts two coins.
+- The gamepad spin rate was raised from 2 to 20 pixels per poll at full
+  deflection, the order of the `PORT_KEYDELTA` the pinned dial and
+  trackball drivers declare, so a pad spins as fast as the keyboard ramp.
+- Four browser tests the agent could not run needed small updates: the
+  keyboard test's "unmapped" example key is now `KeyB` (`KeyV` became a
+  pedal), and the three harness tests' scripted sessions gained the
+  `inputs` field and a `setAxis` method.

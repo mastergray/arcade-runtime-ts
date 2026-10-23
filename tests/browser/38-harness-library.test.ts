@@ -122,10 +122,12 @@ const SCRIPTED_ADAPTER = `
                         { name: "home", description: "Home", isDefault: true },
                         { name: "travel", description: "Travel", isDefault: false }
                     ],
+                    inputs: { analog: [], dualStick: false },
                     hasNvram: false
                 },
                 sampleRate: 48000,
                 setControl: () => undefined,
+                setAxis: () => undefined,
                 pause: () => undefined,
                 resume: () => undefined,
                 reset: () => undefined,

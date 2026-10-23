@@ -64,7 +64,7 @@ const DEFAULT_LEFT_AXES = Object.freeze([0, 1] as const);          // W3C standa
 const DEFAULT_RIGHT_AXES = Object.freeze([2, 3] as const);         // W3C standard right stick
 const DEFAULT_PEDALS = Object.freeze([7, 6] as const);             // Right then left trigger
 const DIRECTIONS = ["up", "down", "left", "right"] as const;   // Stable directional order
-const SPIN_PIXELS_PER_POLL = 2;                                   // Full deflection; 120 px/s at a 60 Hz poll
+const SPIN_PIXELS_PER_POLL = 20;                                  // Full deflection; matches the 20–30 px key delta the pinned dial and trackball drivers declare
 
 // HELPER :: gamepadLike, NUMBER -> BOOLEAN
 // Digital/analog button threshold used for d-pad-only snapshots.

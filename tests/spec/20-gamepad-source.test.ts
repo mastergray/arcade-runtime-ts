@@ -347,8 +347,8 @@ const testFile: TestFile = {
                     active: [
                         { axis: { player: 1, kind: "pedal-1" }, value: 0.5 },
                         { axis: { player: 1, kind: "pedal-2" }, value: -0.5 },
-                        { axis: { player: 1, kind: "spin-x" }, value: 1 },
-                        { axis: { player: 1, kind: "spin-y" }, value: -2 },
+                        { axis: { player: 1, kind: "spin-x" }, value: 10 },
+                        { axis: { player: 1, kind: "spin-y" }, value: -20 },
                         { axis: { player: 1, kind: "stick-x" }, value: 0.5 },
                         { axis: { player: 1, kind: "stick-y" }, value: -1 },
                         { axis: { player: 1, kind: "stick-z" }, value: 0.5 },
@@ -357,8 +357,8 @@ const testFile: TestFile = {
                     calls: [
                         axisCall({ player: 1, kind: "stick-x" }, 0.5),
                         axisCall({ player: 1, kind: "stick-y" }, -1),
-                        axisCall({ player: 1, kind: "spin-x" }, 1),
-                        axisCall({ player: 1, kind: "spin-y" }, -2),
+                        axisCall({ player: 1, kind: "spin-x" }, 10),
+                        axisCall({ player: 1, kind: "spin-y" }, -20),
                         axisCall({ player: 1, kind: "stick-z" }, 0.5),
                         axisCall({ player: 1, kind: "pedal-1" }, 0.5),
                         axisCall({ player: 1, kind: "pedal-2" }, -0.5),

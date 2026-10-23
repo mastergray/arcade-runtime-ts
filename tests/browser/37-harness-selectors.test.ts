@@ -116,10 +116,12 @@ const SCRIPTED_ADAPTER = `
                         { name: "steady-bios", description: "Steady", isDefault: true },
                         { name: "alternate-bios", description: "Alternate", isDefault: false }
                     ],
+                    inputs: { analog: [], dualStick: false },
                     hasNvram: false
                 },
                 sampleRate: 48000,
                 setControl: () => undefined,
+                setAxis: () => undefined,
                 pause: () => undefined,
                 resume: () => undefined,
                 reset: () => undefined,
