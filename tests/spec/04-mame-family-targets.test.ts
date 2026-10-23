@@ -130,6 +130,15 @@ const FAMILY_TARGETS: readonly FamilyTarget[] = [
         expectedMachines: 52,
     },
     {
+        id: "sega-s16",
+        sources: [
+            "src/mame/drivers/segas16a.c",
+            "src/mame/drivers/segas16b.c",
+            "src/mame/drivers/segas18.c",
+        ],
+        expectedMachines: 139,
+    },
+    {
         id: "taito-classic",
         sources: [
             "src/mame/drivers/taitosj.c",
