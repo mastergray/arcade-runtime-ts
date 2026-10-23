@@ -333,8 +333,10 @@ zero controller-config warnings.
   socket-free case was blocked by denied Chromium IPC.
 - `git commit --amend ...`: refused before it could change the repository
   because the external worktree Git directory was mounted read-only and Git
-  could not create `index.lock`. The existing checkpoint commit remains; the
-  browser case and this merge note could not be committed in this sandbox.
+  could not create `index.lock`. The existing checkpoint commit remained
+  unchanged. A later `git add tests/browser/22-web-bridge.test.ts
+  docs/work/W26-merge-note.md && git commit ...` succeeded and committed the
+  browser case and this note.
 
 No build-all, package build, clean, rebase or push command was run. Ignored
 family artifacts, source extraction and Emscripten configuration remain
