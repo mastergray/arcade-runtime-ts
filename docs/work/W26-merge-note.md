@@ -142,12 +142,22 @@ type MachineInputs,
 The existing `ArcadeControl`, `ArcadeSession` and `MachineInfo` exports expose
 their additive members without another export line.
 
-The integrator should also add `_web_set_axis` to `EXPORTED_FUNCTIONS` in
-`scripts/mame-build/buildInfo.ts` and to the matching expected export list in
+The integrator should also add `_web_set_axis` to the `EXPORTED_FUNCTIONS`
+line in `mame/bridge/README.md`, to `EXPORTED_FUNCTIONS` in
+`scripts/mame-build/buildInfo.ts`, and to the matching expected export list in
 `tests/spec/27-build-pipeline.test.ts`. Those files are outside W26's write
 set. `EMSCRIPTEN_KEEPALIVE` caused the rebuilt module to export the function,
-so the W26 artifact is usable, but the explicit build contract still needs to
+so the W26 artifact is usable, but the explicit link contract still needs to
 be synchronized.
+
+## Write-set note
+
+`tests/support/fixtures.ts` has one additive `inputs: { analog: [],
+dualStick: false }` line. The shared `validMachineInfo()` function is declared
+to return the now-expanded `MachineInfo`, and tests across existing packages
+consume it, so the required `MachineInfo.inputs` contract cannot type-check
+without updating that common fixture. No other ownership in the support file
+changed.
 
 ## Exact spec sentences for integration
 
@@ -331,12 +341,12 @@ zero controller-config warnings.
   test:browser`: the runner completed 0 passed, 42 failed and 26 skipped;
   every regular browser case was blocked by loopback `EPERM`, and the W26
   socket-free case was blocked by denied Chromium IPC.
-- `git commit --amend ...`: refused before it could change the repository
-  because the external worktree Git directory was mounted read-only and Git
-  could not create `index.lock`. The existing checkpoint commit remained
-  unchanged. A later `git add tests/browser/22-web-bridge.test.ts
-  docs/work/W26-merge-note.md && git commit ...` succeeded and committed the
-  browser case and this note.
+- The attempted `git commit --amend` for the checkpoint message and one later
+  combined `git add ... && git commit ...` were refused before changing the
+  repository because Git could not create the external worktree's
+  `index.lock`. Normal `git add` and `git commit` retries later succeeded; the
+  checkpoint message remained unchanged, and the browser case and this note
+  are committed.
 
 No build-all, package build, clean, rebase or push command was run. Ignored
 family artifacts, source extraction and Emscripten configuration remain

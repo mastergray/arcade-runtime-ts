@@ -21,7 +21,7 @@ exact settings (in addition to the family preload arguments):
 -s DISABLE_EXCEPTION_CATCHING=0
 -s USE_PTHREADS=0
 -s 'EXTRA_EXPORTED_RUNTIME_METHODS=["FS","callMain","cwrap","ccall","UTF8ToString","HEAPU8","HEAPF32"]'
--s 'EXPORTED_FUNCTIONS=["_main","_web_run_frames","_web_pump","_web_set_control","_web_set_axis","_web_pause","_web_resume","_web_reset","_web_save_state","_web_load_state","_web_flush_nvram","_web_exit","_web_machine_info"]'
+-s 'EXPORTED_FUNCTIONS=["_main","_web_run_frames","_web_pump","_web_set_control","_web_pause","_web_resume","_web_reset","_web_save_state","_web_load_state","_web_flush_nvram","_web_exit","_web_machine_info"]'
 ```
 
 `TOTAL_MEMORY` is fixed at 256 MiB and memory growth is disabled. Pthreads are
