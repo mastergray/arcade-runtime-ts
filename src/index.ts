@@ -41,10 +41,14 @@ export {
     isArcadeDirection,                                             // Guard for ArcadeDirection
     isArcadeButtonIndex,                                           // Guard for ArcadeButtonIndex
     isArcadeButtonCount,                                           // Guard for ArcadeButtonCount
+    isArcadeAxis,                                                  // Guard for ArcadeAxis (M11)
+    isArcadeAxisKind,                                              // Guard for ArcadeAxisKind (M11)
     isArcadeControl,                                               // Guard for ArcadeControl
     isOrientation,                                                 // Guard for Orientation
     isBiosOption,                                                  // Guard for BiosOption
+    isMachineAnalogKind,                                           // Guard for MachineAnalogKind (M11)
     isMachineInfo,                                                 // Guard for MachineInfo
+    isMachineInputs,                                               // Guard for MachineInputs (M11)
     isFrameEvent,                                                  // Guard for FrameEvent
     isSoundEvent,                                                  // Guard for SoundEvent
     isRomRole,                                                     // Guard for RomRole
@@ -83,11 +87,15 @@ export type {
     ArcadeDirection,                                               // Stick direction literal
     ArcadeButtonIndex,                                             // Action button number
     ArcadeButtonCount,                                             // Number of action buttons
+    ArcadeAxis,                                                    // Logical analogue axis (M11)
+    ArcadeAxisKind,                                                // Axis kinds (M11)
     ArcadeControl,                                                 // Digital control union
     ArcadeControlKey,                                              // Canonical control string
     Orientation,                                                   // Cabinet monitor orientation
     BiosOption,                                                    // Selectable BIOS
+    MachineAnalogKind,                                             // Discovered analogue port kinds (M11)
     MachineInfo,                                                   // Discovered machine description
+    MachineInputs,                                                 // Discovered analogue and dual-stick ports (M11)
     FrameEvent,                                                    // Video frame
     SoundEvent,                                                    // Stereo sample chunk
     RomRole,                                                       // Archive role in a set

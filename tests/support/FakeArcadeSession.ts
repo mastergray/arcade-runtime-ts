@@ -2,11 +2,9 @@
 import { arcadeControlKey } from "../../src/index.ts";            // Canonical control key for the held set
 import { validMachineInfo } from "./fixtures.ts";                 // Default machine when none is given
 
-// Type dependencies owned by W26 until the integrator adds the root exports:
-import type { ArcadeAxis } from "../../src/shared.types.ts";       // Argument of setAxis
-
 // Type dependencies:
 import type {
+    ArcadeAxis,                                                    // Argument of setAxis
     ArcadeControl,                                                 // Argument of setControl
     ArcadeControlKey,                                              // Key of the held set
     ArcadeSession,                                                 // Contract this double implements
