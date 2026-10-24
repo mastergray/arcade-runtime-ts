@@ -204,3 +204,10 @@ row should add `drivers/toobin.c`, `video/toobin.c`, `audio/atarijsa.c`, the
 JSA-I sound board and the new 34-machine count. The earlier statement that
 `audio/atarijsa.c` is unused is no longer true. This package did not edit the
 spec because it is outside W28f's write set.
+
+## Integrator notes
+
+Gate run on the host with the ignored preload (2026-10-24, quiet host):
+32 passed, 0 failed, 25 skipped by design. F4 407 ms; F5 384×512 vertical at 60.096 Hz, cadences within 1 %; F6 1.0001 over
+60 s; audio queue peak 77 ms; coin and start reached play; two pads
+assigned and released. Measurements copied into the probe record.

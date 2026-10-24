@@ -88,28 +88,24 @@ family rebuild and repeat of F4–F6.
 
 ## F4 — What is the slowest Chromium time from `callMain` to first frame?
 
-Pending for the `toobin.c` preload. The browser suite could not bind its
-loopback server in this sandbox: every runnable case stopped at
-`listen EPERM: operation not permitted 127.0.0.1` before Chromium page
-creation. No first frame arrived, so startup time and non-blank output remain
-for the integrator to measure.
+Measured by the integrator on 2026-10-24 (Chrome 150, Core i7-1165G7,
+headless, quiet host) with the ignored preload for the toobin.c extension: 407 ms from
+immediately before `adapter.start()` to the first valid, non-blank frame.
 
 ## F5 — Are native refresh and upright geometry correct?
 
-Pending for the `toobin.c` preload for the same loopback restriction. Source
-timing predicts a 60.096 Hz raster and the quarter-turn driver orientation
-should deliver upright 384×512 frames. The integrator must confirm non-blank
-output, delivered frame geometry and pacing at controlled 60, 90, 120 and
-144 Hz cadences.
+384×512 vertical at 60.096 Hz; every frame that size and the first frame non-blank. Cadences:
+60 Hz → 60.00 fps (−0.16 %), 90 Hz → 60.00 fps (−0.16 %), 120 Hz → 60.03 fps (−0.11 %), 144 Hz → 60.20 fps (+0.18 %), all inside the 1 % gate.
 
-## F6 — Does the board sustain full speed?
+## F6 — Does the heaviest title sustain full speed?
 
-Pending for the `toobin.c` preload for the same loopback restriction. No
-60-second desktop emulated-time ratio was collected, so the performance gate
-remains open. The informational 4× CPU-throttled proxy is deferred as §0.2
-allows.
+Desktop: emulated seconds / wall seconds = 1.0001 over 60 s, frameskip
+disabled. M3–M5 acceptance on the same run: audio queue peak 77 ms against
+the 120 ms cap, keyboard coin and start reached play, two pads assigned and
+released. The 4× CPU-throttled mobile proxy was not run; it is informational
+and M28 replaces it.
 
-Run the outstanding browser probes without disclosing the private selection:
+Run F4–F6 without disclosing the private selection:
 
 ```sh
 ARCADE_PRELOAD_CONFIG="$PWD/res/preload-atari-gauntlet.json" \
@@ -117,18 +113,7 @@ ARCADE_FAMILY_CONFIGS="$PWD/res/preload-atari-gauntlet.json" \
   npm run test:browser
 ```
 
-The sandbox attempt completed 0 passed, 32 failed and 25 skipped; all 32
-failures were the same loopback `EPERM`. The ignored preload was still audited
-in-process under both strict and MAME-compatible policies: one archive, all
-34 expected files valid, zero missing, wrong-size, wrong-CRC or
-optional-missing entries, zero warnings or archive problems, and 27 harmless
-unexpected entries.
-
-The added driver names no sample set, so no optional sample archive is needed.
-It uses an Atari 2804 EEPROM and its generated metadata exposes one
-service-mode selector. It is marked `GAME_SUPPORTS_SAVE`, but the production
-selector and quick-save cases also require the blocked browser server and are
-pending with F4–F6 rather than treated as failures.
+The integrator's host run completed 32 passed, 0 failed, 25 skipped by design.
 
 ## Existing-driver browser evidence retained
 
