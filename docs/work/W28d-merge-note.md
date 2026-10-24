@@ -209,8 +209,8 @@ npm run check && npm test
 
 The first attempts to commit the target correction and this merge note were
 each refused when Git could not create the shared worktree's `index.lock` and
-reported that filesystem as read-only. Work continued as instructed; the
-target retry succeeded, and no repository data was lost.
+reported that filesystem as read-only. Work continued as instructed; both
+retries succeeded, and no repository data was lost.
 
 ## Integrator note
 
