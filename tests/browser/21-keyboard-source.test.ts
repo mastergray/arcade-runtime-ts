@@ -154,7 +154,10 @@ const testFile: TestFile = {
                     return { prevented: event.defaultPrevented, calls: callSnapshots() };
                 }), P.equals<unknown>({
                     prevented: false,
-                    calls: [{ method: "setControl", args: [{ kind: "test" }, true] }],
+                    calls: [
+                        { method: "setControl", args: [{ kind: "test" }, true] },
+                        { method: "setControl", args: [{ kind: "key", key: "F2" }, true] },   // W29 pass-through rides beside the map
+                    ],
                 }))
                 .start(url, { timeout: TIMEOUT })),
         },

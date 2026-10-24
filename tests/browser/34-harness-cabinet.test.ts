@@ -307,6 +307,7 @@ const cases: TestCase[] = [
                 await page.evaluate(() => {
                     (window as unknown as Window & { __arcadeHarnessSynthetic: SyntheticBrowserState }).__arcadeHarnessSynthetic.running = true;
                 });
+                await page.evaluate(() => { document.querySelector<HTMLDetailsElement>("#corner-menu")!.open = false; });   // the floating menu would cover the library controls
                 await page.locator(".store-remove").first().click();
                 await page.waitForFunction(() => document.querySelectorAll(".store-remove").length === 1);
                 await page.evaluate(() => {
@@ -385,6 +386,7 @@ if (CONFIG_ARGUMENT !== undefined) cases.push({
         })
         .skip("save quick state (This driver cannot save in 0.161)", async (state) => state.page !== null && state.page.locator("#save-state").isDisabled())
         .interact("persist and clear only save storage", async ({ page }) => {
+            await page.evaluate(() => { document.querySelector<HTMLDetailsElement>("#corner-menu")!.open = true; });   // the quick-save step may have been skipped
             await page.locator("#persist").click();
             await page.waitForFunction(() => document.querySelector<HTMLElement>("#status")?.dataset.state === "persisted");
             await page.evaluate(() => {

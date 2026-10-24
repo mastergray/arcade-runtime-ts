@@ -596,16 +596,18 @@ const PAGE = `<!doctype html>
       var load = active.module.cwrap('web_load_state', null, ['string']);
       var machineInfo = active.module.cwrap('web_machine_info', 'number', []);
       var exit = active.module.cwrap('web_exit', null, []);
-      for (var warmup = 0; warmup < 180; warmup++) run(1);
+      for (var warmup = 0; warmup < 720; warmup++) run(1);   // past the self test and the first-boot operator screen
       var info = JSON.parse(active.module.UTF8ToString(machineInfo()));
       var inputsMatch = JSON.stringify(info.inputs.keys) === JSON.stringify(config.expectedKeys)
         && info.inputs.volume === false;
 
       if (config.family === 'atari-gauntlet') {
-        setControl(0, 10, 1);
-        run(30);
-        setControl(0, 10, 0);
-        run(60);
+        for (var coin = 0; coin < 2; coin++) {   // the toobin.c board wants two credits per player
+          setControl(0, 10, 1);
+          run(30);
+          setControl(0, 10, 0);
+          run(60);
+        }
       }
       var stateIndex = active.values().stateDone.length;
       save('w29-coded-field');
@@ -624,10 +626,16 @@ const PAGE = `<!doctype html>
       run(180);
       var before = fingerprint();
       restore();
+      if (config.family === 'midway-mcr') {   // Auto Up before Advance, so the williams.c first boot ends in game over
+        setControl(0, 29, 1);
+        run(10);
+        setControl(0, 29, 0);
+        run(20);
+      }
       setControl(0, config.controlItem, 1);
       run(30);
       setControl(0, config.controlItem, 0);
-      run(150);
+      run(240);
       var after = fingerprint();
       var controllerWarnings = active.values().logs.filter(function (record) {
         return record.level <= 1 && /(?:ctrlr|controller|newseq|JOYCODE|BUTTON(?:1[6-9]|2[0-9]|3[01]))/i.test(record.text);
@@ -1025,11 +1033,15 @@ const testFile: TestFile = {
                         }
                     });
                 })
-                .assertPage("machine rows and rewritten field are live without controller warnings", (page) => page.evaluate(() => {
-                    const result = (window as unknown as { bridgeTest: BridgeBrowserApi }).bridgeTest.coded;
-                    if (result === undefined) throw new Error("coded-field bridge produced no result");
+                .assertPage("machine rows and rewritten field are live without controller warnings", async (page) => {
+                    const result = await page.evaluate(() => {
+                        const coded = (window as unknown as { bridgeTest: BridgeBrowserApi }).bridgeTest.coded;
+                        if (coded === undefined) throw new Error("coded-field bridge produced no result");
+                        return coded;
+                    });
+                    console.log(`W29-EVIDENCE ${JSON.stringify(result)}`);
                     return result;
-                }), P.equals<CodedBridgeResult>({
+                }, P.equals<CodedBridgeResult>({
                     controllerWarnings: 0,
                     inputsMatch: true,
                     screenChanged: true,

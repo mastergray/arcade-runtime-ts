@@ -104,8 +104,17 @@ const acceptance = async (audioWindowMs: number, audioSampleMs: number, audioCap
     // M4: keyboard through KeyboardSource with the default map, from real key events on window.
     const keyboard = runtime.KeyboardSource.init({ input: player.input, map: runtime.DEFAULT_KEYBOARD_MAP });
     keyboard.attach();
-    const beforeKeys = snapshot();
     const key = (code: string, down: boolean): void => { window.dispatchEvent(new KeyboardEvent(down ? "keydown" : "keyup", { code, bubbles: true })); };
+    const operatorKeys = player.machine.inputs.keys;
+    if (operatorKeys.some((row) => row.name === "Advance")) {   // W29: boards whose first boot waits on the operator Advance switch
+        if (operatorKeys.some((row) => row.key === "F1")) { key("F1", true); await wait(300); key("F1", false); await wait(300); }   // Auto Up first
+        key("F2", true); await wait(300); key("F2", false); await wait(4000);   // one Advance reaches attract on some boards
+        const pageA = snapshot(); await wait(1000); const pageB = snapshot();
+        if (pageA.every((value, index) => value === pageB[index])) {           // still a static operator page: held Advance runs through to game over
+            key("F2", true); await wait(8000); key("F2", false); await wait(3000);
+        }
+    }
+    const beforeKeys = snapshot();
     for (let coin = 0; coin < 2; coin++) { key("Digit5", true); await wait(250); key("Digit5", false); await wait(400); }   // two coins: some boards default to two coins per play
     key("Digit1", true); await wait(120); key("Digit1", false); await wait(1500);
     const afterKeys = snapshot();
