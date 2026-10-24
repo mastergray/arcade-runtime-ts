@@ -122,8 +122,9 @@ const SCRIPTED_ADAPTER = `
                         { name: "home", description: "Home", isDefault: true },
                         { name: "travel", description: "Travel", isDefault: false }
                     ],
-                    inputs: { analog: [], dualStick: false },
-                    hasNvram: false
+                    inputs: { analog: [], dualStick: false, keys: [], volume: false },
+                    hasNvram: false,
+                    supportsSave: true
                 },
                 sampleRate: 48000,
                 setControl: () => undefined,

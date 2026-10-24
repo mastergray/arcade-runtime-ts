@@ -101,6 +101,8 @@ export function controllerConfigFor(config: ControllerConfig): string {
     lines.push(port("SERVICE", "JOYCODE_1_BUTTON11"));
     lines.push(port("TILT", "JOYCODE_1_BUTTON12"));
     lines.push(port("TILT1", "JOYCODE_1_BUTTON12"));
+    lines.push(port("VOLUME_UP", "JOYCODE_1_BUTTON16"));
+    lines.push(port("VOLUME_DOWN", "JOYCODE_1_BUTTON17"));
     lines.push("        </input>");
     lines.push("    </system>");
     lines.push("</mameconfig>");

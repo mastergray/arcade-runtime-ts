@@ -21,7 +21,7 @@ import type { TestFile } from "../run.ts";                       // Manifest con
 
 // INTERFACE :: validated private preload details used only by the local server
 interface PreloadConfig {
-    readonly family: "neogeo" | "cps1" | "atari-classic";
+    readonly family: "neogeo" | "cps1" | "atari-classic" | "atari-gauntlet" | "midway-mcr";
     readonly machine: string;
     readonly bios?: string;
     readonly roms: readonly string[];
@@ -98,6 +98,13 @@ interface MainBridgeResult {
     readonly ticks: number;
 }
 
+interface CodedBridgeResult {
+    readonly controllerWarnings: number;
+    readonly inputsMatch: boolean;
+    readonly screenChanged: boolean;
+    readonly supportsSave: boolean;
+}
+
 interface MissingBiosResult {
     readonly callMainReturned: boolean;
     readonly errorBeforeFrontendDone: boolean;
@@ -109,12 +116,14 @@ interface MissingBiosResult {
 
 interface BridgeBrowserApi {
     analog?: AnalogBridgeResult;
+    coded?: CodedBridgeResult;
     error?: string;
     main?: MainBridgeResult;
     missing?: MissingBiosResult;
     runMain: () => Promise<void>;
     runMissingBios: () => Promise<void>;
     runAnalog: () => Promise<void>;
+    runCoded: () => Promise<void>;
 }
 
 interface RawPreloadConfig {
@@ -390,7 +399,9 @@ const PAGE = `<!doctype html>
           && Number.isInteger(info.buttons) && info.buttons >= 0 && info.buttons <= 6
           && info.inputs !== null && typeof info.inputs === 'object'
           && Array.isArray(info.inputs.analog) && typeof info.inputs.dualStick === 'boolean'
-          && Array.isArray(info.bios) && typeof info.hasNvram === 'boolean',
+          && Array.isArray(info.inputs.keys) && typeof info.inputs.volume === 'boolean'
+          && Array.isArray(info.bios) && typeof info.hasNvram === 'boolean'
+          && typeof info.supportsSave === 'boolean',
         loadOk: loadOk,
         nonBlack: values.nonBlack,
         nvramBytes: nvram.bytes,
@@ -566,6 +577,73 @@ const PAGE = `<!doctype html>
       throw error;
     }
   };
+
+  api.runCoded = async function () {
+    var stage = 'config';
+    try {
+      var config = await fetch('/preload.json').then(function (response) { return response.json(); });
+      stage = 'runtime';
+      var active = await runtime(config, false);
+      stage = 'mount';
+      await mountInputs(active.module, config, false);
+      stage = 'callMain';
+      active.module.callMain(argv(config));
+      await new Promise(function (resolveTurn) { setTimeout(resolveTurn, 0); });
+
+      var run = active.module.cwrap('web_run_frames', 'number', ['number']);
+      var setControl = active.module.cwrap('web_set_control', null, ['number', 'number', 'number']);
+      var save = active.module.cwrap('web_save_state', null, ['string']);
+      var load = active.module.cwrap('web_load_state', null, ['string']);
+      var machineInfo = active.module.cwrap('web_machine_info', 'number', []);
+      var exit = active.module.cwrap('web_exit', null, []);
+      for (var warmup = 0; warmup < 180; warmup++) run(1);
+      var info = JSON.parse(active.module.UTF8ToString(machineInfo()));
+      var inputsMatch = JSON.stringify(info.inputs.keys) === JSON.stringify(config.expectedKeys)
+        && info.inputs.volume === false;
+
+      if (config.family === 'atari-gauntlet') {
+        setControl(0, 10, 1);
+        run(30);
+        setControl(0, 10, 0);
+        run(60);
+      }
+      var stateIndex = active.values().stateDone.length;
+      save('w29-coded-field');
+      if (!waitForState(run, active.values, stateIndex)) throw new Error('coded-field checkpoint save failed');
+      var restore = function () {
+        var index = active.values().stateDone.length;
+        load('w29-coded-field');
+        if (!waitForState(run, active.values, index)) throw new Error('coded-field checkpoint load failed');
+        run(1);
+      };
+      var fingerprint = function () {
+        var frame = active.values().lastFrame;
+        return frame === null ? 0 : frame.fingerprint;
+      };
+      restore();
+      run(180);
+      var before = fingerprint();
+      restore();
+      setControl(0, config.controlItem, 1);
+      run(30);
+      setControl(0, config.controlItem, 0);
+      run(150);
+      var after = fingerprint();
+      var controllerWarnings = active.values().logs.filter(function (record) {
+        return record.level <= 1 && /(?:ctrlr|controller|newseq|JOYCODE|BUTTON(?:1[6-9]|2[0-9]|3[01]))/i.test(record.text);
+      }).length;
+      exit();
+      api.coded = {
+        controllerWarnings: controllerWarnings,
+        inputsMatch: inputsMatch,
+        screenChanged: before !== after,
+        supportsSave: info.supportsSave === true
+      };
+    } catch (error) {
+      api.error = stage + ': ' + (error && error.stack ? error.stack : String(error));
+      throw error;
+    }
+  };
 })();
 </script>`;
 
@@ -581,7 +659,8 @@ const loadConfig = (argument: string): PreloadConfig => {
     const configPath = resolve(argument);
     const directory = dirname(configPath);
     const parsed = JSON.parse(readFileSync(configPath, "utf8")) as RawPreloadConfig;
-    if ((parsed.family !== "neogeo" && parsed.family !== "cps1" && parsed.family !== "atari-classic")
+    if ((parsed.family !== "neogeo" && parsed.family !== "cps1" && parsed.family !== "atari-classic"
+        && parsed.family !== "atari-gauntlet" && parsed.family !== "midway-mcr")
         || typeof parsed.machine !== "string"
         || !/^[a-z0-9_]+$/.test(parsed.machine)
         || (parsed.bios !== undefined && typeof parsed.bios !== "string")
@@ -617,6 +696,16 @@ const analogPreloads = FAMILY_CONFIG_ARGUMENTS.flatMap((argument) => {
     }
 });
 
+// W29's ignored family configs exercise one standard coded field and the operator-key fields.
+const codedPreloads = FAMILY_CONFIG_ARGUMENTS.flatMap((argument) => {
+    try {
+        const loaded = loadConfig(argument);
+        return loaded.family === "atari-gauntlet" || loaded.family === "midway-mcr" ? [loaded] : [];
+    } catch {
+        return [];
+    }
+});
+
 // HELPER :: [preloadConfig] -> [OBJECT]
 // Converts private paths to index-only browser URLs while adding the production controller config.
 const browserConfigsFor = (preloads: readonly PreloadConfig[]) => preloads.map((entry, caseIndex) => {
@@ -627,6 +716,12 @@ const browserConfigsFor = (preloads: readonly PreloadConfig[]) => preloads.map((
         machine: entry.machine,
         ...(entry.bios === undefined ? {} : { bios: entry.bios }),
         biosRomIndex,
+        controlItem: entry.family === "atari-gauntlet" ? 4 : 30,
+        expectedKeys: entry.family === "midway-mcr" ? [
+            { name: "Auto Up / Manual Down", key: "F1", player: 1 },
+            { name: "Advance", key: "F2", player: 1 },
+            { name: "High Score Reset", key: "9", player: 1 },
+        ] : [],
         controllerConfig: controllerConfigFor({ players: 4, select: false }),
         roms: romNames.map((name, index) => ({ name, url: `/rom/${index}?case=${caseIndex}` })),
     };
@@ -798,7 +893,7 @@ const runAnalogEvidence = async (preloads: readonly PreloadConfig[]): Promise<An
 
 const testFile: TestFile = {
     label: "MAME 0.161 production web bridge",
-    skip: preload === undefined && analogPreloads.length === 0
+    skip: preload === undefined && analogPreloads.length === 0 && codedPreloads.length === 0
         ? "set ARCADE_PRELOAD_CONFIG or ARCADE_FAMILY_CONFIGS to ignored §11.1 preload configs"
         : undefined,
     cases: [
@@ -915,6 +1010,33 @@ const testFile: TestFile = {
                     }))
                 .start(undefined, { timeout: TIMEOUT * 4 }),   // three boards, each booted and branched
         }]),
+        ...codedPreloads.map((coded, index) => ({
+            label: `reports and drives coded fields for preload ${index + 1}`,
+            run: () => withBridgePage([coded], (url) => CTGBrowserTest.init("coded-field bridge contract")
+                .interact("inspect machine info and branch through the coded control", async ({ page }) => {
+                    await page.waitForFunction(() =>
+                        typeof (window as unknown as { bridgeTest?: BridgeBrowserApi }).bridgeTest?.runCoded === "function");
+                    await page.evaluate(async () => {
+                        const bridge = (window as unknown as { bridgeTest: BridgeBrowserApi }).bridgeTest;
+                        try {
+                            await bridge.runCoded();
+                        } catch {
+                            throw new Error(bridge.error ?? "coded-field bridge run failed");
+                        }
+                    });
+                })
+                .assertPage("machine rows and rewritten field are live without controller warnings", (page) => page.evaluate(() => {
+                    const result = (window as unknown as { bridgeTest: BridgeBrowserApi }).bridgeTest.coded;
+                    if (result === undefined) throw new Error("coded-field bridge produced no result");
+                    return result;
+                }), P.equals<CodedBridgeResult>({
+                    controllerWarnings: 0,
+                    inputsMatch: true,
+                    screenChanged: true,
+                    supportsSave: true,
+                }))
+                .start(url, { headless: true, timeout: TIMEOUT })),
+        })),
     ],
 };
 

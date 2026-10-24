@@ -161,6 +161,8 @@ const testFile: TestFile = {
                         ["Digit1", "p1:start"],
                         ["F2", "test"],
                         ["Digit9", "service"],
+                        ["Equal", "volume:up"],
+                        ["Minus", "volume:down"],
                         ["KeyR", "p2:direction:up"],
                         ["KeyF", "p2:direction:down"],
                         ["KeyD", "p2:direction:left"],
@@ -184,7 +186,7 @@ const testFile: TestFile = {
                 .assert("predicate verdicts match", () => {
                     const target = new FakeEventTarget();
                     const input = new ArcadeInput({ session: new FakeArcadeSession() });
-                    const full = { input, map: TEST_MAP, target, visibilityTarget: target, preventDefault: false };
+                    const full = { input, map: TEST_MAP, target, visibilityTarget: target, preventDefault: false, passthroughKeys: true };
                     return {
                         target: isKeyboardEventTargetLike(target),
                         badTarget: isKeyboardEventTargetLike({ addEventListener(): void {} }),
@@ -194,6 +196,7 @@ const testFile: TestFile = {
                         missingTarget: isKeyboardSourceConfig({ input, map: TEST_MAP }),
                         initWithoutTargets: isKeyboardSourceInitConfig({ input, map: TEST_MAP }),
                         initBadPrevent: isKeyboardSourceInitConfig({ input, map: TEST_MAP, preventDefault: "no" }),
+                        initBadPassthrough: isKeyboardSourceInitConfig({ input, map: TEST_MAP, passthroughKeys: "yes" }),
                     };
                 }, P.equals<unknown>({
                     target: true,
@@ -204,6 +207,43 @@ const testFile: TestFile = {
                     missingTarget: false,
                     initWithoutTargets: true,
                     initBadPrevent: false,
+                    initBadPassthrough: false,
+                }))
+                .start(undefined),
+        },
+        {
+            label: "operator keys pass through beside mapped controls and can be disabled independently",
+            run: () => CTGTest.init("operator-key pass-through")
+                .stage("dispatch mapped, unmapped, repeated and disabled operator keys", () => {
+                    const target = new FakeEventTarget();
+                    const session = new FakeArcadeSession();
+                    const source = new KeyboardSource({ input: new ArcadeInput({ session }), map: DEFAULT_KEYBOARD_MAP, target });
+                    source.attach();
+                    const mappedDown = dispatchKey(target, "keydown", "F2");
+                    dispatchKey(target, "keyup", "F2");
+                    const directDown = dispatchKey(target, "keydown", "Digit0");
+                    const repeated = dispatchKey(target, "keydown", "Digit0", true);
+                    dispatchKey(target, "keyup", "Digit0");
+
+                    const disabledTarget = new FakeEventTarget();
+                    const disabledSession = new FakeArcadeSession();
+                    const disabled = new KeyboardSource({ input: new ArcadeInput({ session: disabledSession }), map: {}, target: disabledTarget, passthroughKeys: false });
+                    disabled.attach();
+                    const ignored = dispatchKey(disabledTarget, "keydown", "F1");
+                    return {
+                        calls: session.calls,
+                        prevented: { mappedDown: mappedDown.defaultPrevented, directDown: directDown.defaultPrevented, repeated: repeated.defaultPrevented, ignored: ignored.defaultPrevented },
+                        disabledCalls: disabledSession.calls,
+                    };
+                })
+                .assert("pass-through shares event rules without changing the page map", (state) => state.subject, P.equals<unknown>({
+                    calls: [
+                        controlCall({ kind: "test" }, true), controlCall({ kind: "key", key: "F2" }, true),
+                        controlCall({ kind: "test" }, false), controlCall({ kind: "key", key: "F2" }, false),
+                        controlCall({ kind: "key", key: "0" }, true), controlCall({ kind: "key", key: "0" }, false),
+                    ],
+                    prevented: { mappedDown: true, directDown: true, repeated: false, ignored: false },
+                    disabledCalls: [],
                 }))
                 .start(undefined),
         },

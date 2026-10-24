@@ -14,7 +14,7 @@ import ArcadeRuntimeError from "../../src/ArcadeRuntimeError/ArcadeRuntimeError.
 import { isRomSetReport } from "../../src/RomSetAudit/types.ts";  // Audit fallback validation
 import FakeArcadeAdapter from "../support/FakeArcadeAdapter.ts"; // Required adapter double
 import FakeArcadeSession from "../support/FakeArcadeSession.ts"; // Required session double
-import { errorSnapshot, rejectedBy, thrownBy, validBuildInfo } from "../support/fixtures.ts";   // Stable fixtures and captures
+import { errorSnapshot, rejectedBy, thrownBy, validBuildInfo, validMachineInfo } from "../support/fixtures.ts";   // Stable fixtures and captures
 
 // Type dependencies:
 import type { ArcadeGameConfig, ArcadePlayerEvents, ArcadePlayerStatus } from "../../src/ArcadePlayer/types.ts";   // Test snapshots/config
@@ -403,6 +403,34 @@ const testFile: TestFile = {
                         ["reset", "soft"],
                         ["persist"],
                     ],
+                }))
+                .start(undefined),
+        },
+        {
+            label: "save and load reject before the session when the driver omits save support",
+            run: () => CTGTest.init("save-support guard")
+                .stage("start an unsupported session and attempt both state operations", () => withAudioContext(async () => {
+                    const session = new FakeArcadeSession({ ...validMachineInfo(), supportsSave: false });
+                    const { player } = rig(session);
+                    await player.start();
+                    player.input.press({ kind: "button", player: 1, button: 1 });
+                    const save = await rejectedBy(player.saveState());
+                    const load = await rejectedBy(player.loadState());
+                    const result = {
+                        errors: [save, load].map((error) => ({ ...errorOf(error), message: error instanceof Error ? error.message : "" })),
+                        stateCalls: session.calls.filter((call) => call.method === "saveState" || call.method === "loadState"),
+                        held: session.held,
+                    };
+                    await player.destroy();
+                    return result;
+                }))
+                .assert("both failures are UNSUPPORTED, name the flag and leave input untouched", (state) => state.subject, P.equals<unknown>({
+                    errors: [
+                        { isRuntimeError: true, code: 15, label: "UNSUPPORTED", message: "This MAME 0.161 driver does not set GAME_SUPPORTS_SAVE." },
+                        { isRuntimeError: true, code: 15, label: "UNSUPPORTED", message: "This MAME 0.161 driver does not set GAME_SUPPORTS_SAVE." },
+                    ],
+                    stateCalls: [],
+                    held: ["p1:button:1"],
                 }))
                 .start(undefined),
         },

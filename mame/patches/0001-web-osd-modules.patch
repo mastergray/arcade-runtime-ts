@@ -7,19 +7,19 @@ Register the native software frame, float audio, and four-pad input providers wh
 ---
  scripts/src/osd/modules.lua         |   3 +
  src/osd/modules/lib/osdobj_common.c |   1 +
- src/osd/modules/web/web_input.cpp   | 152 ++++++++++++++++++++++++++++++++++++
+ src/osd/modules/web/web_input.cpp   | 175 ++++++++++++++++++++++++++++++++++++
  src/osd/modules/web/web_sound.cpp   |  43 +++++++++++
  src/osd/modules/web/web_video.cpp   | 112 ++++++++++++++++++++++++++++
  src/osd/sdl/input.c                 |  21 ++++++
  src/osd/sdl/sdlmain.c               |  16 +++-
  src/osd/sdl/video.c                 |  27 +++++++
- 8 files changed, 374 insertions(+), 1 deletion(-)
+ 8 files changed, 397 insertions(+), 1 deletion(-)
  create mode 100644 src/osd/modules/web/web_input.cpp
  create mode 100644 src/osd/modules/web/web_sound.cpp
  create mode 100644 src/osd/modules/web/web_video.cpp
 
 diff --git a/scripts/src/osd/modules.lua b/scripts/src/osd/modules.lua
-index 9bfdfb20..84527c97 100644
+index 9bfdfb2..84527c9 100644
 --- a/scripts/src/osd/modules.lua
 +++ b/scripts/src/osd/modules.lua
 @@ -51,6 +51,9 @@ function osdmodulesbuild()
@@ -33,7 +33,7 @@ index 9bfdfb20..84527c97 100644
  		MAME_DIR .. "src/osd/modules/sound/coreaudio_sound.c",
  		MAME_DIR .. "src/osd/modules/sound/sdl_sound.c",
 diff --git a/src/osd/modules/lib/osdobj_common.c b/src/osd/modules/lib/osdobj_common.c
-index 903ee072..d78da735 100644
+index 903ee07..d78da73 100644
 --- a/src/osd/modules/lib/osdobj_common.c
 +++ b/src/osd/modules/lib/osdobj_common.c
 @@ -183,6 +183,7 @@ void osd_common_t::register_options()
@@ -46,10 +46,10 @@ index 903ee072..d78da735 100644
  
 diff --git a/src/osd/modules/web/web_input.cpp b/src/osd/modules/web/web_input.cpp
 new file mode 100644
-index 00000000..4dabbb17
+index 0000000..0451c48
 --- /dev/null
 +++ b/src/osd/modules/web/web_input.cpp
-@@ -0,0 +1,152 @@
+@@ -0,0 +1,175 @@
 +// license:BSD-3-Clause
 +// copyright-holders:Arcade Runtime contributors
 +
@@ -88,6 +88,22 @@ index 00000000..4dabbb17
 +	WEB_CONTROL_PEDAL1,
 +	WEB_CONTROL_PEDAL2,
 +	WEB_CONTROL_PEDAL3,
++	WEB_CONTROL_VOLUME_UP,
++	WEB_CONTROL_VOLUME_DOWN,
++	WEB_CONTROL_KEY_F1,
++	WEB_CONTROL_KEY_F2,
++	WEB_CONTROL_KEY_F5,
++	WEB_CONTROL_KEY_F6,
++	WEB_CONTROL_KEY_0,
++	WEB_CONTROL_KEY_1,
++	WEB_CONTROL_KEY_2,
++	WEB_CONTROL_KEY_3,
++	WEB_CONTROL_KEY_4,
++	WEB_CONTROL_KEY_5,
++	WEB_CONTROL_KEY_6,
++	WEB_CONTROL_KEY_7,
++	WEB_CONTROL_KEY_8,
++	WEB_CONTROL_KEY_9,
 +	WEB_CONTROL_COUNT
 +};
 +
@@ -135,7 +151,10 @@ index 00000000..4dabbb17
 +		"Coin", "Start", "Select", "Service", "Test", "Tilt",
 +		"Stick 2 Up", "Stick 2 Down", "Stick 2 Left", "Stick 2 Right",
 +		"Stick 1 Up", "Stick 1 Down", "Stick 1 Left", "Stick 1 Right",
-+		"Pedal 1", "Pedal 2", "Pedal 3"
++		"Pedal 1", "Pedal 2", "Pedal 3",
++		"Volume Up", "Volume Down", "Key F1", "Key F2", "Key F5", "Key F6",
++		"Key 0", "Key 1", "Key 2", "Key 3", "Key 4",
++		"Key 5", "Key 6", "Key 7", "Key 8", "Key 9"
 +	};
 +	static const input_item_id item_ids[WEB_CONTROL_COUNT] =
 +	{
@@ -145,7 +164,11 @@ index 00000000..4dabbb17
 +		ITEM_ID_BUTTON9, ITEM_ID_BUTTON10, ITEM_ID_BUTTON11, ITEM_ID_BUTTON12,
 +		ITEM_ID_HAT2UP, ITEM_ID_HAT2DOWN, ITEM_ID_HAT2LEFT, ITEM_ID_HAT2RIGHT,
 +		ITEM_ID_HAT3UP, ITEM_ID_HAT3DOWN, ITEM_ID_HAT3LEFT, ITEM_ID_HAT3RIGHT,
-+		ITEM_ID_BUTTON13, ITEM_ID_BUTTON14, ITEM_ID_BUTTON15
++		ITEM_ID_BUTTON13, ITEM_ID_BUTTON14, ITEM_ID_BUTTON15,
++		ITEM_ID_BUTTON16, ITEM_ID_BUTTON17, ITEM_ID_BUTTON18, ITEM_ID_BUTTON19,
++		ITEM_ID_BUTTON20, ITEM_ID_BUTTON21, ITEM_ID_BUTTON22, ITEM_ID_BUTTON23,
++		ITEM_ID_BUTTON24, ITEM_ID_BUTTON25, ITEM_ID_BUTTON26, ITEM_ID_BUTTON27,
++		ITEM_ID_BUTTON28, ITEM_ID_BUTTON29, ITEM_ID_BUTTON30, ITEM_ID_BUTTON31
 +	};
 +	static const char *const axis_names[WEB_AXIS_COUNT] =
 +	{
@@ -204,7 +227,7 @@ index 00000000..4dabbb17
 +#endif
 diff --git a/src/osd/modules/web/web_sound.cpp b/src/osd/modules/web/web_sound.cpp
 new file mode 100644
-index 00000000..c9dcd875
+index 0000000..c9dcd87
 --- /dev/null
 +++ b/src/osd/modules/web/web_sound.cpp
 @@ -0,0 +1,43 @@
@@ -253,7 +276,7 @@ index 00000000..c9dcd875
 +MODULE_DEFINITION(SOUND_WEB, sound_web)
 diff --git a/src/osd/modules/web/web_video.cpp b/src/osd/modules/web/web_video.cpp
 new file mode 100644
-index 00000000..d17e7d73
+index 0000000..d17e7d7
 --- /dev/null
 +++ b/src/osd/modules/web/web_video.cpp
 @@ -0,0 +1,112 @@
@@ -370,7 +393,7 @@ index 00000000..d17e7d73
 +
 +#endif
 diff --git a/src/osd/sdl/input.c b/src/osd/sdl/input.c
-index 42fc08a8..5a8ae138 100644
+index 42fc08a..5a8ae13 100644
 --- a/src/osd/sdl/input.c
 +++ b/src/osd/sdl/input.c
 @@ -36,6 +36,11 @@
@@ -416,7 +439,7 @@ index 42fc08a8..5a8ae138 100644
  	osd_lock_free(input_lock);
  
 diff --git a/src/osd/sdl/sdlmain.c b/src/osd/sdl/sdlmain.c
-index 04d62287..77bcc3f1 100644
+index 04d6228..77bcc3f 100644
 --- a/src/osd/sdl/sdlmain.c
 +++ b/src/osd/sdl/sdlmain.c
 @@ -343,6 +343,11 @@ void sdl_osd_interface::osd_exit()
@@ -466,7 +489,7 @@ index 04d62287..77bcc3f1 100644
  #ifdef SDLMAME_EMSCRIPTEN
  	SDL_EventState(SDL_TEXTINPUT, SDL_FALSE);
 diff --git a/src/osd/sdl/video.c b/src/osd/sdl/video.c
-index 3d8f6c09..a738fd0d 100644
+index 3d8f6c0..a738fd0 100644
 --- a/src/osd/sdl/video.c
 +++ b/src/osd/sdl/video.c
 @@ -52,6 +52,12 @@
@@ -524,6 +547,3 @@ index 3d8f6c09..a738fd0d 100644
  	sdl_window_info *window;
  
  	if (m_watchdog != NULL)
--- 
-2.25.1
-

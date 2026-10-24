@@ -77,9 +77,10 @@ export const validMachineInfo = (): MachineInfo => ({
     aspectRatio: 4 / 3,
     players: 2,
     buttons: 6,
-    inputs: { analog: [], dualStick: false },
+    inputs: { analog: [], dualStick: false, keys: [], volume: false },
     bios: [{ name: "default", description: "Default BIOS", isDefault: true }],
     hasNvram: true,
+    supportsSave: true,
 });
 
 // HELPER :: VOID -> buildInfo

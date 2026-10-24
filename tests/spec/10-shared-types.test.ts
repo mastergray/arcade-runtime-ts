@@ -42,6 +42,7 @@ import {
 import {
     isArcadeAxis,
     isArcadeAxisKind,
+    isArcadeKeyName,
     isMachineAnalogKind,
     isMachineInputs,
 } from "../../src/shared.types.ts";                              // W26 predicates pending integrator root exports
@@ -204,6 +205,9 @@ const testFile: TestFile = {
         predicateCase("isArcadeButtonCount accepts 6", isArcadeButtonCount, 6, true),
         predicateCase("isArcadeButtonCount rejects 7", isArcadeButtonCount, 7, false),
         predicateCase("isArcadeButtonCount rejects -1", isArcadeButtonCount, -1, false),
+        predicateCase("isArcadeKeyName accepts F1", isArcadeKeyName, "F1", true),
+        predicateCase("isArcadeKeyName accepts 9", isArcadeKeyName, "9", true),
+        predicateCase("isArcadeKeyName rejects F10", isArcadeKeyName, "F10", false),
 
         // isArcadeControl: every kind with exactly its fields
         predicateCase("isArcadeControl accepts a direction", isArcadeControl, { kind: "direction", player: 1, direction: "up" }, true),
@@ -216,6 +220,8 @@ const testFile: TestFile = {
         predicateCase("isArcadeControl accepts service", isArcadeControl, { kind: "service" }, true),
         predicateCase("isArcadeControl accepts test", isArcadeControl, { kind: "test" }, true),
         predicateCase("isArcadeControl accepts tilt", isArcadeControl, { kind: "tilt" }, true),
+        predicateCase("isArcadeControl accepts an operator key", isArcadeControl, { kind: "key", key: "F5" }, true),
+        predicateCase("isArcadeControl accepts cabinet volume", isArcadeControl, { kind: "volume", direction: "down" }, true),
         predicateCase("isArcadeControl rejects an unknown kind", isArcadeControl, { kind: "jump", player: 1 }, false),
         predicateCase("isArcadeControl rejects a direction with player 0", isArcadeControl, { kind: "direction", player: 0, direction: "up" }, false),
         predicateCase("isArcadeControl rejects a direction outside the set", isArcadeControl, { kind: "direction", player: 1, direction: "north" }, false),
@@ -225,6 +231,8 @@ const testFile: TestFile = {
         predicateCase("isArcadeControl rejects a button with an extra field", isArcadeControl, { kind: "button", player: 1, button: 1, direction: "up" }, false),
         predicateCase("isArcadeControl rejects coin without a player", isArcadeControl, { kind: "coin" }, false),
         predicateCase("isArcadeControl rejects service with a player", isArcadeControl, { kind: "service", player: 1 }, false),
+        predicateCase("isArcadeControl rejects an unsupported operator key", isArcadeControl, { kind: "key", key: "F10" }, false),
+        predicateCase("isArcadeControl rejects an invalid volume direction", isArcadeControl, { kind: "volume", direction: "mute" }, false),
         predicateCase("isArcadeControl rejects null", isArcadeControl, null, false),
 
         // arcadeControlKey
@@ -242,8 +250,10 @@ const testFile: TestFile = {
                     { kind: "service" },
                     { kind: "test" },
                     { kind: "tilt" },
+                    { kind: "key", key: "F2" },
+                    { kind: "volume", direction: "up" },
                 ] as ArcadeControl[]).map(arcadeControlKey), P.equals<string[]>([
-                    "p1:direction:up", "p2:button:3", "p3:stick:2:right", "p1:pedal:2", "p1:coin", "p4:start", "p2:select", "service", "test", "tilt",
+                    "p1:direction:up", "p2:button:3", "p3:stick:2:right", "p1:pedal:2", "p1:coin", "p4:start", "p2:select", "service", "test", "tilt", "key:F2", "volume:up",
                 ]))
                 .start(undefined),
         },
@@ -258,10 +268,13 @@ const testFile: TestFile = {
         predicateCase("isMachineAnalogKind accepts every bound family kind", isMachineAnalogKind, "trackball-y", true),
         predicateCase("isMachineAnalogKind accepts a reported unbound kind", isMachineAnalogKind, "lightgun-x", true),
         predicateCase("isMachineAnalogKind rejects an axis-only name", isMachineAnalogKind, "spin-x", false),
-        predicateCase("isMachineInputs accepts distinct analog rows", isMachineInputs, { analog: [{ player: 1, kind: "dial" }, { player: 2, kind: "pedal-1" }], dualStick: true }, true),
-        predicateCase("isMachineInputs rejects duplicate player-kind rows", isMachineInputs, { analog: [{ player: 1, kind: "dial" }, { player: 1, kind: "dial" }], dualStick: false }, false),
-        predicateCase("isMachineInputs rejects an invalid analog kind", isMachineInputs, { analog: [{ player: 1, kind: "spin-x" }], dualStick: false }, false),
-        predicateCase("isMachineInputs rejects a non-boolean dual-stick flag", isMachineInputs, { analog: [], dualStick: 0 }, false),
+        predicateCase("isMachineInputs accepts discovered rows and flags", isMachineInputs, { analog: [{ player: 1, kind: "dial" }, { player: 2, kind: "pedal-1" }], dualStick: true, keys: [{ name: "Advance", key: "F2", player: 1 }], volume: true }, true),
+        predicateCase("isMachineInputs rejects duplicate player-kind rows", isMachineInputs, { analog: [{ player: 1, kind: "dial" }, { player: 1, kind: "dial" }], dualStick: false, keys: [], volume: false }, false),
+        predicateCase("isMachineInputs rejects an invalid analog kind", isMachineInputs, { analog: [{ player: 1, kind: "spin-x" }], dualStick: false, keys: [], volume: false }, false),
+        predicateCase("isMachineInputs rejects a non-boolean dual-stick flag", isMachineInputs, { analog: [], dualStick: 0, keys: [], volume: false }, false),
+        predicateCase("isMachineInputs rejects duplicate name-key rows", isMachineInputs, { analog: [], dualStick: false, keys: [{ name: "Advance", key: "F2", player: 1 }, { name: "Advance", key: "F2", player: 2 }], volume: false }, false),
+        predicateCase("isMachineInputs rejects an unsupported operator key", isMachineInputs, { analog: [], dualStick: false, keys: [{ name: "Menu", key: "F10", player: 1 }], volume: false }, false),
+        predicateCase("isMachineInputs rejects a non-boolean volume flag", isMachineInputs, { analog: [], dualStick: false, keys: [], volume: 1 }, false),
 
         // isMachineInfo
         predicateCase("isMachineInfo accepts the fixture machine", isMachineInfo, validMachineInfo(), true),
@@ -280,6 +293,7 @@ const testFile: TestFile = {
         predicateCase("isMachineInfo rejects two default BIOS options", isMachineInfo, withKey(machineLike(), "bios", [{ name: "a", description: "A", isDefault: true }, { name: "b", description: "B", isDefault: true }]), false),
         predicateCase("isMachineInfo rejects BIOS names equal after case folding", isMachineInfo, withKey(machineLike(), "bios", [{ name: "Euro", description: "A", isDefault: true }, { name: "euro", description: "B", isDefault: false }]), false),
         predicateCase("isMachineInfo rejects a missing hasNvram", isMachineInfo, withKey(machineLike(), "hasNvram"), false),
+        predicateCase("isMachineInfo rejects a missing supportsSave", isMachineInfo, withKey(machineLike(), "supportsSave"), false),
 
         // isFrameEvent, isSoundEvent
         predicateCase("isFrameEvent accepts a 2×2 frame with 16 bytes", isFrameEvent, blankFrame(2, 2), true),

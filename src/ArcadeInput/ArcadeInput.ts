@@ -383,6 +383,8 @@ export default class ArcadeInput {
             case "button": return Object.freeze({ kind: control.kind, player: control.player, button: control.button });
             case "stick": return Object.freeze({ kind: control.kind, player: control.player, stick: control.stick, direction: control.direction });
             case "pedal": return Object.freeze({ kind: control.kind, player: control.player, pedal: control.pedal });
+            case "key": return Object.freeze({ kind: control.kind, key: control.key });
+            case "volume": return Object.freeze({ kind: control.kind, direction: control.direction });
             case "coin":
             case "start":
             case "select": return Object.freeze({ kind: control.kind, player: control.player });

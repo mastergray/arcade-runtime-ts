@@ -159,6 +159,102 @@ static bool web_dual_stick_type(ioport_type type)
 	}
 }
 
+static bool web_rebindable_coded_field(const ioport_field &field)
+{
+	ioport_type type = field.type();
+	return !field.defseq_unresolved(SEQ_TYPE_STANDARD).is_default()
+		&& type != IPT_UNUSED
+		&& type != IPT_UNKNOWN
+		&& type != IPT_SPECIAL
+		&& type != IPT_CUSTOM
+		&& type != IPT_DIPSWITCH
+		&& type != IPT_CONFIG;
+}
+
+static bool web_sequence_contains(const input_seq &sequence, const input_code &code)
+{
+	for (int index = 0; index < sequence.length(); index++)
+		if (sequence[index] == code)
+			return true;
+	return false;
+}
+
+static bool web_append_or(input_seq &sequence, const input_code &code)
+{
+	if (web_sequence_contains(sequence, code))
+		return false;
+	// input_seq holds 16 codes including its end marker. An OR append needs two free slots.
+	if (sequence.length() != 0 && sequence.length() > 13)
+		return false;
+	sequence |= code;
+	return web_sequence_contains(sequence, code);
+}
+
+static bool web_operator_key(const input_code &code, const char *&name, input_code &pad_code)
+{
+	if (code == KEYCODE_F1) { name = "F1"; pad_code = JOYCODE_BUTTON18; return true; }
+	if (code == KEYCODE_F2) { name = "F2"; pad_code = JOYCODE_BUTTON19; return true; }
+	if (code == KEYCODE_F5) { name = "F5"; pad_code = JOYCODE_BUTTON20; return true; }
+	if (code == KEYCODE_F6) { name = "F6"; pad_code = JOYCODE_BUTTON21; return true; }
+	if (code == KEYCODE_0) { name = "0"; pad_code = JOYCODE_BUTTON22; return true; }
+	if (code == KEYCODE_1) { name = "1"; pad_code = JOYCODE_BUTTON23; return true; }
+	if (code == KEYCODE_2) { name = "2"; pad_code = JOYCODE_BUTTON24; return true; }
+	if (code == KEYCODE_3) { name = "3"; pad_code = JOYCODE_BUTTON25; return true; }
+	if (code == KEYCODE_4) { name = "4"; pad_code = JOYCODE_BUTTON26; return true; }
+	if (code == KEYCODE_5) { name = "5"; pad_code = JOYCODE_BUTTON27; return true; }
+	if (code == KEYCODE_6) { name = "6"; pad_code = JOYCODE_BUTTON28; return true; }
+	if (code == KEYCODE_7) { name = "7"; pad_code = JOYCODE_BUTTON29; return true; }
+	if (code == KEYCODE_8) { name = "8"; pad_code = JOYCODE_BUTTON30; return true; }
+	if (code == KEYCODE_9) { name = "9"; pad_code = JOYCODE_BUTTON31; return true; }
+	return false;
+}
+
+static int web_coded_field_count(running_machine &machine, ioport_type type, int player)
+{
+	int count = 0;
+	for (ioport_port *port = machine.ioport().first_port(); port != NULL; port = port->next())
+		for (ioport_field *field = port->first_field(); field != NULL; field = field->next())
+			if (web_rebindable_coded_field(*field) && field->type() == type && field->player() == player)
+				count++;
+	return count;
+}
+
+static void web_rebind_coded_fields(running_machine &machine)
+{
+	for (ioport_port *port = machine.ioport().first_port(); port != NULL; port = port->next())
+		for (ioport_field *field = port->first_field(); field != NULL; field = field->next())
+		{
+			if (!web_rebindable_coded_field(*field))
+				continue;
+
+			ioport_field::user_settings settings;
+			field->get_user_settings(settings);
+			bool changed = false;
+			if (web_coded_field_count(machine, field->type(), field->player()) == 1)
+			{
+				const input_seq &type_sequence = machine.ioport().type_seq(field->type(), field->player(), SEQ_TYPE_STANDARD);
+				for (int index = 0; index < type_sequence.length(); index++)
+					if (!type_sequence[index].internal())
+						changed = web_append_or(settings.seq[SEQ_TYPE_STANDARD], type_sequence[index]) || changed;
+			}
+
+			const input_seq &declared = field->defseq_unresolved(SEQ_TYPE_STANDARD);
+			for (int index = 0; index < declared.length(); index++)
+			{
+				const char *key_name = NULL;
+				input_code pad_code;
+				if (web_operator_key(declared[index], key_name, pad_code))
+					changed = web_append_or(settings.seq[SEQ_TYPE_STANDARD], pad_code) || changed;
+			}
+
+			if (changed)
+			{
+				field->set_user_settings(settings);
+				osd_printf_info("Web input rebound field: %s\n", field->name());
+			}
+		}
+}
+
 static void schedule_state(const char *name, bool save)
 {
 	if (s_machine == NULL || s_stopped || s_state_pending || !valid_state_name(name))
@@ -189,6 +285,7 @@ void web_bridge_start(running_machine *machine)
 	s_stopped = false;
 	machine->video().set_throttled(false);
 	machine->video().set_frameskip(0);
+	web_rebind_coded_fields(*machine);
 }
 
 bool web_bridge_machine_started()
@@ -374,7 +471,15 @@ extern "C" EMSCRIPTEN_KEEPALIVE const char *web_machine_info()
 	int players = 0;
 	int buttons = 0;
 	bool dual_stick = false;
+	bool volume = false;
 	std::vector<std::pair<int, const char *> > analog_inputs;
+	struct key_input
+	{
+		std::string name;
+		std::string key;
+		int player;
+	};
+	std::vector<key_input> key_inputs;
 	for (ioport_port *port = s_machine->ioport().first_port(); port != NULL; port = port->next())
 		for (ioport_field *field = port->first_field(); field != NULL; field = field->next())
 		{
@@ -382,6 +487,7 @@ extern "C" EMSCRIPTEN_KEEPALIVE const char *web_machine_info()
 			if (field->type() >= IPT_BUTTON1 && field->type() <= IPT_BUTTON6)
 				buttons = MAX(buttons, int(field->type() - IPT_BUTTON1 + 1));
 			dual_stick = dual_stick || web_dual_stick_type(field->type());
+			volume = volume || field->type() == IPT_VOLUME_UP || field->type() == IPT_VOLUME_DOWN;
 			const char *kind = web_analog_kind(field->type());
 			int player = field->player() + 1;
 			if (kind != NULL && player >= 1 && player <= 4)
@@ -395,6 +501,29 @@ extern "C" EMSCRIPTEN_KEEPALIVE const char *web_machine_info()
 					}
 				if (!duplicate)
 					analog_inputs.push_back(std::make_pair(player, kind));
+			}
+			if (web_rebindable_coded_field(*field))
+			{
+				const input_seq &declared = field->defseq_unresolved(SEQ_TYPE_STANDARD);
+				for (int index = 0; index < declared.length(); index++)
+				{
+					const char *key_name = NULL;
+					input_code pad_code;
+					if (!web_operator_key(declared[index], key_name, pad_code) || player < 1 || player > 4)
+						continue;
+					bool duplicate = false;
+					for (std::vector<key_input>::const_iterator item = key_inputs.begin(); item != key_inputs.end(); item++)
+						if (item->name == field->name() && item->key == key_name)
+						{
+							duplicate = true;
+							break;
+						}
+					if (!duplicate)
+					{
+						key_input input = { field->name(), key_name, player };
+						key_inputs.push_back(input);
+					}
+				}
 			}
 		}
 	players = MIN(4, MAX(1, players));
@@ -436,7 +565,19 @@ extern "C" EMSCRIPTEN_KEEPALIVE const char *web_machine_info()
 			<< ",\"kind\":" << json_string(analog_inputs[index].second) << '}';
 	}
 
-	json << "],\"dualStick\":" << (dual_stick ? "true" : "false") << '}'
+	json << "],\"dualStick\":" << (dual_stick ? "true" : "false")
+		<< ",\"keys\":[";
+
+	for (size_t index = 0; index < key_inputs.size(); index++)
+	{
+		if (index != 0)
+			json << ',';
+		json << "{\"name\":" << json_string(key_inputs[index].name.c_str())
+			<< ",\"key\":" << json_string(key_inputs[index].key.c_str())
+			<< ",\"player\":" << key_inputs[index].player << '}';
+	}
+
+	json << "],\"volume\":" << (volume ? "true" : "false") << '}'
 		<< ",\"bios\":[";
 
 	bool first_bios = true;
@@ -455,7 +596,8 @@ extern "C" EMSCRIPTEN_KEEPALIVE const char *web_machine_info()
 					<< '}';
 			}
 
-	json << "],\"hasNvram\":" << (has_nvram ? "true" : "false") << '}';
+	json << "],\"hasNvram\":" << (has_nvram ? "true" : "false")
+		<< ",\"supportsSave\":" << ((s_machine->system().flags & GAME_SUPPORTS_SAVE) != 0 ? "true" : "false") << '}';
 	s_machine_info = json.str();
 	return s_machine_info.c_str();
 }

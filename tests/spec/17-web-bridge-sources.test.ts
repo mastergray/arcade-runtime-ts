@@ -105,6 +105,22 @@ const EXPECTED_INPUT_ITEMS = [
     "ITEM_ID_BUTTON13",
     "ITEM_ID_BUTTON14",
     "ITEM_ID_BUTTON15",
+    "ITEM_ID_BUTTON16",
+    "ITEM_ID_BUTTON17",
+    "ITEM_ID_BUTTON18",
+    "ITEM_ID_BUTTON19",
+    "ITEM_ID_BUTTON20",
+    "ITEM_ID_BUTTON21",
+    "ITEM_ID_BUTTON22",
+    "ITEM_ID_BUTTON23",
+    "ITEM_ID_BUTTON24",
+    "ITEM_ID_BUTTON25",
+    "ITEM_ID_BUTTON26",
+    "ITEM_ID_BUTTON27",
+    "ITEM_ID_BUTTON28",
+    "ITEM_ID_BUTTON29",
+    "ITEM_ID_BUTTON30",
+    "ITEM_ID_BUTTON31",
 ] as const;
 
 const EXPECTED_AXIS_ITEMS = [
@@ -293,6 +309,31 @@ const testFile: TestFile = {
                         return ["onTick", "onFrame", "onSound", "onStateDone", "onExit", "onFrontendDone", "onLog"]
                             .every((name) => source.includes(`web['${name}']`))
                             && source.includes("EMSCRIPTEN_KEEPALIVE void web_set_axis");
+                    },
+                    P.equals(true),
+                )
+                .assert(
+                    "coded fields are rebound once after startup with operator items and exclusions",
+                    () => {
+                        const source = readFileSync(join(BRIDGE_ROOT, "web_bridge.cpp"), "utf8");
+                        return source.includes("web_rebind_coded_fields(*machine)")
+                            && source.includes("web_coded_field_count(machine, field->type(), field->player()) == 1")
+                            && source.includes("field->set_user_settings(settings)")
+                            && ["IPT_UNUSED", "IPT_UNKNOWN", "IPT_SPECIAL", "IPT_CUSTOM", "IPT_DIPSWITCH", "IPT_CONFIG"]
+                                .every((type) => source.includes(`type != ${type}`))
+                            && ["KEYCODE_F1", "KEYCODE_F2", "KEYCODE_F5", "KEYCODE_F6", "KEYCODE_0", "KEYCODE_9", "JOYCODE_BUTTON18", "JOYCODE_BUTTON31"]
+                                .every((token) => source.includes(token));
+                    },
+                    P.equals(true),
+                )
+                .assert(
+                    "machine info reports operator keys, cabinet volume and the save flag",
+                    () => {
+                        const source = readFileSync(join(BRIDGE_ROOT, "web_bridge.cpp"), "utf8");
+                        return source.includes("\\\"keys\\\":[")
+                            && source.includes("\\\"volume\\\":")
+                            && source.includes("\\\"supportsSave\\\":")
+                            && source.includes("GAME_SUPPORTS_SAVE");
                     },
                     P.equals(true),
                 )

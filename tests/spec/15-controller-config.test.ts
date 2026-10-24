@@ -85,6 +85,8 @@ const expectedConfig = (players: number, select: boolean): string => {
         expectedPort("SERVICE", "JOYCODE_1_BUTTON11"),
         expectedPort("TILT", "JOYCODE_1_BUTTON12"),
         expectedPort("TILT1", "JOYCODE_1_BUTTON12"),
+        expectedPort("VOLUME_UP", "JOYCODE_1_BUTTON16"),
+        expectedPort("VOLUME_DOWN", "JOYCODE_1_BUTTON17"),
         "        </input>", "    </system>", "</mameconfig>",
     );
     return `${lines.join("\n")}\n`;
@@ -160,6 +162,7 @@ const testFile: TestFile = {
                         service: ports.filter((entry) => entry.type === "SERVICE1"),
                         test: ports.filter((entry) => entry.type === "SERVICE"),
                         tilt: ports.filter((entry) => entry.type === "TILT" || entry.type === "TILT1"),
+                        volume: ports.filter((entry) => entry.type === "VOLUME_UP" || entry.type === "VOLUME_DOWN"),
                     };
                 }, P.equals<unknown>({
                     directions: [
@@ -178,6 +181,10 @@ const testFile: TestFile = {
                         { type: "TILT", code: "JOYCODE_1_BUTTON12" },
                         { type: "TILT1", code: "JOYCODE_1_BUTTON12" },
                     ],
+                    volume: [
+                        { type: "VOLUME_UP", code: "JOYCODE_1_BUTTON16" },
+                        { type: "VOLUME_DOWN", code: "JOYCODE_1_BUTTON17" },
+                    ],
                 }))
                 .start(undefined),
         },
@@ -189,7 +196,7 @@ const testFile: TestFile = {
                     const oldTypes = new Set([
                         "P1_JOYSTICK_UP", "P1_JOYSTICK_DOWN", "P1_JOYSTICK_LEFT", "P1_JOYSTICK_RIGHT",
                         "P1_BUTTON1", "P1_BUTTON2", "P1_BUTTON3", "P1_BUTTON4", "P1_BUTTON5", "P1_BUTTON6",
-                        "COIN1", "START1", "SERVICE1", "SERVICE", "TILT", "TILT1",
+                        "COIN1", "START1", "SERVICE1", "SERVICE", "TILT", "TILT1", "VOLUME_UP", "VOLUME_DOWN",
                     ]);
                     return actual.filter((entry) => !oldTypes.has(entry.type));
                 }, P.equals<unknown>(sequencesOf(expectedExtended(1).join("\n"))))
