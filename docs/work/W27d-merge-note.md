@@ -191,3 +191,14 @@ F6 decision. It should name `drivers/namconb1.c`, `video/namconb1.c`,
 M37710 and M6502 paths, C352 and parallel EEPROM, plus the 15-machine count,
 8,192-page heap rationale and upstream imperfect-sound flag. This package did
 not edit the spec because it is outside W27d's write set.
+
+## Integrator notes
+
+The missing required file was the shared C75 device ROM archive, which the
+user's library holds; added to the ignored preload configs, all three local
+sets audit ok. Gate runs on the host (2026-10-24): NB-2 set 30 passed,
+2 failed; NB-1 set 30 passed, 2 failed; the failures are the two speed
+cases. F6 0.9160 (NB-2) and 0.8208 (NB-1) over 60 s, F4 840 ms and 702 ms,
+audio queue peak 101 ms and 97 ms. The family is merged as **built, below
+the gate** under the W27 rule and leaves the 1.0.0 matrix; the pre-emptive
+8,192-page heap was right (the machines start).

@@ -89,44 +89,48 @@ estimate as proof.
 
 ## F4 — What is the slowest Chromium time from `callMain` to first frame?
 
-**F4 pending: set incomplete (one required file missing).**
-
-The ignored preload audit found 23 valid expected files, one missing required
-file, no wrong-size or wrong-CRC files, and no archive problems under both
-strict and MAME-compatible policies. One of two required archives is absent.
-Per the W27 rule, no substitute file was sought and no browser startup was
-attempted. The integrator should complete the lawful private input, then record
-elapsed monotonic milliseconds from immediately before `adapter.start()` to
-the first valid, non-blank frame.
+Measured by the integrator on 2026-10-24 (Chrome 150, Core i7-1165G7,
+headless, host load average about 4 to 5 from unrelated daemons) with two
+ignored preloads, both completed with the shared C75 device archive the
+agent's audit had found missing: 840 ms for the NB-2 set and 702 ms for the
+NB-1 set, from immediately before `adapter.start()` to the first valid,
+non-blank frame.
 
 ## F5 — Are native refresh and upright geometry correct?
 
-**F5 pending: set incomplete (one required file missing).**
-
-After completing the lawful private input, record the machine-reported native
-refresh, orientation and geometry, confirm the first frame is non-blank and
-upright, and measure the effective rate at controlled 60, 90, 120 and 144 Hz
-callback cadences. No geometry or cadence result is claimed from the metadata
-path.
+Native refresh 59.700 Hz. NB-2 set: 288×224 horizontal, every frame that
+size, first frame non-blank. NB-1 set: 224×288 vertical (upright rotation),
+every frame that size, first frame non-blank. Cadences, NB-2: 60 Hz →
+53.59 fps (−10.24 %), 90 Hz → 58.05 fps (−2.76 %), 120 Hz → 59.90 fps
+(+0.34 %), 144 Hz → 59.75 fps (+0.09 %). NB-1: 60 Hz → 59.27 fps (−0.72 %),
+90 Hz → 59.28 fps (−0.71 %), 120 Hz → 57.20 fps (−4.19 %), 144 Hz →
+55.83 fps (−6.48 %). Geometry and refresh are correct; the cadence misses
+are the board not keeping up, see F6. All three local sets carry MAME's own
+`GAME_IMPERFECT_SOUND` flag in 0.161, upstream's note on the C352 path.
 
 ## F6 — Does the heaviest title sustain full speed?
 
-**F6 pending: set incomplete (one required file missing).**
+**No.** Desktop, frameskip disabled: emulated seconds / wall seconds =
+0.9160 over 60 s for the NB-2 set and 0.8208 for the NB-1 set, far outside
+the 2 % tolerance, on the same host and under the same load where the
+System 32 family measured 1.0000 minutes earlier. The 68EC020 at 24 MHz with
+the M37710 sound CPU, the C352 and the sprite and tilemap chain is more than
+this build sustains on the desktop reference machine. Per the W27 brief the
+family is recorded as **built, below the gate** and leaves the 1.0.0 matrix;
+the build stays in the repository and the artefacts are served, so the games
+start and play at about 82–92 % speed, but the family is not claimed as
+measured. M3–M5 acceptance passed on both runs: audio queue peak 101 ms and
+97 ms against the 120 ms cap, keyboard coin and start reached play, two pads
+assigned and released, quick save passed. The 4× CPU-throttled mobile proxy
+was not run.
 
-After completing the lawful private input, measure emulated seconds divided by
-wall seconds over 60 seconds on desktop with frameskip disabled; the desktop
-ratio is the family gate. The 4× CPU-throttled mobile proxy is informational.
-The configured NB-2 entry carries MAME 0.161's own `GAME_IMPERFECT_SOUND` flag
-in `drivers/namconb1.c`; that upstream emulator flag is accepted as such and
-is not a browser-port defect. The driver also does not declare
-`GAME_SUPPORTS_SAVE`, so a declined harness quick-save is the known M35 case,
-not an F6 performance failure.
-
-Run the acceptance cases without disclosing the private selection after its
-missing dependency is supplied:
+Run F4–F6 without disclosing the private selection:
 
 ```sh
 ARCADE_PRELOAD_CONFIG="$PWD/res/preload-namco-nb.json" \
 ARCADE_FAMILY_CONFIGS="$PWD/res/preload-namco-nb.json" \
   npm run test:browser
 ```
+
+The integrator's runs completed 30 passed, 2 failed (the M1 acceptance and
+the family measurement, both on speed), 25 skipped by design.
