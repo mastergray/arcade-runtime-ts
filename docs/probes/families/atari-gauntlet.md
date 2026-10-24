@@ -44,8 +44,8 @@ where the SDK's bundled Node 8 stopped with `ERR_UNKNOWN_STREAM_TYPE` on the
 captured process streams. An ignored worktree-local `BASH_ENV` configuration
 then selected host Node 22 for Emscripten's JavaScript helpers only; the pinned
 C/C++ compiler, native optimizer, Binaryen, source, flags and production
-pipeline remained unchanged. The resulting extended build identity is
-`221f082cf26c46c25b0b78fd94774ec28ada3d2d2a8dfc99618bc09be8992e7c`.
+pipeline remained unchanged. The resulting W29 build identity is
+`d3886d3d0708fa6007b003717b92eb7a981703c65686001044642ba9f067196b`.
 
 ## F2 — What are the raw, gzip and Brotli sizes of the Wasm and JavaScript?
 
@@ -123,3 +123,13 @@ in 1,151 ms. F5 delivered horizontal 336×240 frames at 59.923 Hz; 60, 90, 120
 and 144 Hz cadence errors were +0.35%, −0.13%, −0.05% and +0.35%. F6 sustained
 a 1.0001 desktop ratio over 60 seconds. These results remain valid for that
 driver, but they do not substitute for the new `toobin.c` measurements above.
+
+## W29 coded-field rebuild
+
+The eight-job W29 rebuild completed with 34 machines and rewrites the
+`toobin.c` fields `P1 R Paddle Forward`, `P1 L Paddle Forward`, `P1 L Paddle
+Backward`, `P1 R Paddle Backward`, `P1 Throw`, `P2 R Paddle Forward`, `P2 L
+Paddle Forward`, `P2 L Paddle Backward`, `P2 R Paddle Backward` and `P2
+Throw` to include their controller type sequences. Browser confirmation of
+those paths is pending because this sandbox cannot launch Chromium or bind a
+loopback listener; the gated bridge case records the integrator assertion.
