@@ -139,6 +139,11 @@ const FAMILY_TARGETS: readonly FamilyTarget[] = [
         expectedMachines: 54,
     },
     {
+        id: "nintendo-classic",
+        sources: ["src/mame/drivers/dkong.c"],
+        expectedMachines: 36,
+    },
+    {
         id: "sega-16",
         sources: [
             "src/mame/drivers/segahang.c",
