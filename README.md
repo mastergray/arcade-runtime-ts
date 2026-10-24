@@ -30,18 +30,21 @@ exactly which archive and file a set is missing.
 | `irem-m72` | Irem M72 and M92 | measured |
 | `sega-16` | Sega `segahang.c`, `segaorun.c`, `segaxbd.c` and `segaybd.c` boards | measured |
 | `sega-s16` | Sega System 16A, 16B and 18 (`segas16a.c`, `segas16b.c`, `segas18.c`) | measured |
-| `midway-tunit` | Midway T-Unit and Y-Unit (`midtunit.c`, `midyunit.c`; Williams ADPCM and DCS sound boards) | measured |
-| `atari-gauntlet` | Atari Gauntlet board (`gauntlet.c`; 68010 with slapstic, 6502 sound) | measured |
+| `midway-tunit` | Midway T-Unit, Y-Unit and Wolf Unit (`midtunit.c`, `midyunit.c`, `midwunit.c`; Williams ADPCM and DCS sound boards) | measured |
+| `atari-gauntlet` | Atari 68010 boards (`gauntlet.c` with slapstic, `toobin.c` with the JSA sound board) | measured |
 | `sega-s32` | Sega System 32 (`segas32.c`; V60 with the V25 protection MCU, MultiPCM) | measured |
 | `seta-2` | Seta 2 board (`seta2.c`; TMP68301 with X1-010 sound) | measured |
 | `namco-nb` | Namco NB-1 and NB-2 (`namconb1.c`; 68EC020 with the C75 sound MCU and C352) | builds; below the F6 gate on desktop (0.82–0.92) |
-| `midway-mcr` | Bally/Midway MCR-1/2/3 and MCR-68k | measured |
+| `midway-mcr` | Bally/Midway MCR-1/2/3, MCR-68k and the Williams 6809 board (`williams.c`) | measured |
 | `konami-16` | Konami 68000 boards (`tmnt.c`, `simpsons.c`, `xmen.c`, `gijoe.c`, `mystwarr.c`, `spy.c` hardware) | measured |
-| `atari-classic` | Atari vector boards (`bzone.c`, `tempest.c`) and `rampart.c` | measured |
-| `misc-16` | Data East (`dec0.c`, `karnov.c`), Seibu (`raiden.c`, `raiden2.c`, `r2dx_v33.c`), Toaplan `snowbros.c`, Technos `shadfrce.c` and Rare `btoads.c` boards (`btoads.c` needs the user's `bsmt2000.zip` device ROM) | measured |
+| `atari-classic` | Atari vector boards (`bzone.c`, `tempest.c`), `rampart.c` and the 6502 `centiped.c` board | measured |
+| `misc-16` | Data East (`dec0.c`, `karnov.c`), Seibu (`raiden.c`, `raiden2.c`, `r2dx_v33.c`), Toaplan `snowbros.c`, Technos `shadfrce.c`, Rare `btoads.c` and Data East `cninja.c` boards (`btoads.c` needs the user's `bsmt2000.zip` device ROM) | measured |
 | `namco-s1` | Namco System 1 and System 86 | builds; evidence deferred |
 | `namco-s2` | Namco System 2 | builds; evidence deferred |
-| `taito-classic` | Taito 8-bit boards (`bublbobl.c`, `arkanoid.c`, `tnzs.c` and related) | builds; evidence deferred |
+| `taito-classic` | Taito 8-bit boards (`bublbobl.c`, `arkanoid.c`, `tnzs.c` and related) and the Taito America `qix.c` board | measured |
+| `nintendo-classic` | Nintendo Z80 board (`dkong.c`; 8035 sound, NES APU, discrete) | measured |
+| `leland` | Leland twin-Z80 board with the 80186 sound CPU (`leland.c`) | measured |
+| `gottlieb` | Gottlieb 8088 board with the rev 1 sound board (`gottlieb.c`) | measured |
 
 The `neogeo` and `cps2` builds link a 512 MiB fixed heap because their largest sets need more than 256 MiB once loaded and decoded; the other families link 256 MiB. A browser must be able to reserve that much for the tab.
 
