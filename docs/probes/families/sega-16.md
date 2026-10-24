@@ -77,28 +77,45 @@ pages.
 
 ## F4 — What is the slowest Chromium time from `callMain` to first frame?
 
-F4 pending for `segaybd.c`: the ignored preload audited `ok` under both strict
-and MAME-compatible policies, with one archive present and all 47 expected
-files valid. The real-adapter browser command then stopped at `listen EPERM`
-when the test server tried to bind `127.0.0.1`. No page was created, so no
-first frame arrived and non-blank output could not be confirmed in this
-sandbox. The integrator must record the startup milliseconds on a host that
-permits loopback and Chromium.
+`segaybd.c`, measured by the integrator on 2026-10-23 (Chrome 150, Core
+i7-1165G7, headless, host load average about 5 from unrelated daemons) with
+the ignored Y Board preload, which audits ok under both policies: 591 ms and
+453 ms on two runs from immediately before `adapter.start()` to the first
+valid, non-blank frame. The earlier drivers' figures are in the table below.
 
 ## F5 — Are native refresh and upright geometry correct?
 
-F5 pending for `segaybd.c`: the same loopback denial prevented a geometry,
-refresh or cadence observation. The integrator must confirm an upright,
-non-blank native-size first frame and measure the 60, 90, 120 and 144 Hz
-controlled cadences through the real adapter.
+`segaybd.c`: 320×224 horizontal at 60.000 Hz, every frame valid and the
+first non-blank. Cadences on the two runs: 60 Hz → 58.33 fps (−2.78 %) then
+59.95 fps (−0.08 %); 90 Hz → 59.86 fps (−0.23 %) then 59.36 fps (−1.06 %);
+120 Hz → 59.85 fps (−0.24 %) then 59.95 fps (−0.08 %); 144 Hz → 58.43 fps
+(−2.62 %) then 59.99 fps (−0.02 %). Each run had one or two cadences outside
+the 1 % tolerance, never the same ones, so the measurement case failed on
+both runs while every rate passed on at least one. The board's pacing margin
+is thin on this host; the misses are dropped frames under load, not a
+geometry or refresh fault.
 
 ## F6 — Does the heaviest title sustain full speed?
 
-F6 pending for `segaybd.c`: the same loopback denial prevented the 60-second
-desktop window, so no sustained emulated-time ratio is claimed and the W27f
-performance gate remains open. The driver stays in this branch for the
-integrator to decide after measuring the ignored preload on an unrestricted
-desktop; the informational 4× CPU-throttled proxy remains a secondary result.
+`segaybd.c` is now the family's heaviest board (three 68000s, Z80, SegaPCM,
+YM2151, the sprite scaler): emulated seconds / wall seconds = 0.9967 and
+0.9975 over 60 s on the two runs, frameskip disabled, inside the 2 %
+tolerance on both, so the driver stays in the family under the W27 rule that
+F6 decides. M3–M5 acceptance on the same runs: audio queue peak 101 ms and
+108 ms against the 120 ms cap, the highest in the matrix; keyboard coin and
+start reached play; two pads assigned and released. The 4× CPU-throttled
+mobile proxy was not run; it is informational and M28 replaces it.
+
+Run F4–F6 without disclosing the private selection:
+
+```sh
+ARCADE_PRELOAD_CONFIG="$PWD/res/preload-sega-16.json" \
+ARCADE_FAMILY_CONFIGS="$PWD/res/preload-sega-16.json" \
+  npm run test:browser
+```
+
+The integrator's two host runs each completed 31 passed, 1 failed (the
+cadence case above), 25 skipped by design.
 
 ## Earlier-driver F4–F6 measured 2026-10-21/22
 

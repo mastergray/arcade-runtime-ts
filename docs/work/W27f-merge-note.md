@@ -184,3 +184,17 @@ The integrator-owned specification remains stale: §4.6's `sega-16` row should
 add `drivers/segaybd.c`, `video/segaybd.c`, three 68000s and MB8421 to its
 scope, and should describe the pending F6 retention decision. This package did
 not edit the spec because it is outside W27f's write set.
+
+## Integrator notes
+
+Gate run twice on the host with the ignored Y Board preload (2026-10-23,
+host load average about 5 from unrelated daemons): 31 passed, 1 failed, 25
+skipped by design each time. The failure is the F5 cadence case: run one
+missed at 60 Hz (−2.78 %) and 144 Hz (−2.62 %), run two at 90 Hz (−1.06 %),
+with every other rate inside 1 %. F6 passed both runs (0.9967, 0.9975 over
+60 s, tolerance 2 %), so the driver stays in the family. F4 591 ms and
+453 ms; audio queue peak 101 ms and 108 ms, under the 120 ms cap. Download
+growth 82,370 raw / 17,957 Brotli bytes for 14 machines, accepted. The
+driver's light-gun set declares `IPT_LIGHTGUN_X/Y`, which the controller
+config does not bind yet (filed as a roadmap item); the stick set is fully
+playable from keyboard and pad through W26's analogue binding.
