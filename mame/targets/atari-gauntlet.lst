@@ -1,0 +1,36 @@
+// Derived from pinned MAME 0.161 source (run at the source root):
+// for driver in gauntlet; do
+//   comm -12 \
+//     <(sed -nE 's/^[[:space:]]*(GAME|GAMEL|GAME_CUSTOM)[[:space:]]*[(][^,]+,[[:space:]]*([a-z0-9_]+).*/\2/p' "src/mame/drivers/$driver.c" | LC_ALL=C sort -u) \
+//     <(sed -nE 's/^([a-z0-9_]+)([[:space:]]*\/\/.*)?$/\1/p' src/mame/mame.lst | LC_ALL=C sort -u) \
+//     | awk -v source="src/mame/drivers/$driver.c" '{ print $0 " // " source }'
+// done | LC_ALL=C sort -u
+
+gaunt2 // src/mame/drivers/gauntlet.c
+gaunt22p // src/mame/drivers/gauntlet.c
+gaunt22p1 // src/mame/drivers/gauntlet.c
+gaunt22pg // src/mame/drivers/gauntlet.c
+gaunt2g // src/mame/drivers/gauntlet.c
+gauntlet // src/mame/drivers/gauntlet.c
+gauntlet2p // src/mame/drivers/gauntlet.c
+gauntlet2pg // src/mame/drivers/gauntlet.c
+gauntlet2pg1 // src/mame/drivers/gauntlet.c
+gauntlet2pj // src/mame/drivers/gauntlet.c
+gauntlet2pj2 // src/mame/drivers/gauntlet.c
+gauntlet2pr3 // src/mame/drivers/gauntlet.c
+gauntletg // src/mame/drivers/gauntlet.c
+gauntletgr3 // src/mame/drivers/gauntlet.c
+gauntletgr6 // src/mame/drivers/gauntlet.c
+gauntletgr8 // src/mame/drivers/gauntlet.c
+gauntletj // src/mame/drivers/gauntlet.c
+gauntletj12 // src/mame/drivers/gauntlet.c
+gauntletr1 // src/mame/drivers/gauntlet.c
+gauntletr2 // src/mame/drivers/gauntlet.c
+gauntletr4 // src/mame/drivers/gauntlet.c
+gauntletr5 // src/mame/drivers/gauntlet.c
+gauntletr7 // src/mame/drivers/gauntlet.c
+gauntletr9 // src/mame/drivers/gauntlet.c
+gauntlets // src/mame/drivers/gauntlet.c
+vindctr2 // src/mame/drivers/gauntlet.c
+vindctr2r1 // src/mame/drivers/gauntlet.c
+vindctr2r2 // src/mame/drivers/gauntlet.c
