@@ -147,3 +147,15 @@ The first attempt to commit the target correction and the first attempt to
 commit this merge note were refused when the worktree Git index lock was
 temporarily read-only. Later retries succeeded; all package commits are
 present and no change was lost.
+
+## Integrator notes
+
+The private archive was incomplete for 0.161 as the agent found (one PROM
+missing, the 6p graphics ROM supplied as the newer 16 KiB dump whose first
+half is the pinned 8 KiB file). The integrator rebuilt it under the ignored
+`res/converted/` tree, audited ok under both policies, and ran the gate on
+the host (2026-10-23): 32 passed, 0 failed, 25 skipped by design. F4
+1151 ms; F5 336×240 at 59.923 Hz, every frame valid and the first non-blank,
+cadences within 0.35 %; F6 1.0001 over 60 s; audio queue peak 76 ms; coin and
+start reached play; two pads assigned and released. Measurements copied into
+the probe record.

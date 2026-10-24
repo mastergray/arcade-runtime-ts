@@ -79,36 +79,37 @@ pages.
 
 ## F4 — What is the slowest Chromium time from `callMain` to first frame?
 
-F4–F6 pending: set incomplete. A privacy-safe audit of the lawful ignored
-preload found one archive, 20 expected files, 19 valid files and one missing
-required file under both strict and MAME-compatible policies. Per W27, no
-replacement file was sought and the browser measurement was not started.
-
-After the integrator supplies a complete lawful 0.161-compatible preload,
-measure Chromium wall-clock milliseconds from immediately before
-`adapter.start()` through the first valid, non-blank frame. Do not record the
-configured machine, archive names, hashes or resolved paths.
+Measured by the integrator on 2026-10-23 (Chrome 150, Core i7-1165G7,
+headless) with the ignored preload, after the private archive had been
+completed for 0.161 (its newer 16 KiB graphics dump split to the pinned
+8 KiB file and the missing PROM added; audit ok under both policies): 1151 ms
+from immediately before `adapter.start()` to the first valid, non-blank
+frame. The board's slapstic and EEPROM start-up and the host serving a
+hand-test session at the time both contribute; it is the slowest F4 so far
+but well inside the gate.
 
 ## F5 — Are native refresh and upright geometry correct?
 
-F4–F6 pending: set incomplete (one missing required file). With the completed
-ignored preload, run the real adapter and record native refresh, expected and
-observed upright geometry, first-frame non-blank status, and emulated-frame
-rate under controlled 60, 90, 120 and 144 Hz cadences. Every cadence must stay
-within the family gate.
+Native refresh 59.923 Hz, horizontal, 336×240; every delivered frame was
+336×240 and the first frame was non-blank. Cadences: 60 Hz → 60.13 fps
+(+0.35 %), 90 Hz → 59.85 fps (−0.13 %), 120 Hz → 59.89 fps (−0.05 %),
+144 Hz → 60.13 fps (+0.35 %), all inside the 1 % gate.
 
-## F6 — Does the four-player board sustain full speed?
+## F6 — Does the board sustain full speed?
 
-F4–F6 pending: set incomplete (one missing required file). The desktop gate
-remains open. After startup and warm-up with a completed ignored preload,
-measure exactly 60 seconds of wall time and report emulated seconds divided by
-wall seconds with frameskip disabled. Record the 4× CPU-throttled mobile proxy
-ratio only if available; it is informational.
+Desktop: emulated seconds / wall seconds = 1.0001 over 60 s, frameskip
+disabled. M3–M5 acceptance on the same run: audio queue peak 76 ms against
+the 120 ms cap, keyboard coin and start reached play, two pads assigned and
+released. The 4× CPU-throttled mobile proxy was not run; it is informational
+and M28 replaces it.
 
-Run the browser measurements without disclosing the private selection:
+Run F4–F6 without disclosing the private selection:
 
 ```sh
 ARCADE_PRELOAD_CONFIG="$PWD/res/preload-atari-gauntlet.json" \
 ARCADE_FAMILY_CONFIGS="$PWD/res/preload-atari-gauntlet.json" \
   npm run test:browser
 ```
+
+The integrator's run on the host completed 32 passed, 0 failed, 25 skipped
+by design.
