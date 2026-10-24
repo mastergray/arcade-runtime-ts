@@ -197,8 +197,8 @@ The target/build/test-row changes were committed as `6e144ba` before this
 documentation pass. The first `git add ... && git commit ...` attempt for the
 probe and merge note was refused because Git could not create the shared
 worktree index lock on a temporarily read-only filesystem. No content change
-was attempted or lost; a later retry is recorded in the branch history if the
-shared Git directory became writable again.
+was attempted or lost; a later retry succeeded after the shared Git directory
+became writable again.
 
 ## Integrator note
 
