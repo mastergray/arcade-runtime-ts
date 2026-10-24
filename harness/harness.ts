@@ -130,6 +130,10 @@ const softResetButton = element<HTMLButtonElement>("#soft-reset");
 const hardResetButton = element<HTMLButtonElement>("#hard-reset");
 const saveStateButton = element<HTMLButtonElement>("#save-state");
 const loadStateButton = element<HTMLButtonElement>("#load-state");
+const volumeUpButton = element<HTMLButtonElement>("#volume-up");
+const volumeDownButton = element<HTMLButtonElement>("#volume-down");
+const operatorControls = element<HTMLElement>("#operator-controls");
+const operatorButtons = element<HTMLDivElement>("#operator-buttons");
 const persistButton = element<HTMLButtonElement>("#persist");
 const clearSavesButton = element<HTMLButtonElement>("#clear-saves");
 const clearSavesRetryButton = element<HTMLButtonElement>("#clear-saves-retry");
@@ -626,8 +630,30 @@ const renderStoredFiles = (): void => {
 // HELPER :: VOID -> VOID
 // Applies availability for controls that require a running cabinet.
 const updateSessionControls = (): void => {
-    const running = cabinet?.isStarted === true;
+    const selected = cabinet;
+    const running = selected?.isStarted === true;
     for (const button of sessionButtons) button.disabled = !running;
+    const machine = running ? selected.player.machine : null;
+    const supportsSave = machine?.supportsSave === true;
+    saveStateButton.disabled = !running || !supportsSave;
+    loadStateButton.disabled = !running || !supportsSave;
+    const saveTitle = running && !supportsSave ? "This driver cannot save in 0.161" : "";
+    saveStateButton.title = saveTitle;
+    loadStateButton.title = saveTitle;
+
+    const volume = machine?.inputs.volume === true;
+    volumeUpButton.hidden = !volume;
+    volumeDownButton.hidden = !volume;
+    volumeUpButton.disabled = !running;
+    volumeDownButton.disabled = !running;
+
+    operatorButtons.replaceChildren();
+    for (const input of machine?.inputs.keys ?? []) {
+        operatorButtons.append(actionButton(`${input.name} (${input.key})`, "operator-key", () => {
+            if (cabinet?.isStarted === true) cabinet.player.input.tap({ kind: "key", key: input.key });
+        }));
+    }
+    operatorControls.hidden = operatorButtons.childElementCount === 0;
     keyboardEnabledInput.disabled = !running;
     gamepadsEnabledInput.disabled = !running;
 };
@@ -1252,6 +1278,14 @@ saveStateButton.addEventListener("click", () => { void runCabinetAction("state-s
 loadStateButton.addEventListener("click", () => { void runCabinetAction("state-loaded", "Quick state could not be loaded", async (selected) => {
     await selected.player.loadState("quick");
     return "Quick state loaded.";
+}); });
+volumeUpButton.addEventListener("click", () => { void runCabinetAction("volume-up", "Volume could not be raised", (selected) => {
+    selected.player.input.tap({ kind: "volume", direction: "up" });
+    return "Volume up pressed.";
+}); });
+volumeDownButton.addEventListener("click", () => { void runCabinetAction("volume-down", "Volume could not be lowered", (selected) => {
+    selected.player.input.tap({ kind: "volume", direction: "down" });
+    return "Volume down pressed.";
 }); });
 persistButton.addEventListener("click", () => { void runCabinetAction("persisted", "Changes could not be saved", async (selected) => {
     const saved = await selected.save();

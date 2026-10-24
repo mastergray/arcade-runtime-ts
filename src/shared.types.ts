@@ -130,6 +130,11 @@ export type ArcadeButtonIndex = 1 | 2 | 3 | 4 | 5 | 6;
 // How many action buttons a machine has; 0 for boards with no action buttons.
 export type ArcadeButtonCount = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
+// TYPE :: "F1" | "F2" | "F5" | "F6" | "0" ... "9"
+// Field-level operator keys exposed without registering a MAME keyboard device.
+export type ArcadeKeyName = "F1" | "F2" | "F5" | "F6"
+    | "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9";
+
 // TYPE :: tagged union of every digital control the runtime speaks
 // The vocabulary everything above the adapter uses; the bridge maps it onto MAME ports.
 export type ArcadeControl =
@@ -142,7 +147,9 @@ export type ArcadeControl =
     | { readonly kind: "select"; readonly player: PlayerIndex }
     | { readonly kind: "service" }
     | { readonly kind: "test" }
-    | { readonly kind: "tilt" };
+    | { readonly kind: "tilt" }
+    | { readonly kind: "key"; readonly key: ArcadeKeyName }
+    | { readonly kind: "volume"; readonly direction: "up" | "down" };
 
 // TYPE :: STRING
 // Canonical string form of an ArcadeControl, e.g. "p1:direction:up", "p2:coin", "service"; arcadeControlKey is its meaning.
@@ -190,6 +197,8 @@ export type MachineAnalogKind =
 export interface MachineInputs {
     readonly analog: ReadonlyArray<{ readonly player: PlayerIndex; readonly kind: MachineAnalogKind }>;   // Declared analog ports
     readonly dualStick: boolean;                                  // Any JOYSTICKLEFT/JOYSTICKRIGHT field exists
+    readonly keys: ReadonlyArray<{ readonly name: string; readonly key: ArcadeKeyName; readonly player: PlayerIndex }>;   // Field-level operator keys in port order
+    readonly volume: boolean;                                     // Whether cabinet volume up/down ports exist
 }
 
 // INTERFACE :: what the adapter learned about the machine at boot
@@ -208,6 +217,7 @@ export interface MachineInfo {
     readonly inputs: MachineInputs;                                // Discovered analog and dual-stick ports
     readonly bios: ReadonlyArray<BiosOption>;                      // Selectable BIOS options; empty when none
     readonly hasNvram: boolean;                                    // Whether the board persists anything itself
+    readonly supportsSave: boolean;                               // Whether the driver declares GAME_SUPPORTS_SAVE
 }
 
 /**
@@ -333,6 +343,7 @@ export interface BuildInfo {
 const POINTER_TYPES = ["pointerdown", "pointermove", "pointerup", "pointercancel", "lostpointercapture"] as const;   // PointerEventLike.type set
 const POINTER_SOURCES = ["mouse", "touch", "pen"] as const;                                                         // PointerEventLike.pointerType set
 const DIRECTIONS = ["up", "down", "left", "right"] as const;                                                         // ArcadeDirection set
+const ARCADE_KEY_NAMES = ["F1", "F2", "F5", "F6", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"] as const;   // ArcadeKeyName set
 const ARCADE_AXIS_KINDS = ["stick-x", "stick-y", "stick-z", "pedal-1", "pedal-2", "spin-x", "spin-y"] as const;   // ArcadeAxisKind set
 const MACHINE_ANALOG_KINDS = [                                                                                     // MachineAnalogKind set
     "stick-x", "stick-y", "stick-z", "paddle", "paddle-v", "pedal-1", "pedal-2", "pedal-3",
@@ -377,6 +388,8 @@ export const arcadeControlKey = (control: ArcadeControl): ArcadeControlKey => {
         case "button": return `p${control.player}:button:${control.button}`;
         case "stick": return `p${control.player}:stick:${control.stick}:${control.direction}`;
         case "pedal": return `p${control.player}:pedal:${control.pedal}`;
+        case "key": return `key:${control.key}`;
+        case "volume": return `volume:${control.direction}`;
         case "coin":
         case "start":
         case "select": return `p${control.player}:${control.kind}`;
@@ -520,6 +533,12 @@ export function isArcadeButtonCount(value: unknown): value is ArcadeButtonCount 
 }
 
 // PREDICATE :: UNKNOWN -> BOOLEAN
+// True when value is one of the field-level operator keys carried by the virtual pad.
+export function isArcadeKeyName(value: unknown): value is ArcadeKeyName {
+    return (ARCADE_KEY_NAMES as readonly unknown[]).includes(value);
+}
+
+// PREDICATE :: UNKNOWN -> BOOLEAN
 // True when value is one member of the ArcadeControl union with exactly the fields its kind carries
 export function isArcadeControl(value: unknown): value is ArcadeControl {
     if (!isObject(value)) return false;
@@ -531,6 +550,8 @@ export function isArcadeControl(value: unknown): value is ArcadeControl {
             && (value.stick === 1 || value.stick === 2) && isArcadeDirection(value.direction);
         case "pedal": return keys.join() === "kind,pedal,player" && isPlayerIndex(value.player)
             && (value.pedal === 1 || value.pedal === 2 || value.pedal === 3);
+        case "key": return keys.join() === "key,kind" && isArcadeKeyName(value.key);
+        case "volume": return keys.join() === "direction,kind" && (value.direction === "up" || value.direction === "down");
         default:
             if ((PLAYER_KINDS as readonly unknown[]).includes(value.kind)) return keys.join() === "kind,player" && isPlayerIndex(value.player);
             if ((GLOBAL_KINDS as readonly unknown[]).includes(value.kind)) return keys.join() === "kind";
@@ -559,7 +580,8 @@ export function isMachineAnalogKind(value: unknown): value is MachineAnalogKind 
 // PREDICATE :: UNKNOWN -> BOOLEAN
 // True when value carries a deduplicated array of player/kind rows and a dual-stick flag.
 export function isMachineInputs(value: unknown): value is MachineInputs {
-    if (!isObject(value) || !Array.isArray(value.analog) || typeof value.dualStick !== "boolean") return false;
+    if (!isObject(value) || !Array.isArray(value.analog) || typeof value.dualStick !== "boolean"
+        || !Array.isArray(value.keys) || typeof value.volume !== "boolean") return false;
     const rows = value.analog as unknown[];
     if (!rows.every((row) => isObject(row)
         && Object.keys(row).sort().join() === "kind,player"
@@ -569,7 +591,18 @@ export function isMachineInputs(value: unknown): value is MachineInputs {
         const input = row as { readonly player: PlayerIndex; readonly kind: MachineAnalogKind };
         return `${input.player}:${input.kind}`;
     });
-    return new Set(keys).size === keys.length;
+    if (new Set(keys).size !== keys.length) return false;
+    const operatorRows = value.keys as unknown[];
+    if (!operatorRows.every((row) => isObject(row)
+        && Object.keys(row).sort().join() === "key,name,player"
+        && isNonEmptyString(row.name)
+        && isArcadeKeyName(row.key)
+        && isPlayerIndex(row.player))) return false;
+    const operatorKeys = operatorRows.map((row) => {
+        const input = row as { readonly name: string; readonly key: ArcadeKeyName };
+        return `${input.name}\0${input.key}`;
+    });
+    return new Set(operatorKeys).size === operatorKeys.length;
 }
 
 // PREDICATE :: UNKNOWN -> BOOLEAN
@@ -590,7 +623,8 @@ export function isMachineInfo(value: unknown): value is MachineInfo {
         && isArrayOf(value.bios, isBiosOption)
         && (value.bios as BiosOption[]).filter((option) => option.isDefault).length <= 1
         && uniqueCaseFolded((value.bios as BiosOption[]).map((option) => option.name))
-        && typeof value.hasNvram === "boolean";
+        && typeof value.hasNvram === "boolean"
+        && typeof value.supportsSave === "boolean";
 }
 
 // PREDICATE :: UNKNOWN -> BOOLEAN

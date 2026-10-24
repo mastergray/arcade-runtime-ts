@@ -1,5 +1,6 @@
 {
     "family": "midway-mcr",
+    "buildId": "66a8f9cee1049aad71598b4a4a414afeb88115e27867b67c515d772f1b072ea7",
     "target": "mame/targets/midway-mcr.lua",
     "list": "mame/targets/midway-mcr.lst",
     "memoryPages": 4096,

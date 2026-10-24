@@ -139,7 +139,7 @@ const attachedSource = (
     scheduler: FakeFrameScheduler,
     target: FakeEventTarget,
     mapping?: GamepadMapping,
-    inputs: MachineInputs = { analog: [], dualStick: false },
+    inputs: MachineInputs = { analog: [], dualStick: false, keys: [], volume: false },
 ) => {
     const session = new FakeArcadeSession({ ...validMachineInfo(), inputs });
     const input = new ArcadeInput({ session });
@@ -335,6 +335,8 @@ const testFile: TestFile = {
                             { player: 1, kind: "dial" }, { player: 1, kind: "trackball-y" },
                         ],
                         dualStick: false,
+                        keys: [],
+                        volume: false,
                     };
                     const { input, session } = attachedSource(provider, scheduler, new FakeEventTarget(), undefined, inputs);
                     scheduler.tick(16);
@@ -390,6 +392,8 @@ const testFile: TestFile = {
                             { player: 1, kind: "pedal-1" }, { player: 1, kind: "pedal-2" },
                         ],
                         dualStick: false,
+                        keys: [],
+                        volume: false,
                     };
                     const { session } = attachedSource(provider, scheduler, new FakeEventTarget(), CUSTOM_MAPPING, inputs);
                     scheduler.tick(16);
@@ -410,7 +414,7 @@ const testFile: TestFile = {
                     const provider = new FakeGamepadProvider();
                     provider.pads = [pad("pad", 0, [14], [-1, -1, 1, 1])];
                     const scheduler = new FakeFrameScheduler();
-                    const { session } = attachedSource(provider, scheduler, new FakeEventTarget(), undefined, { analog: [], dualStick: true });
+                    const { session } = attachedSource(provider, scheduler, new FakeEventTarget(), undefined, { analog: [], dualStick: true, keys: [], volume: false });
                     scheduler.tick(16);
                     return { held: session.held, calls: session.calls };
                 })

@@ -5,7 +5,7 @@ import ArcadeInput from "../ArcadeInput/ArcadeInput.js";          // Input recei
 import ArcadeRuntimeError from "../ArcadeRuntimeError/ArcadeRuntimeError.js";   // Typed config and lifecycle failures
 
 // Type dependencies:
-import { isKeyCode, type ArcadeControl, type KeyCode } from "../shared.types.js";   // Event-code validation and default-map values
+import { isKeyCode, type ArcadeControl, type ArcadeKeyName, type KeyCode } from "../shared.types.js";   // Event-code validation and default-map values
 import type { ArcadeInputChannel } from "../ArcadeInput/types.js";   // Independently releasable source channel
 import {
     isKeyboardSourceConfig,                                       // Guards direct construction
@@ -27,6 +27,12 @@ import {
 // Freezes one default-map value so the exported map is immutable at both levels.
 const frozenControl = <T extends ArcadeControl>(control: T): T => Object.freeze(control);
 
+const PASSTHROUGH_KEYS: Readonly<Record<string, ArcadeKeyName>> = Object.freeze({
+    F1: "F1", F2: "F2", F5: "F5", F6: "F6",
+    Digit0: "0", Digit1: "1", Digit2: "2", Digit3: "3", Digit4: "4",
+    Digit5: "5", Digit6: "6", Digit7: "7", Digit8: "8", Digit9: "9",
+});                                                               // Browser codes whose field-level MAME meanings remain reachable
+
 // MAME 0.161 src/emu/inpttype.h defaults are used for P2: R/F/D/G directions,
 // A/S/Q/W buttons 1–4, Digit6 coin and Digit2 start. P2 buttons 5–6 have no
 // keyboard defaults in that pinned file, so this map deliberately leaves them unbound.
@@ -47,6 +53,8 @@ export const DEFAULT_KEYBOARD_MAP: KeyboardMap = Object.freeze({
     Digit1: frozenControl({ kind: "start", player: 1 }),
     F2: frozenControl({ kind: "test" }),
     Digit9: frozenControl({ kind: "service" }),
+    Equal: frozenControl({ kind: "volume", direction: "up" }),
+    Minus: frozenControl({ kind: "volume", direction: "down" }),
     KeyR: frozenControl({ kind: "direction", player: 2, direction: "up" }),
     KeyF: frozenControl({ kind: "direction", player: 2, direction: "down" }),
     KeyD: frozenControl({ kind: "direction", player: 2, direction: "left" }),
@@ -77,6 +85,7 @@ export default class KeyboardSource {
     private readonly _target: KeyboardEventTargetLike;            // keydown, keyup and blur target
     private readonly _visibilityTarget: KeyboardVisibilityTargetLike;   // visibilitychange target
     private readonly _preventDefault: boolean;                     // Whether handled events suppress browser defaults
+    private readonly _passthroughKeys: boolean;                    // Whether operator keys accompany page-map controls
     private readonly _onKeyDown: (event: Event) => void;           // Bound keydown listener
     private readonly _onKeyUp: (event: Event) => void;             // Bound keyup listener
     private readonly _onBlur: (event: Event) => void;              // Bound blur listener
@@ -95,6 +104,7 @@ export default class KeyboardSource {
         this._target = config.target;
         this._visibilityTarget = config.visibilityTarget ?? config.target;
         this._preventDefault = config.preventDefault ?? KeyboardSource.DEFAULT_PREVENT_DEFAULT;
+        this._passthroughKeys = config.passthroughKeys ?? true;
         this._onKeyDown = (event) => this.handleKey(event, true);
         this._onKeyUp = (event) => this.handleKey(event, false);
         this._onBlur = () => this.releaseHeld();
@@ -178,17 +188,23 @@ export default class KeyboardSource {
      */
 
     // PRIVATE :: event, BOOLEAN -> VOID
-    // Forwards a mapped non-repeating key event through this source's channel.
+    // Forwards mapped and field-level pass-through controls for one non-repeating key event.
     private handleKey(event: Event, pressed: boolean): void {
         if (this._destroyed || !this._enabled) return;
         const keyboard = event as KeyboardEvent;
         if (!isKeyCode(keyboard.code)) return;
-        if (!Object.prototype.hasOwnProperty.call(this._map, keyboard.code)) return;
+        const mapped = Object.prototype.hasOwnProperty.call(this._map, keyboard.code)
+            ? this._map[keyboard.code as KeyCode]
+            : undefined;
+        const key = this._passthroughKeys ? PASSTHROUGH_KEYS[keyboard.code] : undefined;
+        if (mapped === undefined && key === undefined) return;
         if (pressed && keyboard.repeat) return;
-        const control = this._map[keyboard.code as KeyCode];
-        if (control === undefined) return;
-        if (pressed) this._channel.press(control);
-        else this._channel.release(control);
+        const forward = (control: ArcadeControl): void => {
+            if (pressed) this._channel.press(control);
+            else this._channel.release(control);
+        };
+        if (mapped !== undefined) forward(mapped);
+        if (key !== undefined) forward({ kind: "key", key });
         if (this._preventDefault) event.preventDefault();
     }
 

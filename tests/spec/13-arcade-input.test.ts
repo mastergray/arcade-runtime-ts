@@ -44,6 +44,8 @@ const BUTTON_2 = { kind: "button", player: 2, button: 6 } as const satisfies Arc
 const COIN_1 = { kind: "coin", player: 1 } as const satisfies ArcadeControl;
 const START_2 = { kind: "start", player: 2 } as const satisfies ArcadeControl;
 const SERVICE = { kind: "service" } as const satisfies ArcadeControl;
+const KEY_F1 = { kind: "key", key: "F1" } as const satisfies ArcadeControl;
+const VOLUME_DOWN = { kind: "volume", direction: "down" } as const satisfies ArcadeControl;
 const STICK_X_1 = { player: 1, kind: "stick-x" } as const satisfies ArcadeAxis;
 const PEDAL_1 = { player: 1, kind: "pedal-1" } as const satisfies ArcadeAxis;
 const SPIN_X_1 = { player: 1, kind: "spin-x" } as const satisfies ArcadeAxis;
@@ -367,6 +369,31 @@ const testFile: TestFile = {
                 .assert("down is cleared exactly once and up remains", (state) => state.subject, P.equals<unknown>({
                     snapshot: [UP_1],
                     calls: [controlCall(DOWN_1, true), controlCall(DOWN_1, false), controlCall(UP_1, true)],
+                }))
+                .start(undefined),
+        },
+        {
+            label: "operator keys and cabinet volume preserve their values through holds, taps and releaseAll",
+            run: () => CTGTest.init("coded-field controls")
+                .stage("hold a key, tap volume, then release everything", () => {
+                    const { input, session } = rig();
+                    input.press(KEY_F1);
+                    input.tap(VOLUME_DOWN, 2);
+                    const snapshot = input.snapshot;
+                    session.emitTick();
+                    const duringTap = input.snapshot;
+                    session.emitTick();
+                    input.releaseAll();
+                    return { snapshot, duringTap, final: input.snapshot, calls: session.calls };
+                })
+                .assert("both new control kinds pass through unchanged", (state) => state.subject, P.equals<unknown>({
+                    snapshot: [KEY_F1, VOLUME_DOWN],
+                    duringTap: [KEY_F1, VOLUME_DOWN],
+                    final: [],
+                    calls: [
+                        controlCall(KEY_F1, true), controlCall(VOLUME_DOWN, true),
+                        controlCall(VOLUME_DOWN, false), controlCall(KEY_F1, false),
+                    ],
                 }))
                 .start(undefined),
         },

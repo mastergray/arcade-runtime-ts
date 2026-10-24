@@ -112,6 +112,10 @@
     #corner-menu[open] summary { border-radius: 6px 6px 0 0; }
     .menu-body { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; border: 1px solid #3e4a55; border-top: 0; border-radius: 0 0 6px 6px; background: #10161bef; padding: 10px; box-shadow: 0 8px 24px #000a; }
     .menu-body button { min-height: 34px; font-size: .76rem; padding: 5px 7px; }
+    #operator-controls { grid-column: 1 / -1; }
+    #operator-controls h3 { margin: 3px 0 7px; color: #c0cad3; font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; }
+    #operator-buttons { display: grid; gap: 8px; }
+    #operator-buttons button { width: 100%; }
     .menu-body .check { min-height: 34px; font-size: .72rem; }
     #gamepads { grid-column: 1 / -1; margin: 2px 0 0; color: #aeb9c4; font-size: .73rem; line-height: 1.5; }
     #clear-saves-retry { grid-column: 1 / -1; border-color: #b95e55; background: #762f2b; }
@@ -190,8 +194,14 @@
       <button id="hard-reset" type="button" disabled>Hard reset</button>
       <button id="save-state" type="button" disabled>Save state</button>
       <button id="load-state" type="button" disabled>Load state</button>
+      <button id="volume-up" type="button" disabled hidden>Volume up</button>
+      <button id="volume-down" type="button" disabled hidden>Volume down</button>
       <button id="persist" type="button" disabled>Save changes</button>
       <button id="clear-saves" type="button" disabled>Clear saved play</button>
+      <section id="operator-controls" hidden>
+        <h3>Operator</h3>
+        <div id="operator-buttons"></div>
+      </section>
       <label class="check"><input id="autosave" type="checkbox"> Save changes automatically</label>
       <label class="check"><input id="keyboard-enabled" type="checkbox" checked> Keyboard</label>
       <label class="check"><input id="gamepads-enabled" type="checkbox" checked> Gamepads</label>

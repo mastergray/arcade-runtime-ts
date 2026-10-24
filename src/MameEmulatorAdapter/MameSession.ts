@@ -13,6 +13,7 @@ import {
 import type {
     ArcadeAxis,                                                   // Axis vocabulary mapped to web-pad axes
     ArcadeControl,                                                // Input vocabulary mapped to web-pad items
+    ArcadeKeyName,                                                // Field-level operator-key names
     ArcadeSession,                                                // Contract this session implements
     FrameEvent,                                                   // Copied video callback payload
     FrameScheduler,                                               // Injected animation-frame boundary
@@ -131,6 +132,12 @@ const AXIS_ITEMS: Readonly<Record<ArcadeAxis["kind"], number>> = Object.freeze({
     "spin-x": 5,
     "spin-y": 6,
 });                                                               // §4.3.1 axis order
+
+const KEY_ITEMS: Readonly<Record<ArcadeKeyName, number>> = Object.freeze({
+    F1: 29, F2: 30, F5: 31, F6: 32,
+    "0": 33, "1": 34, "2": 35, "3": 36, "4": 37,
+    "5": 38, "6": 39, "7": 40, "8": 41, "9": 42,
+});                                                               // Field-level operator-key item order on Web Pad 1
 
 /**
  *
@@ -320,6 +327,16 @@ export default class MameSession implements ArcadeSession, MameWebCallbacks {
         if ("player" in control && control.player > this.machine.players) return;
         if (control.kind === "button" && control.button > this.machine.buttons) return;
         if (control.kind === "select") return;                    // M1 MachineInfo has no select-port field; enabled by W16
+        if (control.kind === "key") {
+            if (!this.machine.inputs.keys.some((input) => input.key === control.key)) return;
+            this._setControl(0, KEY_ITEMS[control.key], pressed ? 1 : 0);
+            return;
+        }
+        if (control.kind === "volume") {
+            if (!this.machine.inputs.volume) return;
+            this._setControl(0, control.direction === "up" ? 27 : 28, pressed ? 1 : 0);
+            return;
+        }
         const mapped = CONTROL_ITEMS[arcadeControlKey(control)];
         if (mapped !== undefined) this._setControl(mapped[0], mapped[1], pressed ? 1 : 0);
     }

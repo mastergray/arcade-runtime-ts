@@ -279,13 +279,24 @@ export default class ArcadePlayer {
     // INSTANCE :: STRING? -> PROMISE(VOID)
     // Forwards a named save-state write, defaulting to quick.
     saveState(slot = "quick"): Promise<void> {
-        return this.requireSession("saveState").saveState(slot);
+        const session = this.requireSession("saveState");
+        if (!session.machine.supportsSave) return Promise.reject(new ArcadeRuntimeError({
+            code: ArcadeRuntimeError.CODE.UNSUPPORTED,
+            message: "This MAME 0.161 driver does not set GAME_SUPPORTS_SAVE.",
+            data: "GAME_SUPPORTS_SAVE",
+        }));
+        return session.saveState(slot);
     }
 
     // INSTANCE :: STRING? -> PROMISE(VOID)
     // Releases controls before forwarding a named state restore, defaulting to quick.
     loadState(slot = "quick"): Promise<void> {
         const session = this.requireSession("loadState");
+        if (!session.machine.supportsSave) return Promise.reject(new ArcadeRuntimeError({
+            code: ArcadeRuntimeError.CODE.UNSUPPORTED,
+            message: "This MAME 0.161 driver does not set GAME_SUPPORTS_SAVE.",
+            data: "GAME_SUPPORTS_SAVE",
+        }));
         this._input?.releaseAll();
         return session.loadState(slot);
     }

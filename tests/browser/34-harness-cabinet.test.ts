@@ -32,6 +32,8 @@ interface SyntheticResult {
     readonly resolvedFromStore: boolean;
     readonly removedOne: boolean;
     readonly storeCleared: boolean;
+    readonly operatorControls: boolean;
+    readonly saveGuarded: boolean;
 }
 
 // INTERFACE :: privacy-safe observations of save controls against the production family build
@@ -132,8 +134,9 @@ const SCRIPTED_ADAPTER = `
                     players: 2,
                     buttons: 2,
                     bios: [],
-                    inputs: { analog: [], dualStick: false },
-                    hasNvram: true
+                    inputs: { analog: [], dualStick: false, keys: [{ name: "Advance", key: "F2", player: 1 }], volume: true },
+                    hasNvram: true,
+                    supportsSave: false
                 },
                 sampleRate: 48000,
                 setControl: () => undefined,
@@ -328,6 +331,12 @@ const cases: TestCase[] = [
                     resolvedFromStore: state.startedRoms?.length === 2 && state.startedRoms.every((rom) => rom.byteLength > 0),
                     removedOne: state.removedOne === true,
                     storeCleared: document.querySelector("#stored-files")?.textContent?.includes("No files are saved") === true,
+                    operatorControls: document.querySelector("#operator-buttons")?.textContent?.includes("Advance (F2)") === true
+                        && document.querySelector<HTMLButtonElement>("#volume-up")?.hidden === false
+                        && document.querySelector<HTMLButtonElement>("#volume-down")?.hidden === false,
+                    saveGuarded: document.querySelector<HTMLButtonElement>("#save-state")?.disabled === true
+                        && document.querySelector<HTMLButtonElement>("#save-state")?.title === "This driver cannot save in 0.161"
+                        && document.querySelector<HTMLButtonElement>("#load-state")?.disabled === true,
                 };
             }), P.equals<SyntheticResult>({
                 pickedVisible: true,
@@ -340,6 +349,8 @@ const cases: TestCase[] = [
                 resolvedFromStore: true,
                 removedOne: true,
                 storeCleared: true,
+                operatorControls: true,
+                saveGuarded: true,
             }))
             .start(url, { headless: true, timeout: TIMEOUT })),
     },
@@ -360,16 +371,20 @@ if (CONFIG_ARGUMENT !== undefined) cases.push({
                     running: true,
                     firstFrame: true,
                     storeCount: document.querySelectorAll(".store-remove").length,
+                    supportsSave: document.querySelector<HTMLButtonElement>("#save-state")?.disabled === false,
                 };
             });
         })
-        .interact("save quick state, persist it and clear only save storage", async ({ page }) => {
+        .interact("save quick state (This driver cannot save in 0.161)", async ({ page }) => {
             await page.evaluate(() => { document.querySelector<HTMLDetailsElement>("#corner-menu")!.open = true; });
             await page.locator("#save-state").click();
             await page.waitForFunction(() => document.querySelector<HTMLElement>("#status")?.dataset.state === "state-saved");
             await page.evaluate(() => {
                 (window as unknown as Window & { __arcadeHarnessProduction: Record<string, unknown> }).__arcadeHarnessProduction.quickSaved = true;
             });
+        })
+        .skip("save quick state (This driver cannot save in 0.161)", async (state) => state.page !== null && state.page.locator("#save-state").isDisabled())
+        .interact("persist and clear only save storage", async ({ page }) => {
             await page.locator("#persist").click();
             await page.waitForFunction(() => document.querySelector<HTMLElement>("#status")?.dataset.state === "persisted");
             await page.evaluate(() => {
@@ -405,7 +420,7 @@ if (CONFIG_ARGUMENT !== undefined) cases.push({
             return {
                 running: state.running === true,
                 firstFrame: state.firstFrame === true,
-                quickSaved: state.quickSaved === true,
+                quickSaved: state.supportsSave === false || state.quickSaved === true,
                 persisted: state.persisted === true,
                 savesCleared: state.savesCleared === true,
                 restarted: document.querySelector<HTMLElement>("#status")?.dataset.state === "running",

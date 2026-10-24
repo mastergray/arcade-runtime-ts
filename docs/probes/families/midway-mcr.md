@@ -35,8 +35,8 @@ The extension adds the driver, machine and video units from `williams.c`;
 already selected by the family. Source inspection added `BANKDEV` for the
 driver's address-map banks and `machine/ticket.c` from MAME's shared block for
 its ticket device. The first complete extended link found no other missing
-unit or selectable core. The resulting build identity is
-`b0d867ffc6121773fb03c1ae81c7fe40e5d6dcb8f1a31fca6b39b492c01a1f0e`.
+unit or selectable core. The resulting W29 build identity is
+`66a8f9cee1049aad71598b4a4a414afeb88115e27867b67c515d772f1b072ea7`.
 
 The prescribed build without the compatibility environment compiled the
 whole pre-extension family and reached the final link in 167.01 seconds, where
@@ -144,3 +144,12 @@ pedals to RX, dials and trackball X to `ADDREL1`, and trackball Y to `ADDREL2`.
 `HAT1` supplies decrement/increment fallback for each directional analogue
 port, and `BUTTON13` supplies the pedal press fallback. No runtime or
 controller-config change is required by this extension.
+
+## W29 coded-field rebuild
+
+The eight-job W29 rebuild completed with 100 machines and rewrites the
+`williams.c` fields `Auto Up / Manual Down`, `Advance` and `High Score Reset`
+with the pad-1 items for F1, F2 and 9 respectively. Browser confirmation of
+the operator paths is pending because this sandbox cannot launch Chromium or
+bind a loopback listener; the gated bridge cases record the integrator
+assertions for both ignored family preloads.

@@ -643,7 +643,12 @@ const testFile: TestFile = {
             label: "heap callbacks copy into reused buffers and control mapping ignores unavailable ports",
             run: () => CTGTest.init("MAME callbacks and controls")
                 .stage("emit heap callbacks", async () => {
-                    const module = new FakeMameModule(machineInfoWithoutFamily({ players: 2, buttons: 2 }));
+                    const module = new FakeMameModule(machineInfoWithoutFamily({
+                        players: 2,
+                        buttons: 2,
+                        inputs: { analog: [], dualStick: true, keys: [{ name: "Advance", key: "F1", player: 1 }], volume: true },
+                        supportsSave: false,
+                    }));
                     const { session, web } = await startAndFrame(module);
                     let tickCount = 0;
                     let frame: number[] = [];
@@ -667,18 +672,24 @@ const testFile: TestFile = {
                     session.setControl({ kind: "stick", player: 1, stick: 1, direction: "up" }, true);
                     session.setControl({ kind: "stick", player: 2, stick: 2, direction: "left" }, false);
                     session.setControl({ kind: "pedal", player: 1, pedal: 3 }, true);
+                    session.setControl({ kind: "key", key: "F1" }, true);
+                    session.setControl({ kind: "key", key: "F2" }, true);
+                    session.setControl({ kind: "volume", direction: "up" }, true);
+                    session.setControl({ kind: "volume", direction: "down" }, false);
                     session.setAxis({ player: 1, kind: "stick-x" }, 2);
                     session.setAxis({ player: 2, kind: "pedal-2" }, -2);
                     session.setAxis({ player: 2, kind: "spin-y" }, 3.5);
                     session.setAxis({ player: 3, kind: "stick-y" }, 1);
-                    return { tickCount, frame, sound, controls: module.controlCalls, axes: module.axisCalls };
+                    return { tickCount, frame, sound, controls: module.controlCalls, axes: module.axisCalls, inputs: session.machine.inputs, supportsSave: session.machine.supportsSave };
                 })
                 .assert("copies and mappings", (state) => state.subject, P.equals<unknown>({
                     tickCount: 1,
                     frame: [1, 2, 3, 4],
                     sound: [0.25, -0.5],
-                    controls: [[0, 3, 1], [1, 5, 0], [0, 13, 1], [0, 20, 1], [1, 18, 0], [0, 26, 1]],
+                    controls: [[0, 3, 1], [1, 5, 0], [0, 13, 1], [0, 20, 1], [1, 18, 0], [0, 26, 1], [0, 29, 1], [0, 27, 1], [0, 28, 0]],
                     axes: [[0, 0, 1], [1, 4, -1], [1, 6, 3.5]],
+                    inputs: { analog: [], dualStick: true, keys: [{ name: "Advance", key: "F1", player: 1 }], volume: true },
+                    supportsSave: false,
                 }))
                 .start(undefined),
         },

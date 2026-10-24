@@ -1,5 +1,6 @@
 {
     "family": "atari-gauntlet",
+    "buildId": "d3886d3d0708fa6007b003717b92eb7a981703c65686001044642ba9f067196b",
     "target": "mame/targets/atari-gauntlet.lua",
     "list": "mame/targets/atari-gauntlet.lst",
     "memoryPages": 4096,

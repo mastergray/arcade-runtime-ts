@@ -42,6 +42,7 @@ export interface KeyboardSourceConfig {
     readonly target: KeyboardEventTargetLike;                     // keydown, keyup and blur target
     readonly visibilityTarget?: KeyboardVisibilityTargetLike;     // visibilitychange target; defaults to target
     readonly preventDefault?: boolean;                            // Prevent handled events; true when omitted
+    readonly passthroughKeys?: boolean;                           // Forward field-level operator keys in addition to the map; true when omitted
 }
 
 // INTERFACE :: keyboardSourceConfig with optional browser targets
@@ -52,6 +53,7 @@ export interface KeyboardSourceInitConfig {
     readonly target?: KeyboardEventTargetLike;                    // Defaults to window in init()
     readonly visibilityTarget?: KeyboardVisibilityTargetLike;     // Defaults to document with the default window
     readonly preventDefault?: boolean;                            // Prevent handled events; true when omitted
+    readonly passthroughKeys?: boolean;                           // Forward field-level operator keys in addition to the map; true when omitted
 }
 
 /**
@@ -92,7 +94,8 @@ export function isKeyboardSourceConfig(value: unknown): value is KeyboardSourceC
         && isKeyboardMap(config.map)
         && isKeyboardEventTargetLike(config.target)
         && (config.visibilityTarget === undefined || isKeyboardVisibilityTargetLike(config.visibilityTarget))
-        && (config.preventDefault === undefined || typeof config.preventDefault === "boolean");
+        && (config.preventDefault === undefined || typeof config.preventDefault === "boolean")
+        && (config.passthroughKeys === undefined || typeof config.passthroughKeys === "boolean");
 }
 
 // PREDICATE :: UNKNOWN -> BOOLEAN
@@ -104,5 +107,6 @@ export function isKeyboardSourceInitConfig(value: unknown): value is KeyboardSou
         && isKeyboardMap(config.map)
         && (config.target === undefined || isKeyboardEventTargetLike(config.target))
         && (config.visibilityTarget === undefined || isKeyboardVisibilityTargetLike(config.visibilityTarget))
-        && (config.preventDefault === undefined || typeof config.preventDefault === "boolean");
+        && (config.preventDefault === undefined || typeof config.preventDefault === "boolean")
+        && (config.passthroughKeys === undefined || typeof config.passthroughKeys === "boolean");
 }
