@@ -66,8 +66,9 @@ const FAMILY_TARGETS: readonly FamilyTarget[] = [
             "src/mame/drivers/mcr.c",
             "src/mame/drivers/mcr3.c",
             "src/mame/drivers/mcr68.c",
+            "src/mame/drivers/williams.c",
         ],
-        expectedMachines: 54,
+        expectedMachines: 100,
     },
     {
         id: "midway-tunit",

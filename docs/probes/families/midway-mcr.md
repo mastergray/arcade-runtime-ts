@@ -1,18 +1,20 @@
-# Midway MCR family probe
+# Midway MCR family probe (including `williams.c`)
 
-Observed 2026-10-21 on Linux x86-64 with Node.js 22.22.2, npm 10.9.7,
-GNU gzip 1.10, the pinned MAME 0.161 source archive and Emscripten 1.38.31.
-No ROM content was supplied to the build or metadata steps.
+Whole-family F1–F3 evidence was refreshed 2026-10-24 on Linux x86-64 with
+Node.js 22.22.2, npm 10.9.7, GNU gzip 1.10, the pinned MAME 0.161 source
+archive and Emscripten 1.38.31. No ROM content was supplied to the build or
+metadata steps.
 
 ## F1 — Does the target pair compile and expose every machine?
 
-The committed [`midway-mcr.lua`](../../../mame/targets/midway-mcr.lua) and
+The extended [`midway-mcr.lua`](../../../mame/targets/midway-mcr.lua) and
 [`midway-mcr.lst`](../../../mame/targets/midway-mcr.lst) pair compiled through
 the production pipeline. The generated module completed the ROM-free
 `-listfull` and `-listxml` paths, and the threading gate reported one fixed,
 non-shared 4,096-page memory with no worker or pthread markers.
 
 ```sh
+BASH_ENV="$PWD/.cache/w28b-bash-env.sh" \
 EMSDK_DIR="$PWD/res/emsdk" \
   node --import tsx scripts/build-mame.ts midway-mcr --jobs 4
 
@@ -22,107 +24,123 @@ npm run probe:mame:threading -- \
 
 | Result | Reused-source wall time | `-listfull` machines | ROM-set metadata files |
 | ------ | ----------------------: | -------------------: | ---------------------: |
-| Pass | 30.68 s | 54 | 54 |
+| Pass | 32.14 s | 100 | 100 |
 
-The machine count equals the independently derived total from `mcr.c`,
-`mcr3.c` and `mcr68.c`; the list needed no correction. Source inspection
-added `audio/williams.c` for the CVSD board configured by MCR-68. The first
-link then proved that the MCR and IPU configurations also require the
-separately selected Z80 CTC, PIO and DART cores. Adding `Z80CTC`, `Z80PIO`
-and `Z80DART` resolved every undefined symbol; no further target correction
-was needed.
+Independent derivation found 29 machines in `mcr.c`, 12 in `mcr3.c`, 13 in
+`mcr68.c` and 46 in `williams.c`. The 100-entry result matched production
+`-listfull`, so no list correction was needed.
 
-The sandbox presents captured child-process output to the SDK's bundled
-Node 8 as an unsupported stream, so the prescribed command reached the link
-and then stopped in Node bootstrap with `ERR_UNKNOWN_STREAM_TYPE`. The
-successful timed pass used the same pinned Emscripten compiler, optimizer,
-Binaryen, flags, cache and source tree, with only `compiler.js` directed to
-host Node 22 through a temporary untracked SDK environment. No repository or
-shared toolchain file was changed. The resulting build identity is
-`3259065f9c30a7140825db7909ebc874dd261ea75f28f95ab9559e45eae0c833`.
+The extension adds the driver, machine and video units from `williams.c`;
+`audio/williams.c` and the M6800, M6809, PIA, DAC and HC55516 cores were
+already selected by the family. Source inspection added `BANKDEV` for the
+driver's address-map banks and `machine/ticket.c` from MAME's shared block for
+its ticket device. The first complete extended link found no other missing
+unit or selectable core. The resulting build identity is
+`b0d867ffc6121773fb03c1ae81c7fe40e5d6dcb8f1a31fca6b39b492c01a1f0e`.
+
+The prescribed build without the compatibility environment compiled the
+whole pre-extension family and reached the final link in 167.01 seconds, where
+the SDK-bundled Node 8 process stopped with `ERR_UNKNOWN_STREAM_TYPE` on the
+runner's captured standard streams. The successful ignored process-local
+configuration selects host Node 22 for Emscripten's JavaScript helpers only;
+the pinned C/C++ compiler, native optimizer, Binaryen, source, flags and
+production pipeline remain unchanged.
 
 ## F2 — What are the raw, gzip and Brotli sizes of the Wasm and JavaScript?
 
 Raw sizes are filesystem byte counts. Compressed sizes use `gzip -9 -c` and
 Node.js `brotliCompressSync` with `BROTLI_PARAM_QUALITY=11`, matching the
-method in [`family-sizes.md`](../mame0161/family-sizes.md).
+method in [`family-sizes.md`](../mame0161/family-sizes.md). The before row was
+rebuilt from current main immediately before extending the target.
 
-| Artifact | Raw bytes | gzip -9 | Brotli 11 |
-| -------- | --------: | -------: | ---------: |
-| Wasm | 6,305,176 | 1,627,928 | 1,220,386 |
-| JavaScript | 302,961 | 65,636 | 55,422 |
+| Artifact state | Raw bytes | gzip -9 | Brotli 11 |
+| -------------- | --------: | -------: | ---------: |
+| Wasm before extension | 6,307,648 | 1,628,903 | 1,221,093 |
+| Wasm after extension | 6,440,836 | 1,669,262 | 1,251,850 |
+| Wasm increase | 133,188 (2.11%) | 40,359 (2.48%) | 30,757 (2.52%) |
+| JavaScript before extension | 303,075 | 65,655 | 55,366 |
+| JavaScript after extension | 303,075 | 65,655 | 55,377 |
+
+The extension therefore adds 30,757 Brotli-11 bytes to the family download
+while exposing 46 additional public machines.
 
 ## F3 — Does the largest ROM set fit in 4,096 pages, and what is the peak?
 
-Summing the public ROM sizes in every generated metadata file finds
-`blasted` largest at 1,114,118 bytes. The safe adapter budget is:
+Summing the public ROM sizes in every generated metadata file finds the
+family maximum at 1,114,118 bytes in `mcr68.c`. The largest `williams.c`
+metadata sum is 291,616 bytes. The safe adapter budget is:
 
 ```text
 4,096 × 65,536 × 0.75 = 201,326,592 bytes (192 MiB)
 ```
 
 Using the full uncompressed ROM sum once for supplied archive bytes and once
-for loaded regions gives a conservative metadata-only peak estimate of
+for loaded regions gives a conservative whole-family peak estimate of
 2,228,236 bytes, 1.11% of the safe budget, leaving 199,098,356 bytes. No
-machine in the family fails the §5 estimate, so the build remains at 4,096
-pages.
+machine in the extended family fails the §5 estimate, so the build remains at
+4,096 pages.
+
+The added driver does not decode large sprite or tile regions at startup. Its
+blitter-heavy path draws into a small 4-bit framebuffer; its largest graphics
+region is 49,152 bytes and its generated color-remap lookup is 65,536 bytes.
+This differs from the large decoded-sprite case called out by W28. If the
+integrator's real browser run nevertheless aborts with the adapter's
+`MEMORY_EXCEEDED` error, rebuild with `memoryPages: 8192` and record the
+observed browser evidence.
 
 ## F4 — What is the slowest Chromium time from `callMain` to first frame?
 
-measured 2026-10-21 (loaded): 933 ms to the first valid frame for a 512×480 interlaced title at 30.000 Hz; see the measured section below.
-
-An ignored lawful private set was supplied to the real adapter and family
-measurement browser cases. The managed sandbox denied the loopback test
-server with `listen EPERM`; a throwaway no-socket Playwright route then
-reached Chromium 151.0.7922.34, but Chromium itself terminated before page
-creation because the sandbox denied its process broker's `shutdown` call.
-The browser suite therefore produced no startup measurement, and a non-blank
-first frame could not be confirmed. No private set identity was logged or
-recorded.
-
-On an unrestricted runner, record wall-clock milliseconds from immediately
-before `adapter.start()` (which covers `callMain`) until it resolves on the
-first valid frame, and separately confirm that a delivered frame contains
-non-black pixel data. Record the browser version and desktop CPU with the
-result.
+`williams.c`, measured by the integrator on 2026-10-24 (Chrome 150, Core i7-1165G7, headless, quiet host) with the ignored preload for the new driver's heaviest title: 299 ms from immediately before `adapter.start()` to the first valid, non-blank frame.
 
 ## F5 — Are native refresh and upright geometry correct?
 
-measured: 512×480 horizontal at 30.000 Hz, every frame at native size; 60 Hz → 30.00 fps (−0.00 %), 90 → 29.96 (−0.13 %), 120 → 29.95 (−0.16 %), 144 → 29.96 (−0.15 %).
-
-The same pre-page Chromium failure prevented a geometry or pacing result.
-Using the ignored lawful config and the mechanics from
-`tests/browser/33-family-measurements.test.ts`, record the public native
-upright width, height and refresh, the delivered frame dimensions, and the
-observed emulated-frame rate plus percentage error at controlled 60, 90, 120
-and 144 Hz cadences. Every cadence must be within 0.5% of native refresh.
+`williams.c` title: 292×240 horizontal at 60.096 Hz, every frame that size, first frame non-blank; cadences 60 Hz → 60.16 fps (+0.11 %), 90 Hz → 60.27 fps (+0.28 %), 120 Hz → 59.94 fps (−0.26 %), 144 Hz → 60.24 fps (+0.24 %), all inside the 1 % gate.
 
 ## F6 — Does the heaviest title sustain full speed?
 
-measured: sixty-second emulated-time ratio 1.0000 on desktop.
+Desktop: emulated seconds / wall seconds = 0.9999 over 60 s, frameskip disabled, blitter-heavy title. M3–M5 acceptance: audio queue peak 81 ms, two pads assigned and released; the keyboard coin/start/play check did **not** change the picture, and a port-level probe (temporary bridge logging, removed again) showed why: every `williams.c` title boots with an empty CMOS into a "factory settings restored" screen that waits for the operator's **Advance** switch, declared as `IPT_OTHER` with a keyboard default code, which the bridge cannot drive (roadmap M37). The same probe showed coin, start and the twin sticks reaching the ports on a fresh boot. Once the CMOS has been written and the machine is started again, the titles boot into attract and play (verified after a harness hard reset, which also exposed roadmap M38: input sources stay bound to the previous session after a hard reset). The 4× CPU-throttled mobile proxy was not run.
 
-The same pre-page Chromium failure prevented the 60-second run. After a
-warm-up interval, measure exactly 60 seconds at the 60 Hz cadence and report
-`emulated seconds / wall seconds`; repeat under Chromium's 4× CPU-throttled
-mobile proxy as informational evidence. Record browser version, CPU and
-whether frameskip was disabled. The available lawful set is not asserted to
-be the family's heaviest title, so the strict heaviest-title gate remains
-pending even after that set is measured.
+Run F4–F6 without disclosing the private selection:
 
-## F4–F6 measured 2026-10-21/22
+```sh
+ARCADE_PRELOAD_CONFIG="$PWD/res/preload-midway-mcr.json" \\
+ARCADE_FAMILY_CONFIGS="$PWD/res/preload-midway-mcr.json" \\
+  npm run test:browser
+```
 
-Measured with the `build-mame` production artifact, headless Chromium on the
-desktop host, the real adapter driven through
-`tests/browser/33-family-measurements.test.ts` (injected scheduler at a
-controlled cadence against a real clock) and the M3–M5 acceptance in
-`tests/browser/36-input-audio-acceptance.test.ts`. Identities stay in the
-ignored preload configs; titles are described by their native geometry.
-Runs marked "loaded" overlapped three Emscripten builds on the same host and
-are conservative; the 60 s ratio tolerance is 2 %, the cadence tolerance 1 %.
+The integrator's host run: 31 passed, 1 failed (the keyboard play check, explained above), 25 skipped by design.
 
-| Title | F4 | F5 | F6 | Acceptance |
-| ----- | -- | -- | -- | ---------- |
-| 512×480 interlaced horizontal at 30.000 Hz (loaded) | 933 ms | 60 → 30.00 fps (−0.00 %), 90 → 29.96 (−0.13 %), 120 → 29.95 (−0.16 %), 144 → 29.96 (−0.15 %) | 1.0000 | M3–M5 pass |
+## F11 — Which analogue and dual-stick ports occur?
 
-The 30 Hz interlaced board is the first sub-60 Hz native refresh verified
-through the accumulator: one native period per two 60 Hz ticks.
+`mcr.c` declares `IPT_DIAL` over 6-, 7- and 8-bit ranges with
+sensitivity/key-delta pairs 3/50, 10/10, 40/10 and 50/10, generally reversed.
+Its `IPT_AD_STICK_X/Y` declarations use ranges 48–152 at sensitivity 100 and
+key delta 52, plus X instances over 0–206 at sensitivity 100 and key delta 10.
+Its full-range `IPT_TRACKBALL_X/Y` declarations use sensitivity 50 and key
+delta 10, with reversed Y, plus one Y instance at sensitivity 100 and key
+delta 10.
+
+`mcr3.c` declares 6- and 8-bit `IPT_DIAL` at sensitivity 25 or 50 and key
+delta 10, reversed; `IPT_PEDAL` at 0x30–0xff, sensitivity 100, key delta 10
+and reverse, plus a 60–180 instance without reverse; and `IPT_PADDLE` at
+0x34–0xb4, sensitivity 40, key delta 10 and reverse, plus a full-range
+instance at sensitivity 40 and key delta 10.
+
+`mcr68.c` declares full-range reversed `IPT_DIAL` at sensitivity 50 and key
+delta 10; `IPT_PEDAL` at 0x30–0xff, sensitivity 100, key delta 10 and reverse;
+`IPT_PADDLE` at 0x10–0xf0, sensitivity 80, key delta 10 and reverse;
+`IPT_AD_STICK_X/Y` at 0x00–0x6f, sensitivity 100 and key delta 10, with
+reverse on one X variant; and full-range `IPT_TRACKBALL_X/Y` at sensitivity
+100 and key delta 20, with reversed Y.
+
+`williams.c` adds `IPT_AD_STICK_X/Y` at 0x00–0x6f, sensitivity 100 and key
+delta 10, with reversed Y; another X/Y pair uses 0x00–0x3f, sensitivity 25
+and key delta 10. It also adds full-range `IPT_TRACKBALL_X/Y` for two players
+at sensitivity 25 and key delta 32, with reversed Y. None of the four driver
+files declares a centre delta for these ports.
+
+W26's generated standard sequences bind AD-stick X/Y and paddles to X/Y axes,
+pedals to RX, dials and trackball X to `ADDREL1`, and trackball Y to `ADDREL2`.
+`HAT1` supplies decrement/increment fallback for each directional analogue
+port, and `BUTTON13` supplies the pedal press fallback. No runtime or
+controller-config change is required by this extension.
