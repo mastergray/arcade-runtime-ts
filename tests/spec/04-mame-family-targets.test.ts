@@ -86,8 +86,9 @@ const FAMILY_TARGETS: readonly FamilyTarget[] = [
             "src/mame/drivers/snowbros.c",
             "src/mame/drivers/shadfrce.c",
             "src/mame/drivers/btoads.c",
+            "src/mame/drivers/cninja.c",
         ],
-        expectedMachines: 111,
+        expectedMachines: 131,
     },
     {
         id: "konami-16",

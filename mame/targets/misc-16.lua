@@ -64,6 +64,12 @@ _G["createProjects_mame_misc-16"] = function(_target, _subtarget)
 		MAME_DIR .. "src/mame/video/decbac06.c",
 		MAME_DIR .. "src/mame/video/decmxc06.c",
 		MAME_DIR .. "src/mame/video/deckarn.c",
+		MAME_DIR .. "src/mame/drivers/cninja.c",
+		MAME_DIR .. "src/mame/video/cninja.c",
+		MAME_DIR .. "src/mame/machine/deco146.c",
+		MAME_DIR .. "src/mame/video/deco16ic.c",
+		MAME_DIR .. "src/mame/video/decocomn.c",
+		MAME_DIR .. "src/mame/video/decospr.c",
 
 		MAME_DIR .. "src/mame/drivers/raiden.c",
 		MAME_DIR .. "src/mame/video/raiden.c",

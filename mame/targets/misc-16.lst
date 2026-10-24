@@ -1,5 +1,5 @@
 // Derived from pinned MAME 0.161 source (run at the source root):
-// for driver in dec0 karnov raiden raiden2 r2dx_v33 snowbros shadfrce btoads; do
+// for driver in dec0 karnov raiden raiden2 r2dx_v33 snowbros shadfrce btoads cninja; do
 //   comm -12 \
 //     <(sed -nE 's/^[[:space:]]*(GAME|GAMEL|GAME_CUSTOM)[[:space:]]*[(][^,]+,[[:space:]]*([a-z0-9_]+).*/\2/p' "src/mame/drivers/$driver.c" | LC_ALL=C sort -u) \
 //     <(sed -nE 's/^([a-z0-9_]+)([[:space:]]*\/\/.*)?$/\1/p' src/mame/mame.lst | LC_ALL=C sort -u) \
@@ -20,10 +20,20 @@ chelnovj // src/mame/drivers/karnov.c
 chelnovjbl // src/mame/drivers/karnov.c
 chelnovjbla // src/mame/drivers/karnov.c
 chelnovu // src/mame/drivers/karnov.c
+cninja // src/mame/drivers/cninja.c
+cninja1 // src/mame/drivers/cninja.c
+cninjabl // src/mame/drivers/cninja.c
+cninjabl2 // src/mame/drivers/cninja.c
+cninjau // src/mame/drivers/cninja.c
 cookbib2 // src/mame/drivers/snowbros.c
 cookbib3 // src/mame/drivers/snowbros.c
+deathbrd // src/mame/drivers/cninja.c
 drgninja // src/mame/drivers/dec0.c
 drgninjab // src/mame/drivers/dec0.c
+edrandy // src/mame/drivers/cninja.c
+edrandy1 // src/mame/drivers/cninja.c
+edrandy2 // src/mame/drivers/cninja.c
+edrandyj // src/mame/drivers/cninja.c
 ffantasy // src/mame/drivers/dec0.c
 ffantasya // src/mame/drivers/dec0.c
 ffantasybl // src/mame/drivers/dec0.c
@@ -34,6 +44,7 @@ hippodrm // src/mame/drivers/dec0.c
 honeydol // src/mame/drivers/snowbros.c
 hyperpac // src/mame/drivers/snowbros.c
 hyperpacb // src/mame/drivers/snowbros.c
+joemac // src/mame/drivers/cninja.c
 karnov // src/mame/drivers/karnov.c
 karnova // src/mame/drivers/karnov.c
 karnovj // src/mame/drivers/karnov.c
@@ -44,6 +55,10 @@ midresj // src/mame/drivers/dec0.c
 midresu // src/mame/drivers/dec0.c
 moremore // src/mame/drivers/snowbros.c
 moremorp // src/mame/drivers/snowbros.c
+mutantf // src/mame/drivers/cninja.c
+mutantf2 // src/mame/drivers/cninja.c
+mutantf3 // src/mame/drivers/cninja.c
+mutantf4 // src/mame/drivers/cninja.c
 nzeroteam // src/mame/drivers/r2dx_v33.c
 pzlbreak // src/mame/drivers/snowbros.c
 r2dx_v33 // src/mame/drivers/r2dx_v33.c
@@ -79,6 +94,10 @@ raident // src/mame/drivers/raiden.c
 raidenu // src/mame/drivers/raiden.c
 raidenua // src/mame/drivers/raiden.c
 robocop // src/mame/drivers/dec0.c
+robocop2 // src/mame/drivers/cninja.c
+robocop2j // src/mame/drivers/cninja.c
+robocop2u // src/mame/drivers/cninja.c
+robocop2ua // src/mame/drivers/cninja.c
 robocopb // src/mame/drivers/dec0.c
 robocopj // src/mame/drivers/dec0.c
 robocopu // src/mame/drivers/dec0.c
@@ -100,6 +119,7 @@ snowbrosc // src/mame/drivers/snowbros.c
 snowbrosd // src/mame/drivers/snowbros.c
 snowbrosj // src/mame/drivers/snowbros.c
 snowbroswb // src/mame/drivers/snowbros.c
+stoneage // src/mame/drivers/cninja.c
 suhosong // src/mame/drivers/snowbros.c
 toppyrap // src/mame/drivers/snowbros.c
 toto // src/mame/drivers/snowbros.c
