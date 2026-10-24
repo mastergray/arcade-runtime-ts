@@ -8,6 +8,7 @@
 
 CPUS["I86"] = true
 CPUS["M6502"] = true
+CPUS["MCS48"] = true
 
 SOUNDS["SAMPLES"] = true
 SOUNDS["DAC"] = true
