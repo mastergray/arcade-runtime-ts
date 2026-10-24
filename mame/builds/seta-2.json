@@ -1,0 +1,10 @@
+{
+    "family": "seta-2",
+    "target": "mame/targets/seta-2.lua",
+    "list": "mame/targets/seta-2.lst",
+    "memoryPages": 4096,
+    "sources": [
+        "src/mame/drivers/seta2.c",
+        "src/mame/video/seta2.c"
+    ]
+}
