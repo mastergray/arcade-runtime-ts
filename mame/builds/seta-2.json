@@ -5,6 +5,7 @@
     "memoryPages": 4096,
     "sources": [
         "src/mame/drivers/seta2.c",
-        "src/mame/video/seta2.c"
+        "src/mame/video/seta2.c",
+        "src/mame/machine/ticket.c"
     ]
 }

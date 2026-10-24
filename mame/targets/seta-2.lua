@@ -44,6 +44,7 @@ _G["createProjects_mame_seta-2"] = function(_target, _subtarget)
 	files {
 		MAME_DIR .. "src/mame/drivers/seta2.c",
 		MAME_DIR .. "src/mame/video/seta2.c",
+		MAME_DIR .. "src/mame/machine/ticket.c",
 	}
 end
 
