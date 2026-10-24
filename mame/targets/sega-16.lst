@@ -1,5 +1,5 @@
 // Derived from pinned MAME 0.161 source (run at the source root):
-// for driver in segahang segaorun segaxbd; do
+// for driver in segahang segaorun segaxbd segaybd; do
 //   comm -12 \
 //     <(sed -nE 's/^[[:space:]]*(GAME|GAMEL|GAME_CUSTOM)[[:space:]]*[(][^,]+,[[:space:]]*([a-z0-9_]+).*/\2/p' "src/mame/drivers/$driver.c" | LC_ALL=C sort -u) \
 //     <(sed -nE 's/^([a-z0-9_]+)([[:space:]]*\/\/.*)?$/\1/p' src/mame/mame.lst | LC_ALL=C sort -u) \
@@ -15,6 +15,11 @@ endurob2 // src/mame/drivers/segahang.c
 endurobl // src/mame/drivers/segahang.c
 enduror // src/mame/drivers/segahang.c
 enduror1 // src/mame/drivers/segahang.c
+gforce2 // src/mame/drivers/segaybd.c
+gforce2j // src/mame/drivers/segaybd.c
+gforce2ja // src/mame/drivers/segaybd.c
+gloc // src/mame/drivers/segaybd.c
+glocr360 // src/mame/drivers/segaybd.c
 gprider // src/mame/drivers/segaxbd.c
 gpriderj // src/mame/drivers/segaxbd.c
 gprideru // src/mame/drivers/segaxbd.c
@@ -31,8 +36,15 @@ outrundx // src/mame/drivers/segaorun.c
 outrundxa // src/mame/drivers/segaorun.c
 outrundxj // src/mame/drivers/segaorun.c
 outrunra // src/mame/drivers/segaorun.c
+pdrift // src/mame/drivers/segaybd.c
+pdrifta // src/mame/drivers/segaybd.c
+pdrifte // src/mame/drivers/segaybd.c
+pdriftj // src/mame/drivers/segaybd.c
+pdriftl // src/mame/drivers/segaybd.c
 rachero // src/mame/drivers/segaxbd.c
 rascot // src/mame/drivers/segaxbd.c
+rchase // src/mame/drivers/segaybd.c
+rchasej // src/mame/drivers/segaybd.c
 shangon // src/mame/drivers/segaorun.c
 shangon1 // src/mame/drivers/segaorun.c
 shangon2 // src/mame/drivers/segaorun.c
@@ -50,6 +62,8 @@ smgpja // src/mame/drivers/segaxbd.c
 smgpu // src/mame/drivers/segaxbd.c
 smgpu1 // src/mame/drivers/segaxbd.c
 smgpu2 // src/mame/drivers/segaxbd.c
+strkfgtr // src/mame/drivers/segaybd.c
+strkfgtrj // src/mame/drivers/segaybd.c
 thndrbld // src/mame/drivers/segaxbd.c
 thndrbld1 // src/mame/drivers/segaxbd.c
 toutrun // src/mame/drivers/segaorun.c

@@ -139,8 +139,9 @@ const FAMILY_TARGETS: readonly FamilyTarget[] = [
             "src/mame/drivers/segahang.c",
             "src/mame/drivers/segaorun.c",
             "src/mame/drivers/segaxbd.c",
+            "src/mame/drivers/segaybd.c",
         ],
-        expectedMachines: 52,
+        expectedMachines: 66,
     },
     {
         id: "sega-s16",

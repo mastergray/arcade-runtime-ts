@@ -15,6 +15,7 @@ SOUNDS["YM2203"] = true
 SOUNDS["SEGAPCM"] = true
 
 MACHINES["I8255"] = true
+MACHINES["MB8421"] = true
 
 -- The release-era generated project always archives the bus library, and its
 -- pinned llvm-ar cannot create an empty archive. Keep one harmless bus core.
@@ -48,6 +49,8 @@ _G["createProjects_mame_sega-16"] = function(_target, _subtarget)
 		MAME_DIR .. "src/mame/video/segaorun.c",
 		MAME_DIR .. "src/mame/drivers/segaxbd.c",
 		MAME_DIR .. "src/mame/video/segaxbd.c",
+		MAME_DIR .. "src/mame/drivers/segaybd.c",
+		MAME_DIR .. "src/mame/video/segaybd.c",
 
 		MAME_DIR .. "src/mame/machine/segaic16.c",
 		MAME_DIR .. "src/mame/video/segaic16.c",

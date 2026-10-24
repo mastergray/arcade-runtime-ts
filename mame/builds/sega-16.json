@@ -10,6 +10,8 @@
         "src/mame/video/segaorun.c",
         "src/mame/drivers/segaxbd.c",
         "src/mame/video/segaxbd.c",
+        "src/mame/drivers/segaybd.c",
+        "src/mame/video/segaybd.c",
         "src/mame/machine/segaic16.c",
         "src/mame/video/segaic16.c",
         "src/mame/video/segaic16_road.c",
