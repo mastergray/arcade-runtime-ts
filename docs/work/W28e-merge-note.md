@@ -187,6 +187,11 @@ npm run check && npm test
   then 30 files and 555 cases with 555 passed, 0 failed and 0 skipped. The real
   output was present and passed `tests/spec/32-build-output.test.ts`.
 
+The package content commit succeeded. A later message-format-only
+`git commit --amend` attempt was refused because Git could not create the
+shared worktree index lock on a temporarily read-only filesystem; no content
+change was attempted or lost.
+
 ## Integrator note
 
 The integrator-owned specification remains stale: §4.6's `midway-tunit` row
