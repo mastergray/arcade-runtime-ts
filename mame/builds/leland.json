@@ -1,0 +1,12 @@
+{
+    "family": "leland",
+    "target": "mame/targets/leland.lua",
+    "list": "mame/targets/leland.lst",
+    "memoryPages": 4096,
+    "sources": [
+        "src/mame/drivers/leland.c",
+        "src/mame/machine/leland.c",
+        "src/mame/audio/leland.c",
+        "src/mame/video/leland.c"
+    ]
+}

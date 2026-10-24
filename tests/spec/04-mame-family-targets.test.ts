@@ -102,6 +102,11 @@ const FAMILY_TARGETS: readonly FamilyTarget[] = [
         expectedMachines: 98,
     },
     {
+        id: "leland",
+        sources: ["src/mame/drivers/leland.c"],
+        expectedMachines: 25,
+    },
+    {
         id: "neogeo",
         sources: ["src/mame/drivers/neogeo.c", "src/mame/drivers/neogeo_noslot.c"],
         expectedMachines: 256,
