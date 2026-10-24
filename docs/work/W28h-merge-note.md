@@ -185,8 +185,8 @@ npm run check && npm test
 - `npm run check`: passed (`check:src` and `check:tests`).
 - `npm test`: 30 files, 556 cases; 556 passed, 0 failed, 0 skipped. The real
   new output was present and passed `tests/spec/32-build-output.test.ts`.
-- Final combined `npm run check && npm test`: pending final committed-state
-  rerun.
+- Final combined `npm run check && npm test` rerun from the committed package
+  state: passed with the same 556/556 spec result.
 
 ## Integrator note
 
