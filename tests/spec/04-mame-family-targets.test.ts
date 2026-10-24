@@ -183,8 +183,9 @@ const FAMILY_TARGETS: readonly FamilyTarget[] = [
             "src/mame/drivers/gladiatr.c",
             "src/mame/drivers/mexico86.c",
             "src/mame/drivers/superqix.c",
+            "src/mame/drivers/qix.c",
         ],
-        expectedMachines: 148,
+        expectedMachines: 165,
     },
     {
         id: "taito-16",

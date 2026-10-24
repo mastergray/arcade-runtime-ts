@@ -1,5 +1,5 @@
 // Derived from pinned MAME 0.161 source (run at the source root):
-// for driver in taitosj bublbobl arkanoid tnzs slapfght flstory lkage retofinv nycaptor buggychl gladiatr mexico86 superqix; do
+// for driver in taitosj bublbobl arkanoid tnzs slapfght flstory lkage retofinv nycaptor buggychl gladiatr mexico86 superqix qix; do
 //   comm -12 \
 //     <(sed -nE 's/^[[:space:]]*(GAME|GAMEL|GAME_CUSTOM)[[:space:]]*[(][^,]+,[[:space:]]*([a-z0-9_]+).*/\2/p' "src/mame/drivers/$driver.c" | LC_ALL=C sort -u) \
 //     <(sed -nE 's/^([a-z0-9_]+)([[:space:]]*\/\/.*)?$/\1/p' src/mame/mame.lst | LC_ALL=C sort -u) \
@@ -49,11 +49,14 @@ chukatai // src/mame/drivers/tnzs.c
 chukataij // src/mame/drivers/tnzs.c
 chukataiu // src/mame/drivers/tnzs.c
 colt // src/mame/drivers/nycaptor.c
+complexx // src/mame/drivers/qix.c
 cyclshtg // src/mame/drivers/nycaptor.c
 dland // src/mame/drivers/bublbobl.c
 drtoppel // src/mame/drivers/tnzs.c
 drtoppelj // src/mame/drivers/tnzs.c
 drtoppelu // src/mame/drivers/tnzs.c
+elecyoyo // src/mame/drivers/qix.c
+elecyoyo2 // src/mame/drivers/qix.c
 elevator // src/mame/drivers/taitosj.c
 elevatorb // src/mame/drivers/taitosj.c
 extrmatn // src/mame/drivers/tnzs.c
@@ -92,6 +95,9 @@ kicknrunu // src/mame/drivers/mexico86.c
 kikikai // src/mame/drivers/mexico86.c
 kikstart // src/mame/drivers/taitosj.c
 knightb // src/mame/drivers/mexico86.c
+kram // src/mame/drivers/qix.c
+kram2 // src/mame/drivers/qix.c
+kram3 // src/mame/drivers/qix.c
 lkage // src/mame/drivers/lkage.c
 lkageb // src/mame/drivers/lkage.c
 lkageb2 // src/mame/drivers/lkage.c
@@ -112,6 +118,11 @@ perfrmanu // src/mame/drivers/slapfght.c
 piratpet // src/mame/drivers/taitosj.c
 plumppop // src/mame/drivers/tnzs.c
 ppking // src/mame/drivers/gladiatr.c
+qix // src/mame/drivers/qix.c
+qix2 // src/mame/drivers/qix.c
+qixa // src/mame/drivers/qix.c
+qixb // src/mame/drivers/qix.c
+qixo // src/mame/drivers/qix.c
 retofinv // src/mame/drivers/retofinv.c
 retofinv1 // src/mame/drivers/retofinv.c
 retofinv2 // src/mame/drivers/retofinv.c
@@ -119,12 +130,15 @@ rumba // src/mame/drivers/flstory.c
 sboblbobl // src/mame/drivers/bublbobl.c
 sboblbobla // src/mame/drivers/bublbobl.c
 sboblboblb // src/mame/drivers/bublbobl.c
+sdungeon // src/mame/drivers/qix.c
 sfposeid // src/mame/drivers/taitosj.c
 slapfigh // src/mame/drivers/slapfght.c
 slapfigha // src/mame/drivers/slapfght.c
 slapfighb1 // src/mame/drivers/slapfght.c
 slapfighb2 // src/mame/drivers/slapfght.c
 slapfighb3 // src/mame/drivers/slapfght.c
+slither // src/mame/drivers/qix.c
+slithera // src/mame/drivers/qix.c
 spacecr // src/mame/drivers/taitosj.c
 spaceskr // src/mame/drivers/taitosj.c
 sqix // src/mame/drivers/superqix.c
@@ -154,3 +168,6 @@ victnine // src/mame/drivers/flstory.c
 waterski // src/mame/drivers/taitosj.c
 wwestern // src/mame/drivers/taitosj.c
 wwestern1 // src/mame/drivers/taitosj.c
+zookeep // src/mame/drivers/qix.c
+zookeep2 // src/mame/drivers/qix.c
+zookeep3 // src/mame/drivers/qix.c

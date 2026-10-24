@@ -42,6 +42,10 @@
         "src/mame/machine/mexico86.c",
         "src/mame/video/mexico86.c",
         "src/mame/drivers/superqix.c",
-        "src/mame/video/superqix.c"
+        "src/mame/video/superqix.c",
+        "src/mame/drivers/qix.c",
+        "src/mame/machine/qix.c",
+        "src/mame/audio/qix.c",
+        "src/mame/video/qix.c"
     ]
 }

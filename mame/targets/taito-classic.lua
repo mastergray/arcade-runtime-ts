@@ -15,6 +15,7 @@ CPUS["MCS51"] = true
 
 SOUNDS["SAMPLES"] = true
 SOUNDS["DAC"] = true
+SOUNDS["DISCRETE"] = true
 SOUNDS["AY8910"] = true
 SOUNDS["YM2151"] = true
 SOUNDS["YM2203"] = true
@@ -92,6 +93,10 @@ _G["createProjects_mame_taito-classic"] = function(_target, _subtarget)
 		MAME_DIR .. "src/mame/video/mexico86.c",
 		MAME_DIR .. "src/mame/drivers/superqix.c",
 		MAME_DIR .. "src/mame/video/superqix.c",
+		MAME_DIR .. "src/mame/drivers/qix.c",
+		MAME_DIR .. "src/mame/machine/qix.c",
+		MAME_DIR .. "src/mame/audio/qix.c",
+		MAME_DIR .. "src/mame/video/qix.c",
 	}
 end
 
