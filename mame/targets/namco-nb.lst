@@ -1,0 +1,23 @@
+// Derived from pinned MAME 0.161 source (run at the source root):
+// for driver in namconb1; do
+//   comm -12 \
+//     <(sed -nE 's/^[[:space:]]*(GAME|GAMEL|GAME_CUSTOM)[[:space:]]*[(][^,]+,[[:space:]]*([a-z0-9_]+).*/\2/p' "src/mame/drivers/$driver.c" | LC_ALL=C sort -u) \
+//     <(sed -nE 's/^([a-z0-9_]+)([[:space:]]*\/\/.*)?$/\1/p' src/mame/mame.lst | LC_ALL=C sort -u) \
+//     | awk -v source="src/mame/drivers/$driver.c" '{ print $0 " // " source }'
+// done | LC_ALL=C sort -u
+
+gslgr94j // src/mame/drivers/namconb1.c
+gslgr94u // src/mame/drivers/namconb1.c
+gslugrsj // src/mame/drivers/namconb1.c
+gunbuletj // src/mame/drivers/namconb1.c
+gunbuletw // src/mame/drivers/namconb1.c
+machbrkr // src/mame/drivers/namconb1.c
+nebulray // src/mame/drivers/namconb1.c
+nebulrayj // src/mame/drivers/namconb1.c
+outfxies // src/mame/drivers/namconb1.c
+outfxiesj // src/mame/drivers/namconb1.c
+ptblank // src/mame/drivers/namconb1.c
+sws95 // src/mame/drivers/namconb1.c
+sws96 // src/mame/drivers/namconb1.c
+sws97 // src/mame/drivers/namconb1.c
+vshoot // src/mame/drivers/namconb1.c

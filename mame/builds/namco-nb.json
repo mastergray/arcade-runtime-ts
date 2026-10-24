@@ -1,0 +1,13 @@
+{
+    "family": "namco-nb",
+    "target": "mame/targets/namco-nb.lua",
+    "list": "mame/targets/namco-nb.lst",
+    "memoryPages": 8192,
+    "sources": [
+        "src/mame/drivers/namconb1.c",
+        "src/mame/video/namconb1.c",
+        "src/mame/drivers/namcoic.c",
+        "src/mame/machine/namcomcu.c",
+        "src/mame/video/c116.c"
+    ]
+}

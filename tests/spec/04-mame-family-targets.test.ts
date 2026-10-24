@@ -124,6 +124,11 @@ const FAMILY_TARGETS: readonly FamilyTarget[] = [
         expectedMachines: 378,
     },
     {
+        id: "namco-nb",
+        sources: ["src/mame/drivers/namconb1.c"],
+        expectedMachines: 15,
+    },
+    {
         id: "namco-s1",
         sources: ["src/mame/drivers/namcos1.c", "src/mame/drivers/namcos86.c"],
         expectedMachines: 47,
