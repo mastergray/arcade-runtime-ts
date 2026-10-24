@@ -26,7 +26,7 @@ npm run probe:mame:threading -- \
 
 | Result | Initial compile to first link | Corrected cached-source pipeline | `-listfull` machines | ROM-set metadata files |
 | ------ | ----------------------------: | -------------------------------: | -------------------: | ---------------------: |
-| Pass | 104.30 s | 40.01 s | 15 | 15 |
+| Pass | 104.30 s | 34.75 s | 15 | 15 |
 
 The independently derived list contains 15 machines from
 `drivers/namconb1.c` and matched the production count without a list
