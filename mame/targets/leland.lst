@@ -1,0 +1,31 @@
+// Derived from pinned MAME 0.161 source (run at the source root):
+// comm -12 \
+//   <(sed -nE 's/^[[:space:]]*(GAME|GAMEL|GAME_CUSTOM)[[:space:]]*[(][^,]+,[[:space:]]*([a-z0-9_]+).*/\2/p' src/mame/drivers/leland.c | LC_ALL=C sort -u) \
+//   <(sed -nE 's/^([a-z0-9_]+)([[:space:]]*\/\/.*)?$/\1/p' src/mame/mame.lst | LC_ALL=C sort -u) \
+//   | awk -v source="src/mame/drivers/leland.c" '{ print $0 " // " source }'
+
+aafb // src/mame/drivers/leland.c
+aafbb // src/mame/drivers/leland.c
+aafbc // src/mame/drivers/leland.c
+aafbd2p // src/mame/drivers/leland.c
+alleymas // src/mame/drivers/leland.c
+basebal2 // src/mame/drivers/leland.c
+cerberus // src/mame/drivers/leland.c
+dangerz // src/mame/drivers/leland.c
+dblplay // src/mame/drivers/leland.c
+mayhem // src/mame/drivers/leland.c
+offroad // src/mame/drivers/leland.c
+offroadt // src/mame/drivers/leland.c
+offroadt2p // src/mame/drivers/leland.c
+pigout // src/mame/drivers/leland.c
+pigouta // src/mame/drivers/leland.c
+powrplay // src/mame/drivers/leland.c
+quarterb // src/mame/drivers/leland.c
+quarterba // src/mame/drivers/leland.c
+redlin2p // src/mame/drivers/leland.c
+strkzone // src/mame/drivers/leland.c
+teamqb // src/mame/drivers/leland.c
+teamqb2 // src/mame/drivers/leland.c
+upyoural // src/mame/drivers/leland.c
+viper // src/mame/drivers/leland.c
+wseries // src/mame/drivers/leland.c
