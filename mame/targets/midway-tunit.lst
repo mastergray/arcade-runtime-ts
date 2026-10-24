@@ -1,5 +1,5 @@
 // Derived from pinned MAME 0.161 source (run at the source root):
-// for driver in midtunit midyunit; do
+// for driver in midtunit midyunit midwunit; do
 //   comm -12 \
 //     <(sed -nE 's/^[[:space:]]*(GAME|GAMEL|GAME_CUSTOM)[[:space:]]*[(][^,]+,[[:space:]]*([a-z0-9_]+).*/\2/p' "src/mame/drivers/$driver.c" | LC_ALL=C sort -u) \
 //     <(sed -nE 's/^([a-z0-9_]+)([[:space:]]*\/\/.*)?$/\1/p' src/mame/mame.lst | LC_ALL=C sort -u) \
@@ -25,6 +25,10 @@ mk2r31e // src/mame/drivers/midtunit.c
 mk2r32e // src/mame/drivers/midtunit.c
 mk2r42 // src/mame/drivers/midtunit.c
 mk2r91 // src/mame/drivers/midtunit.c
+mk3 // src/mame/drivers/midwunit.c
+mk3p40 // src/mame/drivers/midwunit.c
+mk3r10 // src/mame/drivers/midwunit.c
+mk3r20 // src/mame/drivers/midwunit.c
 mkla1 // src/mame/drivers/midyunit.c
 mkla2 // src/mame/drivers/midyunit.c
 mkla3 // src/mame/drivers/midyunit.c
@@ -44,6 +48,7 @@ mkyturboe // src/mame/drivers/midyunit.c
 narc // src/mame/drivers/midyunit.c
 narc2 // src/mame/drivers/midyunit.c
 narc3 // src/mame/drivers/midyunit.c
+nbahangt // src/mame/drivers/midwunit.c
 nbajam // src/mame/drivers/midtunit.c
 nbajamr2 // src/mame/drivers/midtunit.c
 nbajamte // src/mame/drivers/midtunit.c
@@ -51,6 +56,11 @@ nbajamte1 // src/mame/drivers/midtunit.c
 nbajamte2 // src/mame/drivers/midtunit.c
 nbajamte3 // src/mame/drivers/midtunit.c
 nbajamten // src/mame/drivers/midtunit.c
+nbamht // src/mame/drivers/midwunit.c
+nbamht1 // src/mame/drivers/midwunit.c
+openice // src/mame/drivers/midwunit.c
+rmpgwt // src/mame/drivers/midwunit.c
+rmpgwt11 // src/mame/drivers/midwunit.c
 shimpact // src/mame/drivers/midyunit.c
 shimpactp4 // src/mame/drivers/midyunit.c
 shimpactp5 // src/mame/drivers/midyunit.c
@@ -72,3 +82,9 @@ trog3 // src/mame/drivers/midyunit.c
 trog4 // src/mame/drivers/midyunit.c
 trogpa4 // src/mame/drivers/midyunit.c
 trogpa6 // src/mame/drivers/midyunit.c
+umk3 // src/mame/drivers/midwunit.c
+umk3r10 // src/mame/drivers/midwunit.c
+umk3r11 // src/mame/drivers/midwunit.c
+wwfmania // src/mame/drivers/midwunit.c
+wwfmaniab // src/mame/drivers/midwunit.c
+wwfmaniac // src/mame/drivers/midwunit.c

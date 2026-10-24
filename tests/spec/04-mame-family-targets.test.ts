@@ -72,8 +72,9 @@ const FAMILY_TARGETS: readonly FamilyTarget[] = [
         sources: [
             "src/mame/drivers/midtunit.c",
             "src/mame/drivers/midyunit.c",
+            "src/mame/drivers/midwunit.c",
         ],
-        expectedMachines: 66,
+        expectedMachines: 82,
     },
     {
         id: "misc-16",
