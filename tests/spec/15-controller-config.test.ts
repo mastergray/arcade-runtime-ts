@@ -30,8 +30,10 @@ const expectedExtended = (player: number): string[] => {
     const lines = [
         expectedPort(`${p}AD_STICK_X`, `${j}XAXIS`),
         expectedPort(`${p}PADDLE`, `${j}XAXIS`),
+        expectedPort(`${p}LIGHTGUN_X`, `${j}XAXIS`),
         expectedPort(`${p}AD_STICK_Y`, `${j}YAXIS`),
         expectedPort(`${p}PADDLE_V`, `${j}YAXIS`),
+        expectedPort(`${p}LIGHTGUN_Y`, `${j}YAXIS`),
         expectedPort(`${p}AD_STICK_Z`, `${j}ZAXIS`),
         expectedPort(`${p}PEDAL`, `${j}RXAXIS`),
         expectedPort(`${p}PEDAL2`, `${j}RYAXIS`),
@@ -40,11 +42,11 @@ const expectedExtended = (player: number): string[] => {
         expectedPort(`${p}DIAL_V`, `${j}ADDREL2`),
         expectedPort(`${p}TRACKBALL_Y`, `${j}ADDREL2`),
     ];
-    for (const type of ["AD_STICK_X", "PADDLE", "DIAL", "TRACKBALL_X", "POSITIONAL"]) {
+    for (const type of ["AD_STICK_X", "PADDLE", "LIGHTGUN_X", "DIAL", "TRACKBALL_X", "POSITIONAL"]) {
         lines.push(expectedPort(`${p}${type}`, `${j}HAT1LEFT`, "decrement"));
         lines.push(expectedPort(`${p}${type}`, `${j}HAT1RIGHT`, "increment"));
     }
-    for (const type of ["AD_STICK_Y", "PADDLE_V", "DIAL_V", "TRACKBALL_Y", "POSITIONAL_V"]) {
+    for (const type of ["AD_STICK_Y", "PADDLE_V", "LIGHTGUN_Y", "DIAL_V", "TRACKBALL_Y", "POSITIONAL_V"]) {
         lines.push(expectedPort(`${p}${type}`, `${j}HAT1UP`, "decrement"));
         lines.push(expectedPort(`${p}${type}`, `${j}HAT1DOWN`, "increment"));
     }

@@ -775,8 +775,8 @@ The generator emits ports for players 1 through the requested count only,
 and omits `Pn_SELECT` lines unless the machine reports a select port
 (F10). Since M11 (W26) the file also binds, unconditionally for each
 player, the X/Y/Z, RX/RY and two relative Web Pad axes to their analogue
-port types (`AD_STICK_X` and `PADDLE` → `XAXIS`; `AD_STICK_Y` and `PADDLE_V`
-→ `YAXIS`; `AD_STICK_Z` → `ZAXIS`; `PEDAL` → `RXAXIS`; `PEDAL2` → `RYAXIS`;
+port types (`AD_STICK_X`, `PADDLE` and `LIGHTGUN_X` → `XAXIS`; `AD_STICK_Y`,
+`PADDLE_V` and `LIGHTGUN_Y` → `YAXIS`; `AD_STICK_Z` → `ZAXIS`; `PEDAL` → `RXAXIS`; `PEDAL2` → `RYAXIS`;
 `DIAL` and `TRACKBALL_X` → `ADDREL1`; `DIAL_V` and `TRACKBALL_Y` →
 `ADDREL2`), and supplies `increment` and `decrement` sequences from `HAT1`
 (X-like ports on left/right, Y-like ports on up/down) and from
@@ -1205,7 +1205,8 @@ ignored unless a page supplies an explicit mapping.
 
 Since M11, on a standard-layout pad only the analogue kinds the machine
 declares for the assigned player are written: the dead-zone-rescaled left
-stick supplies `stick-x`/`stick-y` (also for paddles) or `spin-x`/`spin-y`
+stick supplies `stick-x`/`stick-y` (also for paddles and, since M34 step
+one, light-gun aim) or `spin-x`/`spin-y`
 deltas for dials and trackballs (20 pixels per poll at full deflection,
 the order of the key delta the pinned dial and trackball drivers declare),
 the right stick's vertical axis supplies `stick-z`, and trigger buttons 7

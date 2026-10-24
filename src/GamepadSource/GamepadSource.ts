@@ -319,7 +319,7 @@ export default class GamepadSource {
         const declared = new Set<MachineAnalogKind>(inputs.analog
             .filter((input) => input.player === assignment.player)
             .map((input) => input.kind));
-        const leftAnalog = ["stick-x", "stick-y", "paddle", "paddle-v", "dial", "dial-v", "trackball-x", "trackball-y"]
+        const leftAnalog = ["stick-x", "stick-y", "paddle", "paddle-v", "lightgun-x", "lightgun-y", "dial", "dial-v", "trackball-x", "trackball-y"]
             .some((kind) => declared.has(kind as MachineAnalogKind));
         const base = controlsFor(pad, assignment.player, this._deadZone, mapping);
         let controls: ArcadeControl[] = [...base];
@@ -367,8 +367,8 @@ export default class GamepadSource {
         const pedals = mapping.pedals ?? DEFAULT_PEDALS;
         const horizontal = rescaledAxis(pad.axes[left[0]] ?? 0, this._deadZone);
         const vertical = rescaledAxis(pad.axes[left[1]] ?? 0, this._deadZone);
-        if (declared.has("stick-x") || declared.has("paddle")) assignment.channel.setAxis({ player: assignment.player, kind: "stick-x" }, horizontal);
-        if (declared.has("stick-y") || declared.has("paddle-v")) assignment.channel.setAxis({ player: assignment.player, kind: "stick-y" }, vertical);
+        if (declared.has("stick-x") || declared.has("paddle") || declared.has("lightgun-x")) assignment.channel.setAxis({ player: assignment.player, kind: "stick-x" }, horizontal);
+        if (declared.has("stick-y") || declared.has("paddle-v") || declared.has("lightgun-y")) assignment.channel.setAxis({ player: assignment.player, kind: "stick-y" }, vertical);
         if ((declared.has("dial") || declared.has("trackball-x")) && horizontal !== 0)
             assignment.channel.setAxis({ player: assignment.player, kind: "spin-x" }, horizontal * SPIN_PIXELS_PER_POLL);
         if ((declared.has("dial-v") || declared.has("trackball-y")) && vertical !== 0)

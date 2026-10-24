@@ -32,23 +32,24 @@ const port = (type: string, code: string, sequence = "standard"): string =>
 
 // HELPER :: NUMBER -> [STRING]
 // Unconditional analog ramp, relative-axis and dual-stick mappings for one virtual pad.
+// Light-gun X/Y ports ride the same absolute axes and hat ramps as sticks (M34 step one; pointer input comes later).
 const extendedPorts = (player: number): string[] => {
     const prefix = `P${player}_`;
     const joy = `JOYCODE_${player}_`;
     const lines: string[] = [];
     for (const [type, code] of [
-        ["AD_STICK_X", "XAXIS"], ["PADDLE", "XAXIS"],
-        ["AD_STICK_Y", "YAXIS"], ["PADDLE_V", "YAXIS"],
+        ["AD_STICK_X", "XAXIS"], ["PADDLE", "XAXIS"], ["LIGHTGUN_X", "XAXIS"],
+        ["AD_STICK_Y", "YAXIS"], ["PADDLE_V", "YAXIS"], ["LIGHTGUN_Y", "YAXIS"],
         ["AD_STICK_Z", "ZAXIS"], ["PEDAL", "RXAXIS"], ["PEDAL2", "RYAXIS"],
         ["DIAL", "ADDREL1"], ["TRACKBALL_X", "ADDREL1"],
         ["DIAL_V", "ADDREL2"], ["TRACKBALL_Y", "ADDREL2"],
     ] as const) lines.push(port(`${prefix}${type}`, `${joy}${code}`));
 
-    for (const type of ["AD_STICK_X", "PADDLE", "DIAL", "TRACKBALL_X", "POSITIONAL"] as const) {
+    for (const type of ["AD_STICK_X", "PADDLE", "LIGHTGUN_X", "DIAL", "TRACKBALL_X", "POSITIONAL"] as const) {
         lines.push(port(`${prefix}${type}`, `${joy}HAT1LEFT`, "decrement"));
         lines.push(port(`${prefix}${type}`, `${joy}HAT1RIGHT`, "increment"));
     }
-    for (const type of ["AD_STICK_Y", "PADDLE_V", "DIAL_V", "TRACKBALL_Y", "POSITIONAL_V"] as const) {
+    for (const type of ["AD_STICK_Y", "PADDLE_V", "LIGHTGUN_Y", "DIAL_V", "TRACKBALL_Y", "POSITIONAL_V"] as const) {
         lines.push(port(`${prefix}${type}`, `${joy}HAT1UP`, "decrement"));
         lines.push(port(`${prefix}${type}`, `${joy}HAT1DOWN`, "increment"));
     }
