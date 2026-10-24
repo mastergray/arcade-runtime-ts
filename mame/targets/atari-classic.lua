@@ -48,6 +48,8 @@ _G["createProjects_mame_atari-classic"] = function(_target, _subtarget)
 		MAME_DIR .. "src/mame/drivers/tempest.c",
 		MAME_DIR .. "src/mame/drivers/rampart.c",
 		MAME_DIR .. "src/mame/video/rampart.c",
+		MAME_DIR .. "src/mame/drivers/centiped.c",
+		MAME_DIR .. "src/mame/video/centiped.c",
 
 		MAME_DIR .. "src/mame/video/avgdvg.c",
 		MAME_DIR .. "src/mame/machine/atari_vg.c",

@@ -9,6 +9,8 @@
         "src/mame/drivers/tempest.c",
         "src/mame/drivers/rampart.c",
         "src/mame/video/rampart.c",
+        "src/mame/drivers/centiped.c",
+        "src/mame/video/centiped.c",
         "src/mame/video/avgdvg.c",
         "src/mame/machine/atari_vg.c",
         "src/mame/machine/mathbox.c",

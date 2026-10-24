@@ -1,5 +1,5 @@
 // Derived from pinned MAME 0.161 source (run at the source root):
-// for driver in bzone tempest rampart; do
+// for driver in bzone tempest rampart centiped; do
 //   comm -12 \
 //     <(sed -nE 's/^[[:space:]]*(GAME|GAMEL|GAME_CUSTOM)[[:space:]]*[(][^,]+,[[:space:]]*([a-z0-9_]+).*/\2/p' "src/mame/drivers/$driver.c" | LC_ALL=C sort -u) \
 //     <(sed -nE 's/^([a-z0-9_]+)([[:space:]]*\/\/.*)?$/\1/p' src/mame/mame.lst | LC_ALL=C sort -u) \
@@ -7,9 +7,24 @@
 // done | LC_ALL=C sort -u
 
 bradley // src/mame/drivers/bzone.c
+bullsdrt // src/mame/drivers/centiped.c
 bzone // src/mame/drivers/bzone.c
 bzonea // src/mame/drivers/bzone.c
 bzonec // src/mame/drivers/bzone.c
+caterplr // src/mame/drivers/centiped.c
+centipdb // src/mame/drivers/centiped.c
+centipdd // src/mame/drivers/centiped.c
+centiped // src/mame/drivers/centiped.c
+centiped1 // src/mame/drivers/centiped.c
+centiped2 // src/mame/drivers/centiped.c
+centiped3 // src/mame/drivers/centiped.c
+magworm // src/mame/drivers/centiped.c
+magworma // src/mame/drivers/centiped.c
+mazeinv // src/mame/drivers/centiped.c
+millipdd // src/mame/drivers/centiped.c
+milliped // src/mame/drivers/centiped.c
+millpac // src/mame/drivers/centiped.c
+multiped // src/mame/drivers/centiped.c
 rampart // src/mame/drivers/rampart.c
 rampart2p // src/mame/drivers/rampart.c
 rampartj // src/mame/drivers/rampart.c
@@ -21,3 +36,4 @@ tempest1r // src/mame/drivers/tempest.c
 tempest2 // src/mame/drivers/tempest.c
 tempest3 // src/mame/drivers/tempest.c
 temptube // src/mame/drivers/tempest.c
+warlords // src/mame/drivers/centiped.c
