@@ -158,6 +158,11 @@ const FAMILY_TARGETS: readonly FamilyTarget[] = [
         expectedMachines: 52,
     },
     {
+        id: "seta-2",
+        sources: ["src/mame/drivers/seta2.c"],
+        expectedMachines: 26,
+    },
+    {
         id: "taito-classic",
         sources: [
             "src/mame/drivers/taitosj.c",
