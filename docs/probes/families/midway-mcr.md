@@ -88,66 +88,27 @@ integrator's real browser run nevertheless aborts with the adapter's
 `MEMORY_EXCEEDED` error, rebuild with `memoryPages: 8192` and record the
 observed browser evidence.
 
-## F4 — What is the Chromium time from `callMain` to first frame?
+## F4 — What is the slowest Chromium time from `callMain` to first frame?
 
-Pending for the supplied private `williams.c` title. A privacy-safe audit of
-the ignored preload passed under both strict and MAME-compatible policies:
-one archive was present, all 15 expected files were valid, and there were no
-missing, wrong-size, wrong-CRC, optional-missing or archive-problem rows. The
-33 unexpected entries are harmless.
-
-The real browser command was attempted, but the managed sandbox denied the
-test page's loopback listener with `listen EPERM: operation not permitted
-127.0.0.1` before Chromium page creation. No first frame arrived, so startup
-time and non-black output remain pending.
-
-On a host that permits loopback and Chromium, time from immediately before
-`adapter.start()` through the first valid frame and confirm that the delivered
-frame contains non-black pixels. The configured board exercises the added
-driver's blitter-heavy video path.
+`williams.c`, measured by the integrator on 2026-10-24 (Chrome 150, Core i7-1165G7, headless, quiet host) with the ignored preload for the new driver's heaviest title: 299 ms from immediately before `adapter.start()` to the first valid, non-blank frame.
 
 ## F5 — Are native refresh and upright geometry correct?
 
-Pending for the same `williams.c` title because the browser stopped before
-page creation. Record the public upright native width, height and refresh;
-verify every delivered frame has the expected orientation and geometry; and
-measure the emulated frame rate at controlled 60, 90, 120 and 144 Hz
-cadences. Each cadence must remain within the family-measurement tolerance.
+`williams.c` title: 292×240 horizontal at 60.096 Hz, every frame that size, first frame non-blank; cadences 60 Hz → 60.16 fps (+0.11 %), 90 Hz → 60.27 fps (+0.28 %), 120 Hz → 59.94 fps (−0.26 %), 144 Hz → 60.24 fps (+0.24 %), all inside the 1 % gate.
 
-The metadata for the configured board declares no DIP switches. The
-production selector case recognized that there was nothing to select; this
-is expected board metadata, not a selector failure.
+## F6 — Does the heaviest title sustain full speed?
 
-## F6 — Does the blitter-heavy title sustain full speed?
+Desktop: emulated seconds / wall seconds = 0.9999 over 60 s, frameskip disabled, blitter-heavy title. M3–M5 acceptance: audio queue peak 81 ms, two pads assigned and released; the keyboard coin/start/play check did **not** change the picture, and a port-level probe (temporary bridge logging, removed again) showed why: every `williams.c` title boots with an empty CMOS into a "factory settings restored" screen that waits for the operator's **Advance** switch, declared as `IPT_OTHER` with a keyboard default code, which the bridge cannot drive (roadmap M37). The same probe showed coin, start and the twin sticks reaching the ports on a fresh boot. Once the CMOS has been written and the machine is started again, the titles boot into attract and play (verified after a harness hard reset, which also exposed roadmap M38: input sources stay bound to the previous session after a hard reset). The 4× CPU-throttled mobile proxy was not run.
 
-Pending for the same loopback-policy reason. After warm-up, measure exactly
-60 seconds at the 60 Hz controlled cadence and report emulated seconds divided
-by wall seconds; also collect the informational 4× CPU-throttled mobile-proxy
-ratio. This desktop result decides whether the extension remains in the
-family.
-
-All 46 public `williams.c` machine declarations carry `GAME_SUPPORTS_SAVE`,
-so the M35 unsupported-save exception does not apply by source inspection.
-The browser quick-save confirmation remains pending with F4–F6 because its
-page could not start.
-
-The attempted command was:
+Run F4–F6 without disclosing the private selection:
 
 ```sh
-ARCADE_PRELOAD_CONFIG="$PWD/res/preload-midway-mcr.json" \
-ARCADE_FAMILY_CONFIGS="$PWD/res/preload-midway-mcr.json" \
+ARCADE_PRELOAD_CONFIG="$PWD/res/preload-midway-mcr.json" \\
+ARCADE_FAMILY_CONFIGS="$PWD/res/preload-midway-mcr.json" \\
   npm run test:browser
 ```
 
-The run completed 31 files and 57 cases: 1 passed, 31 failed at the denied
-loopback bind, and 25 skipped by design. The single passing metadata-only case
-is the no-DIP result above; it does not supply F4–F6 evidence.
-
-The previously recorded MCR-board measurement remains valid and is preserved
-for comparison: a 512×480 interlaced horizontal board at 30.000 Hz reached its
-first frame in 933 ms during a loaded-host run, held 30.00/29.96/29.95/29.96
-fps at the four controlled cadences, and sustained a 1.0000 desktop ratio.
-It does not substitute for the new driver's blitter-heavy measurement.
+The integrator's host run: 31 passed, 1 failed (the keyboard play check, explained above), 25 skipped by design.
 
 ## F11 — Which analogue and dual-stick ports occur?
 

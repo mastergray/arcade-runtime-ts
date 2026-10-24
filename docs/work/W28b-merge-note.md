@@ -207,3 +207,7 @@ should add `drivers/williams.c`, `machine/williams.c`, `video/williams.c`, the
 bank and shared ticket dependencies, and the 100-machine count after the host
 F6 decision. This package did not edit the spec because it is outside W28b's
 write set.
+
+## Integrator notes
+
+Gate on the host (2026-10-24, quiet): 31 passed, 1 failed, 25 skipped by design. F4 299 ms, F5 292×240 at 60.096 Hz within 0.28 %, F6 0.9999, audio peak 81 ms. The failure is the coin/start/play check: all `williams.c` titles wait for the operator Advance switch on their first boot (M37) and inputs do not survive a harness hard reset (M38, runtime-wide); with the switch pressed once or the CMOS already written they play. Port-level probe evidence was gathered with a temporary bridge hook, removed and the family rebuilt clean (build id unchanged).
