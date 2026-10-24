@@ -1,4 +1,4 @@
-# W28 — Family wave 4 (`W28a` … `W28h`)
+# W28 — Family wave 4 (`W28a` … `W28i`)
 
 Lane: **native**. Branch: `wp/w28<letter>-<slug>`. Milestone: M36.
 Unlike wave 3, the packages of this wave run **concurrently**, up to three
@@ -21,12 +21,13 @@ order. Everything in `W14-family.md` §2–§8, `W19-family-wave-2.md` §2 and
 | W28f | extend `atari-gauntlet` | add `drivers/toobin.c`, `video/toobin.c`, `audio/atarijsa.c` | 68010 with the JSA sound board (6502, YM2151, POKEY, TMS5220, all present); the JSA unit is the only addition |
 | W28g | extend `misc-16` | add `drivers/cninja.c`, `video/cninja.c`, `video/deco16ic.c`, `video/decocomn.c`, `machine/deco146.c` (or whichever protection unit the driver configures in 0.161) | Data East 68000 with the H6280 sound CPU; the family already has the earlier Data East boards and YM2151/YM2203/OKI |
 | W28h | `leland` (new) | `drivers/leland.c`, `machine/leland.c`, `audio/leland.c`, `video/leland.c` and the 80186 core | Twin Z80s with an 80186 sound CPU and DACs; nothing else shares it. The local title is `GAME_SUPPORTS_SAVE`-less; the quick-save case fails for it (M35), record and move on |
+| W28i | `gottlieb` (new) | `drivers/gottlieb.c`, `audio/gottlieb.c`, `video/gottlieb.c` and whatever its `mame.lua` block adds (8088, the 6502 sound board, AY-3-8913, SP0250, the samples device, the Votrax fake) | 8088 main CPU with the rev 1 sound board; the local title names sample sets for its knocker and faked speech and carries `GAME_IMPERFECT_SOUND`: it runs without the samples, record that. `exterm.c` shares the block but needs a TMS34010, leave it out |
 
 ## 1. Package row (§16.3)
 
 | ID | Package | Owns | After | Spec | Lane | Milestone |
 | -- | ------- | ---- | ----- | ---- | :--: | --------- |
-| W28a–h | One package per row above: target pair, build file, F1–F6 record | `mame/targets/<family>.*`, `mame/builds/<family>.json`, `docs/probes/families/<family>.md`, one `FAMILY_TARGETS` row | W14, W19, W27 | §4.6, §13.1 | N | M36 |
+| W28a–i | One package per row above: target pair, build file, F1–F6 record | `mame/targets/<family>.*`, `mame/builds/<family>.json`, `docs/probes/families/<family>.md`, one `FAMILY_TARGETS` row | W14, W19, W27 | §4.6, §13.1 | N | M36 |
 
 ## 2. What differs from W27
 
@@ -37,9 +38,8 @@ order. Everything in `W14-family.md` §2–§8, `W19-family-wave-2.md` §2 and
   driver decodes large graphics regions and, if the integrator's browser run
   aborts with the adapter's "needs more memory" error, the fix is
   `memoryPages: 8192`.
-- Samples: a driver that names sample sets (the Gottlieb board is the known
-  one in the library, not in this wave) runs without them; record it, do
-  not hunt for files.
+- Samples: a driver that names sample sets (W28i) runs without them;
+  record it, do not hunt for files.
 - EEPROM boards declare no DIP switches and the production DIP-selector
   case handles that; drivers without `GAME_SUPPORTS_SAVE` fail the harness
   quick-save case until M35; both are recorded, not fixed, in this wave.
