@@ -2,7 +2,7 @@
 --
 --   atari-gauntlet.lua
 --
---   MAME 0.161 Atari 68010 four-player family target.
+--   MAME 0.161 Atari 68010 raster family target.
 --
 ---------------------------------------------------------------------------
 
@@ -45,9 +45,12 @@ _G["createProjects_mame_atari-gauntlet"] = function(_target, _subtarget)
 	files {
 		MAME_DIR .. "src/mame/drivers/gauntlet.c",
 		MAME_DIR .. "src/mame/video/gauntlet.c",
+		MAME_DIR .. "src/mame/drivers/toobin.c",
+		MAME_DIR .. "src/mame/video/toobin.c",
 		MAME_DIR .. "src/mame/machine/atarigen.c",
 		MAME_DIR .. "src/mame/video/atarimo.c",
 		MAME_DIR .. "src/mame/machine/slapstic.c",
+		MAME_DIR .. "src/mame/audio/atarijsa.c",
 	}
 end
 
