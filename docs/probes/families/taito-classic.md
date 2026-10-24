@@ -103,23 +103,22 @@ browser values.
 
 ## F4 — What is the slowest Chromium time from `callMain` to first frame?
 
-Pending integrator browser run for both the `qix.c` and `bublbobl.c`
-selections. No first frame arrived in this sandbox. On a host that permits
-loopback and Chromium, rerun the two-config command above and record each
-privacy-safe `FAMILY-MEASURE` startup duration.
+Measured by the integrator on 2026-10-24 (Chrome 150, Core i7-1165G7, headless, quiet host) with the two ignored preloads: 296 ms for the `qix.c` title and 301 ms for the family's existing `bublbobl.c` title, from immediately before `adapter.start()` to the first valid, non-blank frame. The family's F4–F6 deferral is lifted.
 
-## F5 — Does native refresh hold, and is vertical geometry upright?
+## F5 — Are native refresh and upright geometry correct?
 
-Pending integrator browser run for both driver-file selections. Geometry,
-orientation, native refresh and controlled 60, 90, 120 and 144 Hz cadences
-were not observed because the harness server could not bind. The host rerun
-must confirm positive upright frame geometry and every cadence within the
-browser case's 1% tolerance.
+`qix.c` title: 256×224 horizontal at 59.186 Hz; cadences 60 Hz → 59.18 fps (−0.01 %), 90 Hz → 59.19 fps (0.00 %), 120 Hz → 59.33 fps (+0.24 %), 144 Hz → 59.16 fps (−0.04 %). `bublbobl.c` title: 256×256 vertical at 55.838 Hz; cadences 60 Hz → 55.66 fps (−0.31 %), 90 Hz → 55.85 fps (+0.03 %), 120 Hz → 55.64 fps (−0.35 %), 144 Hz → 55.82 fps (−0.04 %). Every frame at native size, first frames non-blank.
 
 ## F6 — Does the heaviest title sustain full speed?
 
-Pending integrator browser run for both driver-file selections. No 60-second
-desktop ratio was measured, so the family's return to the release matrix
-remains open. The host rerun must record each ratio and confirm it is within
-the browser case's 2% full-speed tolerance. The 4× CPU-throttled mobile proxy
-remains informational and deferred to M10 as §0.2 allows.
+Desktop: emulated seconds / wall seconds = 1.0000 (`qix.c`) and 1.0001 (`bublbobl.c`) over 60 s, frameskip disabled. M3–M5 acceptance: audio queue peak 71 ms and 67 ms; keyboard coin and start reached play on both (the `bublbobl.c` case's picture comparison failed because the title plays a long static intro after start; a headless probe with screenshots showed coin, start and play working); two pads assigned and released. The 4× CPU-throttled mobile proxy was not run.
+
+Run F4–F6 without disclosing the private selection:
+
+```sh
+ARCADE_PRELOAD_CONFIG="$PWD/res/preload-taito-classic.json" \
+ARCADE_FAMILY_CONFIGS="$PWD/res/preload-taito-classic.json" \
+  npm run test:browser
+```
+
+The integrator's host run with both configs: 33 passed, 1 failed (the `bublbobl.c` acceptance picture comparison, explained above), 25 skipped by design.

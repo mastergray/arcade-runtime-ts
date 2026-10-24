@@ -182,3 +182,7 @@ should add the four `qix.c` source units, the discrete sound, MC6845 and
 6821 PIA cores, and the new 165-machine total. Its deferred-family wording
 should change only after both host F6 results pass. This package did not edit
 the specification because it is outside W28c's write set.
+
+## Integrator notes
+
+Gate on the host (2026-10-24, quiet) with both ignored configs: 33 passed, 1 failed, 25 skipped by design. F6 1.0000 and 1.0001; F4 296 ms and 301 ms; cadences within 0.35 %; audio peaks 71 ms and 67 ms. The one failure is the second title's acceptance picture comparison: its intro after start is static for longer than the comparison window; a headless screenshot probe showed coin, start and play working. The family's deferral from the measured matrix is lifted.
