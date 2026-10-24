@@ -1,0 +1,11 @@
+{
+    "family": "gottlieb",
+    "target": "mame/targets/gottlieb.lua",
+    "list": "mame/targets/gottlieb.lst",
+    "memoryPages": 4096,
+    "sources": [
+        "src/mame/drivers/gottlieb.c",
+        "src/mame/audio/gottlieb.c",
+        "src/mame/video/gottlieb.c"
+    ]
+}

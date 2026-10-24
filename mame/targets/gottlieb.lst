@@ -1,0 +1,31 @@
+// Derived from pinned MAME 0.161 source (run at the source root):
+// comm -12 \
+//   <(sed -nE 's/^[[:space:]]*(GAME|GAMEL|GAME_CUSTOM)[[:space:]]*[(][^,]+,[[:space:]]*([a-z0-9_]+).*/\2/p' src/mame/drivers/gottlieb.c | LC_ALL=C sort -u) \
+//   <(sed -nE 's/^([a-z0-9_]+)([[:space:]]*\/\/.*)?$/\1/p' src/mame/mame.lst | LC_ALL=C sort -u) \
+//   | awk -v source="src/mame/drivers/gottlieb.c" '{ print $0 " // " source }'
+
+3stooges // src/mame/drivers/gottlieb.c
+3stoogesa // src/mame/drivers/gottlieb.c
+argusg // src/mame/drivers/gottlieb.c
+cobram3 // src/mame/drivers/gottlieb.c
+curvebal // src/mame/drivers/gottlieb.c
+insector // src/mame/drivers/gottlieb.c
+kngtmare // src/mame/drivers/gottlieb.c
+krull // src/mame/drivers/gottlieb.c
+mach3 // src/mame/drivers/gottlieb.c
+mplanets // src/mame/drivers/gottlieb.c
+mplanetsuk // src/mame/drivers/gottlieb.c
+myqbert // src/mame/drivers/gottlieb.c
+qbert // src/mame/drivers/gottlieb.c
+qberta // src/mame/drivers/gottlieb.c
+qbertj // src/mame/drivers/gottlieb.c
+qbertqub // src/mame/drivers/gottlieb.c
+qberttst // src/mame/drivers/gottlieb.c
+qbtrktst // src/mame/drivers/gottlieb.c
+reactor // src/mame/drivers/gottlieb.c
+screwloo // src/mame/drivers/gottlieb.c
+sqbert // src/mame/drivers/gottlieb.c
+tylz // src/mame/drivers/gottlieb.c
+usvsthem // src/mame/drivers/gottlieb.c
+vidvince // src/mame/drivers/gottlieb.c
+wizwarz // src/mame/drivers/gottlieb.c
