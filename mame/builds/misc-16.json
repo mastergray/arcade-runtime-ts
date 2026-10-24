@@ -14,6 +14,8 @@
         "src/mame/video/deckarn.c",
         "src/mame/drivers/cninja.c",
         "src/mame/video/cninja.c",
+        "src/mame/machine/decocrpt.c",
+        "src/mame/machine/deco104.c",
         "src/mame/machine/deco146.c",
         "src/mame/video/deco16ic.c",
         "src/mame/video/decocomn.c",
