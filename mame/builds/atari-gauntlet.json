@@ -6,8 +6,11 @@
     "sources": [
         "src/mame/drivers/gauntlet.c",
         "src/mame/video/gauntlet.c",
+        "src/mame/drivers/toobin.c",
+        "src/mame/video/toobin.c",
         "src/mame/machine/atarigen.c",
         "src/mame/video/atarimo.c",
-        "src/mame/machine/slapstic.c"
+        "src/mame/machine/slapstic.c",
+        "src/mame/audio/atarijsa.c"
     ]
 }

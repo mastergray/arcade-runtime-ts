@@ -39,8 +39,8 @@ const TARGET_ROOT = new URL("../../mame/targets/", import.meta.url);
 const FAMILY_TARGETS: readonly FamilyTarget[] = [
     {
         id: "atari-gauntlet",
-        sources: ["src/mame/drivers/gauntlet.c"],
-        expectedMachines: 28,
+        sources: ["src/mame/drivers/gauntlet.c", "src/mame/drivers/toobin.c"],
+        expectedMachines: 34,
     },
     {
         id: "atari-classic",
