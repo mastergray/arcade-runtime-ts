@@ -148,6 +148,8 @@ ARCADE_FAMILY_CONFIGS="$PWD/res/preload-sega-s32.json" \
 
 npm run check
 npm test
+
+npm run check && npm test
 ```
 
 - First production build: compiled the family, then failed at the final link
@@ -167,6 +169,8 @@ npm test
 - `npm run check`: passed (`check:src` and `check:tests`).
 - `npm test`: 30 files, 553 cases; 553 passed, 0 failed, 0 skipped. The real
   new output was present and passed `tests/spec/32-build-output.test.ts`.
+- Final combined `npm run check && npm test` rerun from the committed package
+  state: passed with the same 553/553 spec result.
 
 ## Integrator note
 
