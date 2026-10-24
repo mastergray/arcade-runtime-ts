@@ -34,6 +34,7 @@ exactly which archive and file a set is missing.
 | `atari-gauntlet` | Atari Gauntlet board (`gauntlet.c`; 68010 with slapstic, 6502 sound) | measured |
 | `sega-s32` | Sega System 32 (`segas32.c`; V60 with the V25 protection MCU, MultiPCM) | measured |
 | `seta-2` | Seta 2 board (`seta2.c`; TMP68301 with X1-010 sound) | measured |
+| `namco-nb` | Namco NB-1 and NB-2 (`namconb1.c`; 68EC020 with the C75 sound MCU and C352) | builds; below the F6 gate on desktop (0.82–0.92) |
 | `midway-mcr` | Bally/Midway MCR-1/2/3 and MCR-68k | measured |
 | `konami-16` | Konami 68000 boards (`tmnt.c`, `simpsons.c`, `xmen.c`, `gijoe.c`, `mystwarr.c`, `spy.c` hardware) | measured |
 | `atari-classic` | Atari vector boards (`bzone.c`, `tempest.c`) and `rampart.c` | measured |
