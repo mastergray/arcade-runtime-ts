@@ -33,7 +33,7 @@ from `tnzs.c`, 17 from `slapfght.c`, six from `flstory.c`, seven from
 `superqix.c`. No list correction was needed.
 
 Source inspection expanded §4.6's shorthand with the M6809 CPU used by
-Gladiator, the MCS51 core used by Super Qix's I8751, and the YM2151, MSM5205,
+the `gladiatr.c` set, the MCS51 core used by the `superqix.c` I8751, and the YM2151, MSM5205,
 MSM5232 and SN76496 sound cores used across the selected units. It also added
 the Taito 8741 machine helper and the SETA001 sprite unit. The first complete
 compile then exposed one target correction at link time: `slapfght.c` uses

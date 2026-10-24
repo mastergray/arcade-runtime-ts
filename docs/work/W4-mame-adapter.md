@@ -25,7 +25,7 @@ sets" bullets), and W3's merge note at `docs/work/W3-merge-note.md` for
 the artifact names and link flags.
 
 Port reference for the overlay codec and session shape:
-`/home/mastergray/dev/dos-game-runtime-js/src/JsDosEmulatorAdapter/` (its
+`~/dev/dos-game-runtime-js/src/JsDosEmulatorAdapter/` (its
 overlay zip reading/writing with `fflate`, path validation and limits are
 the model for §2.4).
 

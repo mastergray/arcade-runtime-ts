@@ -112,8 +112,8 @@ record exists with every section present.
 
 ```sh
 npm install
-ln -sfn /home/mastergray/dev/mame-runtume-ts/res/emsdk res/emsdk
-ln -sfn /home/mastergray/dev/mame-runtume-ts/res/mame0161s.zip res/mame0161s.zip
+ln -sfn ~/dev/mame-runtume-ts/res/emsdk res/emsdk
+ln -sfn ~/dev/mame-runtume-ts/res/mame0161s.zip res/mame0161s.zip
 EMSDK_DIR="$PWD/res/emsdk" node --import tsx scripts/build-mame.ts <family> --jobs 4
 npm run probe:mame:threading -- "$PWD/dist/mame/<family>/mame<family>"
 npm run check && npm test

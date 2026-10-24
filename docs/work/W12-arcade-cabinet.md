@@ -17,7 +17,7 @@ sources it attaches), §10.7 (`ArcadeStorage` and `ArcadeRomStore`), §10.5
 of `ArcadeControlsConfig` are accepted by the predicate but rejected with
 `UNSUPPORTED` at construction until M10).
 
-Port reference: `/home/mastergray/dev/dos-game-runtime-js/src/DosDeployment/`
+Port reference: `~/dev/dos-game-runtime-js/src/DosDeployment/`
 and `tests/spec/08-deployment-config.test.ts` plus its browser case. §10.6
 says the cabinet is the counterpart of `DosDeployment`: keep its lifecycle
 (player started before sources attach, teardown of everything created in a

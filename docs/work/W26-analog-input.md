@@ -273,7 +273,7 @@ the `src/index.ts` exports needed, and gives the §4.3 evidence.
   (not the shared link the other lanes use), unpacked from
   `res/mame0161s.zip` on the first build, and `--fresh` is allowed there.
   For reading the pinned source before you build, the shared tree at
-  `/home/mastergray/dev/arcade-runtime-ts/.cache/mame0161-source` is
+  `~/dev/arcade-runtime-ts/.cache/mame0161-source` is
   readable; never write to it.
 - No attribution lines in commits. Do not rebase; do not stop on a refused
   git command, report it in the merge note instead.

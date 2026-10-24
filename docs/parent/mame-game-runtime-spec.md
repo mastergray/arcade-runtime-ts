@@ -34,7 +34,7 @@ Data East and Taito F2. Full-speed desktop and phone play is an
 acceptance target, not an assumption; the probes in §13 record which
 cores and board families actually meet it.
 
-The sibling checkout at `/home/mastergray/dev/dos-game-runtime-js` is
+The sibling checkout at `~/dev/dos-game-runtime-js` is
 the behavioral reference. Its package name is `dos-game-runtime-ts`.
 The same conventions apply here: `ctg-js-test` for the `spec` suite,
 `ctg-js-browser-test` for the `browser` suite, and the

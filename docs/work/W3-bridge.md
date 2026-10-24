@@ -163,9 +163,9 @@ shape).
 
 ```sh
 npm install
-ln -s /home/mastergray/dev/mame-runtume-ts/res/emsdk res/emsdk
-mkdir -p .cache && ln -s /home/mastergray/dev/mame-runtume-ts/.cache/mame0161-source .cache/mame0161-source
-cp /home/mastergray/dev/mame-runtume-ts/res/*.json /home/mastergray/dev/mame-runtume-ts/res/*.lua res/   # private probe configs
+ln -s ~/dev/mame-runtume-ts/res/emsdk res/emsdk
+mkdir -p .cache && ln -s ~/dev/mame-runtume-ts/.cache/mame0161-source .cache/mame0161-source
+cp ~/dev/mame-runtume-ts/res/*.json ~/dev/mame-runtume-ts/res/*.lua res/   # private probe configs
 
 # family build from the committed pair (W1's mode)
 EMSDK_DIR="$PWD/res/emsdk" MAME_PROBE_KIND=family-pair scripts/probe-mame0161-tiny.sh neogeo

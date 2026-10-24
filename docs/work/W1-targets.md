@@ -106,8 +106,8 @@ with their F1 rows written.
 ```sh
 # one-time, in your worktree
 npm install
-ln -s /home/mastergray/dev/mame-runtume-ts/res/emsdk res/emsdk
-mkdir -p .cache && ln -s /home/mastergray/dev/mame-runtume-ts/.cache/mame0161-source .cache/mame0161-source
+ln -s ~/dev/mame-runtume-ts/res/emsdk res/emsdk
+mkdir -p .cache && ln -s ~/dev/mame-runtume-ts/.cache/mame0161-source .cache/mame0161-source
 
 # regression for the patch relocation (ROM-free)
 EMSDK_DIR="$PWD/res/emsdk" npm run probe:mame:tiny -- "$PWD/.cache/mame0161-source"
@@ -121,5 +121,5 @@ npm run check && npm test
 
 The source cache has the probe patches applied in place from M0; the
 scripts already detect an applied patch and skip it. If you need a clean
-tree, unpack `/home/mastergray/dev/mame-runtume-ts/res/mame0161s.zip`
+tree, unpack `~/dev/mame-runtume-ts/res/mame0161s.zip`
 into a new directory under `.cache/` rather than touching the shared one.

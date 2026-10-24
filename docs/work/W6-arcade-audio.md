@@ -17,7 +17,7 @@ bullet and the P10 evidence in `docs/probes/mame0161/bridge-hooks.md`
 cadence that crosses the screen cadence. That cadence is why §8 says
 queue accounting uses buffer duration, never callback arrival time.
 
-Port reference: `/home/mastergray/dev/dos-game-runtime-js/src/DosAudio/`
+Port reference: `~/dev/dos-game-runtime-js/src/DosAudio/`
 and `tests/browser/03-dos-audio.test.ts`. §8 says "port of `DosAudio`";
 keep its public shape (`armGestureUnlock`, `isUnlocked`, `isMuted`,
 `sampleRate`, `queuedMs`, `droppedSamples`, `mute`, `unmute`, `destroy`,

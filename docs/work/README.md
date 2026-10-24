@@ -93,11 +93,11 @@ git command:
 
 ```sh
 codex exec -s workspace-write -c 'approval_policy="never"' \
-  -c 'sandbox_workspace_write.writable_roots=["/home/mastergray/dev/arcade-runtime-ts/.git"]' - < brief-prompt.md
+  -c 'sandbox_workspace_write.writable_roots=["~/dev/arcade-runtime-ts/.git"]' - < brief-prompt.md
 ``` The native lane additionally
 recreates the two ignored links:
 
 ```sh
-ln -s /home/mastergray/dev/mame-runtume-ts/res/emsdk res/emsdk
-mkdir -p .cache && ln -s /home/mastergray/dev/mame-runtume-ts/.cache/mame0161-source .cache/mame0161-source
+ln -s ~/dev/mame-runtume-ts/res/emsdk res/emsdk
+mkdir -p .cache && ln -s ~/dev/mame-runtume-ts/.cache/mame0161-source .cache/mame0161-source
 ```

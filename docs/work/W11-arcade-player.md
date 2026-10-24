@@ -17,7 +17,7 @@ and its browser acceptance needs a real build).
 does on `start`, and that `reset("hard")` is the player's job: exit then
 start again with the cached ROM bytes), §7, §8 and §10.5 (`audit()`).
 
-Port reference: `/home/mastergray/dev/dos-game-runtime-js/src/DosPlayer/`
+Port reference: `~/dev/dos-game-runtime-js/src/DosPlayer/`
 and `tests/browser/04-dos-player.test.ts`. §9 says lifecycle, failure
 handling and event semantics follow `DosPlayer`; read its status machine,
 listener error isolation and partial-start teardown closely, then apply

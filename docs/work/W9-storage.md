@@ -14,7 +14,7 @@ Lane: **TypeScript**. Branch: `wp/w9-storage`. Milestones: M6 (storage), M7 (ROM
 ROM store is local-only and the page is responsible for its contents),
 §2.3 (`RomFile`, `romNameKey`), §3 (`STORAGE_FAILED`).
 
-Port reference: `/home/mastergray/dev/dos-game-runtime-js/src/DosStorage/`
+Port reference: `~/dev/dos-game-runtime-js/src/DosStorage/`
 with `tests/spec/09-storage-config.test.ts` and its browser case, plus
 `tests/support/FailingIndexedDB.ts` there. §10.7 says `ArcadeStorage` "is
 `DosStorage`": keep its public shape (`save`, `load`, `clear`, `key`,

@@ -16,7 +16,7 @@ side of), §2.1 (`ArcadeControl`, `arcadeControlKey`), §2.3
 (`ArcadeSession.setControl` and `onTick`), and §4.6's "Zero-button
 machines" bullet.
 
-Port references: `/home/mastergray/dev/dos-game-runtime-js/src/DosInput/`
+Port references: `~/dev/dos-game-runtime-js/src/DosInput/`
 and `src/KeyboardSource/` with their tests (`tests/spec/03-dos-input.test.ts`,
 `tests/spec/07-input-target.test.ts`, browser keyboard cases). §6 says
 "equivalent of `DosInput`"; keep its lifecycle, `enabled` gate, blur and
@@ -117,6 +117,6 @@ npm run test:browser
 ```
 
 For token questions, the pinned source is readable at
-`/home/mastergray/dev/mame-runtume-ts/.cache/mame0161-source/src/emu/inpttype.h`
+`~/dev/mame-runtume-ts/.cache/mame0161-source/src/emu/inpttype.h`
 (port tokens: `P<n>_<TYPE>` for player types, bare `<TYPE>` for player-0
 types) and `src/emu/input.c` (`code_to_token`: joystick device index + 1).

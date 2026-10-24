@@ -36,7 +36,7 @@ Build ID:
 
 Source inspection showed that §4.6's Taito classic shorthand is incomplete for
 the thirteen selected 0.161 driver units. In addition to its named cores, the
-target needs M6809 for Gladiator, MCS51 for Super Qix's I8751, and YM2151,
+target needs M6809 for the `gladiatr.c` set, MCS51 for the `superqix.c` I8751, and YM2151,
 MSM5205, MSM5232 and SN76496 sound cores. The source set also needs
 `machine/tait8741.c` and `video/seta001.c`.
 

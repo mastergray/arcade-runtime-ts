@@ -35,7 +35,7 @@ authenticated `mame0161` tag, with the in-repo web bridge. The optional
 libretro path from the parent spec is retained as a late, optional milestone
 and is never a substitute for the direct build.
 
-The sibling checkout at `/home/mastergray/dev/dos-game-runtime-js` remains
+The sibling checkout at `~/dev/dos-game-runtime-js` remains
 the behavioral reference for lifecycle, failure and test conventions
 (`ctg-js-test` for the `spec` suite, `ctg-js-browser-test` for the `browser`
 suite, constructors never read globals, `init` supplies browser defaults).

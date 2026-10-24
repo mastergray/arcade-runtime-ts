@@ -16,7 +16,7 @@ Lane: **TypeScript**. Branch: `wp/w5-arcade-display`. Milestone: M1 (slice M1D).
 and "Startup decryption" bullets), and §9's `display` field of
 `ArcadeGameConfig`.
 
-Port reference: `/home/mastergray/dev/dos-game-runtime-js/src/DosDisplay/`
+Port reference: `~/dev/dos-game-runtime-js/src/DosDisplay/`
 and its tests `tests/spec/04-display-layout.test.ts` and the display cases
 under `tests/browser/`. §7 says "port of `DosDisplay`"; keep its public
 shape (construction config, `attach`, `detach`, `layoutFor`, `fullscreen`,

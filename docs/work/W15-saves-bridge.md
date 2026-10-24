@@ -103,8 +103,8 @@ passes with the private config on your machine.
 
 ```sh
 npm install
-ln -sfn /home/mastergray/dev/mame-runtume-ts/res/emsdk res/emsdk
-ln -sfn /home/mastergray/dev/mame-runtume-ts/res/mame0161s.zip res/mame0161s.zip
+ln -sfn ~/dev/mame-runtume-ts/res/emsdk res/emsdk
+ln -sfn ~/dev/mame-runtume-ts/res/mame0161s.zip res/mame0161s.zip
 EMSDK_DIR="$PWD/res/emsdk" node --import tsx scripts/build-mame.ts neogeo --jobs 4
 npm run check && npm test
 ARCADE_PRELOAD_CONFIG=res/preload.json npm run test:browser
