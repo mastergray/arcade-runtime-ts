@@ -80,43 +80,22 @@ the adapter's fixed-heap error, raise `memoryPages` to 8,192 and repeat F4–F6.
 
 ## F4 — What is the slowest Chromium time from `callMain` to first frame?
 
-Pending: the sandbox refused the browser server's loopback bind with
-`listen EPERM: operation not permitted 127.0.0.1`, before Chromium page
-creation. The integrator should rerun the command below and record start time
-to the first valid non-blank frame. The ignored preload audits `ok` under both
-strict and MAME-compatible policies: one required archive present, all 11
-expected files valid, zero missing, wrong-size, wrong-CRC, warnings or archive
-problems, and 25 harmless unexpected entries.
+Measured by the integrator on 2026-10-24 (Chrome 150, Core i7-1165G7,
+headless, quiet host) with the ignored preload for a new family: 315 ms from
+immediately before `adapter.start()` to the first valid, non-blank frame.
 
 ## F5 — Are native refresh and upright geometry correct?
 
-Pending for the same loopback-policy reason. The integrator should confirm
-that the first frame is non-blank, record its upright geometry and native
-refresh, then measure the 60, 90, 120 and 144 Hz controlled cadences.
-`gottlieb.c` marks the configured board `GAME_IMPERFECT_SOUND`; that is MAME
-0.161's upstream driver flag, not a browser-port defect.
-
-The configured board enables the driver's knocker and faked-speech sample
-fragments. Its raw `-listxml` emits 45 sample entries and names a sample set,
-but the optional sample archive shares a basename with an already-required
-game archive, so the runtime's flat archive metadata deliberately omits the
-colliding optional role. No sample archive was supplied, the ordinary ROM
-audit still returned `ok`, and the driver is designed to run without those
-optional sounds. Do not search for sample files; only browser confirmation of
-the rendered frame remains pending.
+240×256 vertical at 61.419 Hz; every frame that size and the first frame non-blank. Cadences:
+60 Hz → 61.58 fps (+0.26 %), 90 Hz → 61.19 fps (−0.38 %), 120 Hz → 61.29 fps (−0.22 %), 144 Hz → 61.31 fps (−0.18 %), all inside the 1 % gate.
 
 ## F6 — Does the heaviest title sustain full speed?
 
-Pending for the same loopback-policy reason. The integrator should record the
-60-second emulated-time / wall-time desktop ratio with frameskip disabled and
-classify the family against the desktop gate. The 4× CPU-throttled mobile
-proxy remains informational.
-
-The driver declaration for the configured board does not include
-`GAME_SUPPORTS_SAVE`. The production quick-save case is therefore expected to
-fail until M35 exposes save support, as for the earlier save-less driver; this
-is recorded rather than fixed in W28. The selected metadata reports 16 DIP
-switches, so the no-DIP EEPROM selector case does not apply to this preload.
+Desktop: emulated seconds / wall seconds = 1.0000 over 60 s, frameskip
+disabled. M3–M5 acceptance on the same run: audio queue peak 72 ms against
+the 120 ms cap, keyboard coin and start reached play, two pads assigned and
+released. The 4× CPU-throttled mobile proxy was not run; it is informational
+and M28 replaces it.
 
 Run F4–F6 without disclosing the private selection:
 
@@ -126,5 +105,4 @@ ARCADE_FAMILY_CONFIGS="$PWD/res/preload-gottlieb.json" \
   npm run test:browser
 ```
 
-The sandbox attempt completed 0 passed, 32 failed and 25 skipped by design;
-all 32 runnable cases stopped on the same loopback bind denial.
+The integrator's host run completed 32 passed, 0 failed, 25 skipped by design.

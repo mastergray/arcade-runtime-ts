@@ -225,3 +225,10 @@ driver/audio/video units, the 8088 and M6502 board paths, samples/DAC/AY8910/
 SP0250/Votrax sound paths, RIOT/MIOT devices and the PR-8210's MCS-48
 controller. This package did not edit the spec because it is outside W28i's
 write set.
+
+## Integrator notes
+
+Gate run on the host with the ignored preload (2026-10-24, quiet host):
+32 passed, 0 failed, 25 skipped by design. F4 315 ms; F5 240×256 vertical at 61.419 Hz, cadences within 1 %; F6 1.0000 over
+60 s; audio queue peak 72 ms; coin and start reached play; two pads
+assigned and released. Measurements copied into the probe record.
