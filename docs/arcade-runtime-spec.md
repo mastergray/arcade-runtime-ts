@@ -331,7 +331,11 @@ type ArcadeControl =
     | { readonly kind: "select";    readonly player: PlayerIndex }   // Neo Geo AES; ignored elsewhere
     | { readonly kind: "service" }
     | { readonly kind: "test" }
-    | { readonly kind: "tilt" };
+    | { readonly kind: "tilt" }
+    | { readonly kind: "key"; readonly key: ArcadeKeyName }             // W29: a field's own PORT_CODE, reached through pad 1
+    | { readonly kind: "volume"; readonly direction: "up" | "down" };  // W29: cabinet volume buttons (M33)
+
+type ArcadeKeyName = "F1" | "F2" | "F5" | "F6" | "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9";
 
 type Unsubscribe = () => void;
 type Listener<T> = (event: T) => void;
@@ -372,8 +376,20 @@ interface ArcadeAxis { readonly player: PlayerIndex; readonly kind: ArcadeAxisKi
 
 type MachineAnalogKind = "stick-x" | "stick-y" | "stick-z" | "paddle" | "paddle-v" | "pedal-1" | "pedal-2" | "pedal-3"
     | "dial" | "dial-v" | "trackball-x" | "trackball-y" | "lightgun-x" | "lightgun-y" | "mouse-x" | "mouse-y" | "positional" | "positional-v";
-interface MachineInputs { readonly analog: ReadonlyArray<{ readonly player: PlayerIndex; readonly kind: MachineAnalogKind }>; readonly dualStick: boolean; }
+interface MachineInputs {
+    readonly analog: ReadonlyArray<{ readonly player: PlayerIndex; readonly kind: MachineAnalogKind }>;
+    readonly dualStick: boolean;
+    readonly keys: ReadonlyArray<{ readonly name: string; readonly key: ArcadeKeyName; readonly player: PlayerIndex }>;   // W29: fields with their own key code
+    readonly volume: boolean;                                                                                              // W29: IPT_VOLUME_UP/DOWN declared
+}
 ```
+
+The `key` and `volume` controls (W29, M37/M33) have canonical keys `key:F2`
+and `volume:up`. A field declared with `PORT_CODE` keeps its own sequence
+and ignores the type-level controller config (§4.4), so the bridge reaches
+such fields through operator-key items on pad 1 and reports them in
+`MachineInputs.keys`; a `key` control whose key no row names, or a `volume`
+control on a board without volume ports, is accepted and does nothing.
 
 `arcadeControlKey` assigns the `stick` and `pedal` variants distinct
 canonical keys. Absolute axis values use [−1, 1], with sticks centred at 0
@@ -409,6 +425,7 @@ interface MachineInfo {
     readonly buttons: ArcadeButtonCount;
     readonly bios: ReadonlyArray<{ readonly name: string; readonly description: string; readonly isDefault: boolean }>;
     readonly hasNvram: boolean;      // false for most pre-1986 boards: high scores do not survive exit
+    readonly supportsSave: boolean;  // W29 (M35): the driver declares GAME_SUPPORTS_SAVE; 0.161 declines saves otherwise
 }
 ```
 
@@ -639,7 +656,10 @@ set to `web`.
   like any other device. Since M11 (W26) items 0–15 keep their meanings,
   items 16–19 are `HAT2UP/DOWN/LEFT/RIGHT` (stick 2), items 20–23 are
   `HAT3UP/DOWN/LEFT/RIGHT` (stick 1) and items 24–26 are
-  `BUTTON13/14/15` (digital pedal presses); each pad also registers
+  `BUTTON13/14/15` (digital pedal presses); since W29 items 27–28 are
+  `BUTTON16/17` (cabinet volume up/down) and items 29–42 are
+  `BUTTON18`–`BUTTON31` (operator keys F1, F2, F5, F6, 0–9), written on
+  pad 1 only; each pad also registers
   `XAXIS`, `YAXIS`, `ZAXIS`, `RXAXIS`, `RYAXIS`, `ADD_RELATIVE1` and
   `ADD_RELATIVE2` at axis indices 0–6, the first five absolute and the last
   two relative read-and-clear accumulators.
@@ -657,7 +677,7 @@ C functions marked `EMSCRIPTEN_KEEPALIVE`, called through `cwrap`:
 | `web_save_state(name)` / `web_load_state(name)` | `schedule_save` / `schedule_load`; completion through a callback |
 | `web_flush_nvram()` | Writes NVRAM (and memory card, per F8) to the filesystem without exiting (patch 0003) |
 | `web_exit()` | Schedules exit |
-| `web_machine_info(out)` | Fills a struct for `MachineInfo`, including BIOS options and NVRAM presence |
+| `web_machine_info(out)` | Fills a struct for `MachineInfo`, including BIOS options, NVRAM presence, operator keys, volume ports and the save flag |
 
 Callbacks into JS (`EM_JS`): `onTick`, `onFrame`, `onSound`,
 `onStateDone(ok)`, `onExit`, `onFrontendDone(result)`, `onLog(level, text)`.
@@ -699,14 +719,14 @@ the machine is advanced only by `web_run_frames`.
 | ------ | --------- | ---- |
 | `web_run_frames` | `(count: i32) → i32` | Advances the device scheduler until `count` emulated screen frames have elapsed, or fewer if exit became pending; services at most one pending scheduled state operation at the between-timeslice boundary before the first frame. Returns frames actually run. A no-op returning 0 while paused. |
 | `web_pump` | `() → void` | Runs the video/OSD boundary once without advancing the scheduler (used while paused so the last frame can be redrawn). |
-| `web_set_control` | `(pad: i32, item: i32, pressed: i32) → void` | Writes virtual device state. `pad` is 0–3; `item` is the §4.4 row order: 0–3 hat up/down/left/right, 4–9 buttons 1–6, 10 coin, 11 start, 12 select, 13 service, 14 test, 15 tilt. |
+| `web_set_control` | `(pad: i32, item: i32, pressed: i32) → void` | Writes virtual device state. `pad` is 0–3; `item` is the §4.4 row order: 0–3 hat up/down/left/right, 4–9 buttons 1–6, 10 coin, 11 start, 12 select, 13 service, 14 test, 15 tilt, 16–26 the M11 stick and pedal items, 27–28 volume up/down, 29–42 operator keys (§4.2). |
 | `web_set_axis` | `(pad: i32, axis: i32, value: f32) → void` | Writes a virtual-pad axis (M11); `axis` is the §4.2 axis index 0–6, absolute values are clamped to [−1, 1], relative values are pixel deltas accumulated until the next sample. |
 | `web_pause` / `web_resume` | `() → void` | `machine().pause()` / `resume()`. |
 | `web_reset` | `(hard: i32) → void` | Schedules a soft reset; `hard` is accepted and ignored because a hard reset is a fresh module (§5). |
 | `web_save_state` / `web_load_state` | `(name: char*) → void` | Schedules save/load of `/mame/sta/<name>.sta`; completion arrives on `onStateDone`. |
 | `web_flush_nvram` | `() → i32` | Flushes NVRAM (and memory card, F8) to MEMFS without exiting; returns 0 on success. |
 | `web_exit` | `() → void` | Schedules exit; `onExit` fires once the bridge has stopped and flushed. |
-| `web_machine_info` | `() → char*` | Returns a NUL-terminated JSON string owned by the bridge, valid until the next call: `{ name, description, width, height, refreshHz, orientation, aspectRatio, players, buttons, inputs: { analog: [{player, kind}], dualStick }, bios: [{name, description, isDefault}], hasNvram }`. The adapter adds `family` from `build.json`. `width` and `height` are valid from the first `onFrame` onward (the 0.161 render target has no size before it first rasterizes), so the adapter reads this inside its first-frame callback. |
+| `web_machine_info` | `() → char*` | Returns a NUL-terminated JSON string owned by the bridge, valid until the next call: `{ name, description, width, height, refreshHz, orientation, aspectRatio, players, buttons, inputs: { analog: [{player, kind}], dualStick, keys: [{name, key, player}], volume }, bios: [{name, description, isDefault}], hasNvram, supportsSave }`. The adapter adds `family` from `build.json`. Before the run loop starts (`web_bridge_start`, after the controller and machine cfg have loaded) the bridge makes one idempotent pass over the live fields (W29): a field whose standard sequence is its own `PORT_CODE` gets the type sequence OR-ed in when it is the only coded field of that type and player, and an operator-key item OR-ed in for each of its codes in the F1/F2/F5/F6/0–9 table; `inputs.keys` lists those fields in port order. `width` and `height` are valid from the first `onFrame` onward (the 0.161 render target has no size before it first rasterizes), so the adapter reads this inside its first-frame callback. |
 
 **Callbacks** read from `Module.web` at the moment each fires:
 
@@ -729,8 +749,10 @@ timing policy.
 ### 4.4 Generated controller config
 
 At start, the adapter writes `/mame/ctrlr/web.cfg` mapping each MAME port to
-the web devices and starts MAME with `-ctrlr web`. Keyboard defaults and
-the MAME UI are never in the input path. Probe F10 records how each family
+the web devices and starts MAME with `-ctrlr web`. No keyboard device
+exists, so MAME's UI and type-default key sequences never fire; a field's
+own `PORT_CODE` is reached through the operator-key items on virtual pad 1
+(§4.2, §4.3, W29). Probe F10 records how each family
 names its ports (for example two-player alternating boards that share one
 physical stick, and Neo Geo AES `SELECT`) so the generator covers every
 family without per-machine code.
@@ -767,6 +789,8 @@ emulation is needed.
 | service (pad 1 only) | `SERVICE1` (the service button, default key 9) | `ITEM_ID_BUTTON10` | `JOYCODE_1_BUTTON10` |
 | test (pad 1 only) | `SERVICE` (the service-mode toggle, default key F2) | `ITEM_ID_BUTTON11` | `JOYCODE_1_BUTTON11` |
 | tilt (pad 1 only) | `TILT` and `TILT1` | `ITEM_ID_BUTTON12` | `JOYCODE_1_BUTTON12` |
+| volume up / down (pad 1 only, W29) | `VOLUME_UP` / `VOLUME_DOWN` | `ITEM_ID_BUTTON16` / `BUTTON17` | `JOYCODE_1_BUTTON16` / `BUTTON17` |
+| key (pad 1 only, W29) | none: bound per field by the bridge (§4.3) | `ITEM_ID_BUTTON18` … `BUTTON31` | `JOYCODE_1_BUTTON18` … |
 
 In 0.161 `SERVICE` is the test-mode toggle and `SERVICE1` the service button, so the two are distinct ports, not aliases. Where the table lists two port tokens, the generator emits both lines;
 0.161 ignores a `port type` it cannot resolve for the running machine, so
@@ -1006,6 +1030,8 @@ class ArcadeInput {
   cannot cancel the same control still held by a gamepad or touch button.
 - Holds are idempotent within a channel. Destroying a channel releases all
   of its holds.
+- `key` and `volume` controls (W29) follow every hold, tap, release and
+  snapshot rule above like any other digital control.
 - **`tap`** exists for coin, start and select: boards sample inputs once per
   frame, and a press/release inside one frame can be missed. It holds for
   `holdFrames` emulated frames counted from `onTick`, then releases.
@@ -1113,8 +1139,8 @@ class ArcadePlayer {
     pause(): void;
     resume(): void;
     reset(kind?: "soft" | "hard"): void;
-    saveState(slot?: string): Promise<void>;   // default slot "quick"
-    loadState(slot?: string): Promise<void>;
+    saveState(slot?: string): Promise<void>;   // default slot "quick"; rejects UNSUPPORTED before the session when machine.supportsSave is false (W29, M35)
+    loadState(slot?: string): Promise<void>;   // same guard
     persist(): Promise<Uint8Array | null>;
     fullscreen(): Promise<void>;
     on(event, listener): Unsubscribe;          // status, exit, error
@@ -1196,7 +1222,14 @@ when a page gives none. Repeat ignored, blur and visibility release,
 `enabled` gate, as in the DOS runtime. Since M11 the default map also binds
 player-one `KeyC` to pedal 1 and `KeyV` to pedal 2; analogue arrow-key
 ramps and the second stick come from the generated controller
-configuration (§4.4), not from `KeyboardSource`.
+configuration (§4.4), not from `KeyboardSource`. Since W29 the default map
+also binds `Equal` and `Minus` to cabinet volume up and down, and the
+source has a **pass-through layer** beside the map: the browser codes `F1`,
+`F2`, `F5`, `F6` and `Digit0`–`Digit9` always send the matching `key`
+control in addition to whatever the map says (so `F2` presses both the
+`test` control and a board's own F2 switch, as in MAME), under the same
+enabled, repeat, blur and `preventDefault` rules; `passthroughKeys: false`
+turns the layer off.
 
 ### 10.4 `GamepadSource`
 
@@ -1456,7 +1489,10 @@ demonstrate the library. It is a consumer, not a product feature:
   (W18; the W13a/W13b family and machine inputs are retired).
   One persisted library-wide setting, "File check: exact 0.161 set / what MAME accepts", controls every card audit and every cabinet start (§10.5 strictness). An `ok` report with warnings reads "Ready to play (N files differ from 0.161; MAME ignores them)", enables Start, and lists each warned file and its true status in the detailed file check; strict-mode wording is unchanged.
 - `ArcadeCabinet` with default keyboard map, gamepads, a corner menu
-  (fullscreen, sound, reset, save/load state, clear saves), BIOS/DIP
+  (fullscreen, sound, reset, save/load state, clear saves), an Operator
+  row built from `MachineInputs.keys` after start, volume buttons when
+  `inputs.volume` is set, save controls disabled with a note when
+  `supportsSave` is false (W29), BIOS/DIP
   selectors once M8 exists, and a touch layout chosen by `MachineInfo`
   once M10 exists.
 

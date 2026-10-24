@@ -44,6 +44,7 @@ export {
     isArcadeAxis,                                                  // Guard for ArcadeAxis (M11)
     isArcadeAxisKind,                                              // Guard for ArcadeAxisKind (M11)
     isArcadeControl,                                               // Guard for ArcadeControl
+    isArcadeKeyName,                                               // Guard for ArcadeKeyName (W29)
     isOrientation,                                                 // Guard for Orientation
     isBiosOption,                                                  // Guard for BiosOption
     isMachineAnalogKind,                                           // Guard for MachineAnalogKind (M11)
@@ -95,7 +96,8 @@ export type {
     BiosOption,                                                    // Selectable BIOS
     MachineAnalogKind,                                             // Discovered analogue port kinds (M11)
     MachineInfo,                                                   // Discovered machine description
-    MachineInputs,                                                 // Discovered analogue and dual-stick ports (M11)
+    MachineInputs,                                                 // Discovered analogue, dual-stick, operator-key and volume ports (M11, W29)
+    ArcadeKeyName,                                                 // Operator keys reachable through pad 1 (W29)
     FrameEvent,                                                    // Video frame
     SoundEvent,                                                    // Stereo sample chunk
     RomRole,                                                       // Archive role in a set
