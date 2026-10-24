@@ -28,7 +28,7 @@ exactly which archive and file a set is missing.
 | `taito-16` | Taito 16-bit boards (B, F2, X, Z System, H and related) | measured |
 | `taito-f3` | Taito F3 (68EC020 with the Ensoniq sound board) | measured |
 | `irem-m72` | Irem M72 and M92 | measured |
-| `sega-16` | Sega `segahang.c`, `segaorun.c` and `segaxbd.c` boards | measured |
+| `sega-16` | Sega `segahang.c`, `segaorun.c`, `segaxbd.c` and `segaybd.c` boards | measured |
 | `sega-s16` | Sega System 16A, 16B and 18 (`segas16a.c`, `segas16b.c`, `segas18.c`) | measured |
 | `midway-tunit` | Midway T-Unit and Y-Unit (`midtunit.c`, `midyunit.c`; Williams ADPCM and DCS sound boards) | measured |
 | `atari-gauntlet` | Atari Gauntlet board (`gauntlet.c`; 68010 with slapstic, 6502 sound) | measured |
