@@ -8,9 +8,12 @@
 
 CPUS["M6502"] = true
 CPUS["M680X0"] = true
+CPUS["S2650"] = true
 
+SOUNDS["AY8910"] = true
 SOUNDS["DISCRETE"] = true
 SOUNDS["POKEY"] = true
+SOUNDS["SN76496"] = true
 SOUNDS["YM2413"] = true
 SOUNDS["OKIM6295"] = true
 
