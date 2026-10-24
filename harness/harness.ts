@@ -86,6 +86,7 @@ type AuditStrictness = "strict" | "mame";
 interface HarnessAdapterBoundary {
     readonly __arcadeHarnessAdapter?: ArcadeAdapter;
     __arcadeHarnessLastStartConfig?: LastStartConfig;
+    __arcadeHarnessCabinet?: ArcadeCabinet;                        // Live cabinet, read by the browser tests after a restart
 }
 
 /**
@@ -998,6 +999,7 @@ const startCard = async (card: GameCard): Promise<void> => {
             renderLibrary();
             setStatus(`Starting ${card.metadata.description}…`, "starting");
             await created.start();
+            (globalThis as unknown as HarnessAdapterBoundary).__arcadeHarnessCabinet = created;
             (globalThis as unknown as HarnessAdapterBoundary).__arcadeHarnessLastStartConfig = {
                 ...(bios === "" ? {} : { bios }),
                 dipswitches: { ...dipswitches },

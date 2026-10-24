@@ -19,7 +19,10 @@ import type {
     RomSource,                                                     // Original game source classification
     Unsubscribe,                                                   // Player exit remover
 } from "../shared.types.js";
-import type { ArcadeGameConfig } from "../ArcadePlayer/types.js";   // Player game copied during init
+import type {
+    ArcadeGameConfig,                                              // Player game copied during init
+    ArcadePlayerStatus,                                            // Lifecycle transitions followed for source rebinding
+} from "../ArcadePlayer/types.js";
 import type { GamepadProviderLike } from "../GamepadSource/types.js";   // Browser Gamepad API wrapper
 import type {
     KeyboardEventTargetLike,                                      // Injected key and blur targets
@@ -102,6 +105,7 @@ export default class ArcadeCabinet {
     private readonly _blobSources: ReadonlyArray<BlobRomSource>;  // Picked sources stored only after an ok audit
     private readonly _onVisibilityChange: (event: Event) => void; // Bound autosave listener
     private _unsubscribeExit: Unsubscribe | null = null;          // Persistent player-exit subscription
+    private _unsubscribeStatus: Unsubscribe | null = null;        // Persistent player-status subscription (hard-reset rebinding)
     private _keyboardEnabled = true;                              // Restart-persistent keyboard gate
     private _gamepadsEnabled = true;                              // Restart-persistent gamepad gate
     private _keyboard: KeyboardSource | null = null;              // Live keyboard source while started
@@ -144,6 +148,7 @@ export default class ArcadeCabinet {
             void this.save().catch(() => undefined);
         };
         this._unsubscribeExit = this._player.on("exit", () => this.teardownControls());
+        this._unsubscribeStatus = this._player.on("status", (status) => this.followPlayerStatus(status));
         if (this._autosave) this._visibilityTarget?.addEventListener("visibilitychange", this._onVisibilityChange);
     }
 
@@ -354,15 +359,32 @@ export default class ArcadeCabinet {
         }
     }
 
+    // PRIVATE :: arcadePlayerStatus -> VOID
+    // Follows a started player across a hard reset: the old input channel dies with the old session, so sources detach
+    // when the player reports starting and are rebuilt over the fresh input once it reports running (M38).
+    // NOTE: An idle report while started means a hard reset failed; the cabinet then stands down like a natural exit.
+    private followPlayerStatus(status: ArcadePlayerStatus): void {
+        if (!this._isStarted) return;
+        if (status === "starting") this.detachSources();
+        else if (status === "running" && this._keyboard === null && this._gamepads === null) this.buildControls();
+        else if (status === "idle") this.teardownControls();
+    }
+
     // PRIVATE :: VOID -> VOID
     // Destroys live sources in reverse construction order and tolerates channels already retired by natural player exit.
-    private teardownControls(): void {
+    private detachSources(): void {
         const gamepads = this._gamepads;
         this._gamepads = null;
         try { gamepads?.destroy(); } catch { /* Player natural exit destroys input channels before emitting exit. */ }
         const keyboard = this._keyboard;
         this._keyboard = null;
         try { keyboard?.destroy(); } catch { /* Player natural exit destroys input channels before emitting exit. */ }
+    }
+
+    // PRIVATE :: VOID -> VOID
+    // Detaches sources and leaves the started state; natural exit, failed restart and destroy all end here.
+    private teardownControls(): void {
+        this.detachSources();
         this._isStarted = false;
     }
 
@@ -408,10 +430,12 @@ export default class ArcadeCabinet {
     }
 
     // PRIVATE :: VOID -> VOID
-    // Removes persistent player-exit and optional autosave subscriptions idempotently.
+    // Removes persistent player-exit, player-status and optional autosave subscriptions idempotently.
     private removeOwnedListeners(): void {
         try { this._unsubscribeExit?.(); } catch { /* Continue terminal cleanup across an injected remover failure. */ }
         this._unsubscribeExit = null;
+        try { this._unsubscribeStatus?.(); } catch { /* Continue terminal cleanup across an injected remover failure. */ }
+        this._unsubscribeStatus = null;
         if (this._autosave) {
             try { this._visibilityTarget?.removeEventListener("visibilitychange", this._onVisibilityChange); }
             catch { /* Continue terminal cleanup across an injected event target failure. */ }

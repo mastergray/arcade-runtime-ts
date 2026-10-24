@@ -391,6 +391,45 @@ const testFile: TestFile = {
                 .start(undefined),
         },
         {
+            label: "a hard reset detaches the sources from the retired session and rebuilds them over the fresh player input",
+            run: () => CTGTest.init("ArcadeCabinet hard-reset rebinding")
+                .stage("start, hard-reset onto a scripted second session, then press a key", () => withAudioContext(async () => {
+                    const first = new FakeArcadeSession();
+                    const setup = rig({ keyboard: {}, gamepads: {} }, { session: first });
+                    await setup.cabinet.start();
+                    const listenersBefore = setup.target.listenerCount;
+                    const second = new FakeArcadeSession();
+                    setup.adapter.script("resolve", second);
+                    const running = new Promise<void>((resolve) => {
+                        const off = setup.player.on("status", (status) => { if (status === "running") { off(); resolve(); } });
+                    });
+                    setup.player.reset("hard");
+                    const duringReset = { started: setup.cabinet.isStarted, keyboardNull: setup.cabinet.keyboard === null, gamepadsNull: setup.cabinet.gamepads === null };
+                    await running;
+                    setup.target.dispatch("keydown", { code: "ArrowUp", repeat: false });
+                    const result = {
+                        duringReset,
+                        started: setup.cabinet.isStarted,
+                        rebuilt: setup.cabinet.keyboard !== null && setup.cabinet.gamepads !== null,
+                        listeners: setup.target.listenerCount === listenersBefore,
+                        firstCalls: first.calls.map((call) => call.method),
+                        secondHeld: second.held.slice(),
+                    };
+                    await setup.cabinet.destroy();
+                    return { ...result, listenersAfterDestroy: setup.target.listenerCount };
+                }))
+                .assert("sources leave with the old session and the key reaches the new one", (state) => state.subject, P.equals<unknown>({
+                    duringReset: { started: true, keyboardNull: true, gamepadsNull: true },
+                    started: true,
+                    rebuilt: true,
+                    listeners: true,
+                    firstCalls: ["persist", "exit"],
+                    secondHeld: ["p1:direction:up" as ArcadeControlKey],
+                    listenersAfterDestroy: 0,
+                }))
+                .start(undefined),
+        },
+        {
             label: "a failure after one source attaches tears every source down, exits the started player and rejects with the typed error",
             run: () => CTGTest.init("ArcadeCabinet partial source cleanup")
                 .stage("make the gamepad scheduler throw after keyboard attachment", () => withAudioContext(async () => {

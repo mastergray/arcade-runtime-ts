@@ -1389,7 +1389,12 @@ audit.
 
 `start()` audits, then starts the player, then attaches sources and
 primitives; any failure tears down what that call created and rejects.
-Player exit tears controls down too. `save()` stores a non-null overlay and
+Player exit tears controls down too. A hard reset keeps the cabinet started
+but replaces the player's input: the cabinet follows the player's `status`
+events, detaches its sources when a started player reports `starting` and
+rebuilds them over the new `player.input` when it reports `running`, so keys
+and pads reach the fresh session (M38); an `idle` report while started is a
+failed restart and tears the controls down like an exit. `save()` stores a non-null overlay and
 returns `false` when nothing changed; it rejects with `UNSUPPORTED` without
 storage. `destroy()` is idempotent, destroys sources/primitives/mapper
 before the player, and releases every held control. Setters validate

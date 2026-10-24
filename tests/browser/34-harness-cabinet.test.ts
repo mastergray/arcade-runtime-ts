@@ -42,6 +42,7 @@ interface ProductionResult {
     readonly persisted: boolean;
     readonly savesCleared: boolean;
     readonly restarted: boolean;
+    readonly inputAfterRestart: { readonly keyboardAttached: boolean; readonly heldAfterRestart: number };   // M38: a key reaches the restarted session
     readonly romStoreUnchanged: boolean;
 }
 
@@ -385,6 +386,19 @@ if (CONFIG_ARGUMENT !== undefined) cases.push({
             await page.waitForFunction(() => document.querySelector<HTMLElement>("#status")?.dataset.state === "resetting");
             await page.waitForFunction(() => document.querySelector<HTMLElement>("#status")?.dataset.state === "running", undefined, { timeout: TIMEOUT });
         })
+        .interact("press a mapped key and read the restarted player's held controls (M38)", async ({ page }) => {
+            await page.locator("body").click();
+            await page.keyboard.down("ArrowUp");
+            const held = await page.evaluate(() => {
+                const browser = window as unknown as Window & { __arcadeHarnessCabinet?: { player: { input: { snapshot: ReadonlyArray<unknown> } }; keyboard: unknown } };
+                const cabinet = browser.__arcadeHarnessCabinet;
+                return { keyboardAttached: cabinet?.keyboard !== null, heldAfterRestart: cabinet?.player.input.snapshot.length ?? -1 };
+            });
+            await page.keyboard.up("ArrowUp");
+            await page.evaluate((state) => {
+                (window as unknown as Window & { __arcadeHarnessProduction: Record<string, unknown> }).__arcadeHarnessProduction.inputAfterRestart = state;
+            }, held);
+        })
         .assertPage("save controls complete and the ROM store is independent", (page) => page.evaluate((): ProductionResult => {
             const browser = window as unknown as Window & { __arcadeHarnessProduction: Record<string, unknown> };
             const state = browser.__arcadeHarnessProduction;
@@ -395,6 +409,7 @@ if (CONFIG_ARGUMENT !== undefined) cases.push({
                 persisted: state.persisted === true,
                 savesCleared: state.savesCleared === true,
                 restarted: document.querySelector<HTMLElement>("#status")?.dataset.state === "running",
+                inputAfterRestart: state.inputAfterRestart as ProductionResult["inputAfterRestart"],
                 romStoreUnchanged: state.storeCount === document.querySelectorAll(".store-remove").length,
             };
         }), P.equals<ProductionResult>({
@@ -404,6 +419,7 @@ if (CONFIG_ARGUMENT !== undefined) cases.push({
             persisted: true,
             savesCleared: true,
             restarted: true,
+            inputAfterRestart: { keyboardAttached: true, heldAfterRestart: 1 },
             romStoreUnchanged: true,
         }))
         .start(url, { headless: true, timeout: TIMEOUT })),
