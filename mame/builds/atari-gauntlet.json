@@ -1,0 +1,13 @@
+{
+    "family": "atari-gauntlet",
+    "target": "mame/targets/atari-gauntlet.lua",
+    "list": "mame/targets/atari-gauntlet.lst",
+    "memoryPages": 4096,
+    "sources": [
+        "src/mame/drivers/gauntlet.c",
+        "src/mame/video/gauntlet.c",
+        "src/mame/machine/atarigen.c",
+        "src/mame/video/atarimo.c",
+        "src/mame/machine/slapstic.c"
+    ]
+}
