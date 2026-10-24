@@ -197,3 +197,10 @@ DAC paths, EEPROM and the shared audio-unit YM2151/PIT dependencies. It should
 also record the zero-DIP EEPROM behavior and lack of `GAME_SUPPORTS_SAVE`
 pending M35. This package did not edit the spec because it is outside W28h's
 write set.
+
+## Integrator notes
+
+Gate run on the host with the ignored preload (2026-10-24, quiet host):
+32 passed, 0 failed, 25 skipped by design. F4 324 ms; F5 320×240 horizontal at 60.000 Hz, cadences within 1 %; F6 1.0000 over
+60 s; audio queue peak 49 ms; coin and start reached play; two pads
+assigned and released. Measurements copied into the probe record.

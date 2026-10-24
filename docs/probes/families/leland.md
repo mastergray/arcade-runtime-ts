@@ -85,27 +85,22 @@ reports the adapter's fixed-heap error, raise it to 8,192 as W28 §2 directs.
 
 ## F4 — What is the slowest Chromium time from `callMain` to first frame?
 
-Pending a host that permits the browser test server. The privacy-safe preload
-audit passed both strict and MAME-compatible policy: one required archive was
-present, all 24 expected files were valid, and there were zero missing,
-wrong-size, wrong-CRC, optional-missing, warning or archive-problem rows. The
-browser command was attempted, but every runnable page stopped at
-`listen EPERM: operation not permitted 127.0.0.1` before Chromium could start
-the machine, so no first-frame time or non-blank-frame observation exists.
+Measured by the integrator on 2026-10-24 (Chrome 150, Core i7-1165G7,
+headless, quiet host) with the ignored preload for a new family: 324 ms from
+immediately before `adapter.start()` to the first valid, non-blank frame.
 
 ## F5 — Are native refresh and upright geometry correct?
 
-Pending the same host run. It must record the first-frame geometry and
-orientation, confirm non-blank output, and measure native refresh at controlled
-60, 90, 120 and 144 Hz scheduler cadences. The generated metadata declares no
-DIP switches; the production selector case correctly records that there is
-nothing to select on this EEPROM-backed board.
+320×240 horizontal at 60.000 Hz; every frame that size and the first frame non-blank. Cadences:
+60 Hz → 59.76 fps (−0.40 %), 90 Hz → 60.32 fps (+0.53 %), 120 Hz → 59.86 fps (−0.23 %), 144 Hz → 59.85 fps (−0.25 %), all inside the 1 % gate.
 
 ## F6 — Does the heaviest title sustain full speed?
 
-Pending the same host run. It must record the emulated-time/wall-time ratio over
-60 seconds on desktop with frameskip disabled. The informational 4× throttled
-mobile proxy remains deferred to M10.
+Desktop: emulated seconds / wall seconds = 1.0000 over 60 s, frameskip
+disabled. M3–M5 acceptance on the same run: audio queue peak 49 ms against
+the 120 ms cap, keyboard coin and start reached play, two pads assigned and
+released. The 4× CPU-throttled mobile proxy was not run; it is informational
+and M28 replaces it.
 
 Run F4–F6 without disclosing the private selection:
 
@@ -115,9 +110,7 @@ ARCADE_FAMILY_CONFIGS="$PWD/res/preload-leland.json" \
   npm run test:browser
 ```
 
-The sandbox attempt completed 1 passed, 31 failed and 25 skipped by design;
-all 31 failures were the loopback `EPERM` above. The passing production-selector
-case was the expected no-DIP result.
+The integrator's host run completed 32 passed, 0 failed, 25 skipped by design.
 
 ## W28h save-state observation
 
