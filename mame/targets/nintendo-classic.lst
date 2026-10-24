@@ -1,0 +1,42 @@
+// Derived from pinned MAME 0.161 source (run at the source root):
+// comm -12 \
+//   <(sed -nE 's/^[[:space:]]*(GAME|GAMEL|GAME_CUSTOM)[[:space:]]*[(][^,]+,[[:space:]]*([a-z0-9_]+).*/\2/p' src/mame/drivers/dkong.c | LC_ALL=C sort -u) \
+//   <(sed -nE 's/^([a-z0-9_]+)([[:space:]]*\/\/.*)?$/\1/p' src/mame/mame.lst | LC_ALL=C sort -u) \
+//   | awk -v source="src/mame/drivers/dkong.c" '{ print $0 " // " source }'
+
+8ballact // src/mame/drivers/dkong.c
+8ballact2 // src/mame/drivers/dkong.c
+dkingjr // src/mame/drivers/dkong.c
+dkong // src/mame/drivers/dkong.c
+dkong3 // src/mame/drivers/dkong.c
+dkong3b // src/mame/drivers/dkong.c
+dkong3j // src/mame/drivers/dkong.c
+dkongf // src/mame/drivers/dkong.c
+dkonghrd // src/mame/drivers/dkong.c
+dkongj // src/mame/drivers/dkong.c
+dkongjnrj // src/mame/drivers/dkong.c
+dkongjo // src/mame/drivers/dkong.c
+dkongjo1 // src/mame/drivers/dkong.c
+dkongjr // src/mame/drivers/dkong.c
+dkongjrb // src/mame/drivers/dkong.c
+dkongjre // src/mame/drivers/dkong.c
+dkongjrj // src/mame/drivers/dkong.c
+dkongjrpb // src/mame/drivers/dkong.c
+dkongo // src/mame/drivers/dkong.c
+dkongx // src/mame/drivers/dkong.c
+dkongx11 // src/mame/drivers/dkong.c
+drakton // src/mame/drivers/dkong.c
+drktnjr // src/mame/drivers/dkong.c
+herbiedk // src/mame/drivers/dkong.c
+herodk // src/mame/drivers/dkong.c
+herodku // src/mame/drivers/dkong.c
+hunchbkd // src/mame/drivers/dkong.c
+jrking // src/mame/drivers/dkong.c
+pestplce // src/mame/drivers/dkong.c
+radarscp // src/mame/drivers/dkong.c
+radarscp1 // src/mame/drivers/dkong.c
+sbdk // src/mame/drivers/dkong.c
+shootgal // src/mame/drivers/dkong.c
+spcfrcii // src/mame/drivers/dkong.c
+spclforc // src/mame/drivers/dkong.c
+strtheat // src/mame/drivers/dkong.c

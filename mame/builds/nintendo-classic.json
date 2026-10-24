@@ -1,0 +1,11 @@
+{
+    "family": "nintendo-classic",
+    "target": "mame/targets/nintendo-classic.lua",
+    "list": "mame/targets/nintendo-classic.lst",
+    "memoryPages": 4096,
+    "sources": [
+        "src/mame/drivers/dkong.c",
+        "src/mame/audio/dkong.c",
+        "src/mame/video/dkong.c"
+    ]
+}
