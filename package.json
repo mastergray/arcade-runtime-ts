@@ -1,7 +1,7 @@
 {
   "name": "arcade-runtime-ts",
   "version": "0.0.0",
-  "description": "Headless TypeScript runtime for playing arcade games in the browser from user-supplied ROMs",
+  "description": "TypeScript runtime for playing arcade games in the browser from user-supplied ROMs",
   "private": true,
   "type": "module",
   "main": "./dist/index.js",
