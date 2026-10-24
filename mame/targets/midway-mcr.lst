@@ -1,16 +1,34 @@
 // Derived from pinned MAME 0.161 source (run at the source root):
-// for driver in mcr mcr3 mcr68; do
+// for driver in mcr mcr3 mcr68 williams; do
 //   comm -12 \
 //     <(sed -nE 's/^[[:space:]]*(GAME|GAMEL|GAME_CUSTOM)[[:space:]]*[(][^,]+,[[:space:]]*([a-z0-9_]+).*/\2/p' "src/mame/drivers/$driver.c" | LC_ALL=C sort -u) \
 //     <(sed -nE 's/^([a-z0-9_]+)([[:space:]]*\/\/.*)?$/\1/p' src/mame/mame.lst | LC_ALL=C sort -u) \
 //     | awk -v source="src/mame/drivers/$driver.c" '{ print $0 " // " source }'
 // done | LC_ALL=C sort -u
 
+alienar // src/mame/drivers/williams.c
+alienaru // src/mame/drivers/williams.c
 archrivl // src/mame/drivers/mcr68.c
 archrivla // src/mame/drivers/mcr68.c
 archrivlb // src/mame/drivers/mcr68.c
+batlzone // src/mame/drivers/williams.c
 blasted // src/mame/drivers/mcr68.c
+blaster // src/mame/drivers/williams.c
+blasterkit // src/mame/drivers/williams.c
+blastero // src/mame/drivers/williams.c
+bubbles // src/mame/drivers/williams.c
+bubblesp // src/mame/drivers/williams.c
+bubblesr // src/mame/drivers/williams.c
+colony7 // src/mame/drivers/williams.c
+colony7a // src/mame/drivers/williams.c
 crater // src/mame/drivers/mcr3.c
+defcmnd // src/mame/drivers/williams.c
+defence // src/mame/drivers/williams.c
+defender // src/mame/drivers/williams.c
+defenderb // src/mame/drivers/williams.c
+defenderg // src/mame/drivers/williams.c
+defenderw // src/mame/drivers/williams.c
+defndjeu // src/mame/drivers/williams.c
 demoderb // src/mame/drivers/mcr.c
 demoderbc // src/mame/drivers/mcr.c
 demoderm // src/mame/drivers/mcr3.c
@@ -19,44 +37,72 @@ dotron // src/mame/drivers/mcr.c
 dotrona // src/mame/drivers/mcr.c
 dotrone // src/mame/drivers/mcr.c
 dpoker // src/mame/drivers/mcr.c
+inferno // src/mame/drivers/williams.c
 intlaser // src/mame/drivers/mcr68.c
+jin // src/mame/drivers/williams.c
 journey // src/mame/drivers/mcr.c
+joust // src/mame/drivers/williams.c
+joust2 // src/mame/drivers/williams.c
+joust2r1 // src/mame/drivers/williams.c
+joustr // src/mame/drivers/williams.c
+joustwr // src/mame/drivers/williams.c
 kick // src/mame/drivers/mcr.c
 kickc // src/mame/drivers/mcr.c
 kickman // src/mame/drivers/mcr.c
 kroozr // src/mame/drivers/mcr.c
+lottofun // src/mame/drivers/williams.c
 maxrpm // src/mame/drivers/mcr3.c
+mayday // src/mame/drivers/williams.c
+maydaya // src/mame/drivers/williams.c
+maydayb // src/mame/drivers/williams.c
+mysticm // src/mame/drivers/williams.c
+mysticmp // src/mame/drivers/williams.c
 nflfoot // src/mame/drivers/mcr.c
 pigskin // src/mame/drivers/mcr68.c
 pigskina // src/mame/drivers/mcr68.c
 pigskinb // src/mame/drivers/mcr68.c
+playball // src/mame/drivers/williams.c
 powerdrv // src/mame/drivers/mcr3.c
 rampage // src/mame/drivers/mcr3.c
 rampage2 // src/mame/drivers/mcr3.c
 rbtapper // src/mame/drivers/mcr.c
+robotron // src/mame/drivers/williams.c
+robotronyo // src/mame/drivers/williams.c
 sarge // src/mame/drivers/mcr3.c
 shollow // src/mame/drivers/mcr.c
 shollow2 // src/mame/drivers/mcr.c
+sinistar // src/mame/drivers/williams.c
+sinistar1 // src/mame/drivers/williams.c
+sinistar2 // src/mame/drivers/williams.c
 solarfox // src/mame/drivers/mcr.c
+spdball // src/mame/drivers/williams.c
+splat // src/mame/drivers/williams.c
 spyhunt // src/mame/drivers/mcr3.c
 spyhunt2 // src/mame/drivers/mcr68.c
 spyhunt2a // src/mame/drivers/mcr68.c
 spyhuntp // src/mame/drivers/mcr3.c
 spyhuntpr // src/mame/drivers/mcr3.c
+stargate // src/mame/drivers/williams.c
 stargrds // src/mame/drivers/mcr3.c
+startrkd // src/mame/drivers/williams.c
 sutapper // src/mame/drivers/mcr.c
 tapper // src/mame/drivers/mcr.c
 tappera // src/mame/drivers/mcr.c
 timber // src/mame/drivers/mcr.c
+tornado1 // src/mame/drivers/williams.c
+tornado2 // src/mame/drivers/williams.c
 trisport // src/mame/drivers/mcr68.c
 tron // src/mame/drivers/mcr.c
 tron2 // src/mame/drivers/mcr.c
 tron3 // src/mame/drivers/mcr.c
 tron4 // src/mame/drivers/mcr.c
 tronger // src/mame/drivers/mcr.c
+tshoot // src/mame/drivers/williams.c
 turbotag // src/mame/drivers/mcr3.c
 twotiger // src/mame/drivers/mcr.c
 twotigerc // src/mame/drivers/mcr.c
 wacko // src/mame/drivers/mcr.c
 xenophob // src/mame/drivers/mcr68.c
+zero // src/mame/drivers/williams.c
+zero2 // src/mame/drivers/williams.c
 zwackery // src/mame/drivers/mcr68.c

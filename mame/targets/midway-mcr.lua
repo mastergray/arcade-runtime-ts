@@ -20,6 +20,7 @@ SOUNDS["HC55516"] = true
 SOUNDS["OKIM6295"] = true
 
 MACHINES["6821PIA"] = true
+MACHINES["BANKDEV"] = true
 MACHINES["Z80CTC"] = true
 MACHINES["Z80DART"] = true
 MACHINES["Z80PIO"] = true
@@ -60,6 +61,10 @@ _G["createProjects_mame_midway-mcr"] = function(_target, _subtarget)
 		MAME_DIR .. "src/mame/video/mcr68.c",
 		MAME_DIR .. "src/mame/audio/midway.c",
 		MAME_DIR .. "src/mame/audio/williams.c",
+		MAME_DIR .. "src/mame/drivers/williams.c",
+		MAME_DIR .. "src/mame/machine/williams.c",
+		MAME_DIR .. "src/mame/video/williams.c",
+		MAME_DIR .. "src/mame/machine/ticket.c",
 	}
 end
 
