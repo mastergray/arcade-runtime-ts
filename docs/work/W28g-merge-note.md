@@ -142,9 +142,18 @@ Commands and results, in execution order:
   EMSDK_DIR="$PWD/res/emsdk" \
   node --import tsx scripts/build-mame.ts misc-16 --jobs 4
 
+source "$PWD/res/emsdk/emsdk_env.sh" >/dev/null
+export PATH="$PWD/scripts/toolchain-shims:$PATH"
 EM_CONFIG="$PWD/.cache/w28g.emscripten" EMCC_DEBUG=2 \
-  emcc <the production link flags printed above> \
-  .cache/mame/mame0161/mamemisc-16.bc -o /tmp/w28g-diag.js
+  "$PWD/res/emsdk/emscripten/1.38.31/emcc" \
+  -O2 -s WASM=1 -s USE_SDL=2 -s MODULARIZE=1 \
+  -s 'EXPORT_NAME="createMame"' -s TOTAL_MEMORY=268435456 \
+  -s ALLOW_MEMORY_GROWTH=0 -s NO_EXIT_RUNTIME=1 \
+  -s DISABLE_EXCEPTION_CATCHING=0 -s USE_PTHREADS=0 \
+  -s 'EXTRA_EXPORTED_RUNTIME_METHODS=["FS","callMain","cwrap","ccall","UTF8ToString","HEAPU8","HEAPF32"]' \
+  -s 'EXPORTED_FUNCTIONS=["_main","_web_run_frames","_web_pump","_web_set_control","_web_set_axis","_web_pause","_web_resume","_web_reset","_web_save_state","_web_load_state","_web_flush_nvram","_web_exit","_web_machine_info"]' \
+  "$PWD/.cache/mame/mame0161/mamemisc-16.bc" \
+  -o /tmp/w28g-diag.js
 
 /usr/bin/time -p env BASH_ENV="$PWD/.cache/w28g-bash-env.sh" \
   EMSDK_DIR="$PWD/res/emsdk" \
