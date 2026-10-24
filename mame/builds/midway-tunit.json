@@ -10,6 +10,9 @@
         "src/mame/drivers/midyunit.c",
         "src/mame/machine/midyunit.c",
         "src/mame/video/midyunit.c",
+        "src/mame/drivers/midwunit.c",
+        "src/mame/machine/midwunit.c",
+        "src/mame/machine/midwayic.c",
         "src/mame/audio/williams.c",
         "src/mame/audio/dcs.c"
     ]

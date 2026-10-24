@@ -2,7 +2,7 @@
 --
 --   midway-tunit.lua
 --
---   MAME 0.161 Midway T-Unit/Y-Unit family target.
+--   MAME 0.161 Midway T-Unit/Y-Unit/Wolf Unit family target.
 --
 ---------------------------------------------------------------------------
 
@@ -51,6 +51,9 @@ _G["createProjects_mame_midway-tunit"] = function(_target, _subtarget)
 		MAME_DIR .. "src/mame/drivers/midyunit.c",
 		MAME_DIR .. "src/mame/machine/midyunit.c",
 		MAME_DIR .. "src/mame/video/midyunit.c",
+		MAME_DIR .. "src/mame/drivers/midwunit.c",
+		MAME_DIR .. "src/mame/machine/midwunit.c",
+		MAME_DIR .. "src/mame/machine/midwayic.c",
 		MAME_DIR .. "src/mame/audio/williams.c",
 		MAME_DIR .. "src/mame/audio/dcs.c",
 	}
