@@ -219,3 +219,10 @@ The integrator-owned specification remains stale: §4.6 should add the
 driver/audio/video units, the four CPU paths, discrete and NES APU sound,
 M58817/M58819 speech, DMA, latch and EEPROM dependencies. This package did
 not edit the spec because it is outside W28d's write set.
+
+## Integrator notes
+
+Gate run on the host with the ignored preload (2026-10-24, quiet host):
+32 passed, 0 failed, 25 skipped by design. F4 298 ms; F5 224×256 vertical at 60.606 Hz, cadences within 1 %; F6 1.0000 over
+60 s; audio queue peak 88 ms; coin and start reached play; two pads
+assigned and released. Measurements copied into the probe record.

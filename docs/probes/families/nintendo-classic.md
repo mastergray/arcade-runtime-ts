@@ -100,26 +100,22 @@ rebuild before repeating F4–F6.
 
 ## F4 — What is the slowest Chromium time from `callMain` to first frame?
 
-Pending on the integrator host. The ignored preload audits successfully under
-both strict and MAME-compatible policies: one archive is present, all 15
-expected files are valid, and there are zero missing, wrong-size, wrong-CRC,
-optional-missing, warning or archive-problem rows. The sandbox browser run
-could not bind its loopback page server, so no first frame arrived and no
-non-blank result or start-up time was measured.
+Measured by the integrator on 2026-10-24 (Chrome 150, Core i7-1165G7,
+headless, quiet host) with the ignored preload for a new family: 298 ms from
+immediately before `adapter.start()` to the first valid, non-blank frame.
 
 ## F5 — Are native refresh and upright geometry correct?
 
-Pending on the integrator host. The source timing is 60.606 Hz and the board
-is vertical, with an expected upright 224×256 frame after core rotation. The
-blocked browser run could not confirm geometry, non-blank output, or pacing
-at controlled 60, 90, 120 and 144 Hz cadences.
+224×256 vertical at 60.606 Hz; every frame that size and the first frame non-blank. Cadences:
+60 Hz → 60.81 fps (+0.34 %), 90 Hz → 60.66 fps (+0.10 %), 120 Hz → 60.63 fps (+0.04 %), 144 Hz → 60.60 fps (−0.01 %), all inside the 1 % gate.
 
 ## F6 — Does the heaviest title sustain full speed?
 
-Pending on the integrator host. The discrete sound network is the family CPU
-cost to watch; no 60-second desktop emulated-time ratio was available because
-the sandbox stopped before Chromium page creation. The 4× CPU-throttled
-mobile proxy remains informational and was not run.
+Desktop: emulated seconds / wall seconds = 1.0000 over 60 s, frameskip
+disabled. M3–M5 acceptance on the same run: audio queue peak 88 ms against
+the 120 ms cap, keyboard coin and start reached play, two pads assigned and
+released. The 4× CPU-throttled mobile proxy was not run; it is informational
+and M28 replaces it.
 
 Run F4–F6 without disclosing the private selection:
 
@@ -129,8 +125,4 @@ ARCADE_FAMILY_CONFIGS="$PWD/res/preload-nintendo-classic.json" \
   npm run test:browser
 ```
 
-The sandbox attempt completed 0 passed, 32 failed and 25 skipped by design;
-every runnable case stopped at `listen EPERM: operation not permitted
-127.0.0.1`. The integrator should rerun this command on a host that permits
-Chromium and loopback, then record only privacy-safe F4–F6 measurements. If
-the run reports fixed-heap exhaustion, apply the F3 memory adjustment first.
+The integrator's host run completed 32 passed, 0 failed, 25 skipped by design.
