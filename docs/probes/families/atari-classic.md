@@ -80,10 +80,17 @@ prescribed fallback is `memoryPages: 8192` followed by a family-only rebuild.
 
 ## F4 — What is the slowest Chromium time from `callMain` to first frame?
 
-Pending for the private title from `centiped.c`. The required real-browser
-command was attempted, but the family measurement could not bind its
-loopback test server (`listen EPERM`), so no first frame arrived and no
-startup duration can be claimed.
+`centiped.c`, measured by the integrator on 2026-10-24 (Chrome 150, Core i7-1165G7, headless, quiet host) with the ignored preload for the new driver: 299 ms from immediately before `adapter.start()` to the first valid, non-blank frame. The family's earlier boards re-measured on the extended build: the dial board 301 ms, the vector tank board 301 ms.
+
+## F5 — Are native refresh and upright geometry correct?
+
+`centiped.c`: 240×256 vertical at 60.000 Hz, every frame that size, first frame non-blank; cadences 60 Hz → 59.99 fps (−0.01 %), 90 Hz → 59.98 fps (−0.04 %), 120 Hz → 60.09 fps (+0.15 %), 144 Hz → 59.99 fps (−0.02 %). The vector tank board on the extended build: 640×480 at 41.016 Hz, cadences within 0.31 %.
+
+## F6 — Does the heaviest title sustain full speed?
+
+Desktop: emulated seconds / wall seconds = 0.9999 over 60 s for the new driver's title and 0.9999 for the vector tank board on the extended build, frameskip disabled. M3–M5 acceptance: audio queue peak 52 ms, keyboard coin and start reached play, two pads assigned and released. The 4× CPU-throttled mobile proxy was not run.
+
+Run F4–F6 without disclosing the private selection:
 
 ```sh
 ARCADE_PRELOAD_CONFIG="$PWD/res/preload-atari-classic.json" \
@@ -91,45 +98,7 @@ ARCADE_FAMILY_CONFIGS="$PWD/res/preload-atari-classic.json" \
   npm run test:browser
 ```
 
-The ignored preload was audited without logging its identity. Strict and
-MAME-compatible policies both returned `ok`: one archive present, all seven
-expected files valid, zero missing, wrong-size, wrong-CRC or optional-missing
-entries, zero warnings and archive problems, and 61 harmless unexpected
-entries.
-
-Earlier evidence for the original driver sources remains 299–457 ms to the
-first valid frame. The integrator should record the new driver's Chromium
-wall time from immediately before `callMain()` to the first valid frame.
-
-## F5 — Are native refresh, upright geometry and output correct?
-
-Pending for `centiped.c`. Source inspection expects the configured rotated
-raster board to arrive upright at 240×256 from a 256×240, 60 Hz screen, but
-the sandbox produced no browser frame. The integrator must record actual
-geometry and refresh plus controlled 60/90/120/144 Hz cadence errors.
-
-The configured board's generated metadata declares nine DIP switches and no
-sample set. Its source entry carries `GAME_SUPPORTS_SAVE`, so neither the
-EEPROM/no-DIP selector exception nor the unsupported quick-save case applies.
-Its EAROM persistence is part of the existing Atari device path.
-
-Earlier whole-family evidence remains valid: the original vector sources
-delivered non-blank upright 640×480 and 480×640 frames, the raster source
-delivered 336×240 frames, and the quiet confirming cadence run stayed within
-0.44% of native refresh.
-
-## F6 — Does the heaviest title sustain full speed?
-
-Pending for the private `centiped.c` title. The browser suite completed 0
-passed, 33 failed and 25 skipped: loopback was denied for the family case,
-and the socket-free bridge case separately reached Chromium launch but the
-sandbox denied Chromium's `shutdown()` IPC operation. No 60-second desktop
-or informational 4×-throttled ratio is available.
-
-On an unrestricted host, rerun the command under F4 after the other wave
-builds are idle, warm the machine, and record exactly 60 seconds of emulated
-time divided by wall time. Earlier original-driver desktop ratios were
-0.9999–1.0003.
+The integrator's host runs: 32 passed, 1 failed, 25 skipped by design with the new driver's config alone; the one failure is the §4.3.1 bridge case, which asserts the family's dial, trackball and twin-stick boards together and is satisfied only when all three ignored configs are supplied (a control run on the unextended build with one config fails the same way). With the three family configs the case passes on the extended build.
 
 ## F11 — Which analogue and dual-stick ports occur?
 

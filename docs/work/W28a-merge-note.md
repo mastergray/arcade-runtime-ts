@@ -211,3 +211,7 @@ The integrator-owned specification remains stale: §4.6's `atari-classic` row
 should add `drivers/centiped.c`, `video/centiped.c`, S2650, AY8910 and SN76496
 to its scope after the host browser measurements are recorded. This package
 did not edit the spec because it is outside W28a's write set.
+
+## Integrator notes
+
+Gate on the host (2026-10-24, quiet): new driver's title 32 passed, 1 failed, 25 skipped; the failure is the bridge analogue case, which needs the family's three analogue configs at once (confirmed by a control run on the unextended build failing identically with one config). F4 299 ms, F5 240×256 at 60.000 Hz within 0.15 %, F6 0.9999, audio peak 52 ms. The earlier boards re-measured on the extended build: 0.9999 over 60 s on the vector tank board, cadences within 0.31 %.
