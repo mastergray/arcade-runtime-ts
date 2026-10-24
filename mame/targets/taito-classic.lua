@@ -15,6 +15,7 @@ CPUS["MCS51"] = true
 
 SOUNDS["SAMPLES"] = true
 SOUNDS["DAC"] = true
+SOUNDS["DISCRETE"] = true
 SOUNDS["AY8910"] = true
 SOUNDS["YM2151"] = true
 SOUNDS["YM2203"] = true
@@ -24,8 +25,10 @@ SOUNDS["MSM5232"] = true
 SOUNDS["SN76496"] = true
 
 VIDEOS["BUFSPRITE"] = true
+VIDEOS["MC6845"] = true
 
 MACHINES["BANKDEV"] = true
+MACHINES["6821PIA"] = true
 
 -- The release-era generated project always archives the bus library, and its
 -- pinned llvm-ar cannot create an empty archive. Keep one harmless bus core.
@@ -92,6 +95,10 @@ _G["createProjects_mame_taito-classic"] = function(_target, _subtarget)
 		MAME_DIR .. "src/mame/video/mexico86.c",
 		MAME_DIR .. "src/mame/drivers/superqix.c",
 		MAME_DIR .. "src/mame/video/superqix.c",
+		MAME_DIR .. "src/mame/drivers/qix.c",
+		MAME_DIR .. "src/mame/machine/qix.c",
+		MAME_DIR .. "src/mame/audio/qix.c",
+		MAME_DIR .. "src/mame/video/qix.c",
 	}
 end
 
