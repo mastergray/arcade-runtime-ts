@@ -195,3 +195,18 @@ The integrator-owned specification remains stale: §4.6 should add the
 units, the M68000/ColdFire and H8 paths, TMP68301, X1-010, OKI M9810 and the
 shared ticket-dispenser dependency. This package did not edit the spec because
 it is outside W27e's write set.
+
+## Integrator notes
+
+The first host gate run aborted at start-up: MAME ran out of memory in the
+4,096-page heap although the metadata-only F3 estimate said the largest set
+fits. The driver decodes its 8-bit sprite data into gfx elements at boot,
+which that estimate does not count. `memoryPages` raised to 8,192 (as `cps2`
+and `neogeo`) and the family rebuilt; the probe record's F3 says so.
+
+Two further gate runs (2026-10-23, host load average about 5): 31 passed,
+1 failed, 25 skipped by design each time. F6 0.9806 and 0.9932 over 60 s,
+inside the 2 % tolerance, so the family ships; F4 802 ms and 876 ms; the
+cadence case missed one rate per run (60 Hz −1.47 %, then 144 Hz −4.47 %)
+with the others inside 1 %; audio queue peak 109 ms and 97 ms; quick save,
+coin, start and two pads passed.

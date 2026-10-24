@@ -71,39 +71,48 @@ set of 39,845,888 bytes. The safe adapter budget is:
 Using the full uncompressed ROM sum once for supplied archive bytes and once
 for loaded regions gives a conservative metadata-only peak estimate of
 79,691,776 bytes, 39.58% of the safe budget, leaving 121,634,816 bytes. No
-machine in the family fails the §5 estimate, so the build remains at 4,096
-pages.
+machine in the family fails the §5 estimate on paper. The host browser run
+proved the estimate wrong for this board: with 4,096 pages the ignored preload
+aborted with MAME's out-of-memory error at start-up (the adapter reported "needs
+more memory than this family build provides (256 MiB fixed heap)"). The driver
+decodes its 24 MiB of 8-bit sprite data into MAME's gfx elements at start, which
+the metadata-only estimate does not count. The integrator raised `memoryPages`
+to 8,192 (512 MiB, as `cps2` and `neogeo` use) and rebuilt; the start then
+succeeded.
 
 ## F4 — What is the slowest Chromium time from `callMain` to first frame?
 
-F4 pending: the lawful ignored preload audits successfully, but this sandbox
-rejects the harness server's loopback bind with `listen EPERM` before Chromium
-page creation. No first frame arrived, so startup time and non-blank output
-remain for the integrator to measure on the host.
+Measured by the integrator on 2026-10-23 (Chrome 150, Core i7-1165G7,
+headless, host load average about 5 from unrelated daemons) with the ignored
+preload after the heap was raised to 8,192 pages (see F3): 802 ms and 876 ms
+on two runs from immediately before `adapter.start()` to the first valid,
+non-blank frame. With 4,096 pages the machine did not start at all.
 
 ## F5 — Are native refresh and upright geometry correct?
 
-F5 pending: the same loopback restriction prevented observing geometry,
-orientation, native refresh or controlled 60/90/120/144 Hz cadences. The
-configured entry carries `GAME_IMPERFECT_GRAPHICS` in MAME 0.161's
-`drivers/seta2.c`; this is MAME's own upstream flag, not a browser-port defect.
+Native refresh 60.000 Hz, horizontal, 304×232; every frame was 304×232 and
+the first frame was non-blank. Cadences on the two runs: 60 Hz → 59.12 fps
+(−1.47 %) then 59.89 fps (−0.18 %); 90 Hz → 59.91 fps (−0.16 %) then
+59.54 fps (−0.76 %); 120 Hz → 59.43 fps (−0.95 %) then 60.05 fps (+0.09 %);
+144 Hz → 60.07 fps (+0.11 %) then 57.32 fps (−4.47 %). Each run had one
+cadence outside the 1 % tolerance, a different one each time, so the
+measurement case failed on both runs while every rate passed on at least
+one. As with the Y Board, the misses are dropped frames under host load; the
+geometry and refresh are correct. The set carries MAME's own
+`GAME_IMPERFECT_GRAPHICS` flag in 0.161, upstream's note on the driver.
 
-## F6 — Does the heaviest board sustain full speed?
+## F6 — Does the heaviest title sustain full speed?
 
-F6 pending: the same loopback restriction prevented the required 60-second
-desktop measurement, so no sustained emulated-time ratio is available. The
-4× CPU-throttled mobile proxy also remains pending and is informational.
-
-The configured driver has no `GAME_SUPPORTS_SAVE` flag. MAME 0.161 is therefore
-expected to decline the harness quick-save operation; if the host browser run
-reaches that case, record it as the known M35 save-support limitation and move
-on rather than treating it as a family-port defect.
-
-The ignored preload was audited without logging its identity. Strict and
-MAME-compatible policies both returned `ok`: one archive present, all 13
-expected files valid, zero missing, wrong-size, wrong-CRC or optional-missing
-entries, zero warnings and archive problems, and 17 harmless unexpected
-entries.
+Desktop: emulated seconds / wall seconds = 0.9806 and 0.9932 over 60 s on
+the two runs, frameskip disabled, both inside the 2 % tolerance, so the
+family ships under the W27 rule that F6 decides. The margin is the thinnest
+in the matrix on the first run; the TMP68301 with 24 MiB of 8-bit sprites
+and the X1-010 is heavier than its clock suggests. M3–M5 acceptance on the
+same runs: audio queue peak 109 ms and 97 ms against the 120 ms cap, the
+highest in the matrix; keyboard coin and start reached play; two pads
+assigned and released; the quick-save case passed (the driver supports save
+states). The 4× CPU-throttled mobile proxy was not run; it is informational
+and M28 replaces it.
 
 Run F4–F6 without disclosing the private selection:
 
@@ -113,6 +122,5 @@ ARCADE_FAMILY_CONFIGS="$PWD/res/preload-seta-2.json" \
   npm run test:browser
 ```
 
-The sandbox attempt completed 0 passed, 32 failed and 25 skipped by design;
-every runnable case stopped at `listen EPERM: operation not permitted
-127.0.0.1` before Chromium page creation.
+The integrator's two host runs each completed 31 passed, 1 failed (the
+cadence case above), 25 skipped by design.
