@@ -25,8 +25,10 @@ SOUNDS["MSM5232"] = true
 SOUNDS["SN76496"] = true
 
 VIDEOS["BUFSPRITE"] = true
+VIDEOS["MC6845"] = true
 
 MACHINES["BANKDEV"] = true
+MACHINES["6821PIA"] = true
 
 -- The release-era generated project always archives the bus library, and its
 -- pinned llvm-ar cannot create an empty archive. Keep one harmless bus core.
