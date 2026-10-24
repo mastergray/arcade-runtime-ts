@@ -209,3 +209,7 @@ This package did not edit the spec because it is outside W28g's write set.
 
 F4–F6 require both a complete lawful 0.161 preload and a host that permits
 loopback/Chromium. No other integrator-owned line is needed.
+
+## Integrator notes
+
+The ignored preload names a clone set whose archive lacks the parent's fifteen files; the integrator recorded F4–F6 pending and merged the build (131 machines, +196 KB). The measurement runs when the parent archive is available.

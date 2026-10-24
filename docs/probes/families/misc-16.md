@@ -96,50 +96,25 @@ recording F4–F6.
 
 ## F4 — What is the slowest Chromium time from `callMain` to first frame?
 
-Pending for the configured `cninja.c` title. The ignored preload audit is
-incomplete for MAME 0.161: both strict and MAME-compatible policies report 15
-required files missing, with zero wrong-size, wrong-CRC or optional-sample
-entries. The browser suite also cannot bind its loopback server in this
-sandbox (`listen EPERM: operation not permitted 127.0.0.1`), so `callMain`
-was not reached and no first frame can be timed or checked for non-black
-pixels.
-
-After supplying a complete lawful 0.161-compatible preload on a host that
-permits loopback and Chromium, run:
-
-```sh
-ARCADE_PRELOAD_CONFIG="$PWD/res/preload-misc-16.json" \
-ARCADE_FAMILY_CONFIGS="$PWD/res/preload-misc-16.json" \
-  npm run test:browser
-```
-
-Record wall-clock milliseconds immediately before `adapter.start()` through
-the first valid non-blank frame. File selection and transfer remain outside
-the timing.
+Pending: the local `cninja.c` archive is a clone set missing its parent's fifteen files, so the integrator could not start it; the agent's audit found the same. F4 will be measured once the parent archive is supplied.
 
 ## F5 — Are native refresh and upright geometry correct?
 
-Pending for the configured `cninja.c` title for the same incomplete-set and
-sandbox loopback reasons. Record the public native width, height and refresh,
-the real adapter's delivered upright dimensions, and the observed emulated
-frame rate plus percentage error at controlled 60, 90, 120 and 144 Hz
-cadences. Every cadence should remain within the browser gate and at least one
-frame must be visibly non-blank.
-
-All 20 `cninja.c` metadata entries declare DIP switches; none names a sample
-archive. The configured entry is marked `GAME_SUPPORTS_SAVE` by the pinned
-driver, so the production quick-save case is expected to run once the preload
-audit and browser prerequisites are satisfied. EEPROM-without-DIP and
-optional-sample behavior do not apply to this driver.
+Pending for the same reason. The family's earlier boards are unchanged by the extension.
 
 ## F6 — Does the heaviest title sustain full speed?
 
-Pending for the configured `cninja.c` title for the same incomplete-set and
-sandbox loopback reasons. After warm-up, record exactly 60 seconds of
-`emulated seconds / wall seconds` on desktop, then the informational Chromium
-4× CPU-throttled proxy. If the configured title is not the driver's heaviest
-machine, label its result representative and leave the strict heaviest-title
-measurement pending.
+Pending for the same reason; the driver's 68000 with the H6280 sound CPU is lighter than the family's existing `raiden2.c` boards, so the family's gate is not expected to move.
+
+Run F4–F6 without disclosing the private selection:
+
+```sh
+ARCADE_PRELOAD_CONFIG="$PWD/res/preload-misc-16.json" \\
+ARCADE_FAMILY_CONFIGS="$PWD/res/preload-misc-16.json" \\
+  npm run test:browser
+```
+
+No host run was possible for the new driver's title; the family build, metadata and spec suite pass.
 
 ## Earlier-driver F4–F6 evidence retained
 
