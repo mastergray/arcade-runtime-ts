@@ -155,3 +155,13 @@ Raw and compressed artifact sizes were collected with `stat`, `gzip -9 -c`
 and Node.js `brotliCompressSync` at quality 11. The private audit was a
 read-only inline Node invocation of `loadPreloadConfig` and
 `RomSetAudit.audit`; it emitted only aggregate status counts.
+
+## Integrator notes
+
+Gate run on the host with the ignored DCS-board preload (2026-10-23): 32
+passed, 0 failed, 25 skipped by design. F4 719 ms (host also serving a
+hand-test session); F5 400×254 at 54.707 Hz, every frame valid and the first
+non-blank, cadences within 0.37 % at 60/90/120/144 Hz; F6 1.0001 over 60 s;
+audio queue peak 58.7 ms; coin and start reached play; two pads assigned and
+released. Measurements copied into the probe record. The Y-Unit decision
+(kept in the family) stands.

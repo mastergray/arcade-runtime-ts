@@ -5,7 +5,8 @@ GNU gzip 1.10, Node's bundled Brotli 1.1.0 encoder, the pinned MAME 0.161
 source archive and Emscripten 1.38.31. No ROM content was supplied to the
 build or metadata steps. A lawful ignored preload config selects a DCS board
 from `drivers/midtunit.c`; no private selection, archive identity, hash or
-resolved path is recorded here.
+resolved path is recorded here. F4–F6 were measured by the integrator on the
+host after the agent's sandbox could not open a browser.
 
 ## F1 — Does the target pair compile and expose every machine?
 
@@ -78,32 +79,28 @@ pages.
 
 ## F4 — What is the slowest Chromium time from `callMain` to first frame?
 
-Pending integrator browser run. The ignored DCS-board preload audits cleanly
-under both strict and MAME-compatible policies: one supplied archive, 20
-expected files, and zero missing, wrong-size, wrong-CRC, optional-missing,
-warning or archive-problem entries. The sandbox browser run stopped before
-page creation because the shared server could not bind loopback (`listen
-EPERM`), so a first frame and its non-blank status remain unconfirmed.
-
-On a host that permits loopback and Chromium, measure milliseconds from
-immediately before `adapter.start()`/`callMain()` until the first valid frame
-and until the first non-blank frame. Record browser version and desktop CPU
-without recording the private selection.
+Measured by the integrator on 2026-10-23 (Chrome 150, Core i7-1165G7,
+headless) with the ignored DCS-board preload: 719 ms from immediately before
+`adapter.start()` to the first valid, non-blank frame. The host was also
+serving a hand-test session at the time, so the figure is an upper bound.
+The agent's sandbox audit of the same preload passed under both strictness
+policies (one archive, 20 expected files, nothing missing or wrong).
 
 ## F5 — Are native refresh and upright geometry correct?
 
-Pending integrator browser run for the same sandbox reason. Record the DCS
-board's public native upright width, height and refresh, the first delivered
-frame geometry, and observed emulated-frame rate plus percentage error at
-controlled 60, 90, 120 and 144 Hz cadences. Every cadence must remain within
-the repository gate and at least one delivered frame must be non-blank.
+Native refresh 54.707 Hz, horizontal, 400×254; every delivered frame was
+400×254 and the first frame was non-blank. Cadences: 60 Hz → 54.66 fps
+(−0.08 %), 90 Hz → 54.91 fps (+0.37 %), 120 Hz → 54.64 fps (−0.12 %),
+144 Hz → 54.91 fps (+0.37 %), all inside the 1 % gate.
 
 ## F6 — Does the DCS board sustain full speed?
 
-Pending integrator browser run; this is the family's gate. After warm-up,
-measure exactly 60 seconds and report `emulated seconds / wall seconds` on
-desktop with frameskip disabled. Repeat under Chromium's 4× CPU-throttled
-mobile proxy as informational evidence.
+Desktop: emulated seconds / wall seconds = 1.0001 over 60 s, frameskip
+disabled, with the TMS34010 video CPU, the ADSP-2105 DCS sound DSP and the
+M6809 running together. M3–M5 acceptance on the same run: audio queue peak
+58.7 ms against the 120 ms cap, keyboard coin and start reached play, two
+pads assigned and released. The 4× CPU-throttled mobile proxy was not run;
+it is informational and M28 replaces it.
 
 Run F4–F6 without disclosing the private selection:
 
@@ -113,5 +110,6 @@ ARCADE_FAMILY_CONFIGS="$PWD/res/preload-midway-tunit.json" \
   npm run test:browser
 ```
 
-The agent's sandbox run completed 0 passed, 32 failed and 25 skipped; every
-runnable case stopped at `listen EPERM: operation not permitted 127.0.0.1`.
+The agent's sandbox attempt could not bind loopback (`listen EPERM`); the
+integrator's run on the host completed 32 passed, 0 failed, 25 skipped by
+design.
