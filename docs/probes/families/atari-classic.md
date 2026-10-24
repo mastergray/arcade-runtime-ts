@@ -1,19 +1,19 @@
 # Atari classic family probe
 
-Observed 2026-10-21 on Linux x86-64 with Node.js 22.22.2, npm 10.9.7,
+Observed 2026-10-24 on Linux x86-64 with Node.js 22.22.2, npm 10.9.7,
 GNU gzip 1.10, the pinned MAME 0.161 source archive and Emscripten 1.38.31.
 No ROM content was supplied to the build or metadata steps.
 
 ## F1 — Does the target pair compile and expose every machine?
 
-The committed [`atari-classic.lua`](../../../mame/targets/atari-classic.lua)
+The extended [`atari-classic.lua`](../../../mame/targets/atari-classic.lua)
 and [`atari-classic.lst`](../../../mame/targets/atari-classic.lst) pair built
 through the production pipeline. The generated module completed the ROM-free
 `-listfull` and `-listxml` paths, and the threading gate reported one fixed,
 non-shared 4,096-page memory with no worker or pthread markers.
 
 ```sh
-BASH_ENV="$PWD/.cache/w19d-bash-env.sh" \
+BASH_ENV="$PWD/.cache/w28a-bash-env.sh" \
 EMSDK_DIR="$PWD/res/emsdk" \
   node --import tsx scripts/build-mame.ts atari-classic --jobs 4
 
@@ -21,78 +21,69 @@ npm run probe:mame:threading -- \
   "$PWD/dist/mame/atari-classic/mameatari-classic"
 ```
 
-| Result | First full compile/link attempt | Corrected cached build | `-listfull` machines | ROM-set metadata files |
-| ------ | ------------------------------: | ---------------------: | -------------------: | ---------------------: |
-| Pass | 223.73 s | 49.12 s | 15 | 15 |
+| Result | Successful corrected build | `-listfull` machines | ROM-set metadata files |
+| ------ | -------------------------: | -------------------: | ---------------------: |
+| Pass | 34.53 s | 31 | 31 |
 
-The prescribed command without `BASH_ENV` first stopped after 9.96 seconds
-when the SDK-bundled Node 8 process could not classify the command runner's
-captured stream (`ERR_UNKNOWN_STREAM_TYPE`). The ignored compatibility
-environment changed only Emscripten's JavaScript engine to host Node 22; the
-pinned compiler, source and flags were unchanged.
+The independent derivation found 15 machines in the three original driver
+sources and 16 in `centiped.c`; its 31-entry result exactly matched
+production `-listfull`, so no list correction was needed. The extension adds
+only `drivers/centiped.c` and `video/centiped.c` as compilation units.
 
-The independently derived list matched the production machine count, so no
-list correction was needed. Source inspection added `machine/atari_vg.c`,
-which supplies the EAROM device instantiated by both vector drivers. The first
-modularized link then proved that the compiled Atari support units also need
-the parallel EEPROM and ER2055 machine cores; selecting `EEPROMDEV` and
-`ER2055` resolved the only undefined symbols. The final target contains the
-three driver units, their adjacent `audio/bzone.c` and `video/rampart.c` units,
-and the shared Atari vector, EAROM, mathbox, `audio/redbaron.c`, Atari-gen,
-motion-object and slapstic units.
+The brief's 6502/POKEY/EAROM shorthand covers the configured measurement
+board, but complete driver coverage also compiles public configurations that
+instantiate the S2650 CPU, AY8910 and SN76496. A diagnostic link exposed
+those undefined cores; selecting them resolved every symbol. Existing
+`machine/atari_vg.c`, parallel EEPROM and ER2055 selections already cover the
+driver's EAROM and multigame configuration.
 
-The resulting build identity is
-`f178804840c9a34ca74957c3e81d805d1356941e1858c3793c77bf637943f27a`.
+The successful build identity is
+`830093aedf306139b771ea81811f5dc586fa9c3bfbb8c066804a5ac376a8c60a`.
 
 ## F2 — What are the raw, gzip and Brotli sizes of the Wasm and JavaScript?
 
 Raw sizes are filesystem byte counts. Compressed sizes use `gzip -9 -c` and
-Node.js `brotliCompressSync` with `BROTLI_PARAM_QUALITY=11`, matching the
-method in [`family-sizes.md`](../mame0161/family-sizes.md).
+Node.js `brotliCompressSync` with `BROTLI_PARAM_QUALITY=11`, matching
+[`family-sizes.md`](../mame0161/family-sizes.md).
 
-| Artifact | Raw bytes | gzip -9 | Brotli 11 |
-| -------- | --------: | -------: | ---------: |
-| Wasm | 6,022,964 | 1,556,676 | 1,169,229 |
-| JavaScript | 302,084 | 65,596 | 55,356 |
+| Wasm state | Raw bytes | gzip -9 | Brotli 11 |
+| ---------- | --------: | -------: | ---------: |
+| Before extension | 6,022,964 | 1,556,676 | 1,169,229 |
+| After extension | 6,193,930 | 1,597,000 | 1,199,086 |
+| Increase | 170,966 (2.84%) | 40,324 (2.59%) | 29,857 (2.55%) |
+
+The extended JavaScript artifact is 303,108 raw, 65,662 gzip-9 and 55,408
+Brotli-11 bytes. It grew by 1,024 raw, 66 gzip and 52 Brotli bytes.
 
 ## F3 — Does the largest ROM set fit in 4,096 pages, and what is the peak?
 
-Summing the public ROM sizes in every generated metadata file finds
-`rampart2p` largest at 1,707,786 bytes. The safe adapter budget is:
+Summing public ROM sizes in all 31 generated metadata files leaves the
+whole-family maximum unchanged at 1,707,786 bytes in an original driver
+source. The safe adapter budget is:
 
 ```text
 4,096 × 65,536 × 0.75 = 201,326,592 bytes (192 MiB)
 ```
 
-Using the full uncompressed ROM sum once for supplied archive bytes and once
-for loaded regions gives a conservative metadata-only peak estimate of
-3,415,572 bytes, 1.70% of the safe budget, leaving 197,911,020 bytes. No
-machine in the family fails the §5 estimate, so the build remains at 4,096
-pages.
+Counting the full uncompressed sum once for supplied archive bytes and once
+for loaded regions gives a conservative 3,415,572-byte estimate, 1.70% of
+the safe budget, leaving 197,911,020 bytes. The largest `centiped.c` metadata
+sum is 82,176 bytes, or 164,352 bytes under the same two-copy estimate.
+
+The new driver does decode graphics, but only through small 8×8 and 8×16
+planar layouts; its largest declared `gfx1` region is 16 KiB. It does not
+have the large decoded graphics regions that caused the earlier 4,096-page
+browser abort in another family. No family machine fails the metadata
+estimate, so this build remains at 4,096 pages. If the unrestricted browser
+run nevertheless reports the adapter's `needs more memory` error, the
+prescribed fallback is `memoryPages: 8192` followed by a family-only rebuild.
 
 ## F4 — What is the slowest Chromium time from `callMain` to first frame?
 
-measured 2026-10-22 (quiet): 299–457 ms to the first valid frame across the two vector titles and the raster title; see the measured section below.
-
-This managed sandbox cannot bind loopback or start Chromium, so no browser
-suite was attempted. On a host with those capabilities, run:
-
-```sh
-ARCADE_PRELOAD_CONFIG="$PWD/res/preload-atari-classic.json" \
-ARCADE_FAMILY_CONFIGS="$PWD/res/preload-atari-classic.json" \
-  npm run test:browser
-```
-
-Record Chromium wall-clock milliseconds from immediately before `callMain()`
-to the first valid frame, including machine initialization but excluding file
-selection and network transfer. Record the browser version and desktop CPU;
-do not record the configured title or ROM identity.
-
-## F5 — Are native refresh, upright geometry and vector output correct?
-
-measured: vector 640×480 horizontal at 41.016 Hz and 480×640 vertical at 60.000 Hz, raster 336×240 at 59.923 Hz, every frame at native size and orientation; worst cadence error 0.77 % (the 41 Hz board at a 60 Hz cadence). Vector output is not blank: 2.4–3.3 % of the 640×480 canvas lit with about 300 distinct colours and 4–5 % of the vertical canvas lit with 670–900 colours, sampled three times over nine seconds through the real display.
-
-Run the same exact command on an unrestricted browser host:
+Pending for the private title from `centiped.c`. The required real-browser
+command was attempted, but the family measurement could not bind its
+loopback test server (`listen EPERM`), so no first frame arrived and no
+startup duration can be claimed.
 
 ```sh
 ARCADE_PRELOAD_CONFIG="$PWD/res/preload-atari-classic.json" \
@@ -100,80 +91,68 @@ ARCADE_FAMILY_CONFIGS="$PWD/res/preload-atari-classic.json" \
   npm run test:browser
 ```
 
-Record the expected native upright width, height and refresh from public MAME
-metadata and the first frame's observed width and height. Report observed
-emulated-frame rate and percentage error under controlled 60, 90, 120 and
-144 Hz cadences; every error must be within 0.5%. For a vector title, confirm
-explicitly that the first delivered frame through the real adapter is not
-blank. If it is blank, stop and record the failure without changing the
-bridge.
+The ignored preload was audited without logging its identity. Strict and
+MAME-compatible policies both returned `ok`: one archive present, all seven
+expected files valid, zero missing, wrong-size, wrong-CRC or optional-missing
+entries, zero warnings and archive problems, and 61 harmless unexpected
+entries.
+
+Earlier evidence for the original driver sources remains 299–457 ms to the
+first valid frame. The integrator should record the new driver's Chromium
+wall time from immediately before `callMain()` to the first valid frame.
+
+## F5 — Are native refresh, upright geometry and output correct?
+
+Pending for `centiped.c`. Source inspection expects the configured rotated
+raster board to arrive upright at 240×256 from a 256×240, 60 Hz screen, but
+the sandbox produced no browser frame. The integrator must record actual
+geometry and refresh plus controlled 60/90/120/144 Hz cadence errors.
+
+The configured board's generated metadata declares nine DIP switches and no
+sample set. Its source entry carries `GAME_SUPPORTS_SAVE`, so neither the
+EEPROM/no-DIP selector exception nor the unsupported quick-save case applies.
+Its EAROM persistence is part of the existing Atari device path.
+
+Earlier whole-family evidence remains valid: the original vector sources
+delivered non-blank upright 640×480 and 480×640 frames, the raster source
+delivered 336×240 frames, and the quiet confirming cadence run stayed within
+0.44% of native refresh.
 
 ## F6 — Does the heaviest title sustain full speed?
 
-measured: 60 s ratios 0.9999–1.0003 on desktop.
+Pending for the private `centiped.c` title. The browser suite completed 0
+passed, 33 failed and 25 skipped: loopback was denied for the family case,
+and the socket-free bridge case separately reached Chromium launch but the
+sandbox denied Chromium's `shutdown()` IPC operation. No 60-second desktop
+or informational 4×-throttled ratio is available.
 
-Run the same exact command on an unrestricted browser host:
-
-```sh
-ARCADE_PRELOAD_CONFIG="$PWD/res/preload-atari-classic.json" \
-ARCADE_FAMILY_CONFIGS="$PWD/res/preload-atari-classic.json" \
-  npm run test:browser
-```
-
-After startup and a warm-up interval, measure exactly 60 seconds of wall time
-and report `emulated seconds / wall seconds` on desktop; repeat under
-Chromium's 4× CPU-throttled mobile proxy and report that informational ratio.
-Record browser version, CPU and whether frameskip was disabled. If the
-configured title is not the public metadata-heaviest family member, retain
-that qualification and schedule strict heaviest-title evidence separately.
-
-## F4–F6 measured 2026-10-21/22
-
-Measured with the `build-mame` production artifact, headless Chromium on the
-desktop host, the real adapter driven through
-`tests/browser/33-family-measurements.test.ts` (injected scheduler at a
-controlled cadence against a real clock) and the M3–M5 acceptance in
-`tests/browser/36-input-audio-acceptance.test.ts`. Identities stay in the
-ignored preload configs; titles are described by their native geometry.
-Runs marked "loaded" overlapped three Emscripten builds on the same host and
-are conservative; the 60 s ratio tolerance is 2 %, the cadence tolerance 1 %.
-
-| Title | F4 | F5 | F6 | Acceptance |
-| ----- | -- | -- | -- | ---------- |
-| vector 640×480 horizontal at 41.016 Hz (quiet re-run: 305 ms; 60 → 41.00 (−0.04 %), 90 → 41.00 (−0.04 %), 120 → 41.20 (+0.44 %), 144 → 40.90 (−0.29 %); 0.9996) | 341 ms | 60 → 41.33 (+0.77 %), 90 → 40.91 (−0.25 %), 120 → 40.92 (−0.23 %), 144 → 40.98 (−0.08 %) | 1.0003 | M3–M5: see note |
-| vector 480×640 vertical at 60.000 Hz | 299 ms | 60 → 60.00 (−0.01 %), 90 → 59.98 (−0.04 %), 120 → 59.99 (−0.02 %), 144 → 59.91 (−0.15 %) | 1.0000 | pass |
-| raster 336×240 at 59.923 Hz | 457 ms | 60 → 59.99 (+0.12 %), 90 → 59.66 (−0.43 %), 120 → 59.92 (0.00 %), 144 → 59.87 (−0.09 %) | 0.9999 | pass |
-
-Vector lines are drawn by the stock `rendersw.inc` software renderer the
-bridge already uses, so no bridge change was needed.
-
-Acceptance note for the 41 Hz vector title: M3 (audio unlocked, sound,
-queued max 68.0 ms) and M5 (two pads took players 1 and 2, pad coin and
-start changed the picture, held direction released on unplug) pass; M4's
-keyboard coin and start did not change the picture within the test's
-2-second window although the keyboard direction was held and released
-correctly, so the keyboard input path itself works. The test holds the
-keyboard coin for 120 ms and the pad coin for 200 ms; the board's coin
-input is the likely difference. Logged on the roadmap as a post-1.0 check
-rather than a runtime defect.
+On an unrestricted host, rerun the command under F4 after the other wave
+builds are idle, warm the machine, and record exactly 60 seconds of emulated
+time divided by wall time. Earlier original-driver desktop ratios were
+0.9999–1.0003.
 
 ## F11 — Which analogue and dual-stick ports occur?
 
-`bzone.c` declares one board with `IPT_JOYSTICKLEFT_UP/DOWN` and
-`IPT_JOYSTICKRIGHT_UP/DOWN`, all 2-way. The generated
-`Pn_JOYSTICKLEFT_*`/`Pn_JOYSTICKRIGHT_*` standard sequences synthesize both
-sticks from `HAT1` and also bind them independently to `HAT3` and `HAT2`.
-Other declarations in that driver use `IPT_AD_STICK_X/Y` at 64–192,
-sensitivity 25 and key delta 10, or at 0x48–0xc8 and 0x46–0xc6 with the same
-sensitivity and delta; `IPT_AD_STICK_Z` uses 0x10–0xf0, sensitivity 25, key
-delta 10, centre delta 0 and reverse. The standard X/Y/Z axis rows bind these
-ports, while `HAT1` ramps X/Y and `BUTTON13/14` ramp Z.
+`bzone.c` declares a dual-stick board plus `IPT_AD_STICK_X/Y/Z` fields. The
+generated left/right-stick sequences synthesize both sticks from `HAT1` and
+also bind them independently to `HAT3` and `HAT2`. Its analogue ranges are
+64–192 for X/Y and 0x10–0xf0 for reversed Z, with sensitivity 25 and key
+delta 10; standard X/Y/Z rows, hat ramps and `BUTTON13/14` bind them.
 
 `tempest.c` declares `IPT_DIAL` for players 1 and 2 over the 0x0f mask, with
 sensitivity 100, key delta 20 and full-turn count 72. `JOYCODE_n_ADDREL1`
-supplies relative pixels; `HAT1LEFT/RIGHT` supplies decrement/increment.
+supplies relative pixels and `HAT1LEFT/RIGHT` supplies the digital fallback.
 
-`rampart.c` declares `IPT_TRACKBALL_X/Y` for players 1–3 over 8-bit halves of
-the input words, all sensitivity 100, key delta 30 and reverse. X uses
+`rampart.c` declares `IPT_TRACKBALL_X/Y` for players 1–3 over 8-bit halves
+of the input words, all sensitivity 100, key delta 30 and reverse. X uses
 `JOYCODE_n_ADDREL1` plus `HAT1LEFT/RIGHT`; Y uses `JOYCODE_n_ADDREL2` plus
 `HAT1UP/DOWN`.
+
+`centiped.c` declares full-range `IPT_TRACKBALL_X/Y` fields at sensitivity
+50 and key delta 10, with reverse on the primary X and cocktail Y fields.
+The same relative-axis and hat rows used by `rampart.c` bind them. It also
+declares `IPT_PADDLE` for players 1–4 at 0x1d–0xcb, sensitivity 50, key
+delta 10 and centre delta 0; standard X axes and `HAT1LEFT/RIGHT` bind those
+fields. Finally, its prototype configuration declares `IPT_AD_STICK_X/Y` for
+players 1 and 2 at 0x40–0xbf, sensitivity 100 and key delta 10, with reverse
+on player 1 Y and player 2 X; standard X/Y axes and hat ramps bind them.
