@@ -98,44 +98,24 @@ integrator's real browser run nevertheless reports the adapter's
 
 ## F4 — What is the slowest Chromium time from `callMain` to first frame?
 
-For the new `midwunit.c` title, F4 is pending. The sandbox browser suite
-stopped before Chromium page creation because binding `127.0.0.1` returned
-`EPERM`; no first frame arrived and non-blank output is not yet confirmed.
-The privacy-safe preload audit passed in both strict and MAME-compatible modes:
-one archive present, all 26 expected files valid, zero missing, wrong-size,
-wrong-CRC or optional-missing files, zero warnings and problems, and 29
-harmless unexpected entries.
-
-The earlier `midtunit.c` DCS-board measurement remains valid family evidence:
-719 ms to a non-blank first frame on the desktop reference host.
+Measured by the integrator on 2026-10-24 (Chrome 150, Core i7-1165G7,
+headless, quiet host) with the ignored preload for the Wolf Unit extension: 652 ms from
+immediately before `adapter.start()` to the first valid, non-blank frame.
 
 ## F5 — Are native refresh and upright geometry correct?
 
-For the new `midwunit.c` title, F5 is pending for the same loopback-policy
-reason. The integrator must record its native geometry and refresh, confirm
-that the first delivered frame is non-blank and upright, and measure the
-60/90/120/144 Hz controlled cadences.
+400×254 horizontal at 54.707 Hz; every frame that size and the first frame non-blank. Cadences:
+60 Hz → 54.66 fps (−0.08 %), 90 Hz → 54.60 fps (−0.20 %), 120 Hz → 54.66 fps (−0.09 %), 144 Hz → 54.85 fps (+0.27 %), all inside the 1 % gate.
 
-The earlier `midtunit.c` measurement remains valid: 400×254 horizontal at
-54.707 Hz, every delivered frame at native geometry, with 60 Hz → 54.66 fps
-(−0.08%), 90 Hz → 54.91 fps (+0.37%), 120 Hz → 54.64 fps (−0.12%) and
-144 Hz → 54.91 fps (+0.37%).
+## F6 — Does the heaviest title sustain full speed?
 
-## F6 — Does the heavier Wolf Unit board sustain full speed?
+Desktop: emulated seconds / wall seconds = 1.0000 over 60 s, frameskip
+disabled. M3–M5 acceptance on the same run: audio queue peak 58.7 ms against
+the 120 ms cap, keyboard coin and start reached play, two pads assigned and
+released. The 4× CPU-throttled mobile proxy was not run; it is informational
+and M28 replaces it.
 
-For the new `midwunit.c` title, F6 is pending. No 60-second desktop ratio was
-available because the sandbox could not start the browser server, so final
-retention of the extension remains open. The earlier `midtunit.c` DCS-board
-ratio was 1.0001 over 60 seconds with frameskip disabled.
-
-The new driver uses the same DCS board and its configured title declares
-ordinary DIP switches and `GAME_SUPPORTS_SAVE`; the EEPROM/no-DIP and
-unsupported quick-save exceptions do not apply. M33 still applies: the DCS
-output level is a CMOS setting controlled by cabinet volume buttons that the
-runtime does not yet expose, so low audio volume is expected and is not a
-Wolf Unit emulation failure.
-
-Run the pending measurements without disclosing the private selection:
+Run F4–F6 without disclosing the private selection:
 
 ```sh
 ARCADE_PRELOAD_CONFIG="$PWD/res/preload-midway-tunit.json" \
@@ -143,9 +123,4 @@ ARCADE_FAMILY_CONFIGS="$PWD/res/preload-midway-tunit.json" \
   npm run test:browser
 ```
 
-The sandbox attempt completed 0 passed, 32 failed and 25 skipped by design;
-every runnable case failed at `listen EPERM: operation not permitted
-127.0.0.1`. On a host that permits loopback and Chromium, copy only the
-privacy-safe F4–F6 measurements into this record. If the desktop ratio misses
-the gate, state the measured ratio plainly and decide whether to remove the
-extension.
+The integrator's host run completed 32 passed, 0 failed, 25 skipped by design.
