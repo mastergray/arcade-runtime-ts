@@ -1,0 +1,58 @@
+// Derived from pinned MAME 0.161 source (run at the source root):
+// comm -12 \
+//   <(sed -nE 's/^[[:space:]]*(GAME|GAMEL|GAME_CUSTOM)[[:space:]]*[(][^,]+,[[:space:]]*([a-z0-9_]+).*/\2/p' src/mame/drivers/segas32.c | LC_ALL=C sort -u) \
+//   <(sed -nE 's/^([a-z0-9_]+)([[:space:]]*\/\/.*)?$/\1/p' src/mame/mame.lst | LC_ALL=C sort -u) \
+//   | awk -v source="src/mame/drivers/segas32.c" '{ print $0 " // " source }'
+
+alien3 // src/mame/drivers/segas32.c
+alien3u // src/mame/drivers/segas32.c
+arabfgt // src/mame/drivers/segas32.c
+arabfgtj // src/mame/drivers/segas32.c
+arabfgtu // src/mame/drivers/segas32.c
+arescue // src/mame/drivers/segas32.c
+arescuej // src/mame/drivers/segas32.c
+brival // src/mame/drivers/segas32.c
+brivalj // src/mame/drivers/segas32.c
+darkedge // src/mame/drivers/segas32.c
+darkedgej // src/mame/drivers/segas32.c
+dbzvrvs // src/mame/drivers/segas32.c
+f1en // src/mame/drivers/segas32.c
+f1enj // src/mame/drivers/segas32.c
+f1enu // src/mame/drivers/segas32.c
+f1lap // src/mame/drivers/segas32.c
+f1lapj // src/mame/drivers/segas32.c
+ga2 // src/mame/drivers/segas32.c
+ga2j // src/mame/drivers/segas32.c
+ga2u // src/mame/drivers/segas32.c
+harddunk // src/mame/drivers/segas32.c
+harddunkj // src/mame/drivers/segas32.c
+holo // src/mame/drivers/segas32.c
+jleague // src/mame/drivers/segas32.c
+jpark // src/mame/drivers/segas32.c
+jparkj // src/mame/drivers/segas32.c
+jparkja // src/mame/drivers/segas32.c
+jparkjc // src/mame/drivers/segas32.c
+kokoroj2 // src/mame/drivers/segas32.c
+orunners // src/mame/drivers/segas32.c
+orunnersj // src/mame/drivers/segas32.c
+orunnersu // src/mame/drivers/segas32.c
+radm // src/mame/drivers/segas32.c
+radmu // src/mame/drivers/segas32.c
+radr // src/mame/drivers/segas32.c
+radrj // src/mame/drivers/segas32.c
+radru // src/mame/drivers/segas32.c
+scross // src/mame/drivers/segas32.c
+scrossa // src/mame/drivers/segas32.c
+scrossu // src/mame/drivers/segas32.c
+slipstrm // src/mame/drivers/segas32.c
+slipstrmh // src/mame/drivers/segas32.c
+sonic // src/mame/drivers/segas32.c
+sonicp // src/mame/drivers/segas32.c
+spidman // src/mame/drivers/segas32.c
+spidmanj // src/mame/drivers/segas32.c
+spidmanu // src/mame/drivers/segas32.c
+svf // src/mame/drivers/segas32.c
+svs // src/mame/drivers/segas32.c
+titlef // src/mame/drivers/segas32.c
+titlefj // src/mame/drivers/segas32.c
+titlefu // src/mame/drivers/segas32.c

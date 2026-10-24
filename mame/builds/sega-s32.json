@@ -1,0 +1,12 @@
+{
+    "family": "sega-s32",
+    "target": "mame/targets/sega-s32.lua",
+    "list": "mame/targets/sega-s32.lst",
+    "memoryPages": 4096,
+    "sources": [
+        "src/mame/drivers/segas32.c",
+        "src/mame/machine/segas32.c",
+        "src/mame/video/segas32.c",
+        "src/mame/machine/315_5296.c"
+    ]
+}

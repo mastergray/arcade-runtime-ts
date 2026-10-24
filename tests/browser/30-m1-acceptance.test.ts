@@ -21,7 +21,8 @@ interface CadenceResult {
     readonly refreshHz: number;                                    // Machine native refresh from MachineInfo
     readonly ticksPerSecond: number;                               // Emulated frames per wall second over the measured window
     readonly speedRatio: number;                                   // ticksPerSecond / refreshHz
-    readonly uprightNativeSize: boolean;                           // Every frame matched MachineInfo width × height and the canvas backing store
+    readonly uprightNativeSize: boolean;                           // Every frame carried a positive integer size and the canvas backing store matched it
+    readonly frameSizes: ReadonlyArray<string>;                    // Distinct frame sizes seen, first one is MachineInfo's; mode-switching video chips report more than one
     readonly orientation: string;                                  // MachineInfo orientation
 }
 
@@ -90,9 +91,12 @@ const measureCadence = async (cadenceHz: number, warmupMs: number, measureMs: nu
     display.attach(session);
     let uprightNativeSize = true;
     let frames = 0;
+    const frameSizes: string[] = [`${machine.width}x${machine.height}`];
     session.onFrame((frame) => {
         frames++;
-        if (frame.width !== machine.width || frame.height !== machine.height || canvas.width !== machine.width || canvas.height !== machine.height) uprightNativeSize = false;
+        if (!Number.isInteger(frame.width) || !Number.isInteger(frame.height) || frame.width <= 0 || frame.height <= 0) uprightNativeSize = false;
+        const size = `${frame.width}x${frame.height}`;
+        if (!frameSizes.includes(size)) frameSizes.push(size);
     });
     await new Promise((done) => setTimeout(done, warmupMs));
     let ticks = 0;
@@ -110,7 +114,8 @@ const measureCadence = async (cadenceHz: number, warmupMs: number, measureMs: nu
         refreshHz: machine.refreshHz,
         ticksPerSecond,
         speedRatio: ticksPerSecond / machine.refreshHz,
-        uprightNativeSize: uprightNativeSize && frames > 0,
+        uprightNativeSize: uprightNativeSize && frames > 0 && canvas.width > 0 && canvas.height > 0,
+        frameSizes,
         orientation: machine.orientation,
     };
 };
@@ -145,7 +150,7 @@ const testFile: TestFile = {
                         return { at60, at120 };
                     }, { source: measureCadence.toString(), warmupMs: WARMUP_MS, measureMs: MEASURE_MS });
                     for (const result of [results.at60, results.at120]) {
-                        console.log(`M1 cadence ${result.cadenceHz} Hz: ${result.ticksPerSecond.toFixed(2)} emulated frames/s against ${result.refreshHz.toFixed(3)} Hz native (ratio ${result.speedRatio.toFixed(4)}), ${result.orientation}, upright native size ${result.uprightNativeSize}`);
+                        console.log(`M1 cadence ${result.cadenceHz} Hz: ${result.ticksPerSecond.toFixed(2)} emulated frames/s against ${result.refreshHz.toFixed(3)} Hz native (ratio ${result.speedRatio.toFixed(4)}), ${result.orientation}, frames valid ${result.uprightNativeSize} (sizes ${result.frameSizes.join("/")})`);
                     }
                     await page.evaluate((verdict) => { (window as unknown as { m1Verdict: AcceptanceVerdict }).m1Verdict = verdict; }, {
                         speedOk60: Math.abs(results.at60.speedRatio - 1) <= TOLERANCE,
