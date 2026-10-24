@@ -1,0 +1,74 @@
+// Derived from pinned MAME 0.161 source (run at the source root):
+// for driver in midtunit midyunit; do
+//   comm -12 \
+//     <(sed -nE 's/^[[:space:]]*(GAME|GAMEL|GAME_CUSTOM)[[:space:]]*[(][^,]+,[[:space:]]*([a-z0-9_]+).*/\2/p' "src/mame/drivers/$driver.c" | LC_ALL=C sort -u) \
+//     <(sed -nE 's/^([a-z0-9_]+)([[:space:]]*\/\/.*)?$/\1/p' src/mame/mame.lst | LC_ALL=C sort -u) \
+//     | awk -v source="src/mame/drivers/$driver.c" '{ print $0 " // " source }'
+// done | LC_ALL=C sort -u
+
+hiimpact // src/mame/drivers/midyunit.c
+hiimpact1 // src/mame/drivers/midyunit.c
+hiimpact2 // src/mame/drivers/midyunit.c
+hiimpact3 // src/mame/drivers/midyunit.c
+hiimpact4 // src/mame/drivers/midyunit.c
+hiimpactp // src/mame/drivers/midyunit.c
+jdreddp // src/mame/drivers/midtunit.c
+mk // src/mame/drivers/midtunit.c
+mk2 // src/mame/drivers/midtunit.c
+mk2chal // src/mame/drivers/midtunit.c
+mk2r11 // src/mame/drivers/midtunit.c
+mk2r14 // src/mame/drivers/midtunit.c
+mk2r20 // src/mame/drivers/midtunit.c
+mk2r21 // src/mame/drivers/midtunit.c
+mk2r30 // src/mame/drivers/midtunit.c
+mk2r31e // src/mame/drivers/midtunit.c
+mk2r32e // src/mame/drivers/midtunit.c
+mk2r42 // src/mame/drivers/midtunit.c
+mk2r91 // src/mame/drivers/midtunit.c
+mkla1 // src/mame/drivers/midyunit.c
+mkla2 // src/mame/drivers/midyunit.c
+mkla3 // src/mame/drivers/midyunit.c
+mkla4 // src/mame/drivers/midyunit.c
+mknifty // src/mame/drivers/midyunit.c
+mknifty666 // src/mame/drivers/midyunit.c
+mkprot4 // src/mame/drivers/midyunit.c
+mkprot8 // src/mame/drivers/midyunit.c
+mkprot9 // src/mame/drivers/midyunit.c
+mkr4 // src/mame/drivers/midtunit.c
+mktturbo // src/mame/drivers/midtunit.c
+mkyawdim // src/mame/drivers/midyunit.c
+mkyawdim2 // src/mame/drivers/midyunit.c
+mkyawdim3 // src/mame/drivers/midyunit.c
+mkyturbo // src/mame/drivers/midyunit.c
+mkyturboe // src/mame/drivers/midyunit.c
+narc // src/mame/drivers/midyunit.c
+narc2 // src/mame/drivers/midyunit.c
+narc3 // src/mame/drivers/midyunit.c
+nbajam // src/mame/drivers/midtunit.c
+nbajamr2 // src/mame/drivers/midtunit.c
+nbajamte // src/mame/drivers/midtunit.c
+nbajamte1 // src/mame/drivers/midtunit.c
+nbajamte2 // src/mame/drivers/midtunit.c
+nbajamte3 // src/mame/drivers/midtunit.c
+nbajamten // src/mame/drivers/midtunit.c
+shimpact // src/mame/drivers/midyunit.c
+shimpactp4 // src/mame/drivers/midyunit.c
+shimpactp5 // src/mame/drivers/midyunit.c
+shimpactp6 // src/mame/drivers/midyunit.c
+smashtv // src/mame/drivers/midyunit.c
+smashtv3 // src/mame/drivers/midyunit.c
+smashtv4 // src/mame/drivers/midyunit.c
+smashtv5 // src/mame/drivers/midyunit.c
+smashtv6 // src/mame/drivers/midyunit.c
+strkforc // src/mame/drivers/midyunit.c
+term2 // src/mame/drivers/midyunit.c
+term2la1 // src/mame/drivers/midyunit.c
+term2la2 // src/mame/drivers/midyunit.c
+term2la3 // src/mame/drivers/midyunit.c
+totcarn // src/mame/drivers/midyunit.c
+totcarnp // src/mame/drivers/midyunit.c
+trog // src/mame/drivers/midyunit.c
+trog3 // src/mame/drivers/midyunit.c
+trog4 // src/mame/drivers/midyunit.c
+trogpa4 // src/mame/drivers/midyunit.c
+trogpa6 // src/mame/drivers/midyunit.c

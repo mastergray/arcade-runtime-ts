@@ -1,0 +1,16 @@
+{
+    "family": "midway-tunit",
+    "target": "mame/targets/midway-tunit.lua",
+    "list": "mame/targets/midway-tunit.lst",
+    "memoryPages": 4096,
+    "sources": [
+        "src/mame/drivers/midtunit.c",
+        "src/mame/machine/midtunit.c",
+        "src/mame/video/midtunit.c",
+        "src/mame/drivers/midyunit.c",
+        "src/mame/machine/midyunit.c",
+        "src/mame/video/midyunit.c",
+        "src/mame/audio/williams.c",
+        "src/mame/audio/dcs.c"
+    ]
+}
