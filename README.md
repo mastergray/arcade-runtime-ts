@@ -33,6 +33,7 @@ exactly which archive and file a set is missing.
 | `midway-tunit` | Midway T-Unit and Y-Unit (`midtunit.c`, `midyunit.c`; Williams ADPCM and DCS sound boards) | measured |
 | `atari-gauntlet` | Atari Gauntlet board (`gauntlet.c`; 68010 with slapstic, 6502 sound) | measured |
 | `sega-s32` | Sega System 32 (`segas32.c`; V60 with the V25 protection MCU, MultiPCM) | measured |
+| `seta-2` | Seta 2 board (`seta2.c`; TMP68301 with X1-010 sound) | measured |
 | `midway-mcr` | Bally/Midway MCR-1/2/3 and MCR-68k | measured |
 | `konami-16` | Konami 68000 boards (`tmnt.c`, `simpsons.c`, `xmen.c`, `gijoe.c`, `mystwarr.c`, `spy.c` hardware) | measured |
 | `atari-classic` | Atari vector boards (`bzone.c`, `tempest.c`) and `rampart.c` | measured |
