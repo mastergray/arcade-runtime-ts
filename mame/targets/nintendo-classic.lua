@@ -16,6 +16,7 @@ SOUNDS["NES_APU"] = true
 SOUNDS["TMS5110"] = true
 
 MACHINES["I8257"] = true
+MACHINES["LATCH8"] = true
 MACHINES["Z80DMA"] = true
 MACHINES["TMS6100"] = true
 MACHINES["EEPROMDEV"] = true
