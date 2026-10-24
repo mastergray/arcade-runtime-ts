@@ -72,31 +72,42 @@ pages.
 
 ## F4 — What is the slowest Chromium time from `callMain` to first frame?
 
-F4 pending: sandbox browser unavailable. The ignored preload audited `ok`
-under both strict and MAME-compatible policies, with one archive present, all
-19 expected files valid, zero missing, wrong-size, wrong-CRC or
-optional-missing entries, zero warnings and archive problems, and 11 harmless
-unexpected entries. The browser run then stopped at the sandbox's loopback
-`listen EPERM` before page creation, so no first-frame time or non-blank-frame
-confirmation is available.
+Measured by the integrator on 2026-10-23 (Chrome 150, Core i7-1165G7,
+headless, host load average about 5 from unrelated daemons) with the ignored
+System 32 preload, which audits ok under both policies: 940 ms and 869 ms on
+two runs from immediately before `adapter.start()` to the first valid,
+non-blank frame. The V60 board boots through its protection MCU, so this is
+the second-slowest start in the matrix after the Gauntlet board.
 
 ## F5 — Are native refresh and upright geometry correct?
 
-F5 pending: sandbox browser unavailable. Geometry and controlled
-60/90/120/144 Hz cadence measurements require the same real-browser run that
-loopback policy prevented. The ignored selection carries
-`GAME_IMPERFECT_GRAPHICS` in the pinned `segas32.c`; this is MAME 0.161's own
-driver flag and is not a browser-port defect. The integrator should preserve
-that distinction when recording the visual result.
+Native refresh 60.000 Hz, horizontal. The boot mode is 416×224 and the board
+switches to 320×224 during play; the bridge and `ArcadeDisplay` follow each
+frame's own size, so the measurement records the sizes seen
+(416×224/320×224) and asserts that every frame carries a valid size (the M1
+acceptance was relaxed the same way as the family measurement had been for
+System 18). First frame non-blank. Cadences on the confirming run: 60 Hz →
+60.10 fps (+0.17 %), 90 Hz → 59.87 fps (−0.21 %), 120 Hz → 59.88 fps
+(−0.20 %), 144 Hz → 60.14 fps (+0.24 %), all inside the 1 % gate (the first
+run overshot 60 Hz by 1.21 % on the loaded host). The set carries MAME's own
+`GAME_IMPERFECT_GRAPHICS` flag in 0.161; that is upstream's note on the
+driver, not a port defect.
 
-## F6 — Does the heaviest title sustain full speed?
+## F6 — Does the heaviest board sustain full speed?
 
-F6 pending: sandbox browser unavailable. No desktop emulated-time ratio was
-measured, so the performance gate remains open; the family is built but is not
-yet classified as passing or "built, below the gate." If the host measurement
-misses the desktop gate, record the measured ratio plainly and leave this
-family out of the 1.0.0 matrix. The 4× CPU-throttled mobile proxy is
-informational and was not run.
+Desktop: emulated seconds / wall seconds = 1.0000 and 0.9999 over 60 s on
+the two runs, frameskip disabled, with the 16 MHz V60, the Z80 sound CPU and
+the V25 protection MCU all running. The family ships in the 1.0.0 matrix.
+M3–M5 acceptance on the same runs: audio queue peak 93 ms and 71 ms against
+the 120 ms cap, keyboard coin and start reached play, two pads assigned and
+released. The 4× CPU-throttled mobile proxy was not run; it is informational
+and M28 replaces it.
+
+Known failing gate case for this preload: the harness quick-save case. MAME
+0.161 declines the save for this driver (no `GAME_SUPPORTS_SAVE`; the
+scheduler reports pending anonymous timers), the bridge reports the failure
+and the harness shows it, so the case times out waiting for success. Filed
+as M35 (expose the driver's save-support flag through `MachineInfo`).
 
 Run F4–F6 without disclosing the private selection:
 
@@ -106,5 +117,5 @@ ARCADE_FAMILY_CONFIGS="$PWD/res/preload-sega-s32.json" \
   npm run test:browser
 ```
 
-The sandbox attempt completed 0 passed, 32 failed and 25 skipped by design;
-every runnable case stopped at `listen EPERM` before Chromium page creation.
+The integrator's confirming run on the host completed 31 passed, 1 failed
+(the quick-save case above), 25 skipped by design.

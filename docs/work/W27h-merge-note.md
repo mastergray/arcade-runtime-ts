@@ -180,3 +180,23 @@ driver/machine/video units, V60/V70 plus the V25 protection MCU, the two sound
 paths and the 315-5296 I/O unit. If F6 misses the desktop gate, mark the row as
 built but excluded from the 1.0.0 matrix with the measured ratio. This package
 did not edit the spec because it is outside W27h's write set.
+
+## Integrator notes
+
+Gate run twice on the host with the ignored System 32 preload (2026-10-23).
+First run: 28 passed, 4 failed; second run after two test-precondition fixes:
+31 passed, 1 failed, 25 skipped by design. F6 1.0000 and 0.9999 over 60 s:
+the board sustains full speed and the family ships. F4 940 ms and 869 ms;
+F5 416×224 boot mode switching to 320×224 in play, cadences within 0.24 % on
+the confirming run; audio queue peak 93 ms and 71 ms.
+
+The four first-run failures: (1) the M1 acceptance demanded one frame size,
+now relaxed like the family measurement to accept run-time mode switches;
+(2) the family measurement's 60 Hz cadence overshot by 1.21 % on the loaded
+host and was inside 1 % on the rerun; (3) the production DIP-selector case
+waited for a selector on a board that declares no DIP switches (EEPROM); it
+now reads the served metadata and records that there is nothing to select;
+(4) the harness quick-save case: MAME declines the save for this driver and
+the bridge reports it, so the case cannot pass for this preload until the
+save-support flag is exposed (M35). The set's `GAME_IMPERFECT_GRAPHICS` flag
+is MAME's, recorded under F5.

@@ -1,10 +1,11 @@
 // realizes: docs/arcade-runtime-spec.md > §11 Developer harness and §12 M8 BIOS and DIP switches
 
 // Dependencies:
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";   // Creates disposable selector metadata and a harmless zip
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";   // Creates disposable selector metadata and a harmless zip
 import { tmpdir } from "node:os";                                  // Parent for synthetic browser inputs
 import { dirname, join, resolve } from "node:path";                // Resolves the worktree and temporary build tree
 import { fileURLToPath } from "node:url";                          // Finds production artifacts without recording their path
+import CTGTest from "ctg-js-test";                                 // Plain pipeline for the no-DIP-switch outcome
 import CTGBrowserTest, { CTGTestPredicates as P } from "ctg-js-browser-test";   // Chromium pipeline
 import { zipSync } from "fflate";                                  // Creates the synthetic non-ROM archive
 import { startHarnessServer } from "../../scripts/serve-harness.ts";   // Production harness page and server under test
@@ -327,9 +328,18 @@ const cases: TestCase[] = [
     },
 ];
 
+// HELPER :: VOID -> BOOLEAN
+// True when the ignored preload's machine declares at least one DIP switch in the served metadata (EEPROM boards declare none).
+const preloadDeclaresDipSwitches = (): boolean => {
+    if (CONFIG_ARGUMENT === undefined) return false;
+    const preload = JSON.parse(readFileSync(resolve(CONFIG_ARGUMENT), "utf8")) as { family: string; machine: string };
+    const metadata = JSON.parse(readFileSync(resolve(WORKSPACE, "dist", "mame", preload.family, "romsets", `${preload.machine}.json`), "utf8")) as RomSetMetadata;
+    return (metadata.dipswitches ?? []).length > 0;
+};
+
 if (CONFIG_ARGUMENT !== undefined) cases.push({
     label: "a generated non-default DIP selection reaches the environment-gated production session",
-    run: () => withProductionHarness((url) => CTGBrowserTest.init("harness production DIP selector")
+    run: () => preloadDeclaresDipSwitches() ? withProductionHarness((url) => CTGBrowserTest.init("harness production DIP selector")
         .interact("select one generated non-default value and start the preloaded cabinet", async ({ page }) => {
             await page.waitForFunction(() => document.querySelector<HTMLElement>("#status")?.dataset.state === "ready"
                 && document.querySelectorAll('[data-selected="true"] .dip-select').length > 0);
@@ -377,7 +387,12 @@ if (CONFIG_ARGUMENT !== undefined) cases.push({
             running: true,
             reachedSession: true,
         }))
-        .start(url, { headless: true, timeout: TIMEOUT })),
+        .start(url, { headless: true, timeout: TIMEOUT })) : CTGTest.init("harness production DIP selector")
+        .assert("the preloaded machine declares no DIP switches, so there is nothing to select (EEPROM board)", () => {
+            console.log("DIP selector production case: the preloaded machine declares no DIP switches, nothing to select");
+            return preloadDeclaresDipSwitches();
+        }, P.equals<boolean>(false))
+        .start(undefined),
 });
 
 const testFile: TestFile = {
