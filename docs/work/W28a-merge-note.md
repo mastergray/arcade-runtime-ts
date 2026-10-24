@@ -166,6 +166,8 @@ ARCADE_FAMILY_CONFIGS="$PWD/res/preload-atari-classic.json" \
 
 npm run check
 npm test
+
+npm run check && npm test
 ```
 
 - Independent derivation: 31 entries; a direct diff against the committed
@@ -192,6 +194,8 @@ npm test
 - `npm run check`: passed (`check:src` and `check:tests`).
 - `npm test`: 30 files, 555 cases; 555 passed, 0 failed, 0 skipped. The real
   output was present and passed `tests/spec/32-build-output.test.ts`.
+- Final combined rerun from the committed package state: passed with the same
+  555/555 spec result.
 
 No build-all, package build, clean, fresh build, rebase or push command was
 run. Ignored source, build output and compatibility files remain untracked.
@@ -199,7 +203,7 @@ run. Ignored source, build output and compatibility files remain untracked.
 The two target commits succeeded. The first attempt to commit this probe and
 merge note was refused because Git could not create the shared worktree's
 `index.lock` on a temporarily read-only filesystem. No content was lost; the
-same scoped commit was retried after final validation.
+same scoped commit succeeded on retry.
 
 ## Integrator note
 
