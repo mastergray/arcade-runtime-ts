@@ -129,18 +129,18 @@ differs. "runtime" says whether the runtime already has the surface
 
 ### 3.4 V4 Controls
 
+Organised **by player, not by device** (decided 2026-10-25). Pad *n*
+drives player *n*, as the runtime assigns them, with a Swap button; the
+keyboard serves both players with its two key sets; the touch controller
+is player 1.
+
 | Feature | L | P | Runtime | Notes |
 | --- | :-: | :-: | --- | --- |
-| Device picker: player 1, player 2, gamepad n, touch | yes | yes | keyboard map, pad players | |
-| Action to key table per player, with Change key | yes | yes | **M10 keyboard half**: map editor and persisted custom map | |
-| Gamepad layout: which physical button is which logical button, coin, start; d-pad and stick | yes | yes | `GamepadMapping` through the cabinet (W30) | |
-| Operator chords (modifier and bindings) shown and editable | yes | yes | W30 | At least shown; editing is nice to have |
-| Analogue: dead zone, and per game key speed, sensitivity, centre speed, invert | yes | yes | dead zone today; the rest is **M32** inside this package | |
-| System: coin, start, service, test, tilt bindings | yes | yes | keyboard map | |
-| Presets: save, load, restore defaults | yes | yes | new preference store | Per game and global |
-| Test input: live view of every bound control | yes | yes | input state | The phone "Test Input" screen |
-| Touch layout choice (where the on-screen pad exists) | yes | yes | §10.1 touch (M10 touch half, M28) | In P the pad is off by default |
-| Menu gesture per pad (§1.1) | yes | yes | new, beside the W30 chords | Capture by pressing the buttons; shows a warning when the pad lacks the default |
+| Player 1 and Player 2 tabs: a device line (which keyboard set, which pad, touch), a picture of the on-screen controller with the buttons this machine uses lit, and **one table** whose rows are the controller's own labels (▲▼◀▶, B1–B6, COIN, START) and whose columns are Keyboard and Gamepad n | yes | yes | keyboard map (M10 editor), `GamepadMapping` (W30) | Change… waits for a key or a pad button, whichever comes; scope this game or all games |
+| Cabinet tab: Service, Test, Tilt, Volume, the operator keys this game reports, and the page's menu gesture, each with a Keyboard column and a Gamepad column (chords are "hold Select +") | yes | yes | W29, W30 | The same switches appear on the on-screen controller under the game card |
+| Analogue: dead zone (all pads), and per game key speed, sensitivity, invert, only for ports the machine declares | yes | yes | M32 in this package | |
+| Test input: live view by player and device | yes | yes | input state | |
+| Presets | — | — | — | dropped: scope this game / all games covers it |
 
 ### 3.5 V5 Settings
 
@@ -266,7 +266,11 @@ details move into the games column as accordions.
   Search. It opens a modal: drop zone (dropping anywhere on the page
   opens the same modal), Choose files, the identification table of the
   dropped files (file, identified as, status, details), the companion
-  notice, Store and check, Cancel. Search moves into the column header
+  notice, Store all and check, Close. **The modal stays open after Store
+  all and check**: rows update in place to Stored, Pending (naming the
+  companion still needed) or Skip, more files can be dropped while it is
+  open, and the games column behind it updates live. Second tab Stored
+  files (§7.4). Search moves into the column header
   as a filter icon that reveals a field when there are more games than
   fit; not shown by default.
 - **One row per game found**, the harness's cards folded into
@@ -314,7 +318,7 @@ desktop mockup's, followed by a fixed row of **shortcuts**.
 | --- | --- |
 | Settings | Settings…, Controls…; Stored files… (the modal that manages every archive in the browser: size, which games use it, Remove, Remove all) |
 | State | Save to slot 1–3 and Load slot 1–3, each with its timestamp or "empty"; Save changes; Clear saved play for this game…; Reset; Restart from power-on… |
-| View | Controller view (checked), Fullscreen, Show FPS; Mode: Play / Presentation… |
+| View | Controller view (checked), Show FPS; Size: Fit (keep aspect) / Stretch (fill the play area) / Integer (whole pixels); Fullscreen (keep aspect) / Fullscreen, stretched; Mode: Play / Presentation… |
 | Log | Technical log…, Detailed file check…, Copy log |
 
 Shortcuts, fixed and not configurable (decided 2026-10-25): Pause/Resume,
