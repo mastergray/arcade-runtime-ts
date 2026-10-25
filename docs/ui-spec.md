@@ -136,10 +136,10 @@ is player 1.
 
 | Feature | L | P | Runtime | Notes |
 | --- | :-: | :-: | --- | --- |
-| Player 1 and Player 2 tabs: a device line (which keyboard set, which pad, touch), a picture of the on-screen controller with the buttons this machine uses lit, and **one table** whose rows are the controller's own labels (▲▼◀▶, B1–B6, COIN, START) and whose columns are Keyboard and Gamepad n | yes | yes | keyboard map (M10 editor), `GamepadMapping` (W30) | Change… waits for a key or a pad button, whichever comes; scope this game or all games |
+| Player 1 and Player 2 tabs, identical in shape: a device line (which keyboard set, which pad, touch; Swap gamepads), a picture of the on-screen controller with the buttons this machine uses lit (for an alternating-players game, player 2 lights only COIN and START), and **one table** whose rows are the controller's own labels (▲▼◀▶, B1–B6, COIN, START) and whose columns are Keyboard and Gamepad n | yes | yes | keyboard map (M10 editor), `GamepadMapping` (W30) | Change… waits for a key or a pad button, whichever comes; scope this game or all games |
 | Cabinet tab: Service, Test, Tilt, Volume, the operator keys this game reports, and the page's menu gesture, each with a Keyboard column and a Gamepad column (chords are "hold Select +") | yes | yes | W29, W30 | The same switches appear on the on-screen controller under the game card |
-| Analogue: dead zone (all pads), and per game key speed, sensitivity, invert, only for ports the machine declares | yes | yes | M32 in this package | |
-| Test input: live view by player and device | yes | yes | input state | |
+| Analogue tab: one row per analogue control the machine declares (steering, pedal, dial…), with a **Keyboard** column (speed while a key is held, in steps per frame) and a **Gamepad** column (stick or trigger travel to control travel, in percent), an Invert box, and a "Use for all games" button per row; the rows **apply to this game**. Below, one global control for all pads and all games: stick centre tolerance (the dead zone, worded as how far a stick must move before it counts) | yes | yes | M32 in this package; dead zone today | |
+| Test input: a table by function (P1 and P2 directions, buttons, coin and start, each analogue control, cabinet switches, operator keys, the menu gesture) with a column per device (Keyboard, Gamepad 1, Gamepad 2) showing the binding, and a Now column that lights or shows a bar while the input is held. Nothing reaches the game while the tab is open | yes | yes | input state | |
 | Presets | — | — | — | dropped: scope this game / all games covers it |
 
 ### 3.5 V5 Settings
