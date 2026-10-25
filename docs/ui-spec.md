@@ -149,7 +149,9 @@ is player 1.
 | General: go fullscreen on start, mute on start, save changes automatically | yes | yes | cabinet autosave, display, audio | |
 | Video: aspect ratio, integer scaling, filter, side-border crop | yes | yes | display scaling and rendering; crop is new (roadmap §2) | |
 | Audio: volume, mute | yes | yes | audio | |
-| Storage: files saved, saved play per game, clear all; strictness (strict or MAME) | yes | yes | store, audit strictness | |
+| Storage: stored files (Manage opens the Import modal's Stored tab), saved play size, strictness (strict or MAME), emulator build override | yes | yes | store, audit strictness | |
+| **Export settings / Import settings**: a JSON file carrying the whole preference store (global and per-game settings, controls, favorites, recent) with an option to include saved play (the overlays, base64) so a library moves between browsers or devices; import merges by key and confirms overwrites | yes | yes | new: preference store | ROM archives are never exported |
+| Restore all settings to defaults (confirms; keeps saved play and archives) | yes | yes | new | |
 | Emulator build override (Auto) | yes | yes | family resolution | Advanced |
 | Show FPS | yes | yes | display | |
 
@@ -206,12 +208,20 @@ the menu is beside the game and never pauses by itself; the cabinet strip
 has Pause, and the Game view mirrors it. Both: a hidden tab pauses and
 return resumes, as today.
 
-### 4.5 Per-game and global settings
+### 4.5 Per-game and global settings: the preference store
 
-Controls, analogue settings, video crop and the three slots' records are
-per game with a global default; favorites, recent, strictness, the skin
-and the menu gestures per pad are global. All of it lives in one
-preference store per browser, next to the ROM store.
+A third IndexedDB store, `preferences`, beside `archives` (the ROM
+store) and `overlays` (saved play). Two record kinds: one **global**
+record (Settings values, controller-view default, view size, strictness,
+the all-games keyboard map, the gamepad mapping and menu gesture per pad
+id, favorites, recent, the skin) and one **per-game** record keyed like
+the overlay (control overrides scoped to this game, analogue settings,
+side-border crop, the three slot records with timestamp and thumbnail).
+Per-game lookups fall back to the global record field by field. Clear
+saved play deletes the overlay and the slot records and keeps the control
+preferences; Remove all stored files touches neither. The store is a
+small TypeScript package of its own and the first package of the UI
+wave. Export and import (§3.5) serialise it.
 
 ### 4.6 Status everywhere
 
@@ -302,8 +312,10 @@ prompt when no game is loaded.
 
 ### 7.3 Controller view
 
-The on-screen pad under the canvas: d-pad, the game card with COIN and
-START, **always six buttons** (the runtime's maximum per player, which
+The on-screen pad under the canvas: d-pad; in the middle COIN and START
+over the **cabinet switches** (Service, Test, Volume when the machine
+reports it) and the **operator keys** the machine reports, as small
+buttons, shown only while a game runs; **always six buttons** (the runtime's maximum per player, which
 covers every board in the matrix) with the ones this machine does not
 declare dimmed, and the operator keys
 the machine reports as small buttons on the card. **Toggleable** from
