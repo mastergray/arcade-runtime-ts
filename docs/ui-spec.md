@@ -251,3 +251,65 @@ second route so both can be opened side by side.
    page. **Confirmed.**
 
 Layouts: `docs/ui-layouts.md`.
+
+## 7. The local page (desktop and tablet landscape)
+
+Agreed 2026-10-25 from the tablet-landscape mockup and the HTML mock
+`res/ui/mock/local.html`. One page, three regions and a bar: a games
+column on the left, the play surface on the right with the controller
+view under it, and a menu bar on top. The developer harness's card
+details move into the games column as accordions.
+
+### 7.1 Games column
+
+- **Import** button at the top of the column, where the mockup had
+  Search. It opens a modal: drop zone (dropping anywhere on the page
+  opens the same modal), Choose files, the identification table of the
+  dropped files (file, identified as, status, details), the companion
+  notice, Store and check, Cancel. Search moves into the column header
+  as a filter icon that reveals a field when there are more games than
+  fit; not shown by default.
+- **One row per game found**, the harness's cards folded into
+  **accordions**: the closed row shows the generated icon, the name, and
+  on the right either a **Play** button (the set is complete and checked)
+  or the words **Missing files** (or "Bad file", "Not stored") in red.
+  Playing is marked on the row. Opening a row shows exactly what the
+  harness card shows: "Runs with the <family> build", one line per
+  expected archive with its state (stored and checked, chosen but not
+  stored, missing and whether required, bad file), the verdict, and the
+  row's actions: Store and check (when archives are pending), Remove,
+  Detailed file check, Game info. A row whose archive is no game in any
+  build says so and offers Remove.
+- Column footer: games found, ready count, files saved, and the Saved
+  files link (the per-file list with Remove, as in the harness).
+
+### 7.2 Play surface
+
+The canvas at its aspect with the size and rate under it when idle or in
+the status bar when running; the PAUSED veil when paused; a one-line
+prompt when no game is loaded.
+
+### 7.3 Controller view
+
+The on-screen pad under the canvas: d-pad, the game card with COIN and
+START, six buttons with undeclared ones dimmed, and the operator keys
+the machine reports as small buttons on the card. **Toggleable** from
+the View menu and the status bar; off by default when a keyboard or a
+pad is present on a desktop, on by default on a touch device. When off
+the canvas takes the full height.
+
+### 7.4 Menu bar (proposed, to discuss)
+
+The mockup's toolbar buttons become menu buttons with drop-downs:
+
+| Menu | Items |
+| --- | --- |
+| Settings | Settings… (the dialog), Controls…, Saved files…, Clear all saved play… |
+| Pause / Resume | A single toggle button, not a menu; label follows the state; disabled when idle |
+| Mute / Unmute | A single toggle button; the Volume pair appears beside it when the machine reports cabinet volume |
+| State | Save to slot 1–3, Load from slot 1–3 (each with its timestamp), Save changes, Clear saved play, Soft reset, Hard reset |
+| View | Controller view on/off, Fullscreen, Mode: Play / Presentation, Show FPS |
+
+The title bar keeps the game name and counts; the status bar keeps
+state, touch pad, keyboard, gamepads with their menu gesture, files
+saved.
