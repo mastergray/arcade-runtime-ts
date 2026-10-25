@@ -148,11 +148,10 @@ is player 1.
 | --- | :-: | :-: | --- | --- |
 | General: go fullscreen on start, mute on start, save changes automatically | yes | yes | cabinet autosave, display, audio | |
 | Video: aspect ratio, integer scaling, filter, side-border crop | yes | yes | display scaling and rendering; crop is new (roadmap §2) | |
-| Audio: volume, mute | yes | yes | audio | |
-| Storage: stored files (Manage opens the Import modal's Stored tab), saved play size, strictness (strict or MAME), emulator build override | yes | yes | store, audit strictness | |
+| Audio: volume | yes | yes | audio | Mute is the shortcut |
+| Storage: stored files (Manage opens the Import modal's Stored tab), saved play size, **per-game settings** (count, and Manage opens a list of the games whose settings differ from the defaults, what they override, Reset per game and Reset all; saved play untouched), strictness (strict or MAME) | yes | yes | store, audit strictness, preference store | No emulator-build override: the family is resolved from the archive |
 | **Export settings / Import settings**: a JSON file carrying the whole preference store (global and per-game settings, controls, favorites, recent) with an option to include saved play (the overlays, base64) so a library moves between browsers or devices; import merges by key and confirms overwrites | yes | yes | new: preference store | ROM archives are never exported |
 | Restore all settings to defaults (confirms; keeps saved play and archives) | yes | yes | new | |
-| Emulator build override (Auto) | yes | yes | family resolution | Advanced |
 | Show FPS | yes | yes | display | |
 
 ### 3.6 V6 Presentation
@@ -280,9 +279,7 @@ details move into the games column as accordions.
   all and check**: rows update in place to Stored, Pending (naming the
   companion still needed) or Skip, more files can be dropped while it is
   open, and the games column behind it updates live. Second tab Stored
-  files (§7.4). Search moves into the column header
-  as a filter icon that reveals a field when there are more games than
-  fit; not shown by default.
+  files (§7.4). No search or filter in 1.0: the column scrolls.
 - **One row per game found**, the harness's cards folded into
   **accordions**: the closed row shows the generated icon, the name, and
   on the right either a **Play** button (the set is complete and checked)
@@ -312,10 +309,10 @@ prompt when no game is loaded.
 
 ### 7.3 Controller view
 
-The on-screen pad under the canvas: d-pad; in the middle COIN and START
-over the **cabinet switches** (Service, Test, Volume when the machine
+The on-screen pad under the canvas: d-pad; in the middle the **cabinet switches** (Service, Test, Volume when the machine
 reports it) and the **operator keys** the machine reports, as small
-buttons, shown only while a game runs; **always six buttons** (the runtime's maximum per player, which
+buttons, shown only while a game runs, with COIN and START **below**
+them; **always six buttons** (the runtime's maximum per player, which
 covers every board in the matrix) with the ones this machine does not
 declare dimmed, and the operator keys
 the machine reports as small buttons on the card. **Toggleable** from
