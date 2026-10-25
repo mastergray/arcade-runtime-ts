@@ -303,7 +303,9 @@ prompt when no game is loaded.
 ### 7.3 Controller view
 
 The on-screen pad under the canvas: d-pad, the game card with COIN and
-START, six buttons with undeclared ones dimmed, and the operator keys
+START, **always six buttons** (the runtime's maximum per player, which
+covers every board in the matrix) with the ones this machine does not
+declare dimmed, and the operator keys
 the machine reports as small buttons on the card. **Toggleable** from
 the View menu and the status bar; off by default when a keyboard or a
 pad is present on a desktop, on by default on a touch device. When off
