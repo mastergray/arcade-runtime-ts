@@ -276,10 +276,17 @@ details move into the games column as accordions.
   Playing is marked on the row. Opening a row shows exactly what the
   harness card shows: "Runs with the <family> build", one line per
   expected archive with its state (stored and checked, chosen but not
-  stored, missing and whether required, bad file), the verdict, and the
-  row's actions: Store and check (when archives are pending), Remove,
-  Detailed file check, Game info. A row whose archive is no game in any
-  build says so and offers Remove.
+  stored, missing and whether required, bad file), the verdict, then the
+  **game info** inline (manufacturer, year, driver file, players, display
+  size, rate and orientation, control summary, operator keys, save-state
+  support, when progress was last saved), and the row's actions: File
+  check (the audit report), Remove, and Import when a file is missing.
+  A row whose archive is no game in any build says so and offers Remove.
+- **The closed row's right side holds the one primary action** for the
+  row's state: **Play** when stored and checked OK; **Check** when the
+  archives were chosen but not stored yet (the harness's Store and check,
+  which stores them and runs the audit); the red word otherwise (Missing
+  files, Bad file, Not a game), with the details one tap away.
 - Column footer: games found, ready count, files saved, and the Saved
   files link (the per-file list with Remove, as in the harness).
 
@@ -311,8 +318,11 @@ desktop mockup's, followed by a fixed row of **shortcuts**.
 | Log | Technical log…, Detailed file check…, Copy log |
 
 Shortcuts, fixed and not configurable (decided 2026-10-25): Pause/Resume,
-Mute/Unmute, Reset, Fullscreen, Controller. They hide below tablet
-width; the menus keep every action reachable.
+Mute/Unmute, Reset, then a **slot group** (a Slot picker showing 1–3 with
+each slot's timestamp or "empty", and Save and Load buttons acting on the
+chosen slot), Fullscreen, Controller. The State menu keeps the six
+explicit slot items for the keyboard and the pad. Shortcuts hide below
+tablet width; the menus keep every action reachable.
 
 Vocabulary, so the menu says what the runtime does:
 
