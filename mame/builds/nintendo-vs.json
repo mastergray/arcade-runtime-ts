@@ -1,0 +1,12 @@
+{
+    "family": "nintendo-vs",
+    "target": "mame/targets/nintendo-vs.lua",
+    "list": "mame/targets/nintendo-vs.lst",
+    "memoryPages": 4096,
+    "sources": [
+        "src/mame/drivers/vsnes.c",
+        "src/mame/machine/vsnes.c",
+        "src/mame/video/vsnes.c",
+        "src/mame/video/ppu2c0x.c"
+    ]
+}
