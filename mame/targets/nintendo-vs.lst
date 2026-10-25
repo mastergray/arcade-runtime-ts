@@ -1,0 +1,59 @@
+// Derived from pinned MAME 0.161 source (run at the source root):
+// comm -12 \
+//   <(sed -nE 's/^[[:space:]]*(GAME|GAMEL|GAME_CUSTOM)[[:space:]]*[(][^,]+,[[:space:]]*([a-z0-9_]+).*/\2/p' src/mame/drivers/vsnes.c | LC_ALL=C sort -u) \
+//   <(sed -nE 's/^([a-z0-9_]+)([[:space:]]*\/\/.*)?$/\1/p' src/mame/mame.lst | LC_ALL=C sort -u)
+
+balonfgt // src/mame/drivers/vsnes.c
+bnglngby // src/mame/drivers/vsnes.c
+btlecity // src/mame/drivers/vsnes.c
+cluclu // src/mame/drivers/vsnes.c
+cstlevna // src/mame/drivers/vsnes.c
+drmario // src/mame/drivers/vsnes.c
+duckhunt // src/mame/drivers/vsnes.c
+excitebk // src/mame/drivers/vsnes.c
+excitebka // src/mame/drivers/vsnes.c
+goonies // src/mame/drivers/vsnes.c
+hogalley // src/mame/drivers/vsnes.c
+iceclimb // src/mame/drivers/vsnes.c
+iceclimba // src/mame/drivers/vsnes.c
+iceclmrd // src/mame/drivers/vsnes.c
+jajamaru // src/mame/drivers/vsnes.c
+ladygolf // src/mame/drivers/vsnes.c
+ladygolfe // src/mame/drivers/vsnes.c
+machridr // src/mame/drivers/vsnes.c
+machridra // src/mame/drivers/vsnes.c
+mightybj // src/mame/drivers/vsnes.c
+platoon // src/mame/drivers/vsnes.c
+rbibb // src/mame/drivers/vsnes.c
+rbibba // src/mame/drivers/vsnes.c
+skatekds // src/mame/drivers/vsnes.c
+smgolf // src/mame/drivers/vsnes.c
+smgolfb // src/mame/drivers/vsnes.c
+smgolfj // src/mame/drivers/vsnes.c
+starlstr // src/mame/drivers/vsnes.c
+suprmrio // src/mame/drivers/vsnes.c
+suprmrioa // src/mame/drivers/vsnes.c
+suprmriobl // src/mame/drivers/vsnes.c
+suprmriobl2 // src/mame/drivers/vsnes.c
+supxevs // src/mame/drivers/vsnes.c
+tkoboxng // src/mame/drivers/vsnes.c
+topgun // src/mame/drivers/vsnes.c
+vsbball // src/mame/drivers/vsnes.c
+vsbballj // src/mame/drivers/vsnes.c
+vsbballja // src/mame/drivers/vsnes.c
+vsbballjb // src/mame/drivers/vsnes.c
+vsfdf // src/mame/drivers/vsnes.c
+vsgradus // src/mame/drivers/vsnes.c
+vsgshoe // src/mame/drivers/vsnes.c
+vsmahjng // src/mame/drivers/vsnes.c
+vspinbal // src/mame/drivers/vsnes.c
+vspinbalj // src/mame/drivers/vsnes.c
+vsskykid // src/mame/drivers/vsnes.c
+vsslalom // src/mame/drivers/vsnes.c
+vssoccer // src/mame/drivers/vsnes.c
+vssoccera // src/mame/drivers/vsnes.c
+vstennis // src/mame/drivers/vsnes.c
+vstennisa // src/mame/drivers/vsnes.c
+vstennisb // src/mame/drivers/vsnes.c
+vstetris // src/mame/drivers/vsnes.c
+wrecking // src/mame/drivers/vsnes.c
