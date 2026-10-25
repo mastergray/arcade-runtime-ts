@@ -13,7 +13,7 @@ import {
     isPlayerIndex,                                                 // Guards touch-control player assignments
 } from "../shared.types.js";
 import { isArcadeAdapterSelection, isArcadeGameConfig } from "../ArcadePlayer/types.js";   // Guards init's player inputs
-import { isGamepadProviderLike } from "../GamepadSource/types.js";   // Guards the injected Gamepad API boundary
+import { isGamepadMapping, isGamepadProviderLike } from "../GamepadSource/types.js";   // Guards gamepad mapping and injected API boundary
 import {
     isKeyboardEventTargetLike,                                    // Guards keyboard and blur targets
     isKeyboardMap,                                                // Guards physical-key mappings
@@ -30,7 +30,7 @@ import type {
     PlayerIndex,                                                   // Reserved M10 touch player
 } from "../shared.types.js";
 import type { ArcadeAdapterSelection, ArcadeGameConfig } from "../ArcadePlayer/types.js";   // Player choices accepted by init
-import type { GamepadProviderLike } from "../GamepadSource/types.js";   // Direct-construction gamepad provider
+import type { GamepadMapping, GamepadProviderLike } from "../GamepadSource/types.js";   // Gamepad mapping and direct-construction provider
 import type {
     KeyboardEventTargetLike,                                      // Direct-construction event boundary
     KeyboardMap,                                                  // Optional keyboard override
@@ -54,6 +54,7 @@ export interface ArcadeControlsConfig {
     readonly gamepads?: {
         readonly enabled?: boolean;                                // Initial and restart-persistent source gate; true when omitted
         readonly deadZone?: number;                                // Axis threshold in [0, 1); source default when omitted
+        readonly mapping?: GamepadMapping;                         // Physical layout and optional operator chords
     };
     readonly buttons?: ReadonlyArray<{
         readonly surface: InputSurface;                            // Reserved M10 button surface
@@ -136,7 +137,8 @@ const isKeyboardControl = (value: unknown): boolean => isObject(value)
 // True when value is a valid optional gamepad source declaration.
 const isGamepadControl = (value: unknown): boolean => isObject(value)
     && (value.enabled === undefined || typeof value.enabled === "boolean")
-    && isOptionalDeadZone(value.deadZone);
+    && isOptionalDeadZone(value.deadZone)
+    && (value.mapping === undefined || isGamepadMapping(value.mapping));
 
 // PREDICATE :: UNKNOWN -> BOOLEAN
 // True when value is one structurally valid reserved M10 button declaration.

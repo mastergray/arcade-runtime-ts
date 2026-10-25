@@ -6,6 +6,7 @@ import ArcadeInput from "../ArcadeInput/ArcadeInput.js";          // Runtime ide
 // Type dependencies:
 import {
     isArcadeControl,                                              // Guards every helper result during development and tests
+    isArcadeKeyName,                                              // Validates field-level operator-key chord controls
     isFiniteNumber,                                               // Guards button, axis and dead-zone numbers
     isFrameScheduler,                                             // Guards the injected polling clock
     type ArcadeButtonIndex,                                       // Logical action-button number
@@ -44,6 +45,18 @@ export interface GamepadProviderLike {
     getGamepads(): ReadonlyArray<GamepadLike | null>;              // Current sparse pad list
 }
 
+// INTERFACE :: one physical button and the operator control it holds while the chord modifier is down
+export interface GamepadChord {
+    readonly button: number;                                      // Physical button index pressed with the modifier
+    readonly control: ArcadeControl;                              // Operator key, volume or cabinet switch control
+}
+
+// INTERFACE :: optional modifier and replacement bindings for the gamepad operator layer
+export interface GamepadChords {
+    readonly modifier?: number;                                   // Defaults to the mapping's coin button
+    readonly bindings?: ReadonlyArray<GamepadChord>;              // Replaces the standard operator bindings when supplied
+}
+
 // INTERFACE :: optional physical-index overrides, optionally scoped to one browser-reported id
 // Omitting a field retains the standard index; id is required to opt a non-standard pad into polling.
 export interface GamepadMapping {
@@ -60,6 +73,7 @@ export interface GamepadMapping {
     readonly buttons?: readonly [number, number, number, number, number, number];   // Physical indices for logical buttons 1–6
     readonly coin?: number;                                       // Physical coin/select button index
     readonly start?: number;                                      // Physical start button index
+    readonly chords?: GamepadChords | false;                      // false restores the original digital layer and coin timing
 }
 
 // INTERFACE :: direct-construction dependencies and source choices
@@ -111,6 +125,54 @@ const isPhysicalIndex = (value: unknown): value is number =>
     typeof value === "number" && Number.isInteger(value) && value >= 0;
 
 // PREDICATE :: UNKNOWN -> BOOLEAN
+// True only for controls the operator chord layer is allowed to emit.
+const isChordControl = (value: unknown): value is ArcadeControl => {
+    if (!isArcadeControl(value)) return false;
+    switch (value.kind) {
+        case "key": return isArcadeKeyName(value.key);
+        case "volume":
+        case "test":
+        case "service":
+        case "tilt": return true;
+        default: return false;
+    }
+};
+
+// PREDICATE :: UNKNOWN -> BOOLEAN
+// True when one chord binding has a physical index and an allowed operator control.
+const isGamepadChord = (value: unknown): value is GamepadChord => typeof value === "object"
+    && value !== null
+    && !Array.isArray(value)
+    && isPhysicalIndex((value as GamepadChord).button)
+    && isChordControl((value as GamepadChord).control);
+
+// HELPER :: gamepadMapping -> [NUMBER]
+// Resolves the physical indices used by the standard chord set through ordinary mapping overrides.
+const defaultChordButtons = (mapping: GamepadMapping): ReadonlyArray<number> => {
+    const dpad = mapping.dpad ?? DEFAULT_DPAD;
+    const buttons = mapping.buttons ?? DEFAULT_BUTTONS;
+    return [
+        mapping.start ?? DEFAULT_START,
+        dpad.up, dpad.down, dpad.left, dpad.right,
+        buttons[0], buttons[1], buttons[2], buttons[4], buttons[5],
+    ];
+};
+
+// PREDICATE :: gamepadMapping -> BOOLEAN
+// Validates the enabled chord layer after resolving its modifier and optional default bindings.
+const hasValidChords = (mapping: GamepadMapping): boolean => {
+    if (mapping.chords === false) return true;
+    const chords = mapping.chords;
+    if (chords !== undefined && (typeof chords !== "object" || chords === null || Array.isArray(chords))) return false;
+    const modifier = chords?.modifier ?? mapping.coin ?? DEFAULT_COIN;
+    if (!isPhysicalIndex(modifier)) return false;
+    const bindings = chords?.bindings;
+    if (bindings !== undefined && (!Array.isArray(bindings) || !bindings.every(isGamepadChord))) return false;
+    const buttons = bindings?.map(({ button }) => button) ?? defaultChordButtons(mapping);
+    return !buttons.includes(modifier) && new Set(buttons).size === buttons.length;
+};
+
+// PREDICATE :: UNKNOWN -> BOOLEAN
 // True when value has the pressed and normalized value fields GamepadSource reads.
 const isGamepadButtonLike = (value: unknown): value is { readonly pressed: boolean; readonly value: number } =>
     typeof value === "object" && value !== null
@@ -145,7 +207,7 @@ export function isGamepadMapping(value: unknown): value is GamepadMapping {
     if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
     const mapping = value as GamepadMapping;
     const dpad = mapping.dpad;
-    return (mapping.id === undefined || (typeof mapping.id === "string" && mapping.id.length > 0))
+    const valid = (mapping.id === undefined || (typeof mapping.id === "string" && mapping.id.length > 0))
         && (dpad === undefined || (typeof dpad === "object" && dpad !== null
             && isPhysicalIndex(dpad.up) && isPhysicalIndex(dpad.down)
             && isPhysicalIndex(dpad.left) && isPhysicalIndex(dpad.right)))
@@ -155,6 +217,7 @@ export function isGamepadMapping(value: unknown): value is GamepadMapping {
         && (mapping.buttons === undefined || (Array.isArray(mapping.buttons) && mapping.buttons.length === 6 && mapping.buttons.every(isPhysicalIndex)))
         && (mapping.coin === undefined || isPhysicalIndex(mapping.coin))
         && (mapping.start === undefined || isPhysicalIndex(mapping.start));
+    return valid && hasValidChords(mapping);
 }
 
 // PREDICATE :: UNKNOWN -> BOOLEAN

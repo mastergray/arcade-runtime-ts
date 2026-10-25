@@ -4,7 +4,7 @@
 import CTGTest, { CTGTestPredicates as P } from "ctg-js-test";   // Pipeline API and predicate builders
 import ArcadeInput from "../../src/ArcadeInput/ArcadeInput.ts";   // Real channel owner under the source
 import ArcadeRuntimeError from "../../src/ArcadeRuntimeError/ArcadeRuntimeError.ts";   // Typed rejection identity
-import GamepadSource from "../../src/GamepadSource/GamepadSource.ts";   // Source under test
+import GamepadSource, { DEFAULT_GAMEPAD_CHORDS } from "../../src/GamepadSource/GamepadSource.ts";   // Source and default chords under test
 import {
     controlsFor,                                                  // Pure full-control mapper
     directionsFor,                                                // Pure directional mapper
@@ -203,6 +203,17 @@ const testFile: TestFile = {
                     shortButtons: isGamepadMapping({ buttons: [0, 1, 2] }),
                     badCoin: isGamepadMapping({ coin: -1 }),
                     badStart: isGamepadMapping({ start: "9" }),
+                    chordsOff: isGamepadMapping({ chords: false }),
+                    customChord: isGamepadMapping({ chords: { modifier: 10, bindings: [{ button: 3, control: { kind: "volume", direction: "up" } }] } }),
+                    badModifier: isGamepadMapping({ chords: { modifier: -1 } }),
+                    bindingOnModifier: isGamepadMapping({ chords: { modifier: 10, bindings: [{ button: 10, control: { kind: "test" } }] } }),
+                    bindingOnDefaultModifier: isGamepadMapping({ chords: { bindings: [{ button: 8, control: { kind: "test" } }] } }),
+                    duplicateBinding: isGamepadMapping({ chords: { bindings: [{ button: 3, control: { kind: "test" } }, { button: 3, control: { kind: "service" } }] } }),
+                    directionBinding: isGamepadMapping({ chords: { bindings: [{ button: 3, control: { kind: "direction", player: 1, direction: "up" } }] } }),
+                    badKeyBinding: isGamepadMapping({ chords: { bindings: [{ button: 3, control: { kind: "key", key: "F3" } }] } }),
+                    frozenDefaults: Object.isFrozen(DEFAULT_GAMEPAD_CHORDS)
+                        && Object.isFrozen(DEFAULT_GAMEPAD_CHORDS.bindings)
+                        && (DEFAULT_GAMEPAD_CHORDS.bindings ?? []).every((binding) => Object.isFrozen(binding) && Object.isFrozen(binding.control)),
                     array: isGamepadMapping([]),
                     absent: isGamepadMapping(null),
                 }), P.equals<unknown>({
@@ -217,6 +228,15 @@ const testFile: TestFile = {
                     shortButtons: false,
                     badCoin: false,
                     badStart: false,
+                    chordsOff: true,
+                    customChord: true,
+                    badModifier: false,
+                    bindingOnModifier: false,
+                    bindingOnDefaultModifier: false,
+                    duplicateBinding: false,
+                    directionBinding: false,
+                    badKeyBinding: false,
+                    frozenDefaults: true,
                     array: false,
                     absent: false,
                 }))
@@ -316,11 +336,11 @@ const testFile: TestFile = {
                 .start(undefined),
         },
         {
-            label: "declared absolute, relative and pedal axes use dead-zone rescaling and release neutrals",
+            label: "declared axes remain active under the chord modifier, use dead-zone rescaling and release neutrals",
             run: () => CTGTest.init("gamepad analogue bindings")
                 .stage("poll every bound axis kind, then disconnect", () => {
                     const provider = new FakeGamepadProvider();
-                    const base = pad("pad", 0, [], [0.625, -1, 0, 0.625]);
+                    const base = pad("pad", 0, [8], [0.625, -1, 0, 0.625]);
                     provider.pads = [{
                         ...base,
                         buttons: base.buttons.map((button, index) => index === 7
@@ -559,13 +579,13 @@ const testFile: TestFile = {
                 .start(undefined),
         },
         {
-            label: "coin and start rising edges use frame-timed taps once even when the physical buttons stay down",
-            run: () => CTGTest.init("gamepad coin and start taps")
+            label: "chords false preserves the original coin and start rising-edge taps byte for byte",
+            run: () => CTGTest.init("gamepad chords-disabled coin and start taps")
                 .stage("hold both buttons across polls and advance emulated ticks", () => {
                     const provider = new FakeGamepadProvider();
                     provider.pads = [pad("pad", 0, [8, 9])];
                     const scheduler = new FakeFrameScheduler();
-                    const { session } = attachedSource(provider, scheduler, new FakeEventTarget());
+                    const { session } = attachedSource(provider, scheduler, new FakeEventTarget(), { chords: false });
                     scheduler.tick(16);
                     scheduler.tick(16);
                     const whileTapped = session.held;
@@ -589,6 +609,171 @@ const testFile: TestFile = {
                         controlCall({ kind: "start", player: 1 }, false),
                         controlCall({ kind: "coin", player: 1 }, true),
                         controlCall({ kind: "start", player: 1 }, true),
+                    ],
+                }))
+                .start(undefined),
+        },
+        {
+            label: "the default modifier defers a plain coin tap and holds an Advance chord without repeats or a coin",
+            run: () => CTGTest.init("gamepad default operator chords")
+                .stage("release a plain modifier, then hold and release its Start binding", () => {
+                    const provider = new FakeGamepadProvider();
+                    const scheduler = new FakeFrameScheduler();
+                    const { session } = attachedSource(provider, scheduler, new FakeEventTarget());
+
+                    provider.pads = [pad("pad", 0, [8])];
+                    scheduler.tick(16);
+                    const onModifierPress = session.held;
+                    provider.pads = [pad("pad", 0)];
+                    scheduler.tick(16);
+                    const onPlainRelease = session.held;
+                    session.emitTick(3);
+
+                    provider.pads = [pad("pad", 0, [8])];
+                    scheduler.tick(16);
+                    provider.pads = [pad("pad", 0, [8, 9])];
+                    scheduler.tick(16);
+                    scheduler.tick(16);
+                    scheduler.tick(16);
+                    const whileHeld = session.held;
+                    provider.pads = [pad("pad", 0, [8])];
+                    scheduler.tick(16);
+                    const afterStartRelease = session.held;
+                    provider.pads = [pad("pad", 0)];
+                    scheduler.tick(16);
+                    return { onModifierPress, onPlainRelease, whileHeld, afterStartRelease, final: session.held, calls: session.calls };
+                })
+                .assert("coin and held-key edges match", (state) => state.subject, P.equals<unknown>({
+                    onModifierPress: [],
+                    onPlainRelease: ["p1:coin"],
+                    whileHeld: ["key:F2"],
+                    afterStartRelease: [],
+                    final: [],
+                    calls: [
+                        controlCall({ kind: "coin", player: 1 }, true),
+                        controlCall({ kind: "coin", player: 1 }, false),
+                        controlCall({ kind: "key", key: "F2" }, true),
+                        controlCall({ kind: "key", key: "F2" }, false),
+                    ],
+                }))
+                .start(undefined),
+        },
+        {
+            label: "switching layers releases ordinary controls, requires a fresh chord press, and releases chords on disable or disconnect",
+            run: () => CTGTest.init("gamepad chord edge reconciliation")
+                .stage("cross the layer boundary, disable one chord and disconnect another", () => {
+                    const provider = new FakeGamepadProvider();
+                    const scheduler = new FakeFrameScheduler();
+                    const { source, session } = attachedSource(provider, scheduler, new FakeEventTarget());
+
+                    provider.pads = [pad("pad", 0, [0])];
+                    scheduler.tick(16);
+                    provider.pads = [pad("pad", 0, [0, 8])];
+                    scheduler.tick(16);
+                    const enteredWithButtonHeld = session.held;
+                    provider.pads = [pad("pad", 0, [8])];
+                    scheduler.tick(16);
+                    provider.pads = [pad("pad", 0, [0, 8])];
+                    scheduler.tick(16);
+                    const freshChord = session.held;
+                    provider.pads = [pad("pad", 0, [0])];
+                    scheduler.tick(16);
+                    const ordinaryReturns = session.held;
+                    provider.pads = [pad("pad", 0)];
+                    scheduler.tick(16);
+
+                    provider.pads = [pad("pad", 0, [8])];
+                    scheduler.tick(16);
+                    provider.pads = [pad("pad", 0, [8, 9])];
+                    scheduler.tick(16);
+                    source.enabled = false;
+                    const afterDisable = session.held;
+                    source.enabled = true;
+                    provider.pads = [pad("pad", 0, [8])];
+                    scheduler.tick(16);
+                    provider.pads = [pad("pad", 0, [8, 9])];
+                    scheduler.tick(16);
+                    provider.pads = [];
+                    scheduler.tick(16);
+                    return { enteredWithButtonHeld, freshChord, ordinaryReturns, afterDisable, final: session.held, calls: session.calls };
+                })
+                .assert("every digital edge is released before its replacement", (state) => state.subject, P.equals<unknown>({
+                    enteredWithButtonHeld: [],
+                    freshChord: ["test"],
+                    ordinaryReturns: ["p1:button:1"],
+                    afterDisable: [],
+                    final: [],
+                    calls: [
+                        controlCall({ kind: "button", player: 1, button: 1 }, true),
+                        controlCall({ kind: "button", player: 1, button: 1 }, false),
+                        controlCall({ kind: "test" }, true),
+                        controlCall({ kind: "test" }, false),
+                        controlCall({ kind: "button", player: 1, button: 1 }, true),
+                        controlCall({ kind: "button", player: 1, button: 1 }, false),
+                        controlCall({ kind: "key", key: "F2" }, true),
+                        controlCall({ kind: "key", key: "F2" }, false),
+                        controlCall({ kind: "key", key: "F2" }, true),
+                        controlCall({ kind: "key", key: "F2" }, false),
+                    ],
+                }))
+                .start(undefined),
+        },
+        {
+            label: "a custom modifier leaves coin on its rising edge and custom bindings replace the defaults",
+            run: () => CTGTest.init("gamepad custom operator chords")
+                .stage("use index 10 as the modifier, then use one replacement binding", () => {
+                    const provider = new FakeGamepadProvider();
+                    const scheduler = new FakeFrameScheduler();
+                    const mapping: GamepadMapping = { chords: { modifier: 10 } };
+                    const { session } = attachedSource(provider, scheduler, new FakeEventTarget(), mapping);
+                    provider.pads = [pad("pad", 0, [8])];
+                    scheduler.tick(16);
+                    scheduler.tick(16);
+                    provider.pads = [pad("pad", 0)];
+                    scheduler.tick(16);
+                    session.emitTick(3);
+                    provider.pads = [pad("pad", 0, [10])];
+                    scheduler.tick(16);
+                    provider.pads = [pad("pad", 0, [9, 10])];
+                    scheduler.tick(16);
+                    const customModifierHeld = session.held;
+                    provider.pads = [pad("pad", 0, [10])];
+                    scheduler.tick(16);
+                    provider.pads = [pad("pad", 0)];
+                    scheduler.tick(16);
+
+                    const replacementProvider = new FakeGamepadProvider();
+                    const replacementScheduler = new FakeFrameScheduler();
+                    const replacement = attachedSource(replacementProvider, replacementScheduler, new FakeEventTarget(), {
+                        chords: { bindings: [{ button: 3, control: { kind: "volume", direction: "up" } }] },
+                    });
+                    replacementProvider.pads = [pad("pad", 0, [8])];
+                    replacementScheduler.tick(16);
+                    replacementProvider.pads = [pad("pad", 0, [8, 9])];
+                    replacementScheduler.tick(16);
+                    const defaultMissing = replacement.session.held;
+                    replacementProvider.pads = [pad("pad", 0, [8, 3])];
+                    replacementScheduler.tick(16);
+                    const replacementHeld = replacement.session.held;
+                    replacementProvider.pads = [pad("pad", 0, [8])];
+                    replacementScheduler.tick(16);
+                    replacementProvider.pads = [pad("pad", 0)];
+                    replacementScheduler.tick(16);
+                    return { customModifierHeld, calls: session.calls, defaultMissing, replacementHeld, replacementCalls: replacement.session.calls };
+                })
+                .assert("coin timing, silent modifier and replacement set match", (state) => state.subject, P.equals<unknown>({
+                    customModifierHeld: ["key:F2"],
+                    calls: [
+                        controlCall({ kind: "coin", player: 1 }, true),
+                        controlCall({ kind: "coin", player: 1 }, false),
+                        controlCall({ kind: "key", key: "F2" }, true),
+                        controlCall({ kind: "key", key: "F2" }, false),
+                    ],
+                    defaultMissing: [],
+                    replacementHeld: ["volume:up"],
+                    replacementCalls: [
+                        controlCall({ kind: "volume", direction: "up" }, true),
+                        controlCall({ kind: "volume", direction: "up" }, false),
                     ],
                 }))
                 .start(undefined),

@@ -1087,7 +1087,7 @@ const updateGamepads = (): void => {
     const players = cabinet?.gamepads?.players ?? [];
     gamepadsLine.textContent = players.length === 0
         ? "Connected gamepads: none"
-        : `Connected gamepads: ${players.map(({ player, id }) => `P${player} ${id}`).join(", ")}`;
+        : `Connected gamepads: ${players.map(({ player, id }) => `P${player} ${id}`).join(", ")}. Hold Select: Start = Advance (F2), d-pad = F1 / 9 / F5 / F6, A B X = test / service / tilt, LB RB = volume`;
     gamepadFrame = requestAnimationFrame(updateGamepads);
 };
 

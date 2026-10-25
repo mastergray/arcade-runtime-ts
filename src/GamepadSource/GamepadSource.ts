@@ -23,6 +23,8 @@ import {
     isGamepadSourceConfig,                                        // Guards direct construction
     isGamepadSourceInitConfig,                                    // Guards init before reading browser globals
     type GamepadLike,                                             // Provider snapshot entry
+    type GamepadChord,                                            // One operator-layer physical binding
+    type GamepadChords,                                           // Modifier and binding configuration
     type GamepadMapping,                                          // Physical-index overrides
     type GamepadProviderLike,                                     // Injectable Gamepad API boundary
     type GamepadSourceConfig,                                     // Direct construction config
@@ -43,6 +45,9 @@ interface AssignedPad {
     readonly player: PlayerIndex;                                 // Lowest free slot at assignment time
     readonly channel: ArcadeInputChannel;                         // Exactly one independently owned channel
     readonly active: Map<ArcadeControlKey, ArcadeControl>;        // Controls down on the previous poll
+    readonly suppressedChordButtons: Set<number>;                 // Buttons already down when the modifier engaged
+    modifierHeld: boolean;                                        // Previous physical modifier state
+    chordFired: boolean;                                          // Suppresses the deferred coin tap for this hold
 }
 
 // INTERFACE :: validated provider entry with the mapping applicable to this pad
@@ -60,17 +65,68 @@ interface PollablePad {
 const PLAYER_SLOTS = [1, 2, 3, 4] as const;                       // Assignment order and hard v1 player limit
 const DEFAULT_MAPPING: GamepadMapping = Object.freeze({});        // Empty overrides mean W3C standard indices
 const DEFAULT_DPAD = Object.freeze({ up: 12, down: 13, left: 14, right: 15 });   // W3C standard buttons
+const DEFAULT_BUTTONS = Object.freeze([0, 1, 2, 3, 4, 5] as const);   // W3C face and shoulder buttons
+const DEFAULT_COIN = 8;                                           // W3C Select/Back button
+const DEFAULT_START = 9;                                          // W3C Start button
 const DEFAULT_LEFT_AXES = Object.freeze([0, 1] as const);          // W3C standard left stick
 const DEFAULT_RIGHT_AXES = Object.freeze([2, 3] as const);         // W3C standard right stick
 const DEFAULT_PEDALS = Object.freeze([7, 6] as const);             // Right then left trigger
 const DIRECTIONS = ["up", "down", "left", "right"] as const;   // Stable directional order
 const SPIN_PIXELS_PER_POLL = 20;                                  // Full deflection; matches the 20–30 px key delta the pinned dial and trackball drivers declare
 
+// HELPER :: NUMBER, arcadeControl -> gamepadChord
+// Deep-freezes one public default binding.
+const frozenChord = (button: number, control: ArcadeControl): GamepadChord => Object.freeze({
+    button,
+    control: Object.freeze(control),
+});
+
+// Default W3C-layout operator layer. Runtime defaults resolve these logical positions through mapping overrides.
+export const DEFAULT_GAMEPAD_CHORDS: GamepadChords = Object.freeze({
+    modifier: DEFAULT_COIN,
+    bindings: Object.freeze([
+        frozenChord(DEFAULT_START, { kind: "key", key: "F2" }),
+        frozenChord(DEFAULT_DPAD.up, { kind: "key", key: "F1" }),
+        frozenChord(DEFAULT_DPAD.down, { kind: "key", key: "9" }),
+        frozenChord(DEFAULT_DPAD.left, { kind: "key", key: "F5" }),
+        frozenChord(DEFAULT_DPAD.right, { kind: "key", key: "F6" }),
+        frozenChord(DEFAULT_BUTTONS[0], { kind: "test" }),
+        frozenChord(DEFAULT_BUTTONS[1], { kind: "service" }),
+        frozenChord(DEFAULT_BUTTONS[2], { kind: "tilt" }),
+        frozenChord(DEFAULT_BUTTONS[4], { kind: "volume", direction: "down" }),
+        frozenChord(DEFAULT_BUTTONS[5], { kind: "volume", direction: "up" }),
+    ]),
+});
+
 // HELPER :: gamepadLike, NUMBER -> BOOLEAN
 // Digital/analog button threshold used for d-pad-only snapshots.
 const pressed = (pad: GamepadLike, index: number): boolean => {
     const button = pad.buttons[index];
     return button !== undefined && (button.pressed || button.value >= 0.5);
+};
+
+// HELPER :: gamepadLike, NUMBER -> gamepadLike
+// Masks one physical button from only the digital layer; analogue reads continue using the original snapshot.
+const withoutDigitalButton = (pad: GamepadLike, index: number): GamepadLike => ({
+    ...pad,
+    buttons: pad.buttons.map((button, offset) => offset === index ? { pressed: false, value: 0 } : button),
+});
+
+// HELPER :: gamepadMapping -> [gamepadChord]
+// Uses custom bindings verbatim or resolves the standard logical positions through the pad mapping.
+const chordBindingsFor = (mapping: GamepadMapping): ReadonlyArray<GamepadChord> => {
+    if (mapping.chords !== false && mapping.chords?.bindings !== undefined) return mapping.chords.bindings;
+    const dpad = mapping.dpad ?? DEFAULT_DPAD;
+    const buttons = mapping.buttons ?? DEFAULT_BUTTONS;
+    const physical = [
+        mapping.start ?? DEFAULT_START,
+        dpad.up, dpad.down, dpad.left, dpad.right,
+        buttons[0], buttons[1], buttons[2], buttons[4], buttons[5],
+    ];
+    return (DEFAULT_GAMEPAD_CHORDS.bindings ?? []).map((binding, index) => ({
+        button: physical[index] ?? binding.button,
+        control: binding.control,
+    }));
 };
 
 // HELPER :: gamepadLike, gamepadMapping -> Set<arcadeDirection>
@@ -286,6 +342,9 @@ export default class GamepadSource {
                 player,
                 channel: this._input.createChannel(),
                 active: new Map(),
+                suppressedChordButtons: new Set(),
+                modifierHeld: false,
+                chordFired: false,
             });
         }
 
@@ -321,24 +380,55 @@ export default class GamepadSource {
             .map((input) => input.kind));
         const leftAnalog = ["stick-x", "stick-y", "paddle", "paddle-v", "lightgun-x", "lightgun-y", "dial", "dial-v", "trackball-x", "trackball-y"]
             .some((kind) => declared.has(kind as MachineAnalogKind));
-        const base = controlsFor(pad, assignment.player, this._deadZone, mapping);
-        let controls: ArcadeControl[] = [...base];
-        if (leftAnalog || inputs.dualStick) {
-            controls = [];
-            const ordinaryDirections = dpadDirections(pad, mapping);
-            for (const direction of DIRECTIONS)
-                if (ordinaryDirections.has(direction)) controls.push({ kind: "direction", player: assignment.player, direction });
-            if (inputs.dualStick) {
-                for (const direction of DIRECTIONS)
-                    if (stickDirections(pad, mapping.axes ?? DEFAULT_LEFT_AXES, this._deadZone).has(direction))
-                        controls.push({ kind: "stick", player: assignment.player, stick: 1, direction });
-                for (const direction of DIRECTIONS)
-                    if (stickDirections(pad, mapping.rightAxes ?? DEFAULT_RIGHT_AXES, this._deadZone).has(direction))
-                        controls.push({ kind: "stick", player: assignment.player, stick: 2, direction });
+        const chordLayer = mapping.chords !== false;
+        const modifier = mapping.chords !== false ? mapping.chords?.modifier ?? mapping.coin ?? DEFAULT_COIN : -1;
+        const modifierDown = chordLayer && pressed(pad, modifier);
+        let coinOnRelease = false;
+        let controls: ArcadeControl[];
+        if (modifierDown) {
+            const bindings = chordBindingsFor(mapping);
+            if (!assignment.modifierHeld) {
+                assignment.chordFired = false;
+                assignment.suppressedChordButtons.clear();
+                for (const binding of bindings)
+                    if (pressed(pad, binding.button)) assignment.suppressedChordButtons.add(binding.button);
             }
-            controls.push(...base.filter((control) => control.kind !== "direction"));
+            controls = [];
+            for (const binding of bindings) {
+                if (!pressed(pad, binding.button)) {
+                    assignment.suppressedChordButtons.delete(binding.button);
+                    continue;
+                }
+                if (!assignment.suppressedChordButtons.has(binding.button)) controls.push(binding.control);
+            }
+            if (controls.length > 0) assignment.chordFired = true;
+            assignment.modifierHeld = true;
+        } else {
+            coinOnRelease = chordLayer && assignment.modifierHeld && !assignment.chordFired && modifier === (mapping.coin ?? DEFAULT_COIN);
+            assignment.modifierHeld = false;
+            assignment.chordFired = false;
+            assignment.suppressedChordButtons.clear();
+            const digitalPad = chordLayer ? withoutDigitalButton(pad, modifier) : pad;
+            const base = controlsFor(digitalPad, assignment.player, this._deadZone, mapping);
+            controls = [...base];
+            if (leftAnalog || inputs.dualStick) {
+                controls = [];
+                const ordinaryDirections = dpadDirections(digitalPad, mapping);
+                for (const direction of DIRECTIONS)
+                    if (ordinaryDirections.has(direction)) controls.push({ kind: "direction", player: assignment.player, direction });
+                if (inputs.dualStick) {
+                    for (const direction of DIRECTIONS)
+                        if (stickDirections(digitalPad, mapping.axes ?? DEFAULT_LEFT_AXES, this._deadZone).has(direction))
+                            controls.push({ kind: "stick", player: assignment.player, stick: 1, direction });
+                    for (const direction of DIRECTIONS)
+                        if (stickDirections(digitalPad, mapping.rightAxes ?? DEFAULT_RIGHT_AXES, this._deadZone).has(direction))
+                            controls.push({ kind: "stick", player: assignment.player, stick: 2, direction });
+                }
+                controls.push(...base.filter((control) => control.kind !== "direction"));
+            }
         }
         this.forwardControls(assignment, controls);
+        if (coinOnRelease) assignment.channel.tap({ kind: "coin", player: assignment.player });
         this.forwardAxes(assignment, pad, mapping, declared);
     }
 
@@ -386,6 +476,9 @@ export default class GamepadSource {
     private disconnect(assignment: AssignedPad): void {
         assignment.channel.releaseAll();
         assignment.active.clear();
+        assignment.suppressedChordButtons.clear();
+        assignment.modifierHeld = false;
+        assignment.chordFired = false;
         assignment.channel.destroy();
         this._assignments.delete(assignment.index);
     }
@@ -397,6 +490,9 @@ export default class GamepadSource {
         for (const assignment of this._assignments.values()) {
             assignment.channel.releaseAll();
             assignment.active.clear();
+            assignment.suppressedChordButtons.clear();
+            assignment.modifierHeld = false;
+            assignment.chordFired = false;
         }
     }
 
