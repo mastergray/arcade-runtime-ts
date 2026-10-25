@@ -2,10 +2,14 @@
     "family": "taito-f3",
     "target": "mame/targets/taito-f3.lua",
     "list": "mame/targets/taito-f3.lst",
-    "memoryPages": 4096,
+    "memoryPages": 8192,
     "sources": [
         "src/mame/drivers/taito_f3.c",
         "src/mame/video/taito_f3.c",
-        "src/mame/audio/taito_en.c"
+        "src/mame/audio/taito_en.c",
+        "src/mame/drivers/superchs.c",
+        "src/mame/video/superchs.c",
+        "src/mame/video/taito_helper.c",
+        "src/mame/video/tc0480scp.c"
     ]
 }

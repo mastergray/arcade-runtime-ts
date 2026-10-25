@@ -231,8 +231,8 @@ const FAMILY_TARGETS: readonly FamilyTarget[] = [
     },
     {
         id: "taito-f3",
-        sources: ["src/mame/drivers/taito_f3.c"],
-        expectedMachines: 90,
+        sources: ["src/mame/drivers/taito_f3.c", "src/mame/drivers/superchs.c"],
+        expectedMachines: 94,
     },
 ] as const;
 

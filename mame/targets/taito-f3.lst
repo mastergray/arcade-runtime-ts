@@ -1,7 +1,10 @@
 // Derived from pinned MAME 0.161 source (run at the source root):
-// comm -12 \
-//   <(sed -nE 's/^[[:space:]]*(GAME|GAMEL|GAME_CUSTOM)[[:space:]]*[(][^,]+,[[:space:]]*([a-z0-9_]+).*/\2/p' src/mame/drivers/taito_f3.c | LC_ALL=C sort -u) \
-//   <(sed -nE 's/^([a-z0-9_]+)([[:space:]]*\/\/.*)?$/\1/p' src/mame/mame.lst | LC_ALL=C sort -u)
+// for driver in taito_f3 superchs; do
+//   comm -12 \
+//     <(sed -nE 's/^[[:space:]]*(GAME|GAMEL|GAME_CUSTOM)[[:space:]]*[(][^,]+,[[:space:]]*([a-z0-9_]+).*/\2/p' "src/mame/drivers/$driver.c" | LC_ALL=C sort -u) \
+//     <(sed -nE 's/^([a-z0-9_]+)([[:space:]]*\/\/.*)?$/\1/p' src/mame/mame.lst | LC_ALL=C sort -u) \
+//     | awk -v source="src/mame/drivers/$driver.c" '{ print $0 " // " source }'
+// done | LC_ALL=C sort -u
 
 akkanvdr // src/mame/drivers/taito_f3.c
 arabianm // src/mame/drivers/taito_f3.c
@@ -86,6 +89,10 @@ scfinalso // src/mame/drivers/taito_f3.c
 spcinv95 // src/mame/drivers/taito_f3.c
 spcinv95u // src/mame/drivers/taito_f3.c
 spcinvdj // src/mame/drivers/taito_f3.c
+superchs // src/mame/drivers/superchs.c
+superchsj // src/mame/drivers/superchs.c
+superchsp // src/mame/drivers/superchs.c
+superchsu // src/mame/drivers/superchs.c
 tcobra2 // src/mame/drivers/taito_f3.c
 tcobra2u // src/mame/drivers/taito_f3.c
 trstar // src/mame/drivers/taito_f3.c
