@@ -132,6 +132,8 @@ node --import tsx .cache/w31a-audit.ts
 
 npm run check
 npm test
+
+npm run check && npm test
 ```
 
 - Initial spec run: 30 files, 577 cases; 577 passed, 0 failed, 0 skipped.
@@ -152,6 +154,8 @@ npm test
 - `npm run check`: passed (`check:src` and `check:tests`).
 - Post-build `npm test`: 30 files, 577 cases; 577 passed, 0 failed, 0 skipped.
   The real new output was present and passed production-output validation.
+- Final combined `npm run check && npm test` from the committed package
+  state: passed with the same 577/577 spec result.
 
 One intermediate `git add/commit` attempt was refused when Git could not
 create its index lock on a temporarily read-only filesystem. An immediate
