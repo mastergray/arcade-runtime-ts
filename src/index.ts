@@ -11,7 +11,7 @@ export { default as ArcadeAudio } from "./ArcadeAudio/ArcadeAudio.js";          
 export { default as ArcadeInput } from "./ArcadeInput/ArcadeInput.js";                       // Channelled, reference-counted control holds
 export { default as ArcadePlayer } from "./ArcadePlayer/ArcadePlayer.js";                     // Composition root for one running machine
 export { DEFAULT_KEYBOARD_MAP, default as KeyboardSource } from "./KeyboardSource/KeyboardSource.js";   // Physical keyboard to ArcadeInput
-export { default as GamepadSource } from "./GamepadSource/GamepadSource.js";                 // Polled Gamepad API to per-player ArcadeInput channels
+export { default as GamepadSource, DEFAULT_GAMEPAD_CHORDS } from "./GamepadSource/GamepadSource.js";   // Polled Gamepad API to per-player ArcadeInput channels; default operator chords
 export { default as ArcadeStorage } from "./ArcadeStorage/ArcadeStorage.js";                 // Browser-local save-overlay persistence
 export { default as RomSetAudit } from "./RomSetAudit/RomSetAudit.js";                       // Pre-start audit of user zips against romsets metadata
 export { default as ArcadeRomStore } from "./ArcadeRomStore/ArcadeRomStore.js";              // Browser-local user ROM archives
@@ -179,6 +179,8 @@ export {
     isGamepadProviderLike,                                         // Guard for GamepadProviderLike
     isGamepadSourceConfig,                                         // Guard for GamepadSourceConfig
     isGamepadSourceInitConfig,                                     // Guard for GamepadSourceInitConfig
+    type GamepadChord,                                             // One operator-chord binding
+    type GamepadChords,                                            // Chord modifier and bindings
     type GamepadLike,                                              // Gamepad subset the source reads
     type GamepadMapping,                                           // Button and axis index overrides
     type GamepadProviderLike,                                      // Injected navigator.getGamepads boundary
