@@ -394,14 +394,17 @@ buttons right); the status line (state, game metadata, touch, pads).
 
 ### 8.2 Landscape
 
-The canvas fills the middle; the controller splits into two side panels:
-left the d-pad, the Cabinet switches and COIN; right the six buttons,
-the Operator keys and START. **Swap sides** in the View group mirrors
-them for left-handed play. The bar becomes a translucent strip over the
-top of the canvas: Menu, Pause/Resume, Mute, Reset, Games, the status
-text, Fullscreen. Games opens full-screen as two columns of rows; Menu
-opens the same three groups as a centred sheet. With the controller off
-the canvas takes the whole screen and the strip stays.
+The canvas fills the middle; the controller splits into two side panels.
+**Left, top to bottom: the Cabinet switches, the d-pad, COIN. Right: the
+Operator keys, the six buttons, START** (decided 2026-10-25: switches
+above the primary controls, so thumbs rest on the d-pad and buttons at
+the bottom). **Swap sides** in the View tab mirrors the panels for
+left-handed play. The bar is a translucent strip over the top of the
+canvas in the same order as portrait: Games, Pause/Resume, Mute, Reset,
+the status text, Fullscreen, ☰. Games, Import, the Menu window with its
+tabs and the windows behind the items are the portrait ones, centred and
+wider. With the controller off the canvas takes the whole screen and the
+strip stays.
 
 ### 8.3 Rules
 
