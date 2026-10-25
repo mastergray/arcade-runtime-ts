@@ -21,98 +21,89 @@ every action; the toolbar keeps only the three mid-session actions, Play,
 Import and Controls; status lives in the status bar; nothing else is
 duplicated.
 
+The library is the developer harness's library, restyled: a drop zone,
+then one **card per game found** among the chosen and stored archives,
+each card listing every archive the game needs with its state, a verdict
+line and its actions. Managing what is loaded happens on the cards and
+in the Saved files pane, never in a flat list.
+
 ```
 ┌─ Arcade Library ──────────────────────────────────────────────────────────────── _ ☐ ✕ ─┐
 │ File   Games   Import   Controls   Settings   Presentation   Help                          │
 ├─────────────────────────────────────────────────────────────────────────────────────────────┤
 │ [▶ Play]  [⤓ Import…]  [🕹 Controls…]                               1 234 games · 25 builds │
-├────────────────────────────┬────────────────────────────────────────────────────────────────┤
-│ Library                    │ Play                                                           │
-│ ┌ All ┐ Favorites  Recent  │ ┌──────────────────────────────────────────────────────────┐ │
-│ │ 🔍 Search games…       │ │ │                                                          │ │
-│ ├────────────────────────┤ │ │                                                          │ │
-│ │ ▦ Game name        1984│ │ │                                                          │ │
-│ │ ▦ Game name        1985│ │ │                     [ emulator canvas ]                  │ │
-│ │ ▦ Game name        1987│▲│ │                       320 × 224 · 60 Hz                  │ │
-│ │ █ Game name        1990│█│ │                                                          │ │
-│ │ ▦ Game name        1991│ │ │                                                          │ │
-│ │ ▦ Game name        1992│ │ │                                                          │ │
-│ │ ▦ Game name        1993│ │ │                                                          │ │
-│ │ ▦ Game name        1994│ │ └──────────────────────────────────────────────────────────┘ │
-│ │ ▦ Game name        1996│ │ ▦ Game name                                                   │
-│ │ ▦ Game name        1997│▼│   Manufacturer · 1990 · family · 2 players · 8-way, 3 buttons  │
-│ └────────────────────────┘ │ [▶ Play] [☆ Favorite] [ℹ Game info…]                           │
-│ 42 games · 25 builds       │ ┌ Cabinet ───────────────────────────────────────────────────┐ │
-│ 7 files saved              │ │ [⏸ Pause] [⛶ Fullscreen] [🔇 Mute]  [↺ Soft reset] [⟲ Hard] │ │
-│                            │ │ [💾 Save ▾] [📂 Load ▾] [✓ Save changes] [🗑 Clear saved]   │ │
-│                            │ │ Operator: [Advance F2] [Auto Up F1] [High Score Reset 9]    │ │
-│                            │ └────────────────────────────────────────────────────────────┘ │
-├────────────────────────────┴────────────────────────────────────────────────────────────────┤
+├──────────────────────────────────────┬──────────────────────────────────────────────────────┤
+│ Games                                │ Play                                                 │
+│ ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐ │ ┌──────────────────────────────────────────────────┐ │
+│   Drop zip files anywhere, or        │ │                                                  │ │
+│   [Choose files…]  [Store all and check] │                                                  │ │
+│ └ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┘ │ │                                                  │ │
+│ 🔍 Filter…   [All ⌄]  Ready · Pending │ │               [ emulator canvas ]                │ │
+│ ┌──────────────────────────────────┐ │ │                 320 × 224 · 60 Hz                │ │
+│ │ ▦ Game name            ● Playing │ │ │                                                  │ │
+│ │   Runs with the family build     │ │ │                                                  │ │
+│ │   ● game.zip     stored, checked │ │ │                                                  │ │
+│ │   ● parent.zip   stored, checked │ │ └──────────────────────────────────────────────────┘ │
+│ │   Ready to play                  │ │ ▦ Game name                                           │
+│ │   [Playing] [Game info…] [Remove]│ │   Manufacturer · 1990 · family · 2 players · 8-way, 3 btn │
+│ ├──────────────────────────────────┤ │ [▶ Play] [☆ Favorite] [ℹ Game info…]                   │
+│ │ ▦ Game name                      │ │ ┌ Cabinet ────────────────────────────────────────────┐ │
+│ │   Runs with the family build     │ │ │ [⏸ Pause] [⛶ Fullscreen] [🔇 Mute] [↺ Soft] [⟲ Hard] │ │
+│ │   ● game.zip     chosen, not stored│ │ [💾 Save ▾] [📂 Load ▾] [✓ Save changes] [🗑 Clear]  │ │
+│ │   ○ bios.zip     missing (BIOS)  │ │ │ Operator: [Advance F2] [Auto Up F1] [HS Reset 9]    │ │
+│ │   Needs bios.zip before it can run │ └─────────────────────────────────────────────────────┘ │
+│ │   [Store and check] [Start]      │ │ ┌ Saved files in this browser ────────────────────────┐ │
+│ ├──────────────────────────────────┤ │ │ game.zip     1.2 MB   used by 1 game      [Remove]  │ │
+│ │ ▦ other.zip                      │▼│ │ parent.zip   3.4 MB   used by 2 games     [Remove]  │ │
+│ │   Not a game in any available    │ │ │ bios.zip     128 KB   BIOS, used by 6     [Remove]  │ │
+│ │   build.              [Remove]   │ │ │ 7 files · 5.1 MB            [Remove all saved files] │ │
+│ └──────────────────────────────────┘ │ └─────────────────────────────────────────────────────┘ │
+│ 42 games found · 38 ready            │ ▸ Detailed file check    ▸ Technical log               │
+├──────────────────────────────────────┴──────────────────────────────────────────────────────┤
 │ Running · Keyboard on · Gamepad 1 (menu: L3+R3) · Auto-save on · 7 files saved             │
 └─────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-- **Library pane**: tabs All, Favorites, Recent; search filters the list
-  as typed; each row is a generated icon, the set's description from the
-  served metadata and its year (M27). Double-click or Enter plays; the
-  strip under the canvas shows the selection before it is started.
-- **Play pane**: the canvas keeps its aspect and scaling per Settings
-  Video; below it the game strip (icon, name, meta line, three buttons)
-  and the Cabinet box. Save and Load are split buttons listing the three
-  slots with their timestamps; Save changes and Clear saved act on NVRAM
-  and config; the Operator row appears only when the machine reports
-  field-level keys (W29), and a Volume pair appears when it reports
-  cabinet volume.
-- **Status bar**: state, input sources, each pad's menu gesture or "no
-  menu gesture", auto-save, files saved. Clicking the pad segment opens
-  Controls on the Gamepad tab.
-- **Menus**: File (Import…, Saved files…, Clear all saved play…, Quit
-  game), Games (Play, Pause, Add to favorites, Game info…, Soft reset,
-  Hard reset, Save state ▸ slots, Load state ▸ slots, Save changes, Clear
-  saved play), Import (Import games…, File check…), Controls (Controls…,
-  Test input…), Settings (Settings…, Fullscreen, Mute, Show FPS),
-  Presentation (Enter presentation mode, On-screen pad), Help (Keyboard
-  bindings, Technical log, About).
+- **Drop zone** at the top of the Games pane, as in the harness; dropping
+  anywhere on the page lands here. "Store all and check" stores every
+  chosen archive that a card claims.
+- **Cards**: one per game found, with the harness's lines: the set's
+  description, "Runs with the <family> build", one line per expected
+  archive (game, parent, BIOS, device, samples) with its state (stored
+  and checked, chosen but not stored, missing and whether required, bad
+  file), a verdict line, and the actions the harness has: Store and
+  check, Start or Playing, Remove, plus Game info. A card whose archive
+  is not a game in any build says so and offers Remove. The filter box
+  and the All, Ready, Pending, Favorites, Recent drop-down narrow the
+  cards; nothing is hidden by default.
+- **Saved files pane** under the Cabinet box, the harness's "Files saved
+  in this browser" with size, how many games use each archive, Remove
+  per file and Remove all.
+- **Detailed file check** and **Technical log** stay as disclosures at
+  the bottom of the Play pane, as in the harness.
+- **Play pane**, **Cabinet box** and **status bar** as described in the
+  previous draft: Pause explicit, Save and Load as split buttons over the
+  three slots, the Operator row only when the machine reports field-level
+  keys, the status bar naming each pad's menu gesture.
+- **Menus**: File (Choose files…, Store all and check, Saved files,
+  Remove all saved files…, Quit game), Games (Play, Pause, Add to
+  favorites, Game info…, Soft reset, Hard reset, Save state ▸ slots, Load
+  state ▸ slots, Save changes, Clear saved play), Import (Choose files…,
+  File check strictness ▸ Strict / MAME, Detailed file check), Controls
+  (Controls…, Test input…), Settings (Settings…, Fullscreen, Mute, Show
+  FPS), Presentation (Enter presentation mode, On-screen pad), Help
+  (Keyboard bindings, Technical log, About).
 
-### 1.2 Load game (V2) — Import dialog
+### 1.2 Load game (V2)
 
-Opened by the toolbar, the File menu, or dropping a zip anywhere on the
-page. One dialog carries the six steps of the presentation mockup as a
-table plus two panes.
-
-```
-┌─ Import games ────────────────────────────────────────────────────────── ✕ ─┐
-│ ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐ │
-│      Drop zip files anywhere on this page, or  [Choose files…]               │
-│ └ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┘ │
-│ Files to import                                                              │
-│ ┌──────────────┬──────────────────────┬──────────┬──────────────────────────┐ │
-│ │ File         │ Identified as        │ Status   │ Details                  │ │
-│ ├──────────────┼──────────────────────┼──────────┼──────────────────────────┤ │
-│ │ game.zip     │ Game name (family)   │ ● OK     │ 42 files checked         │ │
-│ │ parent.zip   │ parent of game.zip   │ ● OK     │ required by game.zip     │ │
-│ │ other.zip    │ Game name (family)   │ ● Missing│ needs bios.zip (BIOS)    │ │
-│ │ unknown.zip  │ not identified       │ ○ Skip   │ no family matches        │ │
-│ └──────────────┴──────────────────────┴──────────┴──────────────────────────┘ │
-│ ┌ Required files for the selected row ──────────┐ ┌ Additional information ─┐ │
-│ │ ● game.zip        game      found             │ │ Players    2            │ │
-│ │ ● parent.zip      parent    found             │ │ Display    320×224 60Hz │ │
-│ │ ● bios.zip        BIOS      missing (required)│ │ Controls   8-way, 3 btn │ │
-│ │ ○ samples.zip     samples   missing (optional)│ │ Family     family id    │ │
-│ │                               [Re-scan files] │ │ Save       supported    │ │
-│ └───────────────────────────────────────────────┘ └─────────────────────────┘ │
-│ ▸ Technical log                                                              │
-│ Confirmed files are kept only in this browser.                               │
-│                                     [Store all and check]  [Play now] [Close] │
-└──────────────────────────────────────────────────────────────────────────────┘
-```
-
-- Status values: OK, Missing, Wrong size, Wrong CRC, Skip. Store all and
-  check stores every row that is not Skip; Play now is enabled when the
-  selected row is OK and starts it after storing.
-- "File check…" in the Import menu opens the same dialog on the stored
-  files instead of new ones, with the strictness choice (strict or MAME)
-  shown above the table.
+There is no separate load dialog on desktop. The six steps of the
+presentation mockup map onto the card: import is the drop zone, identify
+is the card appearing with its description and family, file check is the
+archive lines, required files is the same lines marked required or
+optional, additional information is Game info, and launch is Start. The
+Import toolbar button opens the file chooser and scrolls to the new
+cards. "Detailed file check" shows the audit report of the selected card
+with the strictness choice above it.
 
 ### 1.3 Game (V3) — Save and Load slots
 
@@ -216,7 +207,7 @@ only its own block.)
 └──────────────────────────────────────────────────────────────┘
 ```
 
-### 1.7 Game info (V1 detail)
+### 1.7 Game info (card detail)
 
 ```
 ┌─ Game name ──────────────────────────────────────────── ✕ ─┐
