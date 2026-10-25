@@ -298,28 +298,33 @@ the View menu and the status bar; off by default when a keyboard or a
 pad is present on a desktop, on by default on a touch device. When off
 the canvas takes the full height.
 
-### 7.4 Menu bar and pinned shortcuts
+### 7.4 Menu bar and shortcuts
 
 The toolbar buttons become a **menu bar** with drop-downs, like the
-desktop mockup's, followed by a row of **pinned shortcuts**.
+desktop mockup's, followed by a fixed row of **shortcuts**.
 
 | Menu | Items |
 | --- | --- |
-| Settings | Settings…, Controls…, Stored files…, Clear all saved play… |
-| State | Save to slot 1–3 and Load slot 1–3, each with its timestamp or "empty"; Save changes; Clear saved play…; Soft reset; Hard reset… |
-| View | Controller view (checked), Fullscreen, Show FPS; Mode: Play / Presentation…; Pinned shortcuts… |
+| Settings | Settings…, Controls…; Stored files… (the modal that manages every archive in the browser: size, which games use it, Remove, Remove all) |
+| State | Save to slot 1–3 and Load slot 1–3, each with its timestamp or "empty"; Save changes; Clear saved play for this game…; Reset; Restart from power-on… |
+| View | Controller view (checked), Fullscreen, Show FPS; Mode: Play / Presentation… |
 | Log | Technical log…, Detailed file check…, Copy log |
 
-Pause/Resume and Mute/Unmute are not menus: they are shortcuts. Any
-menu item can be **pinned**; pinned items render as buttons right of the
-menus, in the order pinned, and drop off from the right as the width
-shrinks (the menus keep every action reachable). Default pins: Pause,
-Mute, Save to slot 1, Fullscreen, Controller view. Pins are a global
-preference.
+Shortcuts, fixed and not configurable (decided 2026-10-25): Pause/Resume,
+Mute/Unmute, Reset, Fullscreen, Controller. They hide below tablet
+width; the menus keep every action reachable.
 
-"Stored files" is the harness's "Files saved in this browser": the zip
-archives in the ROM store. Since every game's archives are visible in
-its accordion row, the separate list only matters for archives no row
-claims (a BIOS or device zip, or a leftover), so it lives in the Import
-modal as a second tab, **Stored**, with size, which games use each file,
-Remove and Remove all. The Settings menu item opens that tab.
+Vocabulary, so the menu says what the runtime does:
+
+- **Reset** is the cabinet's reset button: MAME's soft reset, CPUs and
+  devices restart, NVRAM and the loaded ROMs stay, no reload. The
+  shortcut runs this one.
+- **Restart from power-on** is the runtime's hard reset: the current
+  state is saved to the overlay, the session exits and a fresh module
+  starts from the cached ROMs and that overlay. NVRAM survives; it is
+  the way out of a wedged machine and the only reset that re-reads DIP
+  switches and the BIOS choice. It confirms.
+- **Clear saved play for this game** empties that game's overlay: NVRAM,
+  high scores, the configuration MAME wrote, and its three slots. It
+  confirms. There is no "clear all"; the Stored files modal's Remove all
+  removes archives, not saved play.
