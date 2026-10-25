@@ -418,13 +418,13 @@ strip stays.
 
 ## 9. Presentation mode
 
-Mock `res/ui/mock/presentation.html` (2026-10-25, third draft at the
-user's direction). Presentation mode is the **local page's two columns
-with the chrome reduced to what a pad can drive**: the games list on the
-left, the selected game and a short column of action buttons on the
-right, a pad legend along the bottom. No menu bar, no controller strip,
-no tabs, no settings. Launching a game takes the whole screen; the menu
-gesture brings the two columns back with the game paused.
+Mock `res/ui/mock/presentation.html` (2026-10-25, fourth draft at the
+user's direction). Presentation mode is the game fullscreen, and over it
+on the menu gesture a **grey bordered window in the local page's style**
+with two columns: the current game on the left, a short column of
+pad-driven action buttons on the right. No menu bar, no controller
+strip, no tabs, no settings, no key legend. The game pauses while the
+window is open.
 
 ### 9.1 Playing
 
@@ -433,21 +433,20 @@ in a session a one-line hint over the bottom of the game names the three
 ways to the menu (the pad gesture, Esc, two-finger tap) and fades after
 three seconds; the local View menu can turn it off.
 
-### 9.2 The menu
+### 9.2 The window
 
 | Area | Contents |
 | --- | --- |
 | Title bar | Library name; "Presentation mode · game paused" on the right |
-| Games (left) | The local games list as **flat rows**: icon, name, and "playing", "ready" or the red word (Missing files, Bad file, Not stored, Not a game). Up and down move the selection; A on a ready row launches it (or resumes it when it is the running game) and leaves the menu. A footer line says import and file management are in Play mode |
-| Game card (right, top) | Last frame or thumbnail, name, manufacturer · year · resolution · players · buttons, and a status line: Playing / Ready, when progress was saved, which slots are saved |
-| Actions (right) | **Resume** or **Play** (the selected game); **Save state** ◀ slot 1–3 ▶; **Load state** ◀ slot ▶; **Reset** (MAME soft reset of the running game); then **Controllers** (which pad is which player, the chords, the menu gesture, Test input; read-mostly, no key mapping); **Play mode** (back to the full local page; the game keeps running) |
-| Footer | A Select · B Back to game · ✚ Move · ◀ ▶ Change slot · L3 + R3 Menu / return · the connected pads · keyboard: arrows, Enter, Esc |
+| Left, default | The current game: its last frame in a sunken frame, name, manufacturer · year · resolution · players · buttons, and a status line (Playing / Ready, when progress was saved, which slots are saved or empty) |
+| Left, after **Games** | The games list in place of the frame: flat rows with icon, name and "playing", "ready" or the red word (Missing files, Bad file, Not stored, Not a game); up and down move the selection, A on a ready row launches it and closes the window; B goes back to the current game. A footer line says import and file management are in Play mode |
+| Right | **Resume** (or **Play** when a different game is selected); **Games** (count); **Save state** ◀ slot 1–3 ▶; **Load state** ◀ slot ▶; **Reset** (MAME soft reset); **Controllers** (which pad is which player, the chords, the menu gesture, Test input; read-mostly, no key mapping); then **Play mode** (back to the full local page; the game keeps running) |
 
-Pad model: the d-pad moves focus between the list and the action column
-(left and right cross columns; inside a slot button they change the
-slot), A activates, B returns to the running game, the gesture toggles
-the menu. Keyboard: arrows, Enter, Esc. A mouse or touch still works on
-every row and button.
+Pad model: up and down move focus, left and right change the slot
+inside a slot button or cross into the list, A activates, B steps back
+(list to current game, then window to game), the gesture toggles the
+window. Keyboard: arrows, Enter, Esc. No legend on screen; a mouse or
+touch still works on every row and button.
 
 Not here: import, file check, remove, storage, exports, video and audio
 settings, per-game settings, the technical log, Restart from power-on,
@@ -456,7 +455,6 @@ button away.
 
 ### 9.3 Phone
 
-The same two columns at phone-landscape size, the action buttons
-narrower and the card reduced to name and status. Portrait is not
-supported in presentation mode: the page locks landscape when a game
-starts.
+The same window at phone-landscape size, the buttons narrower and the
+card reduced to name and status. Portrait is not supported in
+presentation mode: the page locks landscape when a game starts.
