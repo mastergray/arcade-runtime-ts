@@ -369,7 +369,7 @@ Volume; Operator keys) that scrolls sideways and shows only while a game
 runs; the **controller** (d-pad left, COIN and START in the middle, six
 buttons right); the status line (state, game metadata, touch, pads).
 
-- **Games** opens the games column as a full-height sheet: Import at the
+- **Games** opens the games column as a **centred window** (not a bottom tray) with a title bar and Close: Import at the
   top, the same accordion rows with Play, Check or the red word, the
   Stored files link in its footer, Close in its title bar. **Import
   replaces the sheet's content in place** (a "‹ Games" button returns),
@@ -377,11 +377,11 @@ buttons right); the status line (state, game metadata, touch, pads).
   Stored, Pending (naming the companion) and Skip, Store all and check.
   The screen stays until the user goes back, so several files can be
   added in turn.
-- **☰** opens a bottom sheet with three **tabs**, State (slot picker,
+- **☰** opens a centred **Menu window** with three **tabs**, State (slot picker,
   Save to slot, Load slot, Save progress, Clear saved play, Reset,
   Restart from power-on), View (Controller on/off, Fullscreen, Size,
   Presentation) and Settings (Settings, Controls, Stored files,
-  Technical log, File check), and a ✕ in the tab strip; tapping outside
+  Technical log, File check), and a ✕ in its title bar; tapping outside
   also closes it. No Close button. The dialogs behind the items are the
   §7 modals at full width.
 
