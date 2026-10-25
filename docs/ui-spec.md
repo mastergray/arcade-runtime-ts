@@ -298,18 +298,28 @@ the View menu and the status bar; off by default when a keyboard or a
 pad is present on a desktop, on by default on a touch device. When off
 the canvas takes the full height.
 
-### 7.4 Menu bar (proposed, to discuss)
+### 7.4 Menu bar and pinned shortcuts
 
-The mockup's toolbar buttons become menu buttons with drop-downs:
+The toolbar buttons become a **menu bar** with drop-downs, like the
+desktop mockup's, followed by a row of **pinned shortcuts**.
 
 | Menu | Items |
 | --- | --- |
-| Settings | Settings… (the dialog), Controls…, Saved files…, Clear all saved play… |
-| Pause / Resume | A single toggle button, not a menu; label follows the state; disabled when idle |
-| Mute / Unmute | A single toggle button; the Volume pair appears beside it when the machine reports cabinet volume |
-| State | Save to slot 1–3, Load from slot 1–3 (each with its timestamp), Save changes, Clear saved play, Soft reset, Hard reset |
-| View | Controller view on/off, Fullscreen, Mode: Play / Presentation, Show FPS |
+| Settings | Settings…, Controls…, Stored files…, Clear all saved play… |
+| State | Save to slot 1–3 and Load slot 1–3, each with its timestamp or "empty"; Save changes; Clear saved play…; Soft reset; Hard reset… |
+| View | Controller view (checked), Fullscreen, Show FPS; Mode: Play / Presentation…; Pinned shortcuts… |
+| Log | Technical log…, Detailed file check…, Copy log |
 
-The title bar keeps the game name and counts; the status bar keeps
-state, touch pad, keyboard, gamepads with their menu gesture, files
-saved.
+Pause/Resume and Mute/Unmute are not menus: they are shortcuts. Any
+menu item can be **pinned**; pinned items render as buttons right of the
+menus, in the order pinned, and drop off from the right as the width
+shrinks (the menus keep every action reachable). Default pins: Pause,
+Mute, Save to slot 1, Fullscreen, Controller view. Pins are a global
+preference.
+
+"Stored files" is the harness's "Files saved in this browser": the zip
+archives in the ROM store. Since every game's archives are visible in
+its accordion row, the separate list only matters for archives no row
+claims (a BIOS or device zip, or a leftover), so it lives in the Import
+modal as a second tab, **Stored**, with size, which games use each file,
+Remove and Remove all. The Settings menu item opens that tab.
