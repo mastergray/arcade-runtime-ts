@@ -353,3 +353,49 @@ Vocabulary, so the menu says what the runtime does:
   high scores, the configuration MAME wrote, and its three slots. It
   confirms. There is no "clear all"; the Stored files modal's Remove all
   removes archives, not saved play.
+
+## 8. The local page on a phone
+
+Mocks `res/ui/mock/mobile-local-portrait.html` and
+`mobile-local-landscape.html` (2026-10-25). Same features as §7, laid out
+for a phone; the tablet in landscape uses §7, in portrait this section.
+
+### 8.1 Portrait
+
+Rows, top to bottom: title bar (name on the right); a **bar** with Menu,
+Pause/Resume, Mute, Reset, Games; the canvas at its aspect; a slim
+**switches** row (Cabinet: Service, Test, Volume; Operator keys) that
+scrolls sideways and shows only while a game runs; the **controller**
+(d-pad left, COIN and START in the middle, six buttons right); the
+status line (state, game metadata, touch, pads).
+
+- **Games** opens the games column as a full-height sheet: Import at the
+  top, the same accordion rows with Play, Check or the red word, the
+  Stored files link in its footer, Close in its title bar.
+- **Menu** opens a bottom sheet with the desktop menus flattened into
+  three groups of large buttons: State (slot picker, Save to slot, Load
+  slot, Save progress, Clear saved play, Reset, Restart from power-on),
+  View (Controller on/off, Fullscreen, Size, Presentation), Settings
+  (Settings, Controls, Import, Stored files, Technical log, File check).
+  The dialogs behind them are the §7 modals at full width.
+
+### 8.2 Landscape
+
+The canvas fills the middle; the controller splits into two side panels:
+left the d-pad, the Cabinet switches and COIN; right the six buttons,
+the Operator keys and START. **Swap sides** in the View group mirrors
+them for left-handed play. The bar becomes a translucent strip over the
+top of the canvas: Menu, Pause/Resume, Mute, Reset, Games, the status
+text, Fullscreen. Games opens full-screen as two columns of rows; Menu
+opens the same three groups as a centred sheet. With the controller off
+the canvas takes the whole screen and the strip stays.
+
+### 8.3 Rules
+
+- Everything is reachable with one thumb: no hover, no double-tap, no
+  long-press. Two-finger tap on the canvas opens the menu (§1.1).
+- The on-screen pad is on by default on a touch device and off when a
+  gamepad connects; the Controller item turns it back on.
+- Fullscreen on a phone hides the title bar and status line; the strip
+  (landscape) or the bar (portrait) stays until the controller is off,
+  then it fades and returns on a tap.
