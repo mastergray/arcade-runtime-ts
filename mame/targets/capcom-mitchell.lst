@@ -1,0 +1,35 @@
+// Derived from pinned MAME 0.161 source (run at the source root):
+// comm -12 \
+//   <(sed -nE 's/^[[:space:]]*(GAME|GAMEL|GAME_CUSTOM)[[:space:]]*[(][^,]+,[[:space:]]*([a-z0-9_]+).*/\2/p' src/mame/drivers/mitchell.c | LC_ALL=C sort -u) \
+//   <(sed -nE 's/^([a-z0-9_]+)([[:space:]]*\/\/.*)?$/\1/p' src/mame/mame.lst | LC_ALL=C sort -u) \
+//   | awk -v source="src/mame/drivers/mitchell.c" '{ print $0 " // " source }'
+
+7toitsu // src/mame/drivers/mitchell.c
+bbros // src/mame/drivers/mitchell.c
+block // src/mame/drivers/mitchell.c
+blockbl // src/mame/drivers/mitchell.c
+blockj // src/mame/drivers/mitchell.c
+blockjoy // src/mame/drivers/mitchell.c
+cworld // src/mame/drivers/mitchell.c
+dokaben // src/mame/drivers/mitchell.c
+hatena // src/mame/drivers/mitchell.c
+marukin // src/mame/drivers/mitchell.c
+mgakuen // src/mame/drivers/mitchell.c
+mgakuen2 // src/mame/drivers/mitchell.c
+mstworld // src/mame/drivers/mitchell.c
+pang // src/mame/drivers/mitchell.c
+pangb // src/mame/drivers/mitchell.c
+pangb2 // src/mame/drivers/mitchell.c
+pangba // src/mame/drivers/mitchell.c
+pangbold // src/mame/drivers/mitchell.c
+pkladies // src/mame/drivers/mitchell.c
+pkladiesbl // src/mame/drivers/mitchell.c
+pkladiesl // src/mame/drivers/mitchell.c
+pkladiesla // src/mame/drivers/mitchell.c
+pompingw // src/mame/drivers/mitchell.c
+qsangoku // src/mame/drivers/mitchell.c
+qtono1 // src/mame/drivers/mitchell.c
+sbbros // src/mame/drivers/mitchell.c
+spang // src/mame/drivers/mitchell.c
+spangbl // src/mame/drivers/mitchell.c
+spangj // src/mame/drivers/mitchell.c

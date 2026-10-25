@@ -52,6 +52,11 @@ const FAMILY_TARGETS: readonly FamilyTarget[] = [
         ],
         expectedMachines: 31,
     },
+    {
+        id: "capcom-mitchell",
+        sources: ["src/mame/drivers/mitchell.c"],
+        expectedMachines: 29,
+    },
     { id: "cps1", sources: ["src/mame/drivers/cps1.c"], expectedMachines: 178 },
     { id: "cps2", sources: ["src/mame/drivers/cps2.c"], expectedMachines: 293 },
     { id: "gottlieb", sources: ["src/mame/drivers/gottlieb.c"], expectedMachines: 25 },
