@@ -362,22 +362,28 @@ for a phone; the tablet in landscape uses §7, in portrait this section.
 
 ### 8.1 Portrait
 
-Rows, top to bottom: title bar (name on the right); a **bar** with Menu,
-Pause/Resume, Mute, Reset, Games; the canvas at its aspect; a slim
-**switches** row (Cabinet: Service, Test, Volume; Operator keys) that
-scrolls sideways and shows only while a game runs; the **controller**
-(d-pad left, COIN and START in the middle, six buttons right); the
-status line (state, game metadata, touch, pads).
+Rows, top to bottom: title bar (name on the right); a **bar** with
+Games, Pause/Resume, Mute, Reset, and an icon-only menu button (☰); the
+canvas at its aspect; a slim **switches** row (Cabinet: Service, Test,
+Volume; Operator keys) that scrolls sideways and shows only while a game
+runs; the **controller** (d-pad left, COIN and START in the middle, six
+buttons right); the status line (state, game metadata, touch, pads).
 
 - **Games** opens the games column as a full-height sheet: Import at the
   top, the same accordion rows with Play, Check or the red word, the
-  Stored files link in its footer, Close in its title bar.
-- **Menu** opens a bottom sheet with the desktop menus flattened into
-  three groups of large buttons: State (slot picker, Save to slot, Load
-  slot, Save progress, Clear saved play, Reset, Restart from power-on),
-  View (Controller on/off, Fullscreen, Size, Presentation), Settings
-  (Settings, Controls, Import, Stored files, Technical log, File check).
-  The dialogs behind them are the §7 modals at full width.
+  Stored files link in its footer, Close in its title bar. **Import
+  replaces the sheet's content in place** (a "‹ Games" button returns),
+  never a second layer: the drop zone and chooser, the file table with
+  Stored, Pending (naming the companion) and Skip, Store all and check.
+  The screen stays until the user goes back, so several files can be
+  added in turn.
+- **☰** opens a bottom sheet with three **tabs**, State (slot picker,
+  Save to slot, Load slot, Save progress, Clear saved play, Reset,
+  Restart from power-on), View (Controller on/off, Fullscreen, Size,
+  Presentation) and Settings (Settings, Controls, Stored files,
+  Technical log, File check), and a ✕ in the tab strip; tapping outside
+  also closes it. No Close button. The dialogs behind the items are the
+  §7 modals at full width.
 
 ### 8.2 Landscape
 
