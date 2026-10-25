@@ -418,41 +418,45 @@ strip stays.
 
 ## 9. Presentation mode
 
-Mock `res/ui/mock/presentation.html` (2026-10-25, redrawn from the local
-page at the user's direction). Presentation mode is the **local page with
-its chrome hidden**: no bar, no games column, no controller, the game
-fullscreen; the local page's **Menu window** is the only UI, scaled for
-TV distance and driven from the pad. Nothing is designed twice.
+Mock `res/ui/mock/presentation.html` (2026-10-25, third draft at the
+user's direction). Presentation mode is the **local page's two columns
+with the chrome reduced to what a pad can drive**: the games list on the
+left, the selected game and a short column of action buttons on the
+right, a pad legend along the bottom. No menu bar, no controller strip,
+no tabs, no settings. Launching a game takes the whole screen; the menu
+gesture brings the two columns back with the game paused.
 
 ### 9.1 Playing
 
-Only the canvas, scaled per the Size setting. On the first start in a
-session a one-line hint over the bottom of the game names the three ways
-in (the pad gesture, Esc, two-finger tap) and fades after three seconds;
-the View tab can turn it off.
+Only the canvas, scaled per the local Size setting. On the first start
+in a session a one-line hint over the bottom of the game names the three
+ways to the menu (the pad gesture, Esc, two-finger tap) and fades after
+three seconds; the local View menu can turn it off.
 
-### 9.2 The menu window
+### 9.2 The menu
 
-The local Menu window with one more tab, since the Games button has no
-bar to live in: **Games · State · View · Settings**. LB and RB switch
-tabs, the d-pad moves focus, A activates, B goes back to the tab strip
-and then closes, the gesture closes. Large rows and buttons with a
-visible focus frame; a ◀ value ▶ selector changes in place with left and
-right. A footer along the bottom of the screen names the pad keys and
-the connected pads; the keyboard uses arrows, Tab, Enter, Esc.
-
-| Tab | Contents |
+| Area | Contents |
 | --- | --- |
-| Games | The local Games window as **flat rows** (no accordions, no Import): icon, name, and "playing · Resume", Play or the red word; A on a ready row starts it and closes the menu. A note says import and file management are in Play mode |
-| State | The game card (last frame, name, meta, when progress was saved), then the local State items as a button grid: Resume; Save to slot ◀ 1–3 ▶; Load slot ◀ ▶; Save progress; Mute; Volume ◀ ▶; Reset; Restart from power-on…; Clear saved play… |
-| View | Size ◀ ▶; Filter ◀ ▶; Side borders ◀ ▶; Touch controller ◀ ▶ (it appears on the TV); FPS ◀ ▶; Show the hint on start ◀ ▶; **Leave presentation mode** (back to Play mode, the game keeps running) |
-| Settings | Read-mostly: which pad is which player; the cabinet chords and operator keys; the per-game analogue values as ◀ ▶ selectors; Save progress automatically ◀ ▶; the menu gesture per pad; Test input; a "More…" row saying key mapping, import and exports are in Play mode |
+| Title bar | Library name; "Presentation mode · game paused" on the right |
+| Games (left) | The local games list as **flat rows**: icon, name, and "playing", "ready" or the red word (Missing files, Bad file, Not stored, Not a game). Up and down move the selection; A on a ready row launches it (or resumes it when it is the running game) and leaves the menu. A footer line says import and file management are in Play mode |
+| Game card (right, top) | Last frame or thumbnail, name, manufacturer · year · resolution · players · buttons, and a status line: Playing / Ready, when progress was saved, which slots are saved |
+| Actions (right) | **Resume** or **Play** (the selected game); **Save state** ◀ slot 1–3 ▶; **Load state** ◀ slot ▶; **Reset** (MAME soft reset of the running game); then **Controllers** (which pad is which player, the chords, the menu gesture, Test input; read-mostly, no key mapping); **Play mode** (back to the full local page; the game keeps running) |
+| Footer | A Select · B Back to game · ✚ Move · ◀ ▶ Change slot · L3 + R3 Menu / return · the connected pads · keyboard: arrows, Enter, Esc |
 
-Rules: confirmations (Restart, Clear) are two-button prompts in the same
-style; no text entry anywhere; a mouse or touch still works on every row.
+Pad model: the d-pad moves focus between the list and the action column
+(left and right cross columns; inside a slot button they change the
+slot), A activates, B returns to the running game, the gesture toggles
+the menu. Keyboard: arrows, Enter, Esc. A mouse or touch still works on
+every row and button.
+
+Not here: import, file check, remove, storage, exports, video and audio
+settings, per-game settings, the technical log, Restart from power-on,
+Clear saved play. All of those are in Play mode; "Play mode" is one
+button away.
 
 ### 9.3 Phone
 
-The same window at phone-landscape size; the footer hints sit inside the
-window's bottom edge. Portrait is not supported in presentation mode: the
-page locks landscape when a game starts.
+The same two columns at phone-landscape size, the action buttons
+narrower and the card reduced to name and status. Portrait is not
+supported in presentation mode: the page locks landscape when a game
+starts.
