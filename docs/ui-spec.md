@@ -418,43 +418,41 @@ strip stays.
 
 ## 9. Presentation mode
 
-Mock `res/ui/mock/presentation.html` (2026-10-25). The same page in the
-TV skin: landscape, the game fullscreen, one **menu window** over the
-paused game, everything driven from the pad.
+Mock `res/ui/mock/presentation.html` (2026-10-25, redrawn from the local
+page at the user's direction). Presentation mode is the **local page with
+its chrome hidden**: no bar, no games column, no controller, the game
+fullscreen; the local page's **Menu window** is the only UI, scaled for
+TV distance and driven from the pad. Nothing is designed twice.
 
 ### 9.1 Playing
 
 Only the canvas, scaled per the Size setting. On the first start in a
 session a one-line hint over the bottom of the game names the three ways
 in (the pad gesture, Esc, two-finger tap) and fades after three seconds;
-the Presentation section can turn it off. No bar, no status line.
+the View tab can turn it off.
 
 ### 9.2 The menu window
 
-Opens over the dimmed, paused game. Left: five large nav buttons, Game,
-Library, Controls, Settings, Presentation. Right: the section as a list
-of large rows, one focused with a visible frame; a row's right side holds
-its value or a ◀ value ▶ selector that left and right change in place.
-A footer along the bottom of the screen names the pad keys: A Select, B
-Back, ✚ Move, the gesture to return to the game, and the connected pads;
-the keyboard uses arrows, Enter, Esc.
+The local Menu window with one more tab, since the Games button has no
+bar to live in: **Games · State · View · Settings**. LB and RB switch
+tabs, the d-pad moves focus, A activates, B goes back to the tab strip
+and then closes, the gesture closes. Large rows and buttons with a
+visible focus frame; a ◀ value ▶ selector changes in place with left and
+right. A footer along the bottom of the screen names the pad keys and
+the connected pads; the keyboard uses arrows, Tab, Enter, Esc.
 
-| Section | Rows |
+| Tab | Contents |
 | --- | --- |
-| Game | Game card (last frame, name, meta, when progress was saved); Resume game; Save to slot ◀ 1–3 with timestamps ▶; Load slot ◀ ▶; Save progress; Sound ◀ volume ▶; Reset; Restart from power-on…; Clear saved play…; Back to library (stops the game) |
-| Library | One row per game: icon, name, and Play, "playing" or the red word; A on a ready row starts it and closes the menu. Import is not available here (the header says "import from Play mode") |
-| Controls | Read-only summary rows per player and for the cabinet and operator chords; the two per-game analogue values as ◀ ▶ selectors (gamepad travel, invert); the menu gesture; Test input |
-| Settings | Size, Filter, Side borders, Volume, Save progress automatically, FPS counter, each as a ◀ ▶ selector; a row saying import, stored files and exports live in Play mode |
-| Presentation | Menu gesture per pad (read-only here); Show the touch controller ◀ ▶ (it appears on the TV); Show the hint on start ◀ ▶; Leave presentation mode (back to the local skin, the game keeps running) |
+| Games | The local Games window as **flat rows** (no accordions, no Import): icon, name, and "playing · Resume", Play or the red word; A on a ready row starts it and closes the menu. A note says import and file management are in Play mode |
+| State | The game card (last frame, name, meta, when progress was saved), then the local State items as a button grid: Resume; Save to slot ◀ 1–3 ▶; Load slot ◀ ▶; Save progress; Mute; Volume ◀ ▶; Reset; Restart from power-on…; Clear saved play… |
+| View | Size ◀ ▶; Filter ◀ ▶; Side borders ◀ ▶; Touch controller ◀ ▶ (it appears on the TV); FPS ◀ ▶; Show the hint on start ◀ ▶; **Leave presentation mode** (back to Play mode, the game keeps running) |
+| Settings | Read-mostly: which pad is which player; the cabinet chords and operator keys; the per-game analogue values as ◀ ▶ selectors; Save progress automatically ◀ ▶; the menu gesture per pad; Test input; a "More…" row saying key mapping, import and exports are in Play mode |
 
-Rules: B on a row returns to the nav; B on the nav or the gesture again
-closes the menu and resumes; confirmations (Restart, Clear) are two-row
-prompts in the same style; no text entry anywhere; nothing in this skin
-needs a pointer, and a mouse or touch still works on every row.
+Rules: confirmations (Restart, Clear) are two-button prompts in the same
+style; no text entry anywhere; a mouse or touch still works on every row.
 
 ### 9.3 Phone
 
-The same window at phone-landscape size with the nav as a row of five
-tabs across the top of the window instead of a column, and the footer
-hints inside the window's bottom edge. Portrait is not supported in
-presentation mode: the page locks landscape when a game starts.
+The same window at phone-landscape size; the footer hints sit inside the
+window's bottom edge. Portrait is not supported in presentation mode: the
+page locks landscape when a game starts.
