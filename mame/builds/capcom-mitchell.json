@@ -1,0 +1,11 @@
+{
+    "family": "capcom-mitchell",
+    "target": "mame/targets/capcom-mitchell.lua",
+    "list": "mame/targets/capcom-mitchell.lst",
+    "memoryPages": 4096,
+    "sources": [
+        "src/mame/drivers/mitchell.c",
+        "src/mame/video/mitchell.c",
+        "src/mame/machine/kabuki.c"
+    ]
+}
