@@ -170,7 +170,8 @@ class FakeEventTarget implements KeyboardVisibilityTargetLike {
 
 // Provider returning no connected pads; assignment behavior belongs to GamepadSource's own suite.
 class EmptyGamepadProvider implements GamepadProviderLike {
-    getGamepads(): ReadonlyArray<GamepadLike | null> { return []; }
+    pads: ReadonlyArray<GamepadLike | null> = [];
+    getGamepads(): ReadonlyArray<GamepadLike | null> { return this.pads; }
 }
 
 // Scheduler whose first attachment fails after the keyboard source has already attached.
@@ -302,7 +303,7 @@ const testFile: TestFile = {
                     };
                     const controls: ArcadeControlsConfig = {
                         keyboard: { enabled: true, map: {}, preventDefault: false },
-                        gamepads: { enabled: false, deadZone: 0.4 },
+                        gamepads: { enabled: false, deadZone: 0.4, mapping: { chords: false } },
                         buttons: [{ surface, control: { kind: "button", player: 1, button: 1 } }],
                         dpads: [{ surface, player: 1, deadZone: 0.2, diagonals: true }],
                         sticks: [{ surface, player: 2, deadZone: 0.1, radius: 40, threshold: 0.5 }],
@@ -316,6 +317,7 @@ const testFile: TestFile = {
                         controls: isArcadeControlsConfig(controls),
                         badKeyboard: isArcadeControlsConfig({ keyboard: { enabled: "yes" } }),
                         badGamepads: isArcadeControlsConfig({ gamepads: { deadZone: 1 } }),
+                        badGamepadMapping: isArcadeControlsConfig({ gamepads: { mapping: { chords: { modifier: -1 } } } }),
                         badTouch: isArcadeControlsConfig({ buttons: [{ surface: {}, control: { kind: "test" } }] }),
                         direct: isArcadeCabinetConfig(direct),
                         missingKeyboardTarget: isArcadeCabinetConfig({ ...direct, keyboardTarget: undefined }),
@@ -330,6 +332,7 @@ const testFile: TestFile = {
                     controls: true,
                     badKeyboard: false,
                     badGamepads: false,
+                    badGamepadMapping: false,
                     badTouch: false,
                     direct: true,
                     missingKeyboardTarget: false,
@@ -395,8 +398,16 @@ const testFile: TestFile = {
             run: () => CTGTest.init("ArcadeCabinet hard-reset rebinding")
                 .stage("start, hard-reset onto a scripted second session, then press a key", () => withAudioContext(async () => {
                     const first = new FakeArcadeSession();
-                    const setup = rig({ keyboard: {}, gamepads: {} }, { session: first });
+                    const setup = rig({
+                        keyboard: {},
+                        gamepads: { mapping: { buttons: [6, 7, 8, 9, 10, 11], coin: 4, start: 5, chords: false } },
+                    }, { session: first });
+                    setup.provider.pads = [{
+                        id: "mapped pad", index: 0, connected: true, mapping: "standard", axes: [0, 0],
+                        buttons: Array.from({ length: 16 }, (_, index) => ({ pressed: index === 6, value: index === 6 ? 1 : 0 })),
+                    }];
                     await setup.cabinet.start();
+                    setup.scheduler.tick(16);
                     const listenersBefore = setup.target.listenerCount;
                     const second = new FakeArcadeSession();
                     setup.adapter.script("resolve", second);
@@ -406,6 +417,7 @@ const testFile: TestFile = {
                     setup.player.reset("hard");
                     const duringReset = { started: setup.cabinet.isStarted, keyboardNull: setup.cabinet.keyboard === null, gamepadsNull: setup.cabinet.gamepads === null };
                     await running;
+                    setup.scheduler.tick(32);
                     setup.target.dispatch("keydown", { code: "ArrowUp", repeat: false });
                     const result = {
                         duringReset,
@@ -423,8 +435,8 @@ const testFile: TestFile = {
                     started: true,
                     rebuilt: true,
                     listeners: true,
-                    firstCalls: ["persist", "exit"],
-                    secondHeld: ["p1:direction:up" as ArcadeControlKey],
+                    firstCalls: ["setControl", "setControl", "persist", "exit"],
+                    secondHeld: ["p1:button:1" as ArcadeControlKey, "p1:direction:up" as ArcadeControlKey],
                     listenersAfterDestroy: 0,
                 }))
                 .start(undefined),

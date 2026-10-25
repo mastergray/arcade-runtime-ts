@@ -352,6 +352,7 @@ export default class ArcadeCabinet {
                 target: this._eventTarget,
                 ...(this._visibilityTarget === null ? {} : { visibilityTarget: this._visibilityTarget }),
                 ...(gamepads.deadZone === undefined ? {} : { deadZone: gamepads.deadZone }),
+                ...(gamepads.mapping === undefined ? {} : { mapping: gamepads.mapping }),
             });
             this._gamepads = source;
             source.enabled = this._gamepadsEnabled;

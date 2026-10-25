@@ -1256,6 +1256,23 @@ directions. `GamepadMapping.rightAxes` and `GamepadMapping.pedals`
 override the standard indices. A board that declares nothing behaves
 exactly as before.
 
+Since M39, a held operator modifier replaces the pad's digital layer with
+chords that hold `key`, `volume`, `test`, `service` and `tilt` controls using
+ordinary press/release edges; analogue axes remain active. The modifier
+defaults to Select/Back (`mapping.coin`, normally button 8). A plain modifier
+hold taps coin on release, but only when no chord fired during that hold; an
+explicit different modifier leaves coin as a rising-edge tap and is itself
+silent in the ordinary layer. `GamepadMapping.chords.bindings` replaces the
+default bindings, and `chords: false` restores the pre-M39 layer and coin
+timing exactly.
+
+| Modifier plus | Standard physical input | Held control |
+| ------------- | ----------------------- | ------------ |
+| Start | 9 (`mapping.start`) | key F2 |
+| d-pad up / down / left / right | 12 / 13 / 14 / 15 (`mapping.dpad`) | key F1 / 9 / F5 / F6 |
+| buttons 1 / 2 / 3 | 0 / 1 / 2 (`mapping.buttons`) | test / service / tilt |
+| LB / RB | 4 / 5 (`mapping.buttons`) | volume down / up |
+
 ### 10.5 `RomSetAudit` and `romsets/` metadata
 
 This replaces the parent spec's `pack-roms`. It is pure logic over metadata
@@ -1368,7 +1385,7 @@ no manifest and nothing is built from it.
 ```ts
 interface ArcadeControlsConfig {
     readonly keyboard?: { readonly enabled?: boolean; readonly map?: Readonly<Record<string, ArcadeControl>>; readonly preventDefault?: boolean };
-    readonly gamepads?: { readonly enabled?: boolean; readonly deadZone?: number };
+    readonly gamepads?: { readonly enabled?: boolean; readonly deadZone?: number; readonly mapping?: GamepadMapping };
     // The three touch fields below are accepted from M10; v1.0.0 rejects them with UNSUPPORTED.
     readonly buttons?: ReadonlyArray<{ readonly surface: InputSurface; readonly control: ArcadeControl }>;
     readonly dpads?: ReadonlyArray<{ readonly surface: InputSurface; readonly player: PlayerIndex; readonly deadZone?: number; readonly diagonals?: boolean }>;
@@ -1495,6 +1512,9 @@ demonstrate the library. It is a consumer, not a product feature:
   `supportsSave` is false (W29), BIOS/DIP
   selectors once M8 exists, and a touch layout chosen by `MachineInfo`
   once M10 exists.
+- While a pad is assigned, its assignment line and the Operator heading's
+  tooltip show the default modifier bindings for Advance, operator keys,
+  cabinet switches and volume.
 
 The harness is served by `scripts/serve-harness.ts`, is excluded from the
 package, and contains no ROM references. Browser acceptance tests that need
