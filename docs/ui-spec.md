@@ -418,13 +418,14 @@ strip stays.
 
 ## 9. Presentation mode
 
-Mock `res/ui/mock/presentation.html` (2026-10-25, fourth draft at the
-user's direction). Presentation mode is the game fullscreen, and over it
-on the menu gesture a **grey bordered window in the local page's style**
-with two columns: the current game on the left, a short column of
-pad-driven action buttons on the right. No menu bar, no controller
-strip, no tabs, no settings, no key legend. The game pauses while the
-window is open.
+Mock `res/ui/mock/presentation.html` (2026-10-25, fifth draft at the
+user's direction). Presentation mode is the game fullscreen, and on the
+menu gesture a **window sized and coloured like the local page** (the
+blue desktop, the grey window filling the screen) with two columns: a
+short column of pad-driven action buttons on the left, the current game
+or the games list on the right. No menu bar, no controller strip, no
+tabs, no settings, no key legend. The game pauses while the window is
+open.
 
 ### 9.1 Playing
 
@@ -438,9 +439,9 @@ three seconds; the local View menu can turn it off.
 | Area | Contents |
 | --- | --- |
 | Title bar | Library name; "Presentation mode · game paused" on the right |
-| Left, default | The current game: its last frame in a sunken frame, name, manufacturer · year · resolution · players · buttons, and a status line (Playing / Ready, when progress was saved, which slots are saved or empty) |
-| Left, after **Games** | The games list in place of the frame: flat rows with icon, name and "playing", "ready" or the red word (Missing files, Bad file, Not stored, Not a game); up and down move the selection, A on a ready row launches it and closes the window; B goes back to the current game. A footer line says import and file management are in Play mode |
-| Right | **Resume** (or **Play** when a different game is selected); **Games** (count); **Save state** ◀ slot 1–3 ▶; **Load state** ◀ slot ▶; **Reset** (MAME soft reset); **Controllers** (which pad is which player, the chords, the menu gesture, Test input; read-mostly, no key mapping); then **Play mode** (back to the full local page; the game keeps running) |
+| Left | **Resume** (or **Play** when a different game is selected); **Games** (count); **Save state** ◀ slot 1–3 ▶; **Load state** ◀ slot ▶; **Reset** (MAME soft reset); **Controllers** (which pad is which player, the chords, the menu gesture, Test input; read-mostly, no key mapping); then **Play mode** (back to the full local page; the game keeps running) |
+| Right, default | The current game: its last frame in a sunken frame, name, manufacturer · year · resolution · players · buttons, and a status line (Playing / Ready, when progress was saved, which slots are saved or empty) |
+| Right, after **Games** | The games list in place of the frame: flat rows with icon, name and a **Play** button on every playable row, or the red word (Missing files, Bad file, Not stored, Not a game). The running game's row is **highlighted as active** (tinted, "playing" in green, its button reads Resume). Up and down move the selection, A on a ready row launches it and closes the window; B goes back to the current game. A footer line says import and file management are in Play mode |
 
 Pad model: up and down move focus, left and right change the slot
 inside a slot button or cross into the list, A activates, B steps back
