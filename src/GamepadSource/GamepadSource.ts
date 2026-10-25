@@ -45,7 +45,8 @@ interface AssignedPad {
     readonly player: PlayerIndex;                                 // Lowest free slot at assignment time
     readonly channel: ArcadeInputChannel;                         // Exactly one independently owned channel
     readonly active: Map<ArcadeControlKey, ArcadeControl>;        // Controls down on the previous poll
-    readonly suppressedChordButtons: Set<number>;                 // Buttons already down when the modifier engaged
+    readonly suppressedChordButtons: Set<number>;                 // Buttons already down before the modifier engaged
+    readonly previousChordButtons: Set<number>;                   // Chord buttons down on the previous poll
     modifierHeld: boolean;                                        // Previous physical modifier state
     chordFired: boolean;                                          // Suppresses the deferred coin tap for this hold
 }
@@ -343,6 +344,7 @@ export default class GamepadSource {
                 channel: this._input.createChannel(),
                 active: new Map(),
                 suppressedChordButtons: new Set(),
+                previousChordButtons: new Set(),
                 modifierHeld: false,
                 chordFired: false,
             });
@@ -385,13 +387,14 @@ export default class GamepadSource {
         const modifierDown = chordLayer && pressed(pad, modifier);
         let coinOnRelease = false;
         let controls: ArcadeControl[];
+        const bindings = chordLayer ? chordBindingsFor(mapping) : [];
         if (modifierDown) {
-            const bindings = chordBindingsFor(mapping);
             if (!assignment.modifierHeld) {
                 assignment.chordFired = false;
                 assignment.suppressedChordButtons.clear();
                 for (const binding of bindings)
-                    if (pressed(pad, binding.button)) assignment.suppressedChordButtons.add(binding.button);
+                    if (pressed(pad, binding.button) && assignment.previousChordButtons.has(binding.button))
+                        assignment.suppressedChordButtons.add(binding.button);
             }
             controls = [];
             for (const binding of bindings) {
@@ -427,6 +430,8 @@ export default class GamepadSource {
                 controls.push(...base.filter((control) => control.kind !== "direction"));
             }
         }
+        assignment.previousChordButtons.clear();
+        for (const binding of bindings) if (pressed(pad, binding.button)) assignment.previousChordButtons.add(binding.button);
         this.forwardControls(assignment, controls);
         if (coinOnRelease) assignment.channel.tap({ kind: "coin", player: assignment.player });
         this.forwardAxes(assignment, pad, mapping, declared);
@@ -477,6 +482,7 @@ export default class GamepadSource {
         assignment.channel.releaseAll();
         assignment.active.clear();
         assignment.suppressedChordButtons.clear();
+        assignment.previousChordButtons.clear();
         assignment.modifierHeld = false;
         assignment.chordFired = false;
         assignment.channel.destroy();
@@ -491,6 +497,7 @@ export default class GamepadSource {
             assignment.channel.releaseAll();
             assignment.active.clear();
             assignment.suppressedChordButtons.clear();
+            assignment.previousChordButtons.clear();
             assignment.modifierHeld = false;
             assignment.chordFired = false;
         }

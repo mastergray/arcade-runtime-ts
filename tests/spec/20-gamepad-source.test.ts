@@ -659,7 +659,7 @@ const testFile: TestFile = {
                 .start(undefined),
         },
         {
-            label: "switching layers releases ordinary controls, requires a fresh chord press, and releases chords on disable or disconnect",
+            label: "switching layers releases ordinary controls, requires a fresh chord press unless the button arrived with the modifier, and releases chords on disable or disconnect",
             run: () => CTGTest.init("gamepad chord edge reconciliation")
                 .stage("cross the layer boundary, disable one chord and disconnect another", () => {
                     const provider = new FakeGamepadProvider();
@@ -681,6 +681,11 @@ const testFile: TestFile = {
                     const ordinaryReturns = session.held;
                     provider.pads = [pad("pad", 0)];
                     scheduler.tick(16);
+                    provider.pads = [pad("pad", 0, [8, 9])];
+                    scheduler.tick(16);
+                    const samePoll = session.held;
+                    provider.pads = [pad("pad", 0)];
+                    scheduler.tick(16);
 
                     provider.pads = [pad("pad", 0, [8])];
                     scheduler.tick(16);
@@ -695,12 +700,13 @@ const testFile: TestFile = {
                     scheduler.tick(16);
                     provider.pads = [];
                     scheduler.tick(16);
-                    return { enteredWithButtonHeld, freshChord, ordinaryReturns, afterDisable, final: session.held, calls: session.calls };
+                    return { enteredWithButtonHeld, freshChord, ordinaryReturns, samePoll, afterDisable, final: session.held, calls: session.calls };
                 })
                 .assert("every digital edge is released before its replacement", (state) => state.subject, P.equals<unknown>({
                     enteredWithButtonHeld: [],
                     freshChord: ["test"],
                     ordinaryReturns: ["p1:button:1"],
+                    samePoll: ["key:F2"],
                     afterDisable: [],
                     final: [],
                     calls: [
@@ -710,6 +716,8 @@ const testFile: TestFile = {
                         controlCall({ kind: "test" }, false),
                         controlCall({ kind: "button", player: 1, button: 1 }, true),
                         controlCall({ kind: "button", player: 1, button: 1 }, false),
+                        controlCall({ kind: "key", key: "F2" }, true),
+                        controlCall({ kind: "key", key: "F2" }, false),
                         controlCall({ kind: "key", key: "F2" }, true),
                         controlCall({ kind: "key", key: "F2" }, false),
                         controlCall({ kind: "key", key: "F2" }, true),
