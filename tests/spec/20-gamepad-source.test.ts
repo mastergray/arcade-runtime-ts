@@ -102,6 +102,26 @@ const CUSTOM_MAPPING: GamepadMapping = Object.freeze({
  *
  */
 
+// CLASS :: pad snapshot whose fields live on the prototype, like a browser Gamepad
+// An object spread of a real Gamepad copies nothing, so every fake exposes its fields the same way.
+class PrototypePad implements GamepadLike {
+    readonly #id: string;
+    readonly #index: number;
+    readonly #connected: boolean;
+    readonly #mapping: string;
+    readonly #buttons: ReadonlyArray<{ readonly pressed: boolean; readonly value: number }>;
+    readonly #axes: ReadonlyArray<number>;
+    constructor(id: string, index: number, connected: boolean, mapping: string, buttons: ReadonlyArray<{ readonly pressed: boolean; readonly value: number }>, axes: ReadonlyArray<number>) {
+        this.#id = id; this.#index = index; this.#connected = connected; this.#mapping = mapping; this.#buttons = buttons; this.#axes = axes;
+    }
+    get id(): string { return this.#id; }
+    get index(): number { return this.#index; }
+    get connected(): boolean { return this.#connected; }
+    get mapping(): string { return this.#mapping; }
+    get buttons(): ReadonlyArray<{ readonly pressed: boolean; readonly value: number }> { return this.#buttons; }
+    get axes(): ReadonlyArray<number> { return this.#axes; }
+}
+
 // HELPER :: STRING, NUMBER, [NUMBER]?, [NUMBER, NUMBER]?, STRING?, BOOLEAN? -> gamepadLike
 // Builds a complete 16-button pad snapshot with selected buttons down.
 const pad = (
@@ -111,14 +131,19 @@ const pad = (
     axes: ReadonlyArray<number> = [0, 0],
     mapping = "standard",
     connected = true,
-): GamepadLike => ({
+): GamepadLike => new PrototypePad(
     id,
     index,
     connected,
     mapping,
-    buttons: Array.from({ length: 16 }, (_, button) => ({ pressed: pressed.includes(button), value: pressed.includes(button) ? 1 : 0 })),
+    Array.from({ length: 16 }, (_, button) => ({ pressed: pressed.includes(button), value: pressed.includes(button) ? 1 : 0 })),
     axes,
-});
+);
+
+// HELPER :: gamepadLike, [BUTTON] -> gamepadLike
+// Copies a prototype pad with replaced buttons; a spread would copy nothing from it.
+const withButtons = (base: GamepadLike, buttons: ReadonlyArray<{ readonly pressed: boolean; readonly value: number }>): GamepadLike =>
+    new PrototypePad(base.id, base.index, base.connected, base.mapping, buttons, base.axes);
 
 // HELPER :: arcadeControl, BOOLEAN -> fakeSessionCall
 // One expected session control call.
@@ -341,12 +366,9 @@ const testFile: TestFile = {
                 .stage("poll every bound axis kind, then disconnect", () => {
                     const provider = new FakeGamepadProvider();
                     const base = pad("pad", 0, [8], [0.625, -1, 0, 0.625]);
-                    provider.pads = [{
-                        ...base,
-                        buttons: base.buttons.map((button, index) => index === 7
+                    provider.pads = [withButtons(base, base.buttons.map((button, index) => index === 7
                             ? { pressed: true, value: 0.75 }
-                            : index === 6 ? { pressed: false, value: 0.25 } : button),
-                    }];
+                            : index === 6 ? { pressed: false, value: 0.25 } : button))];
                     const scheduler = new FakeFrameScheduler();
                     const inputs: MachineInputs = {
                         analog: [
@@ -399,12 +421,9 @@ const testFile: TestFile = {
                 .stage("poll a custom-mapped standard pad", () => {
                     const provider = new FakeGamepadProvider();
                     const base = pad("custom pad", 0, [], [1, 1, 0.625, 0, -1, 0.625]);
-                    provider.pads = [{
-                        ...base,
-                        buttons: base.buttons.map((button, index) => index === 12
+                    provider.pads = [withButtons(base, base.buttons.map((button, index) => index === 12
                             ? { pressed: true, value: 0.75 }
-                            : index === 13 ? { pressed: false, value: 0.25 } : button),
-                    }];
+                            : index === 13 ? { pressed: false, value: 0.25 } : button))];
                     const scheduler = new FakeFrameScheduler();
                     const inputs: MachineInputs = {
                         analog: [

@@ -108,9 +108,14 @@ const pressed = (pad: GamepadLike, index: number): boolean => {
 
 // HELPER :: gamepadLike, NUMBER -> gamepadLike
 // Masks one physical button from only the digital layer; analogue reads continue using the original snapshot.
+// Fields are copied one by one: a browser Gamepad keeps them on its prototype, so an object spread would copy nothing.
 const withoutDigitalButton = (pad: GamepadLike, index: number): GamepadLike => ({
-    ...pad,
-    buttons: pad.buttons.map((button, offset) => offset === index ? { pressed: false, value: 0 } : button),
+    id: pad.id,
+    index: pad.index,
+    connected: pad.connected,
+    mapping: pad.mapping,
+    axes: pad.axes,
+    buttons: Array.from(pad.buttons, (button, offset) => offset === index ? { pressed: false, value: 0 } : button),
 });
 
 // HELPER :: gamepadMapping -> [gamepadChord]
