@@ -382,8 +382,15 @@ buttons right); the status line (state, game metadata, touch, pads).
   Restart from power-on), View (Controller on/off, Fullscreen, Size,
   Presentation) and Settings (Settings, Controls, Stored files,
   Technical log, File check), and a ✕ in its title bar; tapping outside
-  also closes it. No Close button. The dialogs behind the items are the
-  §7 modals at full width.
+  also closes it. No Close button.
+- **The windows behind the items** (Settings, Controls, Presentation,
+  Stored files, Per-game settings, Technical log, File check, the two
+  confirmations) are the §7 modals as centred windows at 92 % width:
+  opening one closes the Menu window; the tab strip wraps to short
+  labels (P1, P2, Cabinet, Analogue, Test); tables keep three columns at
+  most (control, keyboard, gamepad); the analogue rows stack one control
+  per box; footers stick to the window's bottom edge; ✕ in the title bar
+  or a tap outside closes.
 
 ### 8.2 Landscape
 
