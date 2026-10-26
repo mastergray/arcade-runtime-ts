@@ -665,6 +665,35 @@ const testFile: TestFile = {
                 .start(undefined),
         },
         {
+            label: "setControls rebuilds input sources over the running game without restarting it",
+            run: () => CTGTest.init("ArcadeCabinet live control replacement")
+                .stage("replace one keyboard map while the session remains running", () => withAudioContext(async () => {
+                    const setup = rig({ keyboard: { map: { KeyA: { kind: "button", player: 1, button: 1 } } } });
+                    await setup.cabinet.start();
+                    setup.target.dispatch("keydown", { code: "KeyA", repeat: false });
+                    setup.target.dispatch("keyup", { code: "KeyA", repeat: false });
+                    const starts = setup.adapter.startCalls.length;
+                    setup.cabinet.setControls({ keyboard: { map: { KeyB: { kind: "button", player: 1, button: 2 } } } });
+                    setup.target.dispatch("keydown", { code: "KeyA", repeat: false });
+                    setup.target.dispatch("keydown", { code: "KeyB", repeat: false });
+                    const result = {
+                        starts,
+                        startsAfter: setup.adapter.startCalls.length,
+                        held: setup.session.held.slice(),
+                        keyboardAttached: setup.cabinet.keyboard?.isAttached === true,
+                    };
+                    await setup.cabinet.destroy();
+                    return result;
+                }))
+                .assert("only the replacement binding is held and the adapter start count is unchanged", (state) => state.subject, P.equals<unknown>({
+                    starts: 1,
+                    startsAfter: 1,
+                    held: ["p1:button:2"],
+                    keyboardAttached: true,
+                }))
+                .start(undefined),
+        },
+        {
             label: "invalid setters reject with INVALID_CONFIG and destroy makes later operations terminal",
             run: () => CTGTest.init("ArcadeCabinet terminal guards")
                 .stage("exercise setter validation and a post-destroy audit", async () => {

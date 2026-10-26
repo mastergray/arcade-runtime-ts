@@ -58,6 +58,7 @@ export interface ArcadeControlsConfig {
         readonly enabled?: boolean;                                // Initial and restart-persistent source gate; true when omitted
         readonly deadZone?: number;                                // Axis threshold in [0, 1); source default when omitted
         readonly mapping?: GamepadMapping;                         // Physical layout and optional operator chords
+        readonly mappings?: Readonly<Record<string, GamepadMapping>>;   // Exact browser-id mappings
     };
     readonly buttons?: ReadonlyArray<{
         readonly surface: InputSurface;                            // Reserved M10 button surface
@@ -143,7 +144,10 @@ const isKeyboardControl = (value: unknown): boolean => isObject(value)
 const isGamepadControl = (value: unknown): boolean => isObject(value)
     && (value.enabled === undefined || typeof value.enabled === "boolean")
     && isOptionalDeadZone(value.deadZone)
-    && (value.mapping === undefined || isGamepadMapping(value.mapping));
+    && (value.mapping === undefined || isGamepadMapping(value.mapping))
+    && (value.mappings === undefined || (isObject(value.mappings)
+        && Object.entries(value.mappings).every(([id, mapping]) => id.length > 0 && isGamepadMapping(mapping)
+            && (mapping.id === undefined || mapping.id === id))));
 
 // PREDICATE :: UNKNOWN -> BOOLEAN
 // True when value is an optional normalized playback-volume declaration.

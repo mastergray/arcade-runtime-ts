@@ -74,6 +74,7 @@ export default class ArcadeDisplay {
     private _scalingOverride: boolean;                             // Whether orientation and container shape may select the mode
     private _aspectRatio: number;                                  // Display aspect preserved by layout
     private _scaling: ScalingMode;                                 // Current effective scaling mode
+    private _imageRendering: "pixelated" | "smooth";              // Mutable canvas interpolation policy
     private _crop: DisplayCrop;                                    // Requested native columns hidden at each side
     private _machineOrientation: "horizontal" | "vertical" | null = null;   // Attached machine orientation
     private _containerRect: Rect;                                  // Last measured container rectangle
@@ -101,11 +102,10 @@ export default class ArcadeDisplay {
         this._scalingOverride = config.scaling !== undefined;
         this._aspectRatio = config.aspectRatio ?? ArcadeDisplay.DEFAULT_ASPECT_RATIO;
         this._scaling = config.scaling ?? ArcadeDisplay.DEFAULT_SCALING;
+        this._imageRendering = config.imageRendering ?? ArcadeDisplay.DEFAULT_IMAGE_RENDERING;
         this._crop = Object.freeze({ left: config.crop?.left ?? 0, right: config.crop?.right ?? 0 });
         this._containerRect = ArcadeDisplay.contentRectOf(config.container);
-        this._canvas.style.imageRendering = config.imageRendering === "smooth"
-            ? "auto"
-            : ArcadeDisplay.DEFAULT_IMAGE_RENDERING;
+        this._canvas.style.imageRendering = this._imageRendering === "smooth" ? "auto" : ArcadeDisplay.DEFAULT_IMAGE_RENDERING;
         this._layout = this.applyLayout();
         this._resizeObserver = config.resizeObserver === undefined
             ? null
@@ -155,6 +155,18 @@ export default class ArcadeDisplay {
         this._scalingOverride = true;
         this._scaling = value;
         this.updateLayout();
+    }
+
+    // GETTER :: VOID -> "pixelated"|"smooth"
+    // Current canvas interpolation policy.
+    get imageRendering(): "pixelated" | "smooth" { return this._imageRendering; }
+
+    // SETTER :: "pixelated"|"smooth" -> VOID
+    // Changes interpolation without rebuilding the display or changing its layout.
+    set imageRendering(value: "pixelated" | "smooth") {
+        if (value !== "pixelated" && value !== "smooth") throw ArcadeDisplay.invalidConfig("imageRendering must be \"pixelated\" or \"smooth\".", value);
+        this._imageRendering = value;
+        this._canvas.style.imageRendering = value === "smooth" ? "auto" : ArcadeDisplay.DEFAULT_IMAGE_RENDERING;
     }
 
     // GETTER :: VOID -> displayCrop

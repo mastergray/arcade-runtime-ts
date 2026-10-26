@@ -21,6 +21,7 @@ export * from "./MenuBar.js";
 export * from "./Modal.js";
 export * from "./Pill.js";
 export * from "./RedButton.js";
+export * from "./Range.js";
 export * from "./Selector.js";
 export * from "./StatusBar.js";
 export * from "./Table.js";

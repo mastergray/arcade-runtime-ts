@@ -79,11 +79,29 @@
 }
 
 [data-modal="import"] .modal { inline-size: min(var(--modal-phone-width), var(--gallery-max)); }
+[data-modal="settings"] .modal,
+[data-modal="controls"] .modal,
+[data-modal="per-game-settings"] .modal { inline-size: min(var(--modal-phone-width), var(--gallery-max)); }
 [data-modal="import"] .modal-body { overflow-x: hidden; }
 :fullscreen .play-meta { display: none; }
 .import-pane, [data-stored-files-tab] { display: grid; gap: var(--role-gutter); }
 .status-bar { flex-wrap: wrap; }
 .status-bar .btn { min-height: auto; }
+
+.settings-pane, .controls-pane {
+  display: grid;
+  gap: var(--role-gutter);
+  padding: var(--role-row-y) var(--role-row-x);
+}
+
+.settings-check, .scope-choice label { display: inline-flex; align-items: center; gap: calc(var(--role-gutter) / 2); }
+.settings-transfer, .device-line { display: flex; flex-wrap: wrap; align-items: center; gap: var(--role-gutter); }
+.device-line { margin: 0; font-size: var(--role-small); }
+.scope-choice { display: flex; flex-wrap: wrap; gap: var(--role-gutter); border: var(--rule-width) solid var(--mid); }
+.scope-choice legend { font-weight: var(--weight-bold); }
+.controls-pane .range { min-inline-size: 20em; }
+.controls-pane .table td:last-child { white-space: nowrap; }
+.storage-settings .kv2 > span:nth-child(even) { display: flex; flex-wrap: wrap; align-items: center; gap: calc(var(--role-gutter) / 2); }
 
 
 /* Modal hosts: each [data-modal] wrapper is the full-screen layer its veil fills, so it has a box of its own. */

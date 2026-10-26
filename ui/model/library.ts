@@ -6,6 +6,7 @@ import {
     isBuildInfo,
     isRomSetMetadata,
     type RomFile,
+    type AuditStrictness,
     type RomSetMetadata,
     type RomSetReport,
     type RomStoreEntry,
@@ -48,6 +49,7 @@ export interface LibraryModelConfig {
     readonly romStore: ArcadeRomStore;
     readonly search?: string;
     readonly baseUrl: string;
+    readonly strictness?: AuditStrictness;
 }
 
 export interface LibraryModelInitConfig extends Omit<LibraryModelConfig, "romStore"> {
@@ -85,12 +87,14 @@ export class LibraryModel {
     private busy = false;
     private initialized = false;
     private discoveryRequest = 0;
+    private strictness: AuditStrictness;
 
     constructor(config: LibraryModelConfig) {
         this.fetch = config.fetch;
         this.romStore = config.romStore;
         this.search = config.search ?? "";
         this.baseUrl = config.baseUrl;
+        this.strictness = config.strictness ?? "strict";
     }
 
     static async init(config: LibraryModelInitConfig): Promise<LibraryModel> {
@@ -199,7 +203,10 @@ export class LibraryModel {
         this.emit();
         try {
             const choices = this.startChoices(card.key);
-            card.report = RomSetAudit.audit(card.metadata, await this.romFilesFor(card), choices.bios === undefined ? undefined : { bios: choices.bios });
+            card.report = RomSetAudit.audit(card.metadata, await this.romFilesFor(card), {
+                ...(choices.bios === undefined ? {} : { bios: choices.bios }),
+                strictness: this.strictness,
+            });
             card.checkState = "complete";
         } catch (error) {
             card.report = null;
@@ -324,6 +331,14 @@ export class LibraryModel {
             if (missing !== undefined) return `${card.metadata.description} is missing ${missing.name}.`;
         }
         return null;
+    }
+
+    async setStrictness(strictness: AuditStrictness): Promise<void> {
+        if (strictness === this.strictness) return;
+        this.strictness = strictness;
+        for (const card of this.visibleCards()) if (card.metadata !== null && this.pendingForCard(card).length === 0) {
+            await this.checkCard(card.key, false);
+        }
     }
 
     private emit(): void {

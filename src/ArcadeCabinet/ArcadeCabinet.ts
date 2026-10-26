@@ -9,7 +9,7 @@ import ArcadeStorage from "../ArcadeStorage/ArcadeStorage.js";   // Optional ove
 import GamepadSource from "../GamepadSource/GamepadSource.js";   // Per-player physical gamepad source
 import KeyboardSource, { DEFAULT_KEYBOARD_MAP } from "../KeyboardSource/KeyboardSource.js";   // Physical keyboard source and default map
 import { isAnalogSettings, isRomFile, isRomName } from "../shared.types.js";   // Live settings and ROM-store source classification
-import { isArcadeCabinetConfig, isArcadeCabinetInitConfig } from "./types.js";   // Public config guards
+import { isArcadeCabinetConfig, isArcadeCabinetInitConfig, isArcadeControlsConfig } from "./types.js";   // Public config guards
 
 // Type dependencies:
 import type {
@@ -103,7 +103,7 @@ export default class ArcadeCabinet {
     private readonly _player: ArcadePlayer;                       // Player started before sources attach
     private readonly _storage: ArcadeStorage | null;              // Overlay persistence, or null when page-managed
     private readonly _romStore: ArcadeRomStore | null;            // User-local ROM store, or null
-    private readonly _controls: ArcadeControlsConfig;             // Source declarations rebuilt on every start
+    private _controls: ArcadeControlsConfig;                      // Source declarations rebuilt on every start or live replacement
     private readonly _keyboardTarget: KeyboardEventTargetLike | null;   // Keyboard key/blur boundary
     private readonly _eventTarget: KeyboardEventTargetLike | null;   // Gamepad blur boundary
     private readonly _visibilityTarget: KeyboardVisibilityTargetLike | null;   // Source release and autosave boundary
@@ -291,6 +291,23 @@ export default class ArcadeCabinet {
         this._analog?.update(this._analogSettings);
     }
 
+    // INSTANCE :: arcadeControlsConfig -> VOID
+    // Rebuilds keyboard, pad and analogue sources over the current input without restarting the game.
+    setControls(controls: ArcadeControlsConfig): void {
+        this.requireLive();
+        if (!isArcadeControlsConfig(controls)
+            || controls.buttons !== undefined || controls.dpads !== undefined || controls.sticks !== undefined) {
+            throw ArcadeCabinet.invalidConfig();
+        }
+        this._controls = controls;
+        this._keyboardEnabled = controls.keyboard?.enabled ?? true;
+        this._gamepadsEnabled = controls.gamepads?.enabled ?? true;
+        this._analogSettings = analogSettingsCopy(controls.analog);
+        if (!this._isStarted) return;
+        this.detachSources();
+        this.buildControls();
+    }
+
     // INSTANCE :: VOID -> PROMISE(BOOLEAN)
     // Persists a non-null player overlay into configured storage; false means nothing changed.
     async save(): Promise<boolean> {
@@ -392,6 +409,7 @@ export default class ArcadeCabinet {
                 ...(this._visibilityTarget === null ? {} : { visibilityTarget: this._visibilityTarget }),
                 ...(gamepads.deadZone === undefined ? {} : { deadZone: gamepads.deadZone }),
                 ...(gamepads.mapping === undefined ? {} : { mapping: gamepads.mapping }),
+                ...(gamepads.mappings === undefined ? {} : { mappings: gamepads.mappings }),
                 ...(this._analog === null ? {} : { axisFilter: (axis, value) => this._analog?.axisFilter(axis, value) ?? value }),
             });
             this._gamepads = source;
