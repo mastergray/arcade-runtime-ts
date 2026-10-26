@@ -274,11 +274,14 @@ export default class AnalogDriver {
     }
 
     // PRIVATE :: playerIndex, arcadeDirection -> BOOLEAN
-    // True when a declared horizontal (left/right) or vertical (up/down) port exists for the player.
+    // True when a declared absolute horizontal (left/right) or vertical (up/down) port exists for the player.
     // Depth (stick-z) and pedals never claim directions, so a shifter joystick on a racing board stays digital.
+    // Relative kinds (dial, trackball, mouse) never claim them either: boards such as the F3 platform games declare a
+    // dial beside an ordinary joystick, and claiming the arrows there would silence the joystick. MAME's own
+    // HAT1 increment path (the W26 controller config) still spins those ports from the arrows at its keydelta.
     private coversDirection(player: PlayerIndex, direction: "up" | "down" | "left" | "right"): boolean {
         const kinds = direction === "left" || direction === "right" ? HORIZONTAL_KINDS : VERTICAL_KINDS;
-        return this._ports.some((port) => port.player === player && kinds.has(port.kind));
+        return this._ports.some((port) => port.player === player && port.mode !== "relative" && kinds.has(port.kind));
     }
 
     // PRIVATE :: arcadeControl -> BOOLEAN

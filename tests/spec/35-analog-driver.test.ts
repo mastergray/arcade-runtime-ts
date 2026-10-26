@@ -155,6 +155,34 @@ const testFile: TestFile = {
                 .start(undefined),
         },
         {
+            label: "a relative port beside a joystick leaves the arrows digital while stick-1 keys still spin it",
+            run: () => CTGTest.init("dial beside a joystick")
+                .stage("hold a direction and a stick key on a dial board", () => {
+                    const session = new FakeArcadeSession();
+                    const input = new ArcadeInput({ session });
+                    const scheduler = new FakeFrameScheduler();
+                    const keys = input.createChannel();
+                    const driver = new AnalogDriver({ input, scheduler, inputs: [{ player: 1, kind: "dial" }], settings: {} });
+                    keys.press(DIRECTION_RIGHT);
+                    scheduler.tick(16); scheduler.tick(16);
+                    const spinsFromArrow = session.calls.filter((call) => call.method === "setAxis").length;
+                    const digital = [...session.held];
+                    keys.release(DIRECTION_RIGHT);
+                    keys.press(STICK_RIGHT);
+                    scheduler.tick(16); scheduler.tick(16);
+                    const spinsFromStick = session.calls.filter((call) => call.method === "setAxis").length - spinsFromArrow;
+                    keys.release(STICK_RIGHT);
+                    driver.destroy();
+                    return { spinsFromArrow, digital, spinsFromStick };
+                })
+                .assert("the arrow reaches the machine digitally and never spins; the stick key spins", (state) => state.subject, P.equals<unknown>({
+                    spinsFromArrow: 0,
+                    digital: ["p1:direction:right"],
+                    spinsFromStick: 2,
+                }))
+                .start(undefined),
+        },
+        {
             label: "live updates change keyboard slope and inversion while the gamepad filter applies travel",
             run: () => CTGTest.init("analogue live update and filter")
                 .stage("update one running driver", () => {

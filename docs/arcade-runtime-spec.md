@@ -1295,11 +1295,17 @@ fresh session receives the retained snapshot.
 | `pedal-3` | native digital increment path | no axis slot |
 
 Ordinary `direction` controls become stick input on the axes a player's
-declared ports cover: left/right when a horizontal kind is declared, up/down
-when a vertical kind is. Depth (`stick-z`) and pedal kinds never claim
-directions, so a shifter joystick on a racing board stays digital; so does
-every direction on a machine with no declared analogue port. `pedal-3` also
-remains digital because the seven-axis W26 bridge has no third pedal slot.
+declared **absolute** ports cover: left/right when a horizontal stick, paddle,
+positional or light-gun kind is declared, up/down when a vertical one is.
+Relative kinds (dial, trackball, mouse) never claim directions: boards declare
+them beside an ordinary joystick (the F3 platform games, 2026-10-26), and
+claiming the arrows would silence the joystick; MAME's HAT1 increment path from
+the generated controller configuration still spins those ports from the arrows
+at its keydelta, while stick-1 keys and the pad drive them through the driver.
+Depth (`stick-z`) and pedal kinds never claim directions either, so a shifter
+joystick on a racing board stays digital; so does every direction on a machine
+with no declared analogue port. `pedal-3` also remains digital because the
+seven-axis W26 bridge has no third pedal slot.
 
 The driver writes an absolute axis only when its integrated value changes,
 and `GamepadSource` writes an absolute axis only when the pad's filtered
