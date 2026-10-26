@@ -24,6 +24,7 @@ interface PresentationTestState {
     loads: string[];
     controls: Array<{ control: { kind: string; button?: number }; pressed: boolean }>;
     fullscreenRoots: boolean[];
+    logText?: string;
     orientationRequests: string[];
     originalCanvas?: HTMLCanvasElement;
     originalCabinet?: ArcadeCabinet;
@@ -177,6 +178,7 @@ const cases: TestCase[] = [{
     run: () => withSyntheticPage((url, archive) => CTGBrowserTest.init("synthetic presentation flow")
         .interact("store the synthetic archive and enter the idle TV menu", async ({ page }) => {
             await page.addInitScript({ content: SCRIPTED_ADAPTER });
+            await page.addInitScript("globalThis.__name = (value) => value");   // tsx wraps nested functions in a __name helper the page lacks
             await page.goto(url);
             await page.waitForSelector("[data-local-loading]", { state: "detached" });
             await page.evaluate(({ name, bytes }) => {
@@ -254,6 +256,8 @@ const cases: TestCase[] = [{
             await pressPad(page, [15]);
             await pressPad(page, [0]);
             await page.waitForFunction(() => (window as unknown as TestWindow).__arcadePresentationTest.saves.includes('slot2'));
+        })
+        .interact("the save slot selector shows the new timestamp", async ({ page }) => {
             await page.waitForFunction(() => document.querySelector('#presentation-save-slot small')?.textContent !== 'empty');
             await page.locator('#presentation-load-slot').focus();
             await page.keyboard.press('ArrowRight');
@@ -340,18 +344,21 @@ const cases: TestCase[] = [{
             await page.waitForSelector('[data-component="status-bar"][data-state="paused"]');
             await page.locator('[data-menu-title="log"]').click();
             await page.locator('[data-menu-item="technical-log"]').click();
+            await page.waitForSelector('[data-modal="technical-log"]');
+            await page.evaluate(() => { (window as unknown as TestWindow).__arcadePresentationTest.logText = document.querySelector('[data-modal="technical-log"]')?.textContent ?? ''; });
+            await page.keyboard.press('Escape');   // the log modal is a dialog and suspends input while open
+            await page.waitForSelector('[data-modal="technical-log"]', { state: 'detached' });
         })
         .assertPage("fullscreen targets the page root and browser refusals do not break mode changes", (page) => page.evaluate(() => {
             const browser = window as unknown as TestWindow;
             const state = browser.__arcadePresentationTest;
-            const log = document.querySelector('[data-modal="technical-log"]')?.textContent ?? '';
+            const log = state.logText ?? '';
             return state.fullscreenRoots.length >= 3 && state.fullscreenRoots.every(Boolean)
                 && state.orientationRequests.every((value) => value === 'landscape') && state.orientationRequests.length >= 3
                 && log.includes('Synthetic fullscreen refusal') && log.includes('Synthetic orientation refusal')
                 && browser.__arcadeLocalCabinet.player.status === 'paused' && !browser.__arcadeLocalCabinet.player.input.suspended;
         }), P.equals(true))
         .interact("mode persists across reload and the idle window returns", async ({ page }) => {
-            await page.locator('[data-modal="technical-log"] [data-modal-close]').click();
             await page.locator('[data-menu-title="view"]').click();
             await page.locator('[data-menu-item="menu-hint"]').click();
             await page.locator('[data-menu-title="view"]').click();
@@ -377,6 +384,7 @@ if (CONFIG_ARGUMENT !== undefined) cases.push({
                 HTMLElement.prototype.requestFullscreen = async () => { throw new Error('Headless fullscreen refusal'); };
                 Object.defineProperty(screen.orientation, 'lock', { configurable: true, value: async () => { throw new Error('Headless orientation refusal'); } });
             });
+            await page.addInitScript("globalThis.__name = (value) => value");   // tsx wraps nested functions in a __name helper the page lacks
             await page.goto(url);
             await page.waitForFunction(() => document.querySelector('[data-selected="true"] [data-row-action]')?.textContent?.trim() === 'Play');
             await page.locator('[data-selected="true"] [data-row-action]').click();
