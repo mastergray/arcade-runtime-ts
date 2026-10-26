@@ -14,6 +14,10 @@ catalogue, no ROM hosting), the no-titles rule for tracked files, and the
 runtime surfaces listed in the roadmap's §2 table. Nothing here needs a
 new emulator build.
 
+The tokens, components and focus model shared by every view are in
+`docs/ui-design-language.md`; this document says what each view shows,
+that one says what it is made of.
+
 ## 1. The two modes
 
 | | **Local mode** | **Presentation mode** |
