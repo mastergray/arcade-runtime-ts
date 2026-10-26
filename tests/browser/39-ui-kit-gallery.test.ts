@@ -101,6 +101,7 @@ const testFile: TestFile = {
                 await page.locator('[data-component="presentation-window"] [data-component="action-button"]').filter({ hasText: "Controllers" }).click();
                 await page.waitForFunction(() => document.querySelector('[data-section="game-specific"]')?.getAttribute("data-view") === "controls");
                 await page.keyboard.press("Escape");
+                await page.waitForFunction(() => document.querySelector('[data-section="game-specific"]')?.getAttribute("data-view") === "menu", undefined, { timeout: 5000 }).catch(() => undefined);   // the view switch renders a frame later on a loaded host
                 await page.evaluate(({ moved, inverted, changed }) => {
                     const state = (window as unknown as Window & { __uiGalleryTest: GalleryBrowserState }).__uiGalleryTest;
                     state.arrowsMoveFocus = moved;
