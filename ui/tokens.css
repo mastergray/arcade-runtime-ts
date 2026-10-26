@@ -166,6 +166,8 @@
   --role-window-drop-x: 6px;
   --role-window-drop-y: 6px;
   --role-min-target: 44px;
+  --dpad-cell: 44px;
+  --dpad-mini-cell: 34px;
 }
 
 * { box-sizing: border-box; }
@@ -400,7 +402,8 @@ button { color: inherit; }
 .red-button[data-pressed="true"] { transform: translateY(var(--pressed-shift)); box-shadow: none; }
 .dpad { display: grid; grid-template-columns: repeat(3, var(--dpad-cell)); grid-template-rows: repeat(3, var(--dpad-cell)); }
 .dpad[data-mini="true"] { grid-template-columns: repeat(3, var(--dpad-mini-cell)); grid-template-rows: repeat(3, var(--dpad-mini-cell)); }
-.dpad-key { padding: 0; font-size: var(--role-tiny); color: var(--ink); }
+.dpad[data-mini="true"] .dpad-key { font-size: calc(var(--dpad-mini-cell) * 0.42); }
+.dpad-key { padding: 0; font-size: var(--role-tiny); line-height: 1; overflow: hidden; color: var(--ink); }
 .dpad-key[data-centre="true"] { border: 0; background: var(--dark); box-shadow: none; }
 .dpad-key[data-pressed="true"] { background: var(--title); }
 

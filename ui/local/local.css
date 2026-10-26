@@ -136,8 +136,8 @@
 .presentation-games tr[data-focus="true"] td { background: var(--title); color: var(--light); }
 .presentation-playing { color: var(--ok); font-weight: var(--weight-bold); }
 .presentation-bad { color: var(--bad); font-weight: var(--weight-bold); }
-.presentation-frame { background: var(--stage); display: grid; place-items: center; min-block-size: var(--canvas-height); }
-.presentation-frame img { max-inline-size: 100%; max-block-size: 42vh; object-fit: contain; image-rendering: pixelated; }
+.presentation-frame { background: var(--stage); display: grid; place-items: center; block-size: 48vh; flex: none; overflow: hidden; }
+.presentation-frame img { block-size: 48vh; inline-size: auto; max-inline-size: 100%; object-fit: contain; image-rendering: pixelated; }
 .presentation-card h1 { font-size: var(--role-heading); margin-block: var(--role-gutter); }
 .presentation-card p, .presentation-message { font-size: var(--role-small); }
 .presentation-message { margin-block-start: auto; padding-block-start: var(--role-gutter); }
