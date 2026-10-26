@@ -43,7 +43,7 @@ interface ChannelState {
 interface HeldControl {
     readonly control: ArcadeControl;                               // Stable copied control sent to the session
     readonly holders: Set<ChannelState>;                           // Channels currently holding it
-    readonly forwarded: boolean;                                  // Whether the digital edge reached ArcadeSession
+    forwarded: boolean;                                           // Whether the digital edge reached ArcadeSession
 }
 
 // INTERFACE :: {axis:arcadeAxis, value:NUMBER, owner:channelState}
@@ -74,6 +74,7 @@ export default class ArcadeInput {
     private readonly _axes = new Map<string, AxisValue>();        // Effective axes by canonical player/kind key
     private readonly _defaultChannel: ArcadeInputChannel;          // Channel behind the instance convenience methods
     private readonly _unsubscribeTick: Unsubscribe;                // Removes the tap clock subscription
+    private _suspended = false;                                    // UI observation gate that retains state without forwarding
     private _destroyed = false;                                    // Whether destroy() completed
 
     // CONSTRUCTOR :: arcadeInputConfig -> this
@@ -112,6 +113,34 @@ export default class ArcadeInput {
     // Exposes the session's discovered controls to input sources.
     get machine(): MachineInfo {
         return this._session.machine;
+    }
+
+    // GETTER :: VOID -> BOOLEAN
+    // Whether effective holds and axes are observable but isolated from the session.
+    get suspended(): boolean { return this._suspended; }
+
+    // SETTER :: BOOLEAN -> VOID
+    // Releases forwarded state on suspension and restores current state on resume.
+    set suspended(value: boolean) {
+        this.assertLive();
+        if (typeof value !== "boolean") throw ArcadeInput.invalidConfig("ArcadeInput suspended must be a boolean.", value);
+        if (value === this._suspended) return;
+        this._suspended = value;
+        if (value) {
+            for (const held of this._held.values()) if (held.forwarded) {
+                this._session.setControl(held.control, false);
+                held.forwarded = false;
+            }
+            for (const entry of this._axes.values()) if (!entry.axis.kind.startsWith("spin-")) {
+                this._session.setAxis(entry.axis, entry.axis.kind.startsWith("pedal-") ? -1 : 0);
+            }
+        } else {
+            for (const held of this._held.values()) {
+                this._session.setControl(held.control, true);
+                held.forwarded = true;
+            }
+            for (const entry of this._axes.values()) this._session.setAxis(entry.axis, entry.value);
+        }
     }
 
     // INSTANCE :: arcadeInputHoldListener -> unsubscribe
@@ -224,8 +253,8 @@ export default class ArcadeInput {
         const existing = this._held.get(key);
         if (existing === undefined) {
             const consumed = this.reportHold(stable, true);
-            if (!consumed) this._session.setControl(stable, true);
-            this._held.set(key, { control: stable, holders: new Set([channel]), forwarded: !consumed });
+            if (!consumed && !this._suspended) this._session.setControl(stable, true);
+            this._held.set(key, { control: stable, holders: new Set([channel]), forwarded: !consumed && !this._suspended });
         } else {
             existing.holders.add(channel);
         }
@@ -263,7 +292,7 @@ export default class ArcadeInput {
         const previous = this._axes.get(key);
         if (previous !== undefined && previous.owner !== channel) previous.owner.axes.delete(key);
         const entry: AxisValue = { axis: stable, value: normalized, owner: channel };
-        this._session.setAxis(stable, normalized);
+        if (!this._suspended) this._session.setAxis(stable, normalized);
         this._axes.set(key, entry);
         channel.axes.set(key, entry);
     }
@@ -334,7 +363,7 @@ export default class ArcadeInput {
         channel.axes.delete(key);
         if (entry === undefined || this._axes.get(key)?.owner !== channel) return;
         this._axes.delete(key);
-        if (entry.axis.kind.startsWith("spin-")) return;
+        if (entry.axis.kind.startsWith("spin-") || this._suspended) return;
         this._session.setAxis(entry.axis, entry.axis.kind.startsWith("pedal-") ? -1 : 0);
     }
 

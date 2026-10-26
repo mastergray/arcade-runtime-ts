@@ -7,9 +7,11 @@ import {
     type ArcadeControl,
     type ArcadeInputChannel,
     type ArcadeRomStore,
+    type AnalogSettings,
+    type GamepadDevice,
     type ScalingMode,
 } from "../../src/index.js";
-import { PreferenceStore } from "./preferences.js";
+import { PreferenceStore, type GlobalPreferences } from "./preferences.js";
 import type { LibraryModel } from "./library.js";
 import type {
     HeldStripControl,
@@ -81,7 +83,7 @@ export class SessionModel {
         this.update({ busy: true, status: "loading", message: `Starting ${card.metadata.description}…` });
         try {
             await this.stop();
-            const preferences = this.preferences.getGlobal();
+            const preferences = this.preferences.resolveGame(key);
             const injected = this.adapter();
             const choices = this.library.startChoices(key);
             const common = {
@@ -93,12 +95,22 @@ export class SessionModel {
                     roms: this.library.startSources(key),
                     ...(choices.bios === undefined ? {} : { bios: choices.bios }),
                     dipswitches: choices.dipswitches,
-                    display: { scaling: displayScaling(preferences.size), imageRendering: "pixelated" as const },
+                    auditStrictness: preferences.storage.strictness,
+                    display: {
+                        scaling: displayScaling(preferences.size),
+                        imageRendering: preferences.video.filter,
+                        crop: preferences.video.crop,
+                    },
                 },
-                controls: { keyboard: { enabled: true }, gamepads: { enabled: true } },
+                controls: {
+                    analog: preferences.analog,
+                    keyboard: { enabled: true, map: preferences.controls.keyboard },
+                    gamepads: { enabled: true, mappings: preferences.controls.gamepads, deadZone: preferences.controls.stickCentre },
+                },
                 storage: ArcadeStorage.init({ key }),
                 romStore: this.romStore,
                 autosave: preferences.autoSave,
+                audio: { volume: preferences.audio.volume },
             };
             const cabinet = injected === undefined
                 ? await ArcadeCabinet.init({ ...common, adapterConfig: { buildUrl: card.indexed.buildUrl } })
@@ -122,6 +134,11 @@ export class SessionModel {
             });
             try { await cabinet.player.audio.unlock(); }
             catch (error) { this.appendLog(`Audio unlock needs another gesture: ${messageFrom(error, "unknown audio failure")}`); }
+            if (preferences.general.muteOnStart) cabinet.player.audio.mute();
+            if (preferences.general.fullscreenOnStart) {
+                try { await cabinet.fullscreen(); }
+                catch (error) { this.appendLog(`Fullscreen on start was unavailable: ${messageFrom(error, "unknown fullscreen failure")}`); }
+            }
             this.update({
                 activeKey: key,
                 machine: cabinet.player.machine,
@@ -215,6 +232,54 @@ export class SessionModel {
         this.preferences.updateGlobal({ size });
         if (this.cabinetValue !== null) this.cabinetValue.player.display.scaling = displayScaling(size);
         this.update({ message: `Size is ${size === "fit" ? "Fit" : size === "stretch" ? "Stretch" : "Integer"}.` });
+    }
+
+    async applyPreferences(): Promise<void> {
+        const key = this.snapshotValue.activeKey;
+        const global = this.preferences.getGlobal();
+        if (key !== null && this.cabinetValue !== null) {
+            const resolved = this.preferences.resolveGame(key);
+            const cabinet = this.cabinetValue;
+            cabinet.volume = resolved.audio.volume;
+            cabinet.player.display.scaling = displayScaling(resolved.size);
+            cabinet.player.display.imageRendering = resolved.video.filter;
+            cabinet.player.display.crop = resolved.video.crop;
+            cabinet.setControls({
+                analog: resolved.analog,
+                keyboard: { enabled: true, map: resolved.controls.keyboard },
+                gamepads: { enabled: true, mappings: resolved.controls.gamepads, deadZone: resolved.controls.stickCentre },
+            });
+            this.update({ muted: cabinet.player.audio.isMuted, message: "Settings were applied." });
+        }
+        await this.library.setStrictness(global.storage.strictness);
+    }
+
+    previewGlobal(preferences: GlobalPreferences): void {
+        const cabinet = this.cabinetValue;
+        if (cabinet === null) return;
+        cabinet.volume = preferences.audio.volume;
+        cabinet.player.display.scaling = displayScaling(preferences.size);
+        cabinet.player.display.imageRendering = preferences.video.filter;
+        cabinet.player.display.crop = preferences.video.crop;
+    }
+
+    previewAnalog(settings: AnalogSettings): void { this.cabinetValue?.setAnalogSettings(settings); }
+
+    setInputPaused(paused: boolean): void {
+        const cabinet = this.cabinetValue;
+        if (cabinet === null || !cabinet.isStarted) return;
+        if (!paused) cabinet.player.input.releaseAll();
+        cabinet.player.input.suspended = paused;
+    }
+
+    controlDevices(): ReadonlyArray<GamepadDevice> {
+        if (this.cabinetValue?.gamepads !== null && this.cabinetValue?.gamepads !== undefined) return this.cabinetValue.gamepads.devices;
+        return this.getGamepads().flatMap((pad) => pad === null ? [] : [{
+            index: pad.index,
+            id: pad.id,
+            standard: pad.mapping === "standard",
+            player: null,
+        }]);
     }
 
     async fullscreen(stretched = false): Promise<void> {

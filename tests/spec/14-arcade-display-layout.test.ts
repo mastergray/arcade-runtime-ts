@@ -169,6 +169,26 @@ const testFile: TestFile = {
                 }))
                 .start(undefined),
         },
+        {
+            label: "image rendering changes live without rebuilding the display",
+            run: () => CTGTest.init("display live filtering")
+                .stage("toggle the public rendering setter", () => {
+                    const style: Record<string, string> = {};
+                    const display = new ArcadeDisplay({
+                        canvas: { width: 320, height: 240, style, getContext: () => null } as unknown as HTMLCanvasElement,
+                        container: { getBoundingClientRect: () => ({ left: 0, top: 0, width: 800, height: 600 }) } as unknown as HTMLElement,
+                    });
+                    display.imageRendering = "smooth";
+                    const smooth = { value: display.imageRendering, css: style.imageRendering };
+                    display.imageRendering = "pixelated";
+                    return { smooth, pixelated: { value: display.imageRendering, css: style.imageRendering } };
+                })
+                .assert("both public and CSS values follow each live change", (state) => state.subject, P.equals<unknown>({
+                    smooth: { value: "smooth", css: "auto" },
+                    pixelated: { value: "pixelated", css: "pixelated" },
+                }))
+                .start(undefined),
+        },
     ],
 };
 

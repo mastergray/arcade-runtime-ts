@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { FocusProvider } from "../focus/FocusController.js";
 import { Button, Confirm, Desk, StatusBar, Window } from "../kit/index.js";
 import { LibraryModel } from "../model/library.js";
-import { PreferenceStore } from "../model/preferences.js";
+import { IndexedDbSavedPlayStore, PreferenceStore } from "../model/preferences.js";
 import { SessionModel } from "../model/session.js";
 import type { LibrarySnapshot, LocalAdapterBoundary, LocalSlot, SessionSnapshot } from "../model/types.js";
 import { FileCheckModal } from "./FileCheckModal.js";
@@ -14,13 +14,16 @@ import { LogModal } from "./LogModal.js";
 import { LocalMenus, type LocalMenuActions } from "./menus.js";
 import { PlaySurface } from "./PlaySurface.js";
 import { Strip } from "./Strip.js";
+import { SettingsModal } from "./SettingsModal.js";
+import { ControlsModal } from "./ControlsModal.js";
+import { PerGameModal } from "./PerGameModal.js";
 
 interface LocalModels {
     readonly library: LibraryModel;
     readonly preferences: PreferenceStore;
 }
 
-type OpenModal = "import" | "log" | "file-check" | "clear-saved-play" | "restart" | null;
+type OpenModal = "import" | "settings" | "controls" | "per-game" | "log" | "file-check" | "clear-saved-play" | "restart" | null;
 
 const EMPTY_SESSION: SessionSnapshot = {
     status: "idle", message: "Loading the arcade library…", activeKey: null, machine: null,
@@ -91,6 +94,12 @@ function LocalWorkspace({ models }: { readonly models: LocalModels }) {
     }, [session]);
 
     useEffect(() => {
+        if (session === null) return;
+        session.setInputPaused(modal !== null || removal !== null);
+        return () => session.setInputPaused(false);
+    }, [modal, removal, session]);
+
+    useEffect(() => {
         const drag = (event: DragEvent): void => { event.preventDefault(); setDragOver(true); setModal("import"); setImportTab("import"); };
         const leave = (event: DragEvent): void => { if (event.relatedTarget === null) setDragOver(false); };
         const drop = (event: DragEvent): void => {
@@ -151,8 +160,8 @@ function LocalWorkspace({ models }: { readonly models: LocalModels }) {
     };
 
     const actions: LocalMenuActions = {
-        settings: () => undefined,
-        controls: () => undefined,
+        settings: closeMenu(() => setModal("settings")),
+        controls: closeMenu(() => setModal("controls")),
         storedFiles: closeMenu(() => { setImportTab("stored"); setModal("import"); }),
         saveSlot: (slot) => { setOpenMenu(undefined); if (session !== null) void session.saveSlot(slot).finally(refreshPreferences); },
         loadSlot: (slot) => { setOpenMenu(undefined); if (session !== null) void session.loadSlot(slot); },
@@ -232,6 +241,31 @@ function LocalWorkspace({ models }: { readonly models: LocalModels }) {
             </Window>
         </Desk>
         {modal === "import" ? <ImportModal library={models.library} snapshot={library} tab={importTab} onTab={setImportTab} onClose={() => setModal(null)} dragOver={dragOver} onRemove={(name) => setRemoval({ name })} onRemoveAll={() => setRemoval({ all: true })} onPlay={(key) => { if (session !== null) void session.start(key); }} /> : null}
+        {modal === "settings" ? <SettingsModal
+            preferences={models.preferences}
+            library={models.library}
+            librarySnapshot={library}
+            session={session}
+            onClose={() => setModal(null)}
+            onApplied={refreshPreferences}
+            onManageStored={() => { session?.previewGlobal(models.preferences.getGlobal()); setImportTab("stored"); setModal("import"); }}
+            onManageGames={() => { session?.previewGlobal(models.preferences.getGlobal()); setModal("per-game"); }}
+        /> : null}
+        {modal === "controls" ? <ControlsModal
+            preferences={models.preferences}
+            session={session}
+            gameKey={selectedKey}
+            gameName={selectedCard?.metadata?.description ?? null}
+            machine={sessionState.machine}
+            onClose={() => setModal(null)}
+            onApplied={refreshPreferences}
+        /> : null}
+        {modal === "per-game" ? <PerGameModal
+            preferences={models.preferences}
+            gameName={(key) => models.library.card(key)?.metadata?.description ?? key}
+            onClose={() => setModal(null)}
+            onChanged={() => { refreshPreferences(); void session?.applyPreferences(); }}
+        /> : null}
         {modal === "log" ? <LogModal lines={sessionState.log} onCopy={copyLog} onClose={() => setModal(null)} /> : null}
         {modal === "file-check" && fileCheckCard !== null ? <FileCheckModal card={fileCheckCard} onClose={() => setModal(null)} /> : null}
         {modal === "clear-saved-play" ? <div data-modal="clear-saved-play"><Confirm veil question="Clear saved play for this game?" consequence="NVRAM, configuration and all three slots will be removed. Game files stay." confirmLabel="Clear saved play for this game…" onCancel={() => setModal(null)} onConfirm={() => {
@@ -255,11 +289,16 @@ export function LocalPage() {
         let cancelled = false;
         void (async () => {
             try {
-                const preferences = new PreferenceStore(localStorage);
+                const preferences = new PreferenceStore(localStorage, new IndexedDbSavedPlayStore(indexedDB));
                 if (!preferences.hasGlobalRecord() && navigator.maxTouchPoints > 0 && (navigator.getGamepads?.() ?? []).filter(Boolean).length === 0) {
                     preferences.updateGlobal({ controllerView: true });
                 }
-                const library = await LibraryModel.init({ fetch: window.fetch.bind(window), baseUrl: location.href, search: location.search });
+                const library = await LibraryModel.init({
+                    fetch: window.fetch.bind(window),
+                    baseUrl: location.href,
+                    search: location.search,
+                    strictness: preferences.getGlobal().storage.strictness,
+                });
                 await library.initialize();
                 if (!cancelled) setModels({ library, preferences });
             } catch (reason) {

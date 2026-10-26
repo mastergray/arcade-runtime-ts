@@ -147,6 +147,10 @@ reused. "Local" is `/local`, "phone" is `/mobile-local-*`, "TV" is
 | **D-pad** | 3 × 3 grid of raised keys round a flat centre; `.dpadmini` for pictures | pressed | controller strip | controller | controls picture only |
 | **Drop zone** | dashed `--dark` border on `#D6D6D6`, bold line and sub-line | drag-over (invert) | Import | Import | never (import is Play mode) |
 
+The kit's `Range` wrapper added for W23b keeps the label, native slider and
+formatted output in one focusable row; it does not replace the browser's range
+keyboard behavior.
+
 ### 3.3 Containers
 
 | Component | Definition | States | Local | Phone | TV |

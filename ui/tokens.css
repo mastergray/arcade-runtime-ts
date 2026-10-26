@@ -325,6 +325,8 @@ button { color: inherit; }
 .fieldset { border: var(--rule-width) solid var(--mid); padding: var(--role-row-y) var(--role-row-x); }
 .fieldset legend { padding: 0 calc(var(--role-gutter) / 2); font-weight: var(--weight-bold); }
 .fieldset-line { display: block; min-height: var(--role-min-target); padding-block: calc(var(--role-control-y) / 2); }
+.range { display: grid; grid-template-columns: minmax(10em, auto) minmax(8em, 1fr) 4em; align-items: center; gap: var(--role-gutter); min-height: var(--role-min-target); }
+.range output { font-variant-numeric: tabular-nums; }
 .kv2 { display: grid; grid-template-columns: minmax(8em, auto) minmax(0, 1fr); gap: var(--role-gutter) calc(var(--role-gutter) * 1.4); align-items: center; }
 
 .table-wrap { overflow: auto; }

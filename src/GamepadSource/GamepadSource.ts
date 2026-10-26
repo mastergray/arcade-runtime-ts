@@ -187,6 +187,7 @@ export default class GamepadSource {
     private readonly _visibilityTarget: KeyboardVisibilityTargetLike;   // visibilitychange target
     private readonly _deadZone: number;                           // Validated axis threshold
     private readonly _mapping: GamepadMapping | undefined;        // Optional standard override/non-standard opt-in
+    private readonly _mappings: Readonly<Record<string, GamepadMapping>>;   // Exact per-id overrides
     private readonly _axisFilter: ((axis: ArcadeAxis, value: number) => number) | null;   // Live travel/invert filter
     private readonly _assignments = new Map<number, AssignedPad>();   // Assigned pads keyed by Gamepad index
     private readonly _onFrame: (time: number) => void;            // Bound scheduler callback
@@ -209,6 +210,7 @@ export default class GamepadSource {
         this._visibilityTarget = config.visibilityTarget ?? config.target;
         this._deadZone = config.deadZone ?? GamepadSource.DEFAULT_DEAD_ZONE;
         this._mapping = config.mapping;
+        this._mappings = config.mappings ?? {};
         this._axisFilter = config.axisFilter ?? null;
         this._onFrame = () => {
             this._frameHandle = null;
@@ -384,6 +386,8 @@ export default class GamepadSource {
     // PRIVATE :: gamepadLike -> gamepadMapping?
     // Standard pads receive defaults or an applicable override; non-standard pads require an exact id-scoped mapping.
     private mappingFor(pad: GamepadLike): GamepadMapping | null {
+        const exact = this._mappings[pad.id];
+        if (exact !== undefined) return exact;
         if (pad.mapping === "standard") {
             if (this._mapping === undefined) return DEFAULT_MAPPING;
             return this._mapping.id === undefined || this._mapping.id === pad.id ? this._mapping : DEFAULT_MAPPING;

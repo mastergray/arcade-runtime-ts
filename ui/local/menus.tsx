@@ -56,8 +56,8 @@ export function menuDefinitions(props: LocalMenusProps): ReadonlyArray<MenuDefin
     ]);
     return [
         { id: "configure", label: <><u>C</u>onfigure</>, entries: [
-            { id: "settings", label: "Settings…", small: "next package", disabled: true, onSelect: props.actions.settings },
-            { id: "controls", label: "Controls…", small: "next package", disabled: true, onSelect: props.actions.controls },
+            { id: "settings", label: "Settings…", onSelect: props.actions.settings },
+            { id: "controls", label: "Controls…", onSelect: props.actions.controls },
             { id: "settings-separator", label: "", separator: true },
             { id: "stored-files", label: "Stored files…", onSelect: props.actions.storedFiles },
         ] },

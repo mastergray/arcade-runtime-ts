@@ -96,6 +96,7 @@ export interface GamepadSourceConfig {
     readonly visibilityTarget?: KeyboardVisibilityTargetLike;     // visibilitychange target; defaults to target
     readonly deadZone?: number;                                   // Axis threshold in [0, 1); defaults to 0.25
     readonly mapping?: GamepadMapping;                            // Standard-layout overrides and non-standard opt-in
+    readonly mappings?: Readonly<Record<string, GamepadMapping>>; // Per-browser-id mappings; exact id wins over mapping
     readonly axisFilter?: (axis: ArcadeAxis, value: number) => number;   // Live scaling/inversion supplied by AnalogDriver
 }
 
@@ -109,6 +110,7 @@ export interface GamepadSourceInitConfig {
     readonly visibilityTarget?: KeyboardVisibilityTargetLike;     // Defaults to document with the default window
     readonly deadZone?: number;                                   // Axis threshold in [0, 1); defaults to 0.25
     readonly mapping?: GamepadMapping;                            // Standard-layout overrides and non-standard opt-in
+    readonly mappings?: Readonly<Record<string, GamepadMapping>>; // Per-browser-id mappings; exact id wins over mapping
     readonly axisFilter?: (axis: ArcadeAxis, value: number) => number;   // Live scaling/inversion supplied by AnalogDriver
 }
 
@@ -244,6 +246,13 @@ export function isGamepadMapping(value: unknown): value is GamepadMapping {
 }
 
 // PREDICATE :: UNKNOWN -> BOOLEAN
+// True when every browser id names a valid matching mapping.
+const isGamepadMappings = (value: unknown): value is Readonly<Record<string, GamepadMapping>> =>
+    typeof value === "object" && value !== null && !Array.isArray(value)
+    && Object.entries(value).every(([id, mapping]) => id.length > 0 && isGamepadMapping(mapping)
+        && (mapping.id === undefined || mapping.id === id));
+
+// PREDICATE :: UNKNOWN -> BOOLEAN
 // True when direct construction has every injected dependency and valid optional choice.
 export function isGamepadSourceConfig(value: unknown): value is GamepadSourceConfig {
     if (typeof value !== "object" || value === null) return false;
@@ -255,6 +264,7 @@ export function isGamepadSourceConfig(value: unknown): value is GamepadSourceCon
         && (config.visibilityTarget === undefined || isKeyboardVisibilityTargetLike(config.visibilityTarget))
         && (config.deadZone === undefined || (isFiniteNumber(config.deadZone) && config.deadZone >= 0 && config.deadZone < 1))
         && (config.mapping === undefined || isGamepadMapping(config.mapping))
+        && (config.mappings === undefined || isGamepadMappings(config.mappings))
         && (config.axisFilter === undefined || typeof config.axisFilter === "function");
 }
 
@@ -270,6 +280,7 @@ export function isGamepadSourceInitConfig(value: unknown): value is GamepadSourc
         && (config.visibilityTarget === undefined || isKeyboardVisibilityTargetLike(config.visibilityTarget))
         && (config.deadZone === undefined || (isFiniteNumber(config.deadZone) && config.deadZone >= 0 && config.deadZone < 1))
         && (config.mapping === undefined || isGamepadMapping(config.mapping))
+        && (config.mappings === undefined || isGamepadMappings(config.mappings))
         && (config.axisFilter === undefined || typeof config.axisFilter === "function");
 }
 
