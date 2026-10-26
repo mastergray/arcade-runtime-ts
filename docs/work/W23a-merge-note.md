@@ -92,7 +92,7 @@ Use an ignored preload for a board with a player-one absolute paddle or stick
 declared by `segas16.c` or `segaxbd.c` in the built `sega-16` family:
 
 ```sh
-ANALOG_PRELOAD_CONFIG=/path/to/ignored/config.json ARCADE_PRELOAD_CONFIG="$ANALOG_PRELOAD_CONFIG" npm run test:browser
+ARCADE_ANALOG_PRELOAD_CONFIG=/path/to/ignored/config.json npm run test:browser
 ```
 
 `tests/browser/41-analog-driver.test.ts` starts the real cabinet, measures a

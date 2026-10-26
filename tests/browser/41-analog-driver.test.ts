@@ -18,7 +18,7 @@ interface AnalogVerdict {
 }
 
 const WORKSPACE = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
-const CONFIG_ARGUMENT = process.env.ARCADE_PRELOAD_CONFIG;
+const CONFIG_ARGUMENT = process.env.ARCADE_ANALOG_PRELOAD_CONFIG;   // A preload config whose machine declares an absolute paddle or stick; the general config may name a digital board
 const TIMEOUT = 300_000;
 
 const closeServer = async (server: Server): Promise<void> => {
@@ -27,7 +27,7 @@ const closeServer = async (server: Server): Promise<void> => {
 };
 
 const withHarness = async <T>(run: (url: string) => Promise<T>): Promise<T> => {
-    if (CONFIG_ARGUMENT === undefined) throw new Error("ARCADE_PRELOAD_CONFIG is required");
+    if (CONFIG_ARGUMENT === undefined) throw new Error("ARCADE_ANALOG_PRELOAD_CONFIG is required");
     const harness = await startHarnessServer({
         port: 0,
         buildRoot: resolve(WORKSPACE, "dist", "mame"),
@@ -112,7 +112,7 @@ const exerciseAnalogDriver = async (): Promise<AnalogVerdict> => {
 
 const testFile: TestFile = {
     label: "AnalogDriver production surface",
-    skip: CONFIG_ARGUMENT === undefined ? "set ARCADE_PRELOAD_CONFIG to an ignored preload config for a built family with a declared paddle or stick" : undefined,
+    skip: CONFIG_ARGUMENT === undefined ? "set ARCADE_ANALOG_PRELOAD_CONFIG to an ignored preload config for a built family with a declared paddle or stick" : undefined,
     cases: [{
         label: "a declared absolute port changes slope on a live update and changes sign when inverted",
         run: () => withHarness((url) => CTGBrowserTest.init("analogue live settings")
