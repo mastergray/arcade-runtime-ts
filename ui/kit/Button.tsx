@@ -15,7 +15,7 @@ export interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement
 
 export function Button({ label, glyph, size = "body", play = false, primary = false, disabled = false, focusId, focusGroup = "buttons", className = "", onClick, ...props }: ButtonProps) {
     const generatedId = useId();
-    const focusable = useFocusable(focusId ?? `button-${generatedId}`, focusGroup, { disabled, onActivate: () => onClick?.({} as never) });
+    const focusable = useFocusable(focusId ?? `button-${generatedId}`, focusGroup, { disabled });
     return <button
         {...props}
         ref={focusable.ref as never}
@@ -28,6 +28,7 @@ export function Button({ label, glyph, size = "body", play = false, primary = fa
         data-primary={primary}
         data-disabled={disabled}
         data-focus={focusable["data-focus"]}
+        data-state={disabled ? "disabled" : focusable["data-focus"] ? "focus" : primary ? "primary" : play ? "play" : "default"}
         tabIndex={focusable.tabIndex}
         onFocus={focusable.onFocus}
         onClick={onClick}

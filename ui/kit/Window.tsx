@@ -12,6 +12,10 @@ export interface WindowProps {
     readonly className?: string;
 }
 
+export function Desk({ children }: { readonly children: ReactNode }) {
+    return <div className="desk" data-component="desk">{children}</div>;
+}
+
 export function Window({ title, secondary, menu, children, status, className = "" }: WindowProps) {
     return <section className={`window ${className}`.trim()} data-component="window" data-menu={menu !== undefined}>
         <TitleBar title={title} secondary={secondary} />

@@ -2,5 +2,5 @@
 
 export interface ChipProps { readonly label: string; readonly on?: boolean; }
 export function Chip({ label, on = false }: ChipProps) {
-    return <span className="chip" data-component="chip" data-on={on}>{label}</span>;
+    return <span className="chip" data-component="chip" data-on={on} data-state={on ? "on" : "off"}>{label}</span>;
 }

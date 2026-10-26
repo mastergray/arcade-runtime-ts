@@ -12,7 +12,7 @@ export interface ModalProps {
 }
 
 export function Modal({ title, children, foot, onClose, veil = true }: ModalProps) {
-    const modal = <section className="window modal" role="dialog" aria-label={title} data-component="modal">
+    const modal = <section className="window modal" role="dialog" aria-label={title} data-component="modal" data-state="default">
         <TitleBar title={title} onClose={onClose} />
         <div className="modal-body">{children}</div>
         {foot === undefined ? null : <footer className="modal-foot">{foot}</footer>}

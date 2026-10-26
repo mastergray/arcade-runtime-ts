@@ -62,6 +62,8 @@ export function FocusProvider({ children, initialId, onBack, onTabPrevious, onTa
     const [focusedId, setFocusedId] = useState<string | null>(initialId ?? null);
     const focusedIdRef = useRef<string | null>(initialId ?? null);
 
+    useEffect(() => { document.documentElement.dataset.input ??= "touch"; }, []);
+
     const focus = useCallback((id: string): void => {
         const target = targets.current.get(id);
         if (target === undefined || target.disabled) return;
@@ -80,7 +82,11 @@ export function FocusProvider({ children, initialId, onBack, onTabPrevious, onTa
         const available = [...targets.current.values()].filter((target) => !target.disabled);
         if (available.length === 0) return;
         const current = targets.current.get(focusedIdRef.current ?? "") ?? available[0]!;
-        if (action === "activate") { current.onActivate?.(); return; }
+        if (action === "activate") {
+            if (current.onActivate === undefined) current.element.click();
+            else current.onActivate();
+            return;
+        }
         if (action === "back") { (current.onBack ?? onBack)?.(); return; }
         if (action === "tab-previous") { onTabPrevious?.(); return; }
         if (action === "tab-next") { onTabNext?.(); return; }

@@ -27,6 +27,7 @@ function Tab({ stripId, tab, active, onChange }: { readonly stripId: string; rea
         data-on={active}
         data-disabled={tab.disabled ?? false}
         data-focus={focusable["data-focus"]}
+        data-state={tab.disabled ? "disabled" : focusable["data-focus"] ? "focus" : active ? "on" : "off"}
         aria-selected={active}
         tabIndex={focusable.tabIndex}
         onFocus={focusable.onFocus}

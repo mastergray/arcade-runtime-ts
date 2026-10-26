@@ -2,5 +2,5 @@
 
 export interface CanvasFrameProps { readonly paused?: boolean; }
 export function CanvasFrame({ paused = false }: CanvasFrameProps) {
-    return <div className="canvas-frame" data-component="canvas-frame"><div className="canvas-empty">ready</div>{paused ? <div className="paused-overlay">PAUSED</div> : null}</div>;
+    return <div className="canvas-frame" data-component="canvas-frame" data-state={paused ? "paused" : "empty"}><div className="canvas-empty">ready</div>{paused ? <div className="paused-overlay">PAUSED</div> : null}</div>;
 }

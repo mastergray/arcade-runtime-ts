@@ -40,6 +40,7 @@ function MenuItem({ entry, menuId }: { readonly entry: MenuEntry; readonly menuI
         data-checked={entry.checked ?? false}
         data-radio={entry.radio ?? false}
         data-focus={focusable["data-focus"]}
+        data-state={entry.disabled ? "disabled" : entry.checked ? "checked" : entry.radio ? "radio" : focusable["data-focus"] ? "focus" : "default"}
         tabIndex={focusable.tabIndex}
         onFocus={focusable.onFocus}
         onClick={entry.onSelect}

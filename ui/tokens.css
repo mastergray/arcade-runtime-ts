@@ -298,7 +298,7 @@ button { color: inherit; }
 
 .veil { position: fixed; inset: 0; z-index: var(--z-veil); display: grid; place-items: center; padding: var(--role-desk-margin); background: var(--veil-desktop); }
 :root[data-density="phone"] .veil { background: var(--veil-phone); }
-.modal { z-index: var(--z-modal); inline-size: min(var(--modal-phone-width), calc(var(--gallery-max) / 2)); max-block-size: var(--modal-max-height); overflow: auto; }
+.modal { z-index: var(--z-modal); grid-template-rows: auto minmax(0, 1fr) auto; inline-size: min(var(--modal-phone-width), calc(var(--gallery-max) / 2)); max-block-size: var(--modal-max-height); overflow: auto; }
 .modal > .title-bar { position: sticky; inset-block-start: 0; z-index: var(--z-modal); }
 .modal-body, .pane { padding: var(--role-row-y) var(--role-row-x); }
 .modal-foot { display: flex; justify-content: flex-end; gap: var(--role-gutter); padding: var(--role-row-y) var(--role-row-x); border-top: var(--rule-width) solid var(--mid); }

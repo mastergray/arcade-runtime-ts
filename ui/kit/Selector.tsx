@@ -28,11 +28,12 @@ export function Selector({ id, group = "selectors", values, value, label, disabl
         data-component="selector"
         data-disabled={disabled}
         data-focus={focusable["data-focus"]}
+        data-state={disabled ? "disabled" : focusable["data-focus"] ? "focus" : "default"}
         tabIndex={focusable.tabIndex}
         onFocus={focusable.onFocus}
     >
-        <button className="btn selector-arrow" type="button" disabled={disabled} aria-label="Previous" onClick={() => change(-1)}>◀</button>
+        <button className="btn selector-arrow" type="button" disabled={disabled} tabIndex={-1} aria-label="Previous" onClick={() => change(-1)}>◀</button>
         <span className="selector-value" data-selector-value>{value}</span>
-        <button className="btn selector-arrow" type="button" disabled={disabled} aria-label="Next" onClick={() => change(1)}>▶</button>
+        <button className="btn selector-arrow" type="button" disabled={disabled} tabIndex={-1} aria-label="Next" onClick={() => change(1)}>▶</button>
     </div>;
 }

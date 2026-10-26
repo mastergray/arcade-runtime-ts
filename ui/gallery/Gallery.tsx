@@ -72,8 +72,8 @@ function ControlsSection({ allStates }: { readonly allStates: boolean }) {
             <Sample component="dot"><div className="demo-stack"><Dot label="ready" tone="ok" />{allStates ? <><Dot label="Missing files" tone="bad" /><Dot label="Pending" tone="warn" /><Dot label="Skip" /></> : null}</div></Sample>
             <Sample component="pill"><div className="demo-row"><Pill label="COIN" /><Pill label="START" pressed={allStates} /></div></Sample>
             <Sample component="red-button"><div className="demo-row"><RedButton number={1} />{allStates ? <><RedButton number={2} pressed /><RedButton number={3} off /></> : null}</div></Sample>
-            <Sample component="d-pad"><DPad pressed={allStates ? "right" : undefined} /></Sample>
-            <Sample component="drop-zone"><DropZone dragOver={allStates} /></Sample>
+            <Sample component="d-pad"><div className="demo-row"><DPad />{allStates ? <DPad pressed="right" /> : null}</div></Sample>
+            <Sample component="drop-zone"><div className="demo-stack"><DropZone />{allStates ? <DropZone dragOver /> : null}</div></Sample>
         </div>
     </section>;
 }
@@ -127,7 +127,7 @@ function GameSection({ allStates, view, setView }: { readonly allStates: boolean
             <Sample component="game-card"><Card seed="game-card" /></Sample>
             <Sample component="controller-strip"><ControllerStrip pressedButton={allStates ? 1 : undefined} pressedDirection={allStates ? "up" : undefined} /></Sample>
             <Sample component="controls-picture"><ControlsPicture /></Sample>
-            <Sample component="canvas-frame"><CanvasFrame paused={allStates} /></Sample>
+            <Sample component="canvas-frame"><div className="demo-stack"><CanvasFrame />{allStates ? <CanvasFrame paused /> : null}</div></Sample>
             <Sample component="start-hint"><Hint>Press <b>Esc</b> for Menu</Hint></Sample>
             <Sample component="presentation-window" state={view}>
                 <Window title="Play mode" secondary={view === "controls" ? "Controllers" : "paused"}>
@@ -168,5 +168,5 @@ export function Gallery() {
         <GameSection allStates={allStates} view={view} setView={setView} />
     </div>;
 
-    return <FocusProvider initialId="tv-play" onBack={() => setView("menu")}>{density === "phone" ? <div className="window phone-frame">{contents}</div> : contents}</FocusProvider>;
+    return <FocusProvider initialId="tv-play" onBack={() => setView("menu")}>{density === "phone" ? <div className="bevel phone-frame">{contents}</div> : contents}</FocusProvider>;
 }

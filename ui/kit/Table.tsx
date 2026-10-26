@@ -29,6 +29,7 @@ function BodyRow({ tableId, row, columnCount }: { readonly tableId: string; read
         data-dim={row.dim ?? false}
         data-held={row.held ?? false}
         data-focus={row.focusable ? focusable["data-focus"] : undefined}
+        data-state={row.held ? "held" : row.selected ? "selected" : row.dim ? "dim" : row.focusable && focusable["data-focus"] ? "focus" : "default"}
         tabIndex={row.focusable ? focusable.tabIndex : undefined}
         onFocus={row.focusable ? focusable.onFocus : undefined}
     >{row.cells.map((cell, index) => <td key={index}>{cell}</td>)}</tr>;
