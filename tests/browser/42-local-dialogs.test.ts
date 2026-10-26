@@ -81,6 +81,19 @@ const crc32 = (bytes: Uint8Array): string => {
     return ((crc ^ 0xffff_ffff) >>> 0).toString(16).padStart(8, "0");
 };
 
+// HELPER :: page, STRING, STRING -> PROMISE(VOID)
+// Sets a React-controlled range or number input through the prototype setter so React's value tracker sees the change.
+const setInputValue = async (page: { evaluate: (fn: (args: { selector: string; value: string }) => void, args: { selector: string; value: string }) => Promise<void> }, selector: string, value: string): Promise<void> => {
+    await page.evaluate(({ selector, value }) => {
+        const input = document.querySelector<HTMLInputElement>(selector);
+        if (input === null) throw new Error(`missing ${selector}`);
+        const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+        setter?.call(input, value);
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+        input.dispatchEvent(new Event("change", { bubbles: true }));
+    }, { selector, value });
+};
+
 const closeServer = async (server: Server): Promise<void> => {
     server.closeAllConnections();
     await new Promise<void>((closed) => server.close(() => closed()));
@@ -155,9 +168,9 @@ const cases: TestCase[] = [{
             await page.locator('[data-menu-title="configure"]').click();
             await page.locator('[data-menu-item="settings"]').click();
             await page.locator('[data-tab="audio"]').click();
-            await page.locator('[data-setting="volume"]').fill("35");
+            await setInputValue(page, '[data-setting="volume"]', "35");
             await page.locator('[data-tab="video"]').click();
-            await page.locator('[data-setting="crop-left"]').fill("7");
+            await setInputValue(page, '[data-setting="crop-left"]', "7");
             await page.locator('[data-setting="filter"]').selectOption("smooth");
             await page.locator('[data-settings-ok]').click();
             await page.evaluate(() => {
@@ -173,7 +186,7 @@ const cases: TestCase[] = [{
             await page.locator('[data-binding-change="p1:button:1"]').click();
             await page.keyboard.press("t");
             await page.locator('[data-tab="analogue"]').click();
-            await page.locator('input[aria-label="P1 Steering / paddle gamepad travel"]').fill("175");
+            await setInputValue(page, 'input[aria-label="P1 Steering / paddle gamepad travel"]', "180");
             await page.locator('[data-controls-ok]').click();
             await page.evaluate(() => {
                 const state = (window as unknown as { __arcadeDialogTest: { controls: unknown[] } }).__arcadeDialogTest;
@@ -197,7 +210,7 @@ const cases: TestCase[] = [{
                 const verdict = (window as unknown as { __arcadeDialogVerdict: Partial<DialogResult> }).__arcadeDialogVerdict;
                 verdict.rebound = state.controls.some((item) => item.control.kind === "button" && item.control.button === 1 && item.pressed)
                     && state.controls.filter((item) => item.control.kind === "button" && item.control.button === 1 && item.pressed).length === 1;
-                verdict.analog = cabinet.analogSettings["p1:paddle"]?.travel === 1.75;
+                verdict.analog = cabinet.analogSettings["p1:paddle"]?.travel === 1.8;
                 verdict.testInput = lit;
             }, testInput);
         })
@@ -244,7 +257,7 @@ if (CONFIG_ARGUMENT !== undefined) cases.push({
             await page.locator('[data-menu-title="configure"]').click();
             await page.locator('[data-menu-item="settings"]').click();
             await page.locator('[data-tab="audio"]').click();
-            await page.locator('[data-setting="volume"]').fill("40");
+            await setInputValue(page, '[data-setting="volume"]', "40");
             await page.locator('[data-settings-ok]').click();
         })
         .interact("capture and hold the replacement button binding", async ({ page }) => {

@@ -240,7 +240,7 @@ export class SessionModel {
         if (key !== null && this.cabinetValue !== null) {
             const resolved = this.preferences.resolveGame(key);
             const cabinet = this.cabinetValue;
-            cabinet.player.audio.volume = resolved.audio.volume;
+            cabinet.volume = resolved.audio.volume;
             cabinet.player.display.scaling = displayScaling(resolved.size);
             cabinet.player.display.imageRendering = resolved.video.filter;
             cabinet.player.display.crop = resolved.video.crop;
@@ -257,7 +257,7 @@ export class SessionModel {
     previewGlobal(preferences: GlobalPreferences): void {
         const cabinet = this.cabinetValue;
         if (cabinet === null) return;
-        cabinet.player.audio.volume = preferences.audio.volume;
+        cabinet.volume = preferences.audio.volume;
         cabinet.player.display.scaling = displayScaling(preferences.size);
         cabinet.player.display.imageRendering = preferences.video.filter;
         cabinet.player.display.crop = preferences.video.crop;

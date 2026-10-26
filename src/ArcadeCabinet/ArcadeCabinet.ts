@@ -110,7 +110,7 @@ export default class ArcadeCabinet {
     private readonly _gamepadProvider: GamepadProviderLike | null;   // Gamepad snapshots
     private readonly _frameScheduler: FrameScheduler | null;      // Gamepad polling clock
     private readonly _autosave: boolean;                          // Whether hidden visibility requests a save
-    private readonly _audioVolume: number;                        // Volume reapplied to every fresh session
+    private _audioVolume: number;                                 // Last requested volume, reapplied to every fresh session and source rebuild
     private readonly _blobSources: ReadonlyArray<BlobRomSource>;  // Picked sources stored only after an ok audit
     private readonly _onVisibilityChange: (event: Event) => void; // Bound autosave listener
     private _unsubscribeExit: Unsubscribe | null = null;          // Persistent player-exit subscription
@@ -289,6 +289,22 @@ export default class ArcadeCabinet {
         });
         this._analogSettings = analogSettingsCopy(settings);
         this._analog?.update(this._analogSettings);
+    }
+
+    // GETTER :: VOID -> NUMBER
+    // The playback level the cabinet keeps across restarts and source rebuilds.
+    get volume(): number { return this._audioVolume; }
+
+    // SETTER :: NUMBER -> VOID
+    // Applies a 0–1 playback level to the live player and retains it for every later session.
+    set volume(value: number) {
+        if (!Number.isFinite(value) || value < 0 || value > 1) throw new ArcadeRuntimeError({
+            code: ArcadeRuntimeError.CODE.INVALID_CONFIG,
+            message: "ArcadeCabinet volume must be a number from 0 through 1.",
+            data: value,
+        });
+        this._audioVolume = value;
+        this._player.audio.volume = value;
     }
 
     // INSTANCE :: arcadeControlsConfig -> VOID
