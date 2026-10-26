@@ -52,6 +52,7 @@ const inspectBindings = (): BindingResult => {
 
     capture.begin({ id: "menu", mode: "gesture" }, [pad([])]);
     capture.sample([pad([10, 11])]);
+    capture.sample([pad([11])]);
     const gestureResult = capture.sample([pad([])]).result;
     const gestureCaptured = gestureResult?.device === "gamepad" && gamepadChordLabel(gestureResult.buttons) === "L3 + R3";
 

@@ -218,7 +218,7 @@ It adds the production case only when `ARCADE_PRELOAD_CONFIG` is set.
 - A direct run of the 72 cases in the affected ArcadeInput, ArcadeDisplay,
   ArcadeCabinet, preference-v2 and binding files passed 72, failed 0.
 - `npm run build:ui` — passed. It emitted `gallery.js` at 1,258,987 bytes and
-  `local.js` at 1,663,301 bytes, with their HTML, CSS and source maps.
+  `local.js` at 1,663,823 bytes, with their HTML, CSS and source maps.
 - Importing `tests/browser/42-local-dialogs.test.ts` through `tsx` succeeded
   and exposed its synthetic case without a preload configuration.
 - `git diff --check` — passed.

@@ -79,6 +79,16 @@ const padForPlayer = (devices: ReadonlyArray<GamepadDevice>, player: PlayerIndex
 const mappingFor = (mappings: Readonly<Record<string, GamepadMapping>>, pad: GamepadDevice | null): GamepadMapping =>
     pad === null ? {} : mappings[pad.id] ?? { id: pad.id };
 
+const gamepadLabelFor = (mapping: GamepadMapping, control: ArcadeControl): string => {
+    const button = gamepadButtonFor(mapping, control);
+    if (button === null) return "unbound";
+    if (control.kind === "direction" || control.kind === "button" || control.kind === "coin" || control.kind === "start") {
+        return gamepadButtonLabel(button);
+    }
+    const modifier = mapping.chords === false ? mapping.coin ?? 8 : mapping.chords?.modifier ?? mapping.coin ?? 8;
+    return gamepadChordLabel([modifier, button]);
+};
+
 const copyMappings = (source: Readonly<Record<string, GamepadMapping>>): Record<string, GamepadMapping> =>
     Object.fromEntries(Object.entries(source).map(([id, mapping]) => [id, { ...mapping, id }]));
 
@@ -285,7 +295,7 @@ export function ControlsModal(props: ControlsModalProps) {
         return {
             id: `test:${key}`,
             held: held.has(key),
-            cells: [label, keyLabel(keyboardCodeFor(keyboard, control)), gamepadButtonLabel(gamepadButtonFor(p1, control)), gamepadButtonLabel(gamepadButtonFor(p2, control)), <Chip label={held.has(key) ? "held" : "—"} on={held.has(key)} key="now" />],
+            cells: [label, keyLabel(keyboardCodeFor(keyboard, control)), gamepadLabelFor(p1, control), gamepadLabelFor(p2, control), <Chip label={held.has(key) ? "held" : "—"} on={held.has(key)} key="now" />],
         };
     });
     const analogTestRows = props.machine?.inputs.analog.map(({ player, kind }) => {

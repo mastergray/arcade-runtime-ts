@@ -83,7 +83,7 @@ export class BindingCapture {
                     this.gesturePad = pad.id;
                     this.gestureButtons = current;
                 } else if (this.gesturePad === pad.id && current.length > 0) {
-                    this.gestureButtons = current;
+                    this.gestureButtons = [...new Set([...this.gestureButtons, ...current])].sort((left, right) => left - right);
                 } else if (this.gesturePad === pad.id && current.length === 0 && this.gestureButtons.length > 0) {
                     return this.complete({ device: "gamepad", padId: pad.id, buttons: this.gestureButtons });
                 }
