@@ -42,8 +42,8 @@ package root.
 | `stick-x` | centre | `stick-x` |
 | `stick-y` | centre | `stick-y` |
 | `stick-z` | centre | `stick-z` |
-| `pedal-1` | return 0–1 to zero | `pedal-1` |
-| `pedal-2` | return 0–1 to zero | `pedal-2` |
+| `pedal-1` | return to released; written as −1..+1 on the pedal axis (2026-10-26 fix: the raw 0..1 level put a released pedal at half throttle) | `pedal-1` |
+| `pedal-2` | same | `pedal-2` |
 | `paddle`, `paddle-v` | centre (2026-10-26: MAME auto-centres paddles; was hold, and a steering paddle felt stuck) | `stick-x`, `stick-y` |
 | `positional`, `lightgun-x` | hold | `stick-x` |
 | `positional-v`, `lightgun-y` | hold | `stick-y` |

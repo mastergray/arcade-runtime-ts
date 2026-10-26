@@ -1279,7 +1279,10 @@ ignores `centreSpeed`.
 
 The driver observes `stick` and `pedal` holds through `ArcadeInput.onHold`
 and writes its own channel once per animation frame. Stick values integrate
-toward −1 or 1 and return toward zero; pedals integrate from 0 to 1 and
+toward −1 or 1 and return toward zero; pedals integrate from 0 to 1, written
+to the pedal axis as −1 (released) to +1 (floored) like the pad's values
+(2026-10-26: the driver wrote the raw 0..1 level, so a released keyboard pedal
+sat at half throttle), and
 return toward zero. Paddles and positional controls hold their last value
 unless a page supplies a nonzero `centreSpeed`. Dial, trackball and mouse
 kinds emit per-frame deltas. `setAnalogSettings` replaces the immutable
@@ -1289,7 +1292,7 @@ fresh session receives the retained snapshot.
 | Machine kind | Default policy | Bridge axis |
 | ------------ | -------------- | ----------- |
 | `stick-x`, `stick-y`, `stick-z` | centre | matching stick axis |
-| `pedal-1`, `pedal-2` | return to zero | matching pedal axis |
+| `pedal-1`, `pedal-2` | return to released (−1 on the axis) | matching pedal axis |
 | `paddle`, `paddle-v` | centre (MAME auto-centres paddles; 2026-10-26, was hold) | `stick-x`, `stick-y` |
 | `positional`, `lightgun-x` | hold | `stick-x` |
 | `positional-v`, `lightgun-y` | hold | `stick-y` |

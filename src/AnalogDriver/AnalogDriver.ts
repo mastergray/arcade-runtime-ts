@@ -232,7 +232,10 @@ export default class AnalogDriver {
             } else {
                 port.value = towardZero(port.value, setting.centreSpeed);
             }
-            const output = (port.value * (setting.invert ? -1 : 1)) || 0;   // Normalises -0 so inverted centre reads as 0
+            // Pedals integrate 0..1 but the bridge's pedal axes run -1 (released) to +1 (floored), as the pad writes them,
+            // so the written level is remapped; a 0 write would sit a released pedal at half throttle.
+            const level = port.kind === "pedal-1" || port.kind === "pedal-2" ? port.value * 2 - 1 : port.value;
+            const output = (level * (setting.invert ? -1 : 1)) || 0;   // Normalises -0 so inverted centre reads as 0
             if (output === port.written) continue;                // Silent while static: the last writer (a pad's absolute value) keeps the axis
             port.written = output;
             this._channel.setAxis(port.axis, output);

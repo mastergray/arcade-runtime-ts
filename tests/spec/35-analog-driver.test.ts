@@ -109,7 +109,7 @@ const testFile: TestFile = {
                 })
                 .assert("each kind follows its centre, hold or relative policy", (state) => state.subject, P.equals<unknown>({
                     held: { stick: 0.30000000000000004, paddle: 0.6000000000000001, pedal: 1, relative: -0.03, digital: [] },
-                    released: { stick: 0.25000000000000006, paddle: 0.6000000000000001, pedal: 0.75, relative: -0.03 },
+                    released: { stick: 0.25000000000000006, paddle: 0.6000000000000001, pedal: 0.5, relative: -0.03 },
                     pending: 0,
                 }))
                 .start(undefined),
