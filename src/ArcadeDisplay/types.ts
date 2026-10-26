@@ -45,6 +45,13 @@ export type RequestFullscreen = (target: Element) => Promise<void>;
 // Injectable exitFullscreen operation.
 export type ExitFullscreen = (document: DisplayDocumentLike) => Promise<void>;
 
+// INTERFACE :: {left:NUMBER,right:NUMBER}
+// Native frame columns hidden before CSS scaling.
+export interface DisplayCrop {
+    readonly left: number;
+    readonly right: number;
+}
+
 // INTERFACE :: ArcadeDisplay construction dependencies and page choices
 // Direct construction reads no browser globals; init() fills the optional environment fields.
 export interface ArcadeDisplayConfig {
@@ -53,6 +60,7 @@ export interface ArcadeDisplayConfig {
     readonly aspectRatio?: FiniteNumber;                           // Page override; otherwise taken from the attached machine
     readonly scaling?: ScalingMode;                                // Page override; otherwise selected from machine orientation and container shape
     readonly imageRendering?: "pixelated" | "smooth";             // Pixel policy; smooth maps to the interoperable CSS value auto
+    readonly crop?: DisplayCrop;                                  // Native columns hidden from the left and right edges
     readonly resizeObserver?: ResizeObserverConstructorLike;       // Observer constructor supplied by init() in a browser
     readonly fullscreenTarget?: Element;                           // Element passed to requestFullscreen; defaults to container
     readonly document?: DisplayDocumentLike;                       // Fullscreen document supplied by init() in a browser
@@ -103,6 +111,14 @@ export function isDisplayDocumentLike(value: unknown): value is DisplayDocumentL
 }
 
 // PREDICATE :: UNKNOWN -> BOOLEAN
+// True when value names non-negative whole native-column counts.
+export function isDisplayCrop(value: unknown): value is DisplayCrop {
+    return typeof value === "object" && value !== null
+        && Number.isInteger((value as DisplayCrop).left) && (value as DisplayCrop).left >= 0
+        && Number.isInteger((value as DisplayCrop).right) && (value as DisplayCrop).right >= 0;
+}
+
+// PREDICATE :: UNKNOWN -> BOOLEAN
 // True when value has a canvas and container and every optional construction field passes its condition.
 // NOTE: DOM globals are deliberately not read here, so the constructor remains usable with injected structural doubles.
 export function isArcadeDisplayConfig(value: unknown): value is ArcadeDisplayConfig {
@@ -113,6 +129,7 @@ export function isArcadeDisplayConfig(value: unknown): value is ArcadeDisplayCon
         && (config.aspectRatio === undefined || (isFiniteNumber(config.aspectRatio) && config.aspectRatio > 0))
         && (config.scaling === undefined || isScalingMode(config.scaling))
         && (config.imageRendering === undefined || config.imageRendering === "pixelated" || config.imageRendering === "smooth")
+        && (config.crop === undefined || isDisplayCrop(config.crop))
         && (config.resizeObserver === undefined || isResizeObserverConstructorLike(config.resizeObserver))
         && (config.fullscreenTarget === undefined || (typeof config.fullscreenTarget === "object" && config.fullscreenTarget !== null))
         && (config.document === undefined || isDisplayDocumentLike(config.document))

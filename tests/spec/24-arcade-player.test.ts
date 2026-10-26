@@ -164,7 +164,7 @@ const gameConfig = (): ArcadeGameConfig => ({
     bios: "default",
     dipswitches: { Difficulty: "Normal" },
     options: { frameskip: 1, samplerate: 48000, enabled: true },
-    display: { scaling: "integer", imageRendering: "smooth" },
+    display: { scaling: "integer", imageRendering: "smooth", crop: { left: 8, right: 12 } },
 });
 
 // HELPER :: fakeArcadeSession?, arcadeGameConfig?, fetchLike? -> playerRig
@@ -267,6 +267,7 @@ const testFile: TestFile = {
                             isArcadeGameConfig(replacing(game as unknown as Record<string, unknown>, "options", { bad: {} })),
                             isArcadeGameConfig(replacing(game as unknown as Record<string, unknown>, "display", { scaling: "zoom" })),
                             isArcadeGameConfig(replacing(game as unknown as Record<string, unknown>, "display", { imageRendering: "crisp" })),
+                            isArcadeGameConfig(replacing(game as unknown as Record<string, unknown>, "display", { crop: { left: -1, right: 0 } })),
                         ],
                         validConfig: isArcadePlayerConfig(config),
                         badConfig: [
@@ -283,7 +284,7 @@ const testFile: TestFile = {
                 }, P.equals<unknown>({
                     statuses: [true, true, true, true, true], badStatus: false,
                     selections: [true, true, true], badSelections: [false, false, false, false],
-                    validGame: true, validMameGame: true, badGame: [false, false, false, false, false, false, false, false, false, false, false],
+                    validGame: true, validMameGame: true, badGame: [false, false, false, false, false, false, false, false, false, false, false, false],
                     validConfig: true, badConfig: [false, false, false, false, false, false],
                     validEvents: true, badEvents: [false, false, false, false],
                 }))

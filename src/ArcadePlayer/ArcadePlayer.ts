@@ -686,6 +686,7 @@ export default class ArcadePlayer {
         const display: { -readonly [K in keyof ArcadeDisplayConfig]: ArcadeDisplayConfig[K] } = { canvas, container };
         if (game.display?.scaling !== undefined) display.scaling = game.display.scaling;
         if (game.display?.imageRendering !== undefined) display.imageRendering = game.display.imageRendering;
+        if (game.display?.crop !== undefined) display.crop = game.display.crop;
         return display;
     }
 

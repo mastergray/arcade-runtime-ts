@@ -10,6 +10,7 @@ import {
     isFiniteNumber,                                               // Guards button, axis and dead-zone numbers
     isFrameScheduler,                                             // Guards the injected polling clock
     type ArcadeButtonIndex,                                       // Logical action-button number
+    type ArcadeAxis,                                              // Logical axis passed through live settings
     type ArcadeControl,                                           // Active controls returned by controlsFor
     type ArcadeDirection,                                         // Active directions returned by directionsFor
     type FrameScheduler,                                          // Injectable requestAnimationFrame boundary
@@ -43,6 +44,15 @@ export interface GamepadLike {
 // The method is bound or wrapped by init() so providers never depend on a call-site receiver.
 export interface GamepadProviderLike {
     getGamepads(): ReadonlyArray<GamepadLike | null>;              // Current sparse pad list
+}
+
+// INTERFACE :: one connected physical device reported by the provider
+// player is null when the device is visible but not assigned to a runtime seat.
+export interface GamepadDevice {
+    readonly index: number;
+    readonly id: string;
+    readonly standard: boolean;
+    readonly player: PlayerIndex | null;
 }
 
 // INTERFACE :: one physical button and the operator control it holds while the chord modifier is down
@@ -86,6 +96,7 @@ export interface GamepadSourceConfig {
     readonly visibilityTarget?: KeyboardVisibilityTargetLike;     // visibilitychange target; defaults to target
     readonly deadZone?: number;                                   // Axis threshold in [0, 1); defaults to 0.25
     readonly mapping?: GamepadMapping;                            // Standard-layout overrides and non-standard opt-in
+    readonly axisFilter?: (axis: ArcadeAxis, value: number) => number;   // Live scaling/inversion supplied by AnalogDriver
 }
 
 // INTERFACE :: gamepadSourceConfig with optional browser dependencies
@@ -98,6 +109,7 @@ export interface GamepadSourceInitConfig {
     readonly visibilityTarget?: KeyboardVisibilityTargetLike;     // Defaults to document with the default window
     readonly deadZone?: number;                                   // Axis threshold in [0, 1); defaults to 0.25
     readonly mapping?: GamepadMapping;                            // Standard-layout overrides and non-standard opt-in
+    readonly axisFilter?: (axis: ArcadeAxis, value: number) => number;   // Live scaling/inversion supplied by AnalogDriver
 }
 
 /**
@@ -202,6 +214,17 @@ export function isGamepadProviderLike(value: unknown): value is GamepadProviderL
 }
 
 // PREDICATE :: UNKNOWN -> BOOLEAN
+// True when value is a public connected-device snapshot.
+export function isGamepadDevice(value: unknown): value is GamepadDevice {
+    if (typeof value !== "object" || value === null) return false;
+    const device = value as GamepadDevice;
+    return Number.isInteger(device.index) && device.index >= 0
+        && typeof device.id === "string"
+        && typeof device.standard === "boolean"
+        && (device.player === null || (Number.isInteger(device.player) && device.player >= 1 && device.player <= 4));
+}
+
+// PREDICATE :: UNKNOWN -> BOOLEAN
 // True when every supplied mapping override is a usable physical index with the required arity.
 export function isGamepadMapping(value: unknown): value is GamepadMapping {
     if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
@@ -231,7 +254,8 @@ export function isGamepadSourceConfig(value: unknown): value is GamepadSourceCon
         && isKeyboardEventTargetLike(config.target)
         && (config.visibilityTarget === undefined || isKeyboardVisibilityTargetLike(config.visibilityTarget))
         && (config.deadZone === undefined || (isFiniteNumber(config.deadZone) && config.deadZone >= 0 && config.deadZone < 1))
-        && (config.mapping === undefined || isGamepadMapping(config.mapping));
+        && (config.mapping === undefined || isGamepadMapping(config.mapping))
+        && (config.axisFilter === undefined || typeof config.axisFilter === "function");
 }
 
 // PREDICATE :: UNKNOWN -> BOOLEAN
@@ -245,7 +269,8 @@ export function isGamepadSourceInitConfig(value: unknown): value is GamepadSourc
         && (config.target === undefined || isKeyboardEventTargetLike(config.target))
         && (config.visibilityTarget === undefined || isKeyboardVisibilityTargetLike(config.visibilityTarget))
         && (config.deadZone === undefined || (isFiniteNumber(config.deadZone) && config.deadZone >= 0 && config.deadZone < 1))
-        && (config.mapping === undefined || isGamepadMapping(config.mapping));
+        && (config.mapping === undefined || isGamepadMapping(config.mapping))
+        && (config.axisFilter === undefined || typeof config.axisFilter === "function");
 }
 
 /**

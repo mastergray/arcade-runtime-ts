@@ -40,6 +40,7 @@ export interface ArcadeAudioConfig {
     readonly session: ArcadeSession;                               // Source of interleaved stereo SoundEvents
     readonly gestureSource: GestureSourceLike;                     // Target whose first gesture unlocks sound
     readonly audioContext: AudioContextLike;                       // Context receiving de-interleaved buffers
+    readonly volume?: number;                                     // Initial playback gain in [0, 1]; defaults to 1
 }
 
 // INTERFACE :: {dropQueuedFrames:NUMBER, dropIncomingFrames:NUMBER}
@@ -85,7 +86,11 @@ export function isArcadeAudioConfig(value: unknown): value is ArcadeAudioConfig 
     return typeof value === "object" && value !== null
         && isArcadeSession((value as ArcadeAudioConfig).session)
         && isGestureSourceLike((value as ArcadeAudioConfig).gestureSource)
-        && isAudioContextLike((value as ArcadeAudioConfig).audioContext);
+        && isAudioContextLike((value as ArcadeAudioConfig).audioContext)
+        && ((value as ArcadeAudioConfig).volume === undefined
+            || (isFiniteNumber((value as ArcadeAudioConfig).volume)
+                && (value as ArcadeAudioConfig).volume! >= 0
+                && (value as ArcadeAudioConfig).volume! <= 1));
 }
 
 /**

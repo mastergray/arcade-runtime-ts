@@ -57,7 +57,8 @@ export default class ArcadeAudio {
     private readonly _session: ArcadeAudioConfig["session"];       // Interleaved stereo source
     private readonly _gestureSource: GestureSourceLike;            // Gesture listener target
     private readonly _context: AudioContextLike;                   // Playback clock and node factory
-    private readonly _gain: GainNode;                              // Single mute node feeding the destination
+    private readonly _muteGain: GainNode;                          // Mute gate independent of volume
+    private readonly _volumeGain: GainNode;                        // Normalized playback level feeding the destination
     private readonly _unsubscribeSound: Unsubscribe;               // Removes the onSound listener
     private _pending: StereoChunk[] = [];                          // Copied chunks not scheduled yet, oldest first
     private _pendingFrames = 0;                                    // Frames across _pending
@@ -67,6 +68,7 @@ export default class ArcadeAudio {
     private _restartTrimmed = false;                               // Whether the next flush restarts trimmed audio at the clock with no lead
     private _armed: Unsubscribe | null = null;                     // Gesture-listener remover, or null
     private _muted = false;                                        // Whether gain is zero
+    private _volume: number;                                       // Requested playback level in [0, 1]
     private _destroyed = false;                                    // Whether destroy() ran
 
     // CONSTRUCTOR :: arcadeAudioConfig -> this
@@ -77,9 +79,13 @@ export default class ArcadeAudio {
         this._session = config.session;
         this._gestureSource = config.gestureSource;
         this._context = config.audioContext;
+        this._volume = config.volume ?? 1;
         try {
-            this._gain = this._context.createGain();
-            this._gain.connect(this._context.destination);
+            this._muteGain = this._context.createGain();
+            this._volumeGain = this._context.createGain();
+            this._volumeGain.gain.value = this._volume;
+            this._muteGain.connect(this._volumeGain);
+            this._volumeGain.connect(this._context.destination);
         } catch (error) {
             throw ArcadeAudio.audioFailed("The audio gain could not be created.", error);
         }
@@ -102,6 +108,18 @@ export default class ArcadeAudio {
     // Whether the mute gain is zero by request.
     get isMuted(): boolean {
         return this._muted;
+    }
+
+    // GETTER :: VOID -> NUMBER
+    // Requested playback level, independent of mute state.
+    get volume(): number { return this._volume; }
+
+    // SETTER :: NUMBER -> VOID
+    // Applies a normalized playback level without changing mute state.
+    set volume(value: number) {
+        if (!Number.isFinite(value) || value < 0 || value > 1) throw ArcadeAudio.invalidConfig(value);
+        this._volume = value;
+        this._volumeGain.gain.value = value;
     }
 
     // GETTER :: VOID -> NUMBER
@@ -166,14 +184,14 @@ export default class ArcadeAudio {
     // Sets gain to zero while samples continue to flow.
     mute(): void {
         this._muted = true;
-        this._gain.gain.value = 0;
+        this._muteGain.gain.value = 0;
     }
 
     // INSTANCE :: VOID -> VOID
     // Restores gain to one.
     unmute(): void {
         this._muted = false;
-        this._gain.gain.value = 1;
+        this._muteGain.gain.value = 1;
     }
 
     // INSTANCE :: VOID -> VOID
@@ -245,7 +263,7 @@ export default class ArcadeAudio {
             buffer.getChannelData(1).set(right);
             source = this._context.createBufferSource();
             source.buffer = buffer;
-            source.connect(this._gain);
+            source.connect(this._muteGain);
             const now = this._context.currentTime;
             const lead = this._restartTrimmed ? 0 : ArcadeAudio.LEAD_SECONDS;
             const startTime = this._nextStartTime > now ? this._nextStartTime : now + lead;

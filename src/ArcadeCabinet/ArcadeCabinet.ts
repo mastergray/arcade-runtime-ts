@@ -2,16 +2,18 @@
 
 // Dependencies:
 import ArcadePlayer from "../ArcadePlayer/ArcadePlayer.js";       // Owned player lifecycle
+import AnalogDriver from "../AnalogDriver/AnalogDriver.js";       // Per-session keyboard ramps and gamepad filtering
 import ArcadeRomStore from "../ArcadeRomStore/ArcadeRomStore.js";   // Optional browser-local ROM persistence
 import ArcadeRuntimeError from "../ArcadeRuntimeError/ArcadeRuntimeError.js";   // Sole public failure type
 import ArcadeStorage from "../ArcadeStorage/ArcadeStorage.js";   // Optional overlay persistence
 import GamepadSource from "../GamepadSource/GamepadSource.js";   // Per-player physical gamepad source
 import KeyboardSource, { DEFAULT_KEYBOARD_MAP } from "../KeyboardSource/KeyboardSource.js";   // Physical keyboard source and default map
-import { isRomFile, isRomName } from "../shared.types.js";       // ROM-store source classification
+import { isAnalogSettings, isRomFile, isRomName } from "../shared.types.js";   // Live settings and ROM-store source classification
 import { isArcadeCabinetConfig, isArcadeCabinetInitConfig } from "./types.js";   // Public config guards
 
 // Type dependencies:
 import type {
+    AnalogSettings,                                                // Restart-persistent analogue tuning
     ArcadeAdapter,                                                 // Resolved init backend
     FetchLike,                                                     // Player transport injection
     FrameScheduler,                                                // Injected gamepad polling clock
@@ -63,6 +65,12 @@ type PreparedConfig = ArcadeCabinetConfig & { readonly [PREPARED]?: PreparedCons
 const PREPARED: unique symbol = Symbol("ArcadeCabinet prepared construction");   // Unexported init-to-constructor handoff
 const URL_SCHEME = /^[A-Za-z][A-Za-z\d+.-]*:/;                  // RFC-style scheme prefix distinguishing URLs from store basenames
 
+// HELPER :: analogSettings -> analogSettings
+// Retains a deep-frozen snapshot for future sessions.
+const analogSettingsCopy = (settings: AnalogSettings = {}): AnalogSettings => Object.freeze(Object.fromEntries(
+    Object.entries(settings).map(([key, setting]) => [key, Object.freeze({ ...setting })]),
+) as AnalogSettings);
+
 /**
  *
  * Functions
@@ -102,6 +110,7 @@ export default class ArcadeCabinet {
     private readonly _gamepadProvider: GamepadProviderLike | null;   // Gamepad snapshots
     private readonly _frameScheduler: FrameScheduler | null;      // Gamepad polling clock
     private readonly _autosave: boolean;                          // Whether hidden visibility requests a save
+    private readonly _audioVolume: number;                        // Volume reapplied to every fresh session
     private readonly _blobSources: ReadonlyArray<BlobRomSource>;  // Picked sources stored only after an ok audit
     private readonly _onVisibilityChange: (event: Event) => void; // Bound autosave listener
     private _unsubscribeExit: Unsubscribe | null = null;          // Persistent player-exit subscription
@@ -110,6 +119,8 @@ export default class ArcadeCabinet {
     private _gamepadsEnabled = true;                              // Restart-persistent gamepad gate
     private _keyboard: KeyboardSource | null = null;              // Live keyboard source while started
     private _gamepads: GamepadSource | null = null;               // Live gamepad source while started
+    private _analog: AnalogDriver | null = null;                  // Live per-session analogue driver
+    private _analogSettings: AnalogSettings;                      // Settings retained across hard resets
     private _isStarted = false;                                   // Whether sources cover a running player
     private _blobsStored = false;                                 // Whether every retained picked blob was stored
     private _blobStorePromise: Promise<void> | null = null;       // Shared in-flight picked-blob write
@@ -139,9 +150,11 @@ export default class ArcadeCabinet {
         this._gamepadProvider = config.gamepadProvider ?? null;
         this._frameScheduler = config.frameScheduler ?? null;
         this._autosave = config.autosave ?? false;
+        this._audioVolume = config.audio?.volume ?? 1;
         this._blobSources = prepared?.blobSources ?? [];
         this._keyboardEnabled = this._controls.keyboard?.enabled ?? true;
         this._gamepadsEnabled = this._controls.gamepads?.enabled ?? true;
+        this._analogSettings = analogSettingsCopy(this._controls.analog);
         this._onVisibilityChange = () => {
             if (!this._autosave || !this._isStarted || this._player.status !== "running"
                 || this._visibilityTarget?.visibilityState !== "hidden") return;
@@ -181,6 +194,10 @@ export default class ArcadeCabinet {
     // GETTER :: VOID -> gamepadSource?
     // Live gamepad source while started with gamepad controls, else null.
     get gamepads(): GamepadSource | null { return this._gamepads; }
+
+    // GETTER :: VOID -> analogSettings
+    // Immutable settings retained for the next session and applied to the live driver.
+    get analogSettings(): AnalogSettings { return this._analogSettings; }
 
     // GETTER :: VOID -> BOOLEAN
     // Live keyboard gate, or false while no keyboard source exists.
@@ -261,6 +278,19 @@ export default class ArcadeCabinet {
         }
     }
 
+    // INSTANCE :: analogSettings -> VOID
+    // Replaces live analogue tuning and retains it for the next fresh session.
+    setAnalogSettings(settings: AnalogSettings): void {
+        this.requireLive();
+        if (!isAnalogSettings(settings)) throw new ArcadeRuntimeError({
+            code: ArcadeRuntimeError.CODE.INVALID_CONFIG,
+            message: "ArcadeCabinet analogue settings are invalid.",
+            data: settings,
+        });
+        this._analogSettings = analogSettingsCopy(settings);
+        this._analog?.update(this._analogSettings);
+    }
+
     // INSTANCE :: VOID -> PROMISE(BOOLEAN)
     // Persists a non-null player overlay into configured storage; false means nothing changed.
     async save(): Promise<boolean> {
@@ -327,6 +357,15 @@ export default class ArcadeCabinet {
     // Builds configured sources in declaration order over the player's active input.
     private buildControls(): void {
         const input = this._player.input;
+        this._player.audio.volume = this._audioVolume;
+        if (this._frameScheduler !== null && input.machine.inputs.analog.length > 0) {
+            this._analog = new AnalogDriver({
+                input,
+                inputs: input.machine.inputs.analog,
+                settings: this._analogSettings,
+                scheduler: this._frameScheduler,
+            });
+        }
         const keyboard = this._controls.keyboard;
         if (keyboard !== undefined) {
             if (this._keyboardTarget === null) throw ArcadeCabinet.invalidConfig();
@@ -353,6 +392,7 @@ export default class ArcadeCabinet {
                 ...(this._visibilityTarget === null ? {} : { visibilityTarget: this._visibilityTarget }),
                 ...(gamepads.deadZone === undefined ? {} : { deadZone: gamepads.deadZone }),
                 ...(gamepads.mapping === undefined ? {} : { mapping: gamepads.mapping }),
+                ...(this._analog === null ? {} : { axisFilter: (axis, value) => this._analog?.axisFilter(axis, value) ?? value }),
             });
             this._gamepads = source;
             source.enabled = this._gamepadsEnabled;
@@ -367,7 +407,7 @@ export default class ArcadeCabinet {
     private followPlayerStatus(status: ArcadePlayerStatus): void {
         if (!this._isStarted) return;
         if (status === "starting") this.detachSources();
-        else if (status === "running" && this._keyboard === null && this._gamepads === null) this.buildControls();
+        else if (status === "running" && this._keyboard === null && this._gamepads === null && this._analog === null) this.buildControls();
         else if (status === "idle") this.teardownControls();
     }
 
@@ -380,6 +420,9 @@ export default class ArcadeCabinet {
         const keyboard = this._keyboard;
         this._keyboard = null;
         try { keyboard?.destroy(); } catch { /* Player natural exit destroys input channels before emitting exit. */ }
+        const analog = this._analog;
+        this._analog = null;
+        try { analog?.destroy(); } catch { /* Player natural exit destroys input channels before emitting exit. */ }
     }
 
     // PRIVATE :: VOID -> VOID
@@ -470,6 +513,10 @@ export default class ArcadeCabinet {
 
         const keyboardTarget = config.keyboardTarget ?? browserWindow;
         if (controls?.keyboard !== undefined && keyboardTarget === undefined) throw ArcadeCabinet.unsupported("window keyboard events");
+        if (controls?.analog !== undefined && (browserWindow === undefined
+            || typeof browserWindow.requestAnimationFrame !== "function" || typeof browserWindow.cancelAnimationFrame !== "function")) {
+            throw ArcadeCabinet.unsupported("animation frames for analogue settings");
+        }
         if (controls?.gamepads !== undefined && (browserWindow === undefined
             || browserNavigator === undefined || typeof browserNavigator.getGamepads !== "function"
             || typeof browserWindow.requestAnimationFrame !== "function" || typeof browserWindow.cancelAnimationFrame !== "function")) {
@@ -507,6 +554,7 @@ export default class ArcadeCabinet {
             ...(config.storage === undefined ? {} : { storage: config.storage }),
             ...(config.romStore === undefined ? {} : { romStore: config.romStore }),
             ...(config.autosave === undefined ? {} : { autosave: config.autosave }),
+            ...(config.audio === undefined ? {} : { audio: config.audio }),
         };
         if (keyboardTarget !== undefined) direct.keyboardTarget = keyboardTarget as unknown as KeyboardEventTargetLike;
         if (browserWindow !== undefined) direct.eventTarget = browserWindow as unknown as KeyboardEventTargetLike;

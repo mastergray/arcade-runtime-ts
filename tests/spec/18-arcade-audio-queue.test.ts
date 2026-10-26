@@ -316,6 +316,8 @@ const testFile: TestFile = {
                         badContextObject: isAudioContextLike(null),
                         badContextFields: Object.entries(contextFields).map(([key, value]) => isAudioContextLike(replacing(validContext, key, value))),
                         validConfig: isArcadeAudioConfig({ session, gestureSource: gesture, audioContext: validContext }),
+                        validVolume: isArcadeAudioConfig({ session, gestureSource: gesture, audioContext: validContext, volume: 0.25 }),
+                        badVolume: isArcadeAudioConfig({ session, gestureSource: gesture, audioContext: validContext, volume: 1.1 }),
                         badSession: isArcadeAudioConfig({ session: {}, gestureSource: gesture, audioContext: validContext }),
                         badGesture: isArcadeAudioConfig({ session, gestureSource: {}, audioContext: validContext }),
                         badContext: isArcadeAudioConfig({ session, gestureSource: gesture, audioContext: {} }),
@@ -329,6 +331,8 @@ const testFile: TestFile = {
                     badContextObject: false,
                     badContextFields: [false, false, false, false, false, false, false, false, false],
                     validConfig: true,
+                    validVolume: true,
+                    badVolume: false,
                     badSession: false,
                     badGesture: false,
                     badContext: false,
@@ -513,6 +517,26 @@ const testFile: TestFile = {
                 .assert("gain toggles zero to one without consuming audio", (state) => state.subject, P.equals<unknown>({
                     muted: { isMuted: true, gain: 0, queuedMs: 20 },
                     unmuted: { isMuted: false, gain: 1, queuedMs: 20 },
+                }))
+                .start(undefined),
+        },
+        {
+            label: "volume uses a second gain node and remains independent from mute",
+            run: () => CTGTest.init("volume gain")
+                .stage("set volume around a mute cycle", () => {
+                    const { context, audio } = rig();
+                    audio.volume = 0.35;
+                    audio.mute();
+                    const muted = { volume: audio.volume, muteGain: context.gains[0]?.gain.value, volumeGain: context.gains[1]?.gain.value };
+                    audio.unmute();
+                    const unmuted = { volume: audio.volume, muteGain: context.gains[0]?.gain.value, volumeGain: context.gains[1]?.gain.value };
+                    return { gains: context.gains.length, muted, unmuted, bad: errorOf(thrownBy(() => { audio.volume = -0.1; })) };
+                })
+                .assert("the volume gain survives mute and validates its normalized range", (state) => state.subject, P.equals<unknown>({
+                    gains: 2,
+                    muted: { volume: 0.35, muteGain: 0, volumeGain: 0.35 },
+                    unmuted: { volume: 0.35, muteGain: 1, volumeGain: 0.35 },
+                    bad: { isRuntimeError: true, code: 1, label: "INVALID_CONFIG" },
                 }))
                 .start(undefined),
         },

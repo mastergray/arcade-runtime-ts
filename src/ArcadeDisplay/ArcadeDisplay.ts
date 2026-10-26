@@ -17,7 +17,9 @@ import {
 } from "../shared.types.js";
 import {
     isArcadeDisplayConfig,                                         // Runtime guard for construction config
+    isDisplayCrop,                                                 // Guards mutable native-column crop
     type ArcadeDisplayConfig,                                      // Construction dependencies and page options
+    type DisplayCrop,                                              // Native side-border crop
     type DisplayDocumentLike,                                      // Injected fullscreen document boundary
     type ExitFullscreen,                                           // Injected fullscreen exit operation
     type LayoutEvent,                                              // Applied rectangle plus scale
@@ -72,6 +74,7 @@ export default class ArcadeDisplay {
     private _scalingOverride: boolean;                             // Whether orientation and container shape may select the mode
     private _aspectRatio: number;                                  // Display aspect preserved by layout
     private _scaling: ScalingMode;                                 // Current effective scaling mode
+    private _crop: DisplayCrop;                                    // Requested native columns hidden at each side
     private _machineOrientation: "horizontal" | "vertical" | null = null;   // Attached machine orientation
     private _containerRect: Rect;                                  // Last measured container rectangle
     private _frameSize: FrameSize = { width: 0, height: 0 };        // Native dimensions, 0×0 before attach
@@ -98,6 +101,7 @@ export default class ArcadeDisplay {
         this._scalingOverride = config.scaling !== undefined;
         this._aspectRatio = config.aspectRatio ?? ArcadeDisplay.DEFAULT_ASPECT_RATIO;
         this._scaling = config.scaling ?? ArcadeDisplay.DEFAULT_SCALING;
+        this._crop = Object.freeze({ left: config.crop?.left ?? 0, right: config.crop?.right ?? 0 });
         this._containerRect = ArcadeDisplay.contentRectOf(config.container);
         this._canvas.style.imageRendering = config.imageRendering === "smooth"
             ? "auto"
@@ -150,6 +154,21 @@ export default class ArcadeDisplay {
         if (!isScalingMode(value)) throw ArcadeDisplay.invalidConfig("scaling must be \"fit\", \"integer\", \"fill-height\" or \"stretch\".", value);
         this._scalingOverride = true;
         this._scaling = value;
+        this.updateLayout();
+    }
+
+    // GETTER :: VOID -> displayCrop
+    // Native columns currently hidden at the two side edges.
+    get crop(): DisplayCrop { return this._crop; }
+
+    // SETTER :: displayCrop -> VOID
+    // Replaces the side crop and re-lays out against the cropped frame aspect.
+    set crop(value: DisplayCrop) {
+        if (!isDisplayCrop(value)) throw ArcadeDisplay.invalidConfig("crop must contain non-negative integer left and right columns.", value);
+        if (this._frameSize.width > 0 && value.left + value.right >= this._frameSize.width) {
+            throw ArcadeDisplay.invalidConfig("crop must leave at least one visible native column.", value);
+        }
+        this._crop = Object.freeze({ left: value.left, right: value.right });
         this.updateLayout();
     }
 
@@ -368,14 +387,39 @@ export default class ArcadeDisplay {
     // PRIVATE :: VOID -> layoutEvent
     // Computes the centered rectangle and applies its dimensions to the canvas CSS
     private applyLayout(): LayoutEvent {
-        const rect = ArcadeDisplay.layoutFor(this._containerRect, this._frameSize, this._aspectRatio, this._scaling);
+        const crop = this.effectiveCrop();
+        const frameWidth = this._frameSize.width > 0 && this._frameSize.height > 0
+            ? this._frameSize.width
+            : ArcadeDisplay.DEFAULT_FRAME.width;
+        const visibleWidth = frameWidth - crop.left - crop.right;
+        const croppedAspect = this._aspectRatio * (visibleWidth / frameWidth);
+        const rect = ArcadeDisplay.layoutFor(this._containerRect, { width: visibleWidth, height: this._frameSize.height }, croppedAspect, this._scaling);
         const nativeWidth = this._frameSize.width > 0 && this._frameSize.height > 0
             ? this._frameSize.width
             : ArcadeDisplay.DEFAULT_FRAME.width;
-        const layout: LayoutEvent = { ...rect, scale: rect.width / nativeWidth };
+        const layout: LayoutEvent = { ...rect, scale: rect.width / visibleWidth };
+        const leftPercent = crop.left / nativeWidth * 100;
+        const rightPercent = crop.right / nativeWidth * 100;
+        const horizontalScale = nativeWidth / visibleWidth;
+        const croppedColumns = crop.left + crop.right;
+        const origin = croppedColumns === 0 ? 50 : crop.left / croppedColumns * 100;
         this._canvas.style.width = `${layout.width}px`;
         this._canvas.style.height = `${layout.height}px`;
+        this._canvas.style.clipPath = `inset(0 ${rightPercent}% 0 ${leftPercent}%)`;
+        this._canvas.style.transform = `scaleX(${horizontalScale})`;
+        this._canvas.style.transformOrigin = `${origin}% 50%`;
         return layout;
+    }
+
+    // PRIVATE :: VOID -> displayCrop
+    // Clamps a retained pre-attach crop only when a later dynamic frame becomes narrower.
+    private effectiveCrop(): DisplayCrop {
+        const width = this._frameSize.width > 0 && this._frameSize.height > 0
+            ? this._frameSize.width
+            : ArcadeDisplay.DEFAULT_FRAME.width;
+        const left = Math.min(this._crop.left, Math.max(0, width - 1));
+        const right = Math.min(this._crop.right, Math.max(0, width - left - 1));
+        return { left, right };
     }
 
     /**

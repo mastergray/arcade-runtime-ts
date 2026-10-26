@@ -16,7 +16,7 @@ import FakeArcadeAdapter from "../support/FakeArcadeAdapter.ts"; // Required ada
 import FakeArcadeSession from "../support/FakeArcadeSession.ts"; // Required session double
 import FakeFrameScheduler from "../support/FakeFrameScheduler.ts";   // Required gamepad scheduler double
 import FailingIndexedDB from "../support/FailingIndexedDB.ts";   // Scriptable in-memory IDBFactoryLike
-import { errorSnapshot, rejectedBy, thrownBy } from "../support/fixtures.ts";   // Stable error captures
+import { errorSnapshot, rejectedBy, thrownBy, validMachineInfo } from "../support/fixtures.ts";   // Stable error captures
 
 // Type dependencies:
 import type { ArcadeCabinetConfig, ArcadeControlsConfig } from "../../src/ArcadeCabinet/types.ts";   // Config fixtures
@@ -215,6 +215,7 @@ const rig = (controls?: ArcadeControlsConfig, options: {
     readonly romStore?: ArcadeRomStore;
     readonly autosave?: boolean;
     readonly scheduler?: FakeFrameScheduler;
+    readonly audio?: { readonly volume?: number };
 } = {}): CabinetRig => {
     const session = options.session ?? new FakeArcadeSession();
     const adapter = new FakeArcadeAdapter().script("resolve", session);
@@ -239,6 +240,7 @@ const rig = (controls?: ArcadeControlsConfig, options: {
         ...(options.storage === undefined ? {} : { storage: options.storage }),
         ...(options.romStore === undefined ? {} : { romStore: options.romStore }),
         ...(options.autosave === undefined ? {} : { autosave: options.autosave }),
+        ...(options.audio === undefined ? {} : { audio: options.audio }),
     });
     return { adapter, session, target, provider, scheduler, player, cabinet };
 };
@@ -317,11 +319,14 @@ const testFile: TestFile = {
                         controls: isArcadeControlsConfig(controls),
                         badKeyboard: isArcadeControlsConfig({ keyboard: { enabled: "yes" } }),
                         badGamepads: isArcadeControlsConfig({ gamepads: { deadZone: 1 } }),
+                        badAnalog: isArcadeControlsConfig({ analog: { "p1:stick-x": { travel: 5 } } }),
                         badGamepadMapping: isArcadeControlsConfig({ gamepads: { mapping: { chords: { modifier: -1 } } } }),
                         badTouch: isArcadeControlsConfig({ buttons: [{ surface: {}, control: { kind: "test" } }] }),
                         direct: isArcadeCabinetConfig(direct),
                         missingKeyboardTarget: isArcadeCabinetConfig({ ...direct, keyboardTarget: undefined }),
                         init: isArcadeCabinetInitConfig(init),
+                        initAudio: isArcadeCabinetInitConfig({ ...init, audio: { volume: 0.25 } }),
+                        badInitAudio: isArcadeCabinetInitConfig({ ...init, audio: { volume: -0.1 } }),
                         bothAdapters: isArcadeCabinetInitConfig({ ...init, adapterConfig: { buildUrl: "/build/" } }),
                         touchError: errorOf(thrownBy(() => new ArcadeCabinet(direct))),
                     };
@@ -332,11 +337,14 @@ const testFile: TestFile = {
                     controls: true,
                     badKeyboard: false,
                     badGamepads: false,
+                    badAnalog: false,
                     badGamepadMapping: false,
                     badTouch: false,
                     direct: true,
                     missingKeyboardTarget: false,
                     init: true,
+                    initAudio: true,
+                    badInitAudio: false,
                     bothAdapters: false,
                     touchError: UNSUPPORTED,
                 }))
@@ -438,6 +446,45 @@ const testFile: TestFile = {
                     firstCalls: ["setControl", "setControl", "persist", "exit"],
                     secondHeld: ["p1:button:1" as ArcadeControlKey, "p1:direction:up" as ArcadeControlKey],
                     listenersAfterDestroy: 0,
+                }))
+                .start(undefined),
+        },
+        {
+            label: "analogue settings update live and persist with audio volume across a fresh session",
+            run: () => CTGTest.init("ArcadeCabinet analogue and audio surfaces")
+                .stage("change a running slope, exit, and start again", () => withAudioContext(async () => {
+                    const machine = { ...validMachineInfo(), inputs: {
+                        analog: [{ player: 1 as const, kind: "stick-x" as const }], dualStick: false, keys: [], volume: false,
+                    } };
+                    const first = new FakeArcadeSession(machine);
+                    const setup = rig({
+                        analog: { "p1:stick-x": { keySpeed: 0.1, centreSpeed: 0 } },
+                        keyboard: { map: { KeyT: { kind: "stick", player: 1, stick: 1, direction: "right" } } },
+                    }, { session: first, audio: { volume: 0.25 } });
+                    await setup.cabinet.start();
+                    setup.target.dispatch("keydown", { code: "KeyT", repeat: false });
+                    setup.scheduler.tick(16);
+                    const initial = { axes: setup.player.input.axes, held: first.held, volume: setup.player.audio.volume };
+                    setup.cabinet.setAnalogSettings({ "p1:stick-x": { keySpeed: 0.3, centreSpeed: 0, invert: true } });
+                    setup.scheduler.tick(16);
+                    const live = { axes: setup.player.input.axes, settings: setup.cabinet.analogSettings };
+                    first.emitExit();
+                    const second = new FakeArcadeSession(machine);
+                    setup.adapter.script("resolve", second);
+                    await setup.cabinet.start();
+                    setup.target.dispatch("keydown", { code: "KeyT", repeat: false });
+                    setup.scheduler.tick(16);
+                    const restarted = { axes: setup.player.input.axes, volume: setup.player.audio.volume };
+                    await setup.cabinet.destroy();
+                    return { initial, live, restarted };
+                }))
+                .assert("the live driver and new audio instance both receive retained values", (state) => state.subject, P.equals<unknown>({
+                    initial: { axes: [{ axis: { player: 1, kind: "stick-x" }, value: 0.1 }], held: [], volume: 0.25 },
+                    live: {
+                        axes: [{ axis: { player: 1, kind: "stick-x" }, value: -0.4 }],
+                        settings: { "p1:stick-x": { keySpeed: 0.3, centreSpeed: 0, invert: true } },
+                    },
+                    restarted: { axes: [{ axis: { player: 1, kind: "stick-x" }, value: -0.3 }], volume: 0.25 },
                 }))
                 .start(undefined),
         },
@@ -624,6 +671,7 @@ const testFile: TestFile = {
                     const setup = rig();
                     const keyboard = errorOf(thrownBy(() => { setup.cabinet.keyboardEnabled = "yes" as unknown as boolean; }));
                     const gamepads = errorOf(thrownBy(() => { setup.cabinet.gamepadsEnabled = 1 as unknown as boolean; }));
+                    const analog = errorOf(thrownBy(() => setup.cabinet.setAnalogSettings({ "p1:stick-x": { travel: 0 } })));
                     let fullscreenCalls = 0;
                     let exitFullscreenCalls = 0;
                     setup.player.fullscreen = async () => { fullscreenCalls++; };
@@ -638,11 +686,12 @@ const testFile: TestFile = {
                     };
                     await setup.cabinet.destroy();
                     const destroyed = errorOf(await rejectedBy(setup.cabinet.audit()));
-                    return { keyboard, gamepads, fullscreenCalls, exitFullscreenCalls, getters, destroyed };
+                    return { keyboard, gamepads, analog, fullscreenCalls, exitFullscreenCalls, getters, destroyed };
                 })
                 .assert("setter values and terminal use are typed", (state) => state.subject, P.equals<unknown>({
                     keyboard: INVALID_CONFIG,
                     gamepads: INVALID_CONFIG,
+                    analog: INVALID_CONFIG,
                     fullscreenCalls: 1,
                     exitFullscreenCalls: 1,
                     getters: { player: true, storage: true, romStore: true, mapper: true },

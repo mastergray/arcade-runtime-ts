@@ -9,6 +9,7 @@ export { default as MameEmulatorAdapter } from "./MameEmulatorAdapter/MameEmulat
 export { default as ArcadeDisplay } from "./ArcadeDisplay/ArcadeDisplay.js";                 // Canvas sizing, drawing, placeholder and fullscreen
 export { default as ArcadeAudio } from "./ArcadeAudio/ArcadeAudio.js";                       // Stereo Web Audio playback, gesture unlock and bounded latency
 export { default as ArcadeInput } from "./ArcadeInput/ArcadeInput.js";                       // Channelled, reference-counted control holds
+export { default as AnalogDriver } from "./AnalogDriver/AnalogDriver.js";                   // Keyboard analogue integration and gamepad axis filtering
 export { default as ArcadePlayer } from "./ArcadePlayer/ArcadePlayer.js";                     // Composition root for one running machine
 export { DEFAULT_KEYBOARD_MAP, default as KeyboardSource } from "./KeyboardSource/KeyboardSource.js";   // Physical keyboard to ArcadeInput
 export { default as GamepadSource, DEFAULT_GAMEPAD_CHORDS } from "./GamepadSource/GamepadSource.js";   // Polled Gamepad API to per-player ArcadeInput channels; default operator chords
@@ -20,6 +21,7 @@ export { default as ArcadeCabinet } from "./ArcadeCabinet/ArcadeCabinet.js";    
 // Shared helpers:
 export {
     arcadeControlKey,                                              // Canonical string key for an ArcadeControl
+    DEFAULT_ANALOG_SETTING,                                       // Shared analogue tuning defaults
     romNameKey,                                                    // Case-folded comparison key for a ROM name
 } from "./shared.types.js";
 
@@ -43,6 +45,8 @@ export {
     isArcadeButtonCount,                                           // Guard for ArcadeButtonCount
     isArcadeAxis,                                                  // Guard for ArcadeAxis (M11)
     isArcadeAxisKind,                                              // Guard for ArcadeAxisKind (M11)
+    isAnalogSetting,                                               // Guard for one analogue tuning value
+    isAnalogSettings,                                              // Guard for a per-player/kind analogue tuning map
     isArcadeControl,                                               // Guard for ArcadeControl
     isArcadeKeyName,                                               // Guard for ArcadeKeyName (W29)
     isOrientation,                                                 // Guard for Orientation
@@ -90,6 +94,8 @@ export type {
     ArcadeButtonCount,                                             // Number of action buttons
     ArcadeAxis,                                                    // Logical analogue axis (M11)
     ArcadeAxisKind,                                                // Axis kinds (M11)
+    AnalogSetting,                                                 // Optional tuning for one analogue port
+    AnalogSettings,                                                // Per-player/kind analogue settings map
     ArcadeControl,                                                 // Digital control union
     ArcadeControlKey,                                              // Canonical control string
     Orientation,                                                   // Cabinet monitor orientation
@@ -124,10 +130,12 @@ export {
 } from "./MameEmulatorAdapter/types.js";
 export {
     isArcadeDisplayConfig,                                         // Guard for ArcadeDisplayConfig
+    isDisplayCrop,                                                 // Guard for native-column side crop
     isDisplayDocumentLike,                                         // Guard for DisplayDocumentLike
     isLayoutEvent,                                                 // Guard for LayoutEvent
     isResizeObserverConstructorLike,                               // Guard for ResizeObserverConstructorLike
     type ArcadeDisplayConfig,                                      // Display construction config
+    type DisplayCrop,                                              // Native columns hidden from the frame sides
     type DisplayDocumentLike,                                      // Injected fullscreen document boundary
     type ExitFullscreen,                                           // Injected fullscreen exit operation
     type LayoutEvent,                                              // Applied rectangle plus scale
@@ -146,9 +154,15 @@ export {
 export {
     isArcadeInputChannel,                                          // Guard for ArcadeInputChannel
     isArcadeInputConfig,                                           // Guard for ArcadeInputConfig
+    isArcadeInputHoldListener,                                     // Guard for an effective-hold observer
     type ArcadeInputChannel,                                       // Independently releasable source channel
     type ArcadeInputConfig,                                        // ArcadeInput construction config
+    type ArcadeInputHoldListener,                                  // Effective press/release observer
 } from "./ArcadeInput/types.js";
+export {
+    isAnalogDriverConfig,                                         // Guard for AnalogDriverConfig
+    type AnalogDriverConfig,                                      // Driver ports, settings, scheduler and input
+} from "./AnalogDriver/types.js";
 export {
     isArcadeAdapterSelection,                                      // Guard for ArcadeAdapterSelection
     isArcadeGameConfig,                                            // Guard for ArcadeGameConfig
@@ -174,6 +188,7 @@ export {
     type KeyboardVisibilityTargetLike,                             // Injected visibility boundary
 } from "./KeyboardSource/types.js";
 export {
+    isGamepadDevice,                                               // Guard for a connected-device snapshot
     isGamepadLike,                                                 // Guard for GamepadLike
     isGamepadMapping,                                              // Guard for GamepadMapping
     isGamepadProviderLike,                                         // Guard for GamepadProviderLike
@@ -181,6 +196,7 @@ export {
     isGamepadSourceInitConfig,                                     // Guard for GamepadSourceInitConfig
     type GamepadChord,                                             // One operator-chord binding
     type GamepadChords,                                            // Chord modifier and bindings
+    type GamepadDevice,                                            // Connected pad identity and assignment
     type GamepadLike,                                              // Gamepad subset the source reads
     type GamepadMapping,                                           // Button and axis index overrides
     type GamepadProviderLike,                                      // Injected navigator.getGamepads boundary

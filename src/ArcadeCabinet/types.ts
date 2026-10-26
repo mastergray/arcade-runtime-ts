@@ -5,6 +5,7 @@ import ArcadePlayer from "../ArcadePlayer/ArcadePlayer.js";       // Resolved pl
 import ArcadeRomStore from "../ArcadeRomStore/ArcadeRomStore.js";   // Optional local ROM store identity
 import ArcadeStorage from "../ArcadeStorage/ArcadeStorage.js";   // Optional overlay storage identity
 import {
+    isAnalogSettings,                                             // Guards per-port live tuning
     isArcadeAdapter,                                               // Guards init's resolved adapter choice
     isArcadeControl,                                               // Guards touch-control declarations reserved for M10
     isFiniteNumber,                                                // Guards dead zones, radii and thresholds
@@ -22,6 +23,7 @@ import {
 
 // Type dependencies:
 import type {
+    AnalogSettings,                                                // Per-player/kind analogue tuning
     ArcadeAdapter,                                                 // Resolved player backend accepted by init
     ArcadeControl,                                                 // Target of keyboard and reserved touch controls
     FetchLike,                                                     // Player transport injection
@@ -46,6 +48,7 @@ import type {
 // INTERFACE :: optional keyboard, gamepad and reserved M10 touch control declarations
 // Presence of keyboard or gamepads creates that source on every successful start.
 export interface ArcadeControlsConfig {
+    readonly analog?: AnalogSettings;                              // Live ramps, travel and inversion by player/kind
     readonly keyboard?: {
         readonly enabled?: boolean;                                // Initial and restart-persistent source gate; true when omitted
         readonly map?: KeyboardMap;                                // init() supplies DEFAULT_KEYBOARD_MAP when omitted
@@ -86,8 +89,9 @@ export interface ArcadeCabinetConfig {
     readonly eventTarget?: KeyboardEventTargetLike;                // Gamepad blur target, required with gamepad controls
     readonly visibilityTarget?: KeyboardVisibilityTargetLike;      // Shared visibility and autosave target
     readonly gamepadProvider?: GamepadProviderLike;                // Required with gamepad controls
-    readonly frameScheduler?: FrameScheduler;                      // Required with gamepad controls
+    readonly frameScheduler?: FrameScheduler;                      // Required with gamepad controls or explicit analogue settings
     readonly autosave?: boolean;                                   // Save on hidden visibility while running
+    readonly audio?: { readonly volume?: number };                // Playback volume reapplied to each session
 }
 
 // INTERFACE :: page-level inputs from which init() resolves a player and browser source dependencies
@@ -104,6 +108,7 @@ export interface ArcadeCabinetInitConfig {
     readonly storage?: ArcadeStorage;                              // Restored only when game.changes is absent
     readonly romStore?: ArcadeRomStore;                            // Resolves bare basenames and receives picked blobs
     readonly autosave?: boolean;                                   // Defaults false
+    readonly audio?: { readonly volume?: number };                // Playback volume reapplied after hard reset
 }
 
 /**
@@ -139,6 +144,11 @@ const isGamepadControl = (value: unknown): boolean => isObject(value)
     && (value.enabled === undefined || typeof value.enabled === "boolean")
     && isOptionalDeadZone(value.deadZone)
     && (value.mapping === undefined || isGamepadMapping(value.mapping));
+
+// PREDICATE :: UNKNOWN -> BOOLEAN
+// True when value is an optional normalized playback-volume declaration.
+const isAudioControl = (value: unknown): boolean => isObject(value)
+    && (value.volume === undefined || (isFiniteNumber(value.volume) && value.volume >= 0 && value.volume <= 1));
 
 // PREDICATE :: UNKNOWN -> BOOLEAN
 // True when value is one structurally valid reserved M10 button declaration.
@@ -188,7 +198,8 @@ const isContainerLike = (value: unknown): value is HTMLElement => isObject(value
 // True when every supplied source and reserved touch declaration is structurally valid.
 export function isArcadeControlsConfig(value: unknown): value is ArcadeControlsConfig {
     if (!isObject(value)) return false;
-    return (value.keyboard === undefined || isKeyboardControl(value.keyboard))
+    return (value.analog === undefined || isAnalogSettings(value.analog))
+        && (value.keyboard === undefined || isKeyboardControl(value.keyboard))
         && (value.gamepads === undefined || isGamepadControl(value.gamepads))
         && isOptionalArrayOf(value.buttons, isButtonControl)
         && isOptionalArrayOf(value.dpads, isDPadControl)
@@ -209,8 +220,10 @@ export function isArcadeCabinetConfig(value: unknown): value is ArcadeCabinetCon
         || (config.visibilityTarget !== undefined && !isKeyboardVisibilityTargetLike(config.visibilityTarget))
         || (config.gamepadProvider !== undefined && !isGamepadProviderLike(config.gamepadProvider))
         || (config.frameScheduler !== undefined && !isFrameScheduler(config.frameScheduler))
-        || (config.autosave !== undefined && typeof config.autosave !== "boolean")) return false;
+        || (config.autosave !== undefined && typeof config.autosave !== "boolean")
+        || (config.audio !== undefined && !isAudioControl(config.audio))) return false;
     if (config.controls?.keyboard !== undefined && config.keyboardTarget === undefined) return false;
+    if (config.controls?.analog !== undefined && config.frameScheduler === undefined) return false;
     if (config.controls?.gamepads !== undefined
         && (config.eventTarget === undefined || config.gamepadProvider === undefined || config.frameScheduler === undefined)) return false;
     return config.autosave !== true || config.visibilityTarget !== undefined;
@@ -234,5 +247,6 @@ export function isArcadeCabinetInitConfig(value: unknown): value is ArcadeCabine
         && (config.fetch === undefined || typeof config.fetch === "function")
         && (config.storage === undefined || config.storage instanceof ArcadeStorage)
         && (config.romStore === undefined || config.romStore instanceof ArcadeRomStore)
-        && (config.autosave === undefined || typeof config.autosave === "boolean");
+        && (config.autosave === undefined || typeof config.autosave === "boolean")
+        && (config.audio === undefined || isAudioControl(config.audio));
 }

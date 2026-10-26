@@ -31,6 +31,11 @@ export interface ArcadeInputChannel {
     destroy(): void;                                              // Releases this channel and makes it unusable
 }
 
+// TYPE :: (arcadeControl, BOOLEAN) -> BOOLEAN | VOID
+// Reports effective first-press and last-release edges. Returning true consumes
+// the session's digital edge, which lets AnalogDriver replace it with setAxis.
+export type ArcadeInputHoldListener = (control: ArcadeControl, pressed: boolean) => boolean | void;
+
 /**
  *
  * Type Predicates
@@ -55,4 +60,10 @@ export function isArcadeInputChannel(value: unknown): value is ArcadeInputChanne
         && typeof channel.setAxis === "function"
         && typeof channel.releaseAll === "function"
         && typeof channel.destroy === "function";
+}
+
+// PREDICATE :: UNKNOWN -> BOOLEAN
+// True when value can observe effective ArcadeInput hold edges.
+export function isArcadeInputHoldListener(value: unknown): value is ArcadeInputHoldListener {
+    return typeof value === "function";
 }
