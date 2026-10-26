@@ -169,7 +169,7 @@ export interface ArcadeAxis {
 // INTERFACE :: optional live tuning for one discovered analogue port
 // Speeds are fractions of full travel per frame; travel applies to gamepad values only.
 export interface AnalogSetting {
-    readonly keySpeed?: number;                                   // Keyboard travel per frame; default 0.02
+    readonly keySpeed?: number;                                   // Keyboard travel per frame on the -1..1 axis; default 0.04 (MAME's four-count key delta on a 192-count port, from centre to full lock in 25 frames)
     readonly centreSpeed?: number;                                // Return travel per frame; defaults by port kind
     readonly travel?: number;                                     // Gamepad travel multiplier in [0.1, 4]
     readonly invert?: boolean;                                    // Negates the value after scaling
@@ -373,10 +373,10 @@ const BUILD_ID_PATTERN = /^[0-9a-f]{64}$/;                                      
 const ROM_NAME_PATTERN = /^[^/\\\0]+$/;                                                                              // No separators or NUL
 
 // Defaults shared by settings UIs and the runtime driver. Hold kinds resolve an
-// omitted centreSpeed to zero in AnalogDriver; centring kinds retain 0.02.
+// omitted centreSpeed to zero in AnalogDriver; centring kinds retain 0.04.
 export const DEFAULT_ANALOG_SETTING: Required<AnalogSetting> = Object.freeze({
-    keySpeed: 0.02,
-    centreSpeed: 0.02,
+    keySpeed: 0.04,
+    centreSpeed: 0.04,
     travel: 1,
     invert: false,
 });

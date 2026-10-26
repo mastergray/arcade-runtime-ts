@@ -55,8 +55,10 @@ const HORIZONTAL_KINDS: ReadonlySet<MachineAnalogKind> = new Set([
 const VERTICAL_KINDS: ReadonlySet<MachineAnalogKind> = new Set([
     "stick-y", "paddle-v", "positional-v", "lightgun-y", "dial-v", "trackball-y", "mouse-y",
 ]);
+// MAME auto-centres sticks and paddles (ioport.c analog_field: AD_STICK and PADDLE set autocenter) and leaves
+// light guns and positional controls where they are, so a steering paddle returns to centre like a stick does.
 const HOLD_KINDS: ReadonlySet<MachineAnalogKind> = new Set([
-    "paddle", "paddle-v", "positional", "positional-v", "lightgun-x", "lightgun-y",
+    "positional", "positional-v", "lightgun-x", "lightgun-y",
 ]);
 const RELATIVE_KINDS: ReadonlySet<MachineAnalogKind> = new Set([
     "dial", "dial-v", "trackball-x", "trackball-y", "mouse-x", "mouse-y",
@@ -119,7 +121,7 @@ export default class AnalogDriver {
     // CONSTRUCTOR :: analogDriverConfig -> this
     // Starts one frame request chain when at least one declared kind has a W26 axis slot.
     // Relative keySpeed is a delta per frame in axis units; the default represents
-    // 0.02 of a port's full scale because port-specific native scales are not served.
+    // 0.04 of a port's full scale because port-specific native scales are not served.
     constructor(config: AnalogDriverConfig) {
         if (!isAnalogDriverConfig(config)) throw AnalogDriver.invalidConfig("AnalogDriver config is invalid.", config);
         this._scheduler = config.scheduler;

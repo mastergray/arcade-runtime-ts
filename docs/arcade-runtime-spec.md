@@ -1269,11 +1269,12 @@ for player 3; the button, coin and start groups retain the pinned choices.
 One driver is owned by `ArcadeCabinet` for each started session whose
 `MachineInfo.inputs.analog` is non-empty. Settings are addressed by
 ``p${PlayerIndex}:${MachineAnalogKind}`` and contain optional `keySpeed`,
-`centreSpeed`, `travel` and `invert` fields. `keySpeed` defaults to 0.02 of
-full travel per frame; centring kinds default `centreSpeed` to `keySpeed`,
+`centreSpeed`, `travel` and `invert` fields. `keySpeed` defaults to 0.04 of
+the −1..1 axis per frame (MAME's four-count key delta on a 192-count port:
+centre to full lock in 25 frames; 2026-10-26, was 0.02 and felt sluggish); centring kinds default `centreSpeed` to `keySpeed`,
 hold kinds default it to zero, `travel` defaults to 1 and `invert` defaults
 to false. `travel` accepts 0.1–4. Relative `keySpeed` is a delta per frame in
-axis units (the default is therefore 0.02 times the port's full scale) and
+axis units (the default is therefore 0.04 times the port's full scale) and
 ignores `centreSpeed`.
 
 The driver observes `stick` and `pedal` holds through `ArcadeInput.onHold`
@@ -1289,8 +1290,9 @@ fresh session receives the retained snapshot.
 | ------------ | -------------- | ----------- |
 | `stick-x`, `stick-y`, `stick-z` | centre | matching stick axis |
 | `pedal-1`, `pedal-2` | return to zero | matching pedal axis |
-| `paddle`, `positional`, `lightgun-x` | hold | `stick-x` |
-| `paddle-v`, `positional-v`, `lightgun-y` | hold | `stick-y` |
+| `paddle`, `paddle-v` | centre (MAME auto-centres paddles; 2026-10-26, was hold) | `stick-x`, `stick-y` |
+| `positional`, `lightgun-x` | hold | `stick-x` |
+| `positional-v`, `lightgun-y` | hold | `stick-y` |
 | `dial`, `trackball-x`, `mouse-x` | relative | `spin-x` |
 | `dial-v`, `trackball-y`, `mouse-y` | relative | `spin-y` |
 | `pedal-3` | native digital increment path | no axis slot |

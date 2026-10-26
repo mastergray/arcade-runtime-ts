@@ -27,7 +27,7 @@ const STICK_X = { player: 1, kind: "stick-x" } as const satisfies ArcadeAxis;
 const SPIN_Y = { player: 4, kind: "spin-y" } as const satisfies ArcadeAxis;
 const INPUTS = Object.freeze([
     { player: 1, kind: "stick-x" },
-    { player: 2, kind: "paddle" },
+    { player: 2, kind: "positional" },
     { player: 3, kind: "pedal-1" },
     { player: 4, kind: "dial-v" },
 ] as const) satisfies MachineInputs["analog"];
@@ -53,7 +53,7 @@ const testFile: TestFile = {
                         config: isAnalogDriverConfig({ input, scheduler, inputs: INPUTS }),
                     };
                 }, P.equals<unknown>({
-                    defaults: { keySpeed: 0.02, centreSpeed: 0.02, travel: 1, invert: false },
+                    defaults: { keySpeed: 0.04, centreSpeed: 0.04, travel: 1, invert: false },
                     setting: true,
                     badTravel: false,
                     settings: true,
@@ -76,7 +76,7 @@ const testFile: TestFile = {
                         inputs: INPUTS,
                         settings: {
                             "p1:stick-x": { keySpeed: 0.1, centreSpeed: 0.05 },
-                            "p2:paddle": { keySpeed: 0.2 },
+                            "p2:positional": { keySpeed: 0.2 },
                             "p3:pedal-1": { keySpeed: 0.4, centreSpeed: 0.25 },
                             "p4:dial-v": { keySpeed: 0.03 },
                         },
@@ -112,6 +112,29 @@ const testFile: TestFile = {
                     released: { stick: 0.25000000000000006, paddle: 0.6000000000000001, pedal: 0.75, relative: -0.03 },
                     pending: 0,
                 }))
+                .start(undefined),
+        },
+        {
+            label: "a paddle centres after release like a stick, because MAME auto-centres paddles",
+            run: () => CTGTest.init("paddle centring")
+                .stage("hold then release a paddle", () => {
+                    const session = new FakeArcadeSession();
+                    const input = new ArcadeInput({ session });
+                    const scheduler = new FakeFrameScheduler();
+                    const keys = input.createChannel();
+                    const driver = new AnalogDriver({ input, scheduler, inputs: [{ player: 1, kind: "paddle" }], settings: { "p1:paddle": { keySpeed: 0.25 } } });
+                    keys.press(STICK_RIGHT);
+                    scheduler.tick(16); scheduler.tick(16);
+                    const held = valueFor(session, 1, "stick-x");
+                    keys.release(STICK_RIGHT);
+                    scheduler.tick(16);
+                    const afterOne = valueFor(session, 1, "stick-x");
+                    scheduler.tick(16);
+                    const afterTwo = valueFor(session, 1, "stick-x");
+                    driver.destroy();
+                    return { held, afterOne, afterTwo };
+                })
+                .assert("the paddle ramps to half and returns to centre in two frames", (state) => state.subject, P.equals<unknown>({ held: 0.5, afterOne: 0.25, afterTwo: 0 }))
                 .start(undefined),
         },
         {

@@ -44,8 +44,9 @@ package root.
 | `stick-z` | centre | `stick-z` |
 | `pedal-1` | return 0–1 to zero | `pedal-1` |
 | `pedal-2` | return 0–1 to zero | `pedal-2` |
-| `paddle`, `positional`, `lightgun-x` | hold | `stick-x` |
-| `paddle-v`, `positional-v`, `lightgun-y` | hold | `stick-y` |
+| `paddle`, `paddle-v` | centre (2026-10-26: MAME auto-centres paddles; was hold, and a steering paddle felt stuck) | `stick-x`, `stick-y` |
+| `positional`, `lightgun-x` | hold | `stick-x` |
+| `positional-v`, `lightgun-y` | hold | `stick-y` |
 | `dial`, `trackball-x`, `mouse-x` | relative delta | `spin-x` |
 | `dial-v`, `trackball-y`, `mouse-y` | relative delta | `spin-y` |
 | `pedal-3` | unchanged digital path | none |
@@ -66,8 +67,10 @@ field is active.
 
 ## Defaults and rationale
 
-- `keySpeed: 0.02`: two percent of full travel per frame, approximately the
-  pinned four-count key delta on a 192-count port.
+- `keySpeed: 0.04` (2026-10-26, was 0.02): four percent of the −1..1 axis per
+  frame, the pinned four-count key delta on a 192-count port (centre to full
+  lock in 25 frames). The earlier value measured the half-range and was twice
+  as slow as MAME's own ramp.
 - `centreSpeed`: omitted values resolve to `keySpeed` for centring kinds and
   zero for hold kinds. Relative kinds ignore it.
 - `travel: 1`: pad travel equals control travel; accepted live multipliers
