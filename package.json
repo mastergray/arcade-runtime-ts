@@ -25,14 +25,16 @@
     "arcade-audit-roms": "./scripts/audit-roms.ts"
   },
   "scripts": {
-    "check": "run-s check:src check:tests",
+    "check": "run-s check:src check:ui check:tests",
     "check:src": "tsc --noEmit",
+    "check:ui": "tsc -p tsconfig.ui.json",
     "check:tests": "tsc -p tsconfig.tests.json",
     "clean": "node scripts/clean-dist.mjs",
     "compile": "tsc",
     "compile:package": "tsc -p tsconfig.package.json",
     "build": "run-s clean compile",
     "build:package": "run-s clean compile:package",
+    "build:ui": "node --import tsx scripts/build-ui.ts",
     "probe:mame:tiny": "scripts/probe-mame0161-tiny.sh",
     "probe:mame:family": "MAME_PROBE_KIND=family scripts/probe-mame0161-tiny.sh",
     "probe:mame:game": "MAME_PROBE_KIND=game scripts/probe-mame0161-tiny.sh",
