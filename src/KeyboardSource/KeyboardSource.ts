@@ -33,9 +33,10 @@ const PASSTHROUGH_KEYS: Readonly<Record<string, ArcadeKeyName>> = Object.freeze(
     Digit5: "5", Digit6: "6", Digit7: "7", Digit8: "8", Digit9: "9",
 });                                                               // Browser codes whose field-level MAME meanings remain reachable
 
-// MAME 0.161 src/emu/inpttype.h defaults are used for P2: R/F/D/G directions,
-// A/S/Q/W buttons 1–4, Digit6 coin and Digit2 start. P2 buttons 5–6 have no
-// keyboard defaults in that pinned file, so this map deliberately leaves them unbound.
+// MAME 0.161 src/emu/inpttype.h defaults are used for P2 and for the P3/P4
+// button, coin and start groups. The two later direction clusters are swapped:
+// P3 uses the Numpad arrows requested by the page contract, while P4 uses I/J/K/L.
+// Buttons 4–6 for P3/P4 have no pinned defaults and remain deliberately unbound.
 export const DEFAULT_KEYBOARD_MAP: KeyboardMap = Object.freeze({
     ArrowUp: frozenControl({ kind: "direction", player: 1, direction: "up" }),
     ArrowDown: frozenControl({ kind: "direction", player: 1, direction: "down" }),
@@ -65,6 +66,24 @@ export const DEFAULT_KEYBOARD_MAP: KeyboardMap = Object.freeze({
     KeyW: frozenControl({ kind: "button", player: 2, button: 4 }),
     Digit6: frozenControl({ kind: "coin", player: 2 }),
     Digit2: frozenControl({ kind: "start", player: 2 }),
+    Numpad8: frozenControl({ kind: "direction", player: 3, direction: "up" }),
+    Numpad2: frozenControl({ kind: "direction", player: 3, direction: "down" }),
+    Numpad4: frozenControl({ kind: "direction", player: 3, direction: "left" }),
+    Numpad6: frozenControl({ kind: "direction", player: 3, direction: "right" }),
+    ControlRight: frozenControl({ kind: "button", player: 3, button: 1 }),
+    ShiftRight: frozenControl({ kind: "button", player: 3, button: 2 }),
+    Enter: frozenControl({ kind: "button", player: 3, button: 3 }),
+    Digit7: frozenControl({ kind: "coin", player: 3 }),
+    Digit3: frozenControl({ kind: "start", player: 3 }),
+    KeyI: frozenControl({ kind: "direction", player: 4, direction: "up" }),
+    KeyK: frozenControl({ kind: "direction", player: 4, direction: "down" }),
+    KeyJ: frozenControl({ kind: "direction", player: 4, direction: "left" }),
+    KeyL: frozenControl({ kind: "direction", player: 4, direction: "right" }),
+    Numpad0: frozenControl({ kind: "button", player: 4, button: 1 }),
+    NumpadDecimal: frozenControl({ kind: "button", player: 4, button: 2 }),
+    NumpadEnter: frozenControl({ kind: "button", player: 4, button: 3 }),
+    Digit8: frozenControl({ kind: "coin", player: 4 }),
+    Digit4: frozenControl({ kind: "start", player: 4 }),
 });
 
 /**

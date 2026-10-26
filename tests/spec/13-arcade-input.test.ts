@@ -6,6 +6,7 @@ import ArcadeInput from "../../src/ArcadeInput/ArcadeInput.ts";   // Class under
 import {
     isArcadeInputChannel,                                         // Public channel structural predicate
     isArcadeInputConfig,                                          // Public config structural predicate
+    isArcadeInputHoldListener,                                    // Public effective-hold observer predicate
 } from "../../src/ArcadeInput/types.ts";
 import ArcadeRuntimeError from "../../src/ArcadeRuntimeError/ArcadeRuntimeError.ts";   // Typed rejection identity
 import FakeArcadeSession, { type FakeSessionCall } from "../support/FakeArcadeSession.ts";   // Required W0 session double
@@ -158,6 +159,32 @@ const testFile: TestFile = {
                     afterFirst: { snapshot: [BUTTON_1], held: ["p1:button:1"] },
                     final: [],
                     calls: [controlCall(BUTTON_1, true), controlCall(BUTTON_1, false)],
+                }))
+                .start(undefined),
+        },
+        {
+            label: "hold observers receive effective edges and may keep a control off the digital session path",
+            run: () => CTGTest.init("hold observation")
+                .stage("consume one hold, unsubscribe, then forward another", () => {
+                    const { input, session } = rig();
+                    const edges: unknown[] = [];
+                    const listener = (control: ArcadeControl, pressed: boolean): boolean => {
+                        edges.push([control, pressed]);
+                        return true;
+                    };
+                    const accepted = isArcadeInputHoldListener(listener);
+                    const unsubscribe = input.onHold(listener);
+                    input.press(BUTTON_1);
+                    input.release(BUTTON_1);
+                    unsubscribe();
+                    input.press(COIN_1);
+                    input.release(COIN_1);
+                    return { accepted, edges, calls: session.calls };
+                })
+                .assert("only the observed control is consumed", (state) => state.subject, P.equals<unknown>({
+                    accepted: true,
+                    edges: [[BUTTON_1, true], [BUTTON_1, false]],
+                    calls: [controlCall(COIN_1, true), controlCall(COIN_1, false)],
                 }))
                 .start(undefined),
         },

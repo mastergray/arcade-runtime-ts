@@ -5,6 +5,7 @@ import CTGTest, { CTGTestPredicates as P } from "ctg-js-test";   // Pipeline API
 import {
     ArcadeDisplay,                                                // Class under test, via the public surface
     isArcadeDisplayConfig,                                        // Construction config predicate under test
+    isDisplayCrop,                                                // Native-column crop predicate under test
     isLayoutEvent,                                                // Layout event predicate under test
 } from "../../src/index.ts";
 
@@ -65,6 +66,7 @@ const configLike = (): Record<string, unknown> => ({
     aspectRatio: 4 / 3,
     scaling: "integer",
     imageRendering: "smooth",
+    crop: { left: 8, right: 12 },
     resizeObserver: class { observe(): void {} disconnect(): void {} },
     fullscreenTarget: {},
     document: { fullscreenElement: null, addEventListener: NOOP, removeEventListener: NOOP },
@@ -113,6 +115,9 @@ const testFile: TestFile = {
         predicateCase("isArcadeDisplayConfig rejects a non-positive aspectRatio", isArcadeDisplayConfig, replacing(configLike(), "aspectRatio", 0), false),
         predicateCase("isArcadeDisplayConfig rejects an unknown scaling mode", isArcadeDisplayConfig, replacing(configLike(), "scaling", "zoom"), false),
         predicateCase("isArcadeDisplayConfig rejects an unknown imageRendering value", isArcadeDisplayConfig, replacing(configLike(), "imageRendering", "crisp-edges"), false),
+        predicateCase("isDisplayCrop accepts non-negative whole native columns", isDisplayCrop, { left: 8, right: 12 }, true),
+        predicateCase("isDisplayCrop rejects fractional native columns", isDisplayCrop, { left: 0.5, right: 0 }, false),
+        predicateCase("isArcadeDisplayConfig rejects a negative crop edge", isArcadeDisplayConfig, replacing(configLike(), "crop", { left: -1, right: 0 }), false),
         predicateCase("isArcadeDisplayConfig rejects a non-constructor resizeObserver", isArcadeDisplayConfig, replacing(configLike(), "resizeObserver", {}), false),
         predicateCase("isArcadeDisplayConfig rejects a null fullscreenTarget", isArcadeDisplayConfig, replacing(configLike(), "fullscreenTarget", null), false),
         predicateCase("isArcadeDisplayConfig rejects a document without removeEventListener", isArcadeDisplayConfig, replacing(configLike(), "document", { fullscreenElement: null, addEventListener: NOOP }), false),
@@ -129,6 +134,41 @@ const testFile: TestFile = {
         predicateCase("isLayoutEvent rejects a negative height", isLayoutEvent, { left: 0, top: 0, width: 800, height: -1, scale: 1 }, false),
         predicateCase("isLayoutEvent rejects a non-finite scale", isLayoutEvent, { left: 0, top: 0, width: 800, height: 600, scale: NaN }, false),
         predicateCase("isLayoutEvent rejects a negative scale", isLayoutEvent, { left: 0, top: 0, width: 800, height: 600, scale: -1 }, false),
+        {
+            label: "side crop preserves the visible aspect and fills the laid-out rectangle with CSS clipping and scale",
+            run: () => CTGTest.init("display crop layout")
+                .stage("construct and update a cropped display", () => {
+                    const style: Record<string, string> = {};
+                    const display = new ArcadeDisplay({
+                        canvas: { width: 320, height: 240, style, getContext: () => null } as unknown as HTMLCanvasElement,
+                        container: { getBoundingClientRect: () => ({ left: 0, top: 0, width: 800, height: 600 }) } as unknown as HTMLElement,
+                        aspectRatio: 4 / 3,
+                        crop: { left: 40, right: 40 },
+                    });
+                    const first = { crop: display.crop, layout: display.layout, style: { ...style } };
+                    display.crop = { left: 20, right: 20 };
+                    return { first, second: { crop: display.crop, layout: display.layout, style: { ...style } } };
+                })
+                .assert("clip percentages, transform and cropped aspect update together", (state) => state.subject, P.equals<unknown>({
+                    first: {
+                        crop: { left: 40, right: 40 },
+                        layout: { left: 100, top: 0, width: 600, height: 600, scale: 2.5 },
+                        style: {
+                            imageRendering: "pixelated", width: "600px", height: "600px",
+                            clipPath: "inset(0 12.5% 0 12.5%)", transform: "scaleX(1.3333333333333333)", transformOrigin: "50% 50%",
+                        },
+                    },
+                    second: {
+                        crop: { left: 20, right: 20 },
+                        layout: { left: 50.00000000000006, top: 0, width: 699.9999999999999, height: 600, scale: 2.4999999999999996 },
+                        style: {
+                            imageRendering: "pixelated", width: "699.9999999999999px", height: "600px",
+                            clipPath: "inset(0 6.25% 0 6.25%)", transform: "scaleX(1.1428571428571428)", transformOrigin: "50% 50%",
+                        },
+                    },
+                }))
+                .start(undefined),
+        },
     ],
 };
 

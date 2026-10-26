@@ -191,7 +191,7 @@ const testFile: TestFile = {
                         starts: 1,
                         validStartTime: true,
                         sourceConnections: 1,
-                        gainConnections: 1,
+                        gainConnections: 2,
                     }))
                 .assertPage("destroy closes the real context and remains idempotent", (page) => page.evaluate(async () => {
                     const scratch = (window as unknown as { audioScratch: BrowserScratch }).audioScratch;

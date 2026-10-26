@@ -9,12 +9,14 @@ import {
     DEFAULT_KEYBOARD_MAP,                                         // Listed in the cabinet menu so a player can see the bindings
     RomSetAudit,                                                  // Fast per-card check before a cabinet is started
     isBuildInfo,                                                  // Validates each served family index
+    isAnalogSettings,                                             // Guards hand-entered live analogue tuning JSON
     isRomSetMetadata,                                             // Validates fetched per-game metadata
 } from "/src/index.js";                                         // Public package surface only
 
 // Type dependencies:
 import type {
     ArcadeAdapter,                                                // Browser-test injection through the public cabinet boundary
+    AnalogSettings,                                               // Retained hand-test analogue tuning
     BuildInfo,                                                    // Validated family-build index document
     RomFile,                                                      // Bytes passed to the card-level file checker
     RomSetMetadata,                                               // Card title, companion files, BIOS and DIP choices
@@ -143,7 +145,62 @@ const keyboardEnabledInput = element<HTMLInputElement>("#keyboard-enabled");
 const gamepadsEnabledInput = element<HTMLInputElement>("#gamepads-enabled");
 const gamepadsLine = element<HTMLParagraphElement>("#gamepads");
 const keyboardBindings = element<HTMLElement>("#keyboard-bindings");
+const menuBody = element<HTMLDivElement>("#corner-menu .menu-body");
 const AUDIT_STRICTNESS_KEY = "arcade-runtime:harness:audit-strictness";
+
+// HELPER :: STRING, STRING -> {line:htmlLabelElement,input:htmlInputElement}
+// Adds one compact hand-test range/number control without changing committed harness selectors.
+const runtimeInputLine = (labelText: string, id: string): { readonly line: HTMLLabelElement; readonly input: HTMLInputElement } => {
+    const line = document.createElement("label");
+    line.htmlFor = id;
+    line.style.cssText = "grid-column:1/-1;display:grid;grid-template-columns:8rem 1fr;align-items:center;gap:8px;font-size:.72rem;color:#c0cad3";
+    const label = document.createElement("span");
+    label.textContent = labelText;
+    const input = document.createElement("input");
+    input.id = id;
+    line.append(label, input);
+    return { line, input };
+};
+
+const volumeSurface = runtimeInputLine("Playback volume", "runtime-volume");
+volumeSurface.input.type = "range";
+volumeSurface.input.min = "0";
+volumeSurface.input.max = "1";
+volumeSurface.input.step = "0.05";
+volumeSurface.input.value = "1";
+
+const cropLine = document.createElement("label");
+cropLine.style.cssText = "grid-column:1/-1;display:grid;grid-template-columns:8rem 1fr 1fr;align-items:center;gap:8px;font-size:.72rem;color:#c0cad3";
+const cropLabel = document.createElement("span");
+cropLabel.textContent = "Crop L / R";
+const cropLeftInput = document.createElement("input");
+cropLeftInput.id = "runtime-crop-left";
+cropLeftInput.type = "number";
+cropLeftInput.min = "0";
+cropLeftInput.step = "1";
+cropLeftInput.value = "0";
+const cropRightInput = document.createElement("input");
+cropRightInput.id = "runtime-crop-right";
+cropRightInput.type = "number";
+cropRightInput.min = "0";
+cropRightInput.step = "1";
+cropRightInput.value = "0";
+cropLine.append(cropLabel, cropLeftInput, cropRightInput);
+
+const analogLine = document.createElement("label");
+analogLine.htmlFor = "runtime-analog-settings";
+analogLine.style.cssText = "grid-column:1/-1;display:grid;grid-template-columns:8rem 1fr;align-items:start;gap:8px;font-size:.72rem;color:#c0cad3";
+const analogLabel = document.createElement("span");
+analogLabel.textContent = "Analogue JSON";
+const analogSettingsInput = document.createElement("textarea");
+analogSettingsInput.id = "runtime-analog-settings";
+analogSettingsInput.rows = 3;
+analogSettingsInput.value = "{}";
+analogSettingsInput.style.cssText = "min-width:0;width:100%;resize:vertical;background:#182027;color:#f7fafc;border:1px solid #3e4a55;border-radius:6px;padding:6px;font:inherit";
+analogLine.append(analogLabel, analogSettingsInput);
+menuBody.insertBefore(volumeSurface.line, operatorControls);
+menuBody.insertBefore(cropLine, operatorControls);
+menuBody.insertBefore(analogLine, operatorControls);
 
 // HELPER :: STRING -> STRING
 // Turns a KeyboardEvent.code into the label printed on the key.
@@ -208,6 +265,7 @@ let menuPromise: Promise<void> | null = null;                     // Serializes 
 let gamepadFrame: number | null = null;                           // Corner-menu connection display polling
 let discoveryRequest = 0;                                        // Rejects superseded asynchronous metadata discovery
 let buildsLoaded = 0;                                            // Successfully indexed family count
+let analogSettings: AnalogSettings = {};                         // Valid hand-entered settings retained for the next start
 let auditStrictness: AuditStrictness = (() => {
     try { return localStorage.getItem(AUDIT_STRICTNESS_KEY) === "mame" ? "mame" : "strict"; }
     catch { return "strict"; }
@@ -988,16 +1046,22 @@ const startCard = async (card: GameCard): Promise<void> => {
                 auditStrictness,
                 ...(bios === "" ? {} : { bios }),
                 dipswitches,
-                display: { scaling: "fit" as const, imageRendering: "pixelated" as const },
+                display: {
+                    scaling: "fit" as const,
+                    imageRendering: "pixelated" as const,
+                    crop: { left: Number(cropLeftInput.value), right: Number(cropRightInput.value) },
+                },
             };
             const common = {
                 canvas,
                 container,
                 game,
                 controls: {
+                    analog: analogSettings,
                     keyboard: { enabled: keyboardEnabledInput.checked },
                     gamepads: { enabled: gamepadsEnabledInput.checked },
                 },
+                audio: { volume: Number(volumeSurface.input.value) },
                 storage: ArcadeStorage.init({ key: `${card.indexed.family}/${card.indexed.machine}` }),
                 romStore,
                 autosave: autosaveInput.checked,
@@ -1082,12 +1146,12 @@ const runCabinetAction = async (
 };
 
 // HELPER :: VOID -> VOID
-// Refreshes the page-owned gamepad assignment display from GamepadSource.players.
+// Refreshes the page-owned device display, including unassigned non-standard provider entries.
 const updateGamepads = (): void => {
-    const players = cabinet?.gamepads?.players ?? [];
-    gamepadsLine.textContent = players.length === 0
+    const devices = cabinet?.gamepads?.devices ?? [];
+    gamepadsLine.textContent = devices.length === 0
         ? "Connected gamepads: none"
-        : `Connected gamepads: ${players.map(({ player, id }) => `P${player} ${id}`).join(", ")}. Hold Select: Start = Advance (F2), d-pad = F1 / 9 / F5 / F6, A B X = test / service / tilt, LB RB = volume`;
+        : `Connected gamepads: ${devices.map(({ player, id, standard }) => `${player === null ? "unassigned" : `P${player}`} ${id} (${standard ? "standard" : "non-standard"})`).join(", ")}. Hold Select: Start = Advance (F2), d-pad = F1 / 9 / F5 / F6, A B X = test / service / tilt, LB RB = volume`;
     gamepadFrame = requestAnimationFrame(updateGamepads);
 };
 
@@ -1319,6 +1383,32 @@ gamepadsEnabledInput.addEventListener("change", () => {
     if (cabinet?.isStarted !== true) return;
     cabinet.gamepadsEnabled = gamepadsEnabledInput.checked;
     setStatus(`Gamepad controls ${gamepadsEnabledInput.checked ? "enabled" : "disabled"}.`, "controls-updated");
+});
+volumeSurface.input.addEventListener("input", () => {
+    if (cabinet?.isStarted === true) cabinet.player.audio.volume = Number(volumeSurface.input.value);
+});
+const applyCrop = (): void => {
+    const crop = { left: Number(cropLeftInput.value), right: Number(cropRightInput.value) };
+    if (!Number.isInteger(crop.left) || crop.left < 0 || !Number.isInteger(crop.right) || crop.right < 0) {
+        setStatus("Crop values must be non-negative whole native columns.", "error");
+        return;
+    }
+    if (cabinet?.isStarted !== true) return;
+    try { cabinet.player.display.crop = crop; }
+    catch (error) { setStatus(errorMessage(error, "Crop could not be applied."), "error"); }
+};
+cropLeftInput.addEventListener("change", applyCrop);
+cropRightInput.addEventListener("change", applyCrop);
+analogSettingsInput.addEventListener("change", () => {
+    try {
+        const parsed: unknown = JSON.parse(analogSettingsInput.value);
+        if (!isAnalogSettings(parsed)) throw new Error("Analogue JSON must map p<player>:<kind> keys to valid setting objects.");
+        analogSettings = parsed;
+        cabinet?.setAnalogSettings(parsed);
+        setStatus("Analogue settings applied.", "controls-updated");
+    } catch (error) {
+        setStatus(errorMessage(error, "Analogue settings could not be applied."), "error");
+    }
 });
 window.addEventListener("pagehide", () => {
     if (gamepadFrame !== null) cancelAnimationFrame(gamepadFrame);

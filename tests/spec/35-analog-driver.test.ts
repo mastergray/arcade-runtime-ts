@@ -1,0 +1,149 @@
+// realizes: docs/arcade-runtime-spec.md > §10.3 Analogue settings driver
+
+// Dependencies:
+import CTGTest, { CTGTestPredicates as P } from "ctg-js-test";
+import AnalogDriver from "../../src/AnalogDriver/AnalogDriver.ts";
+import { isAnalogDriverConfig } from "../../src/AnalogDriver/types.ts";
+import ArcadeInput from "../../src/ArcadeInput/ArcadeInput.ts";
+import {
+    DEFAULT_ANALOG_SETTING,
+    isAnalogSetting,
+    isAnalogSettings,
+} from "../../src/shared.types.ts";
+import FakeArcadeSession from "../support/FakeArcadeSession.ts";
+import FakeFrameScheduler from "../support/FakeFrameScheduler.ts";
+
+// Type dependencies:
+import type { ArcadeAxis, ArcadeControl, MachineInputs } from "../../src/shared.types.ts";
+import type { TestFile } from "../run.ts";
+
+const STICK_RIGHT = { kind: "stick", player: 1, stick: 1, direction: "right" } as const satisfies ArcadeControl;
+const PADDLE_RIGHT = { kind: "stick", player: 2, stick: 1, direction: "right" } as const satisfies ArcadeControl;
+const PEDAL = { kind: "pedal", player: 3, pedal: 1 } as const satisfies ArcadeControl;
+const DIAL_UP = { kind: "stick", player: 4, stick: 1, direction: "up" } as const satisfies ArcadeControl;
+const STICK_X = { player: 1, kind: "stick-x" } as const satisfies ArcadeAxis;
+const SPIN_Y = { player: 4, kind: "spin-y" } as const satisfies ArcadeAxis;
+const INPUTS = Object.freeze([
+    { player: 1, kind: "stick-x" },
+    { player: 2, kind: "paddle" },
+    { player: 3, kind: "pedal-1" },
+    { player: 4, kind: "dial-v" },
+] as const) satisfies MachineInputs["analog"];
+
+const valueFor = (session: FakeArcadeSession, player: number, kind: ArcadeAxis["kind"]): number | null =>
+    session.axes.find((entry) => entry.axis.player === player && entry.axis.kind === kind)?.value ?? null;
+
+const testFile: TestFile = {
+    label: "AnalogDriver",
+    cases: [
+        {
+            label: "public settings and construction predicates enforce the documented numeric ranges",
+            run: () => CTGTest.init("analogue predicates")
+                .assert("defaults and verdicts match", () => {
+                    const input = new ArcadeInput({ session: new FakeArcadeSession() });
+                    const scheduler = new FakeFrameScheduler();
+                    return {
+                        defaults: DEFAULT_ANALOG_SETTING,
+                        setting: isAnalogSetting({ keySpeed: 0.1, centreSpeed: 0, travel: 4, invert: true }),
+                        badTravel: isAnalogSetting({ travel: 4.1 }),
+                        settings: isAnalogSettings({ "p1:stick-x": { keySpeed: 0.1 } }),
+                        badKey: isAnalogSettings({ "p5:stick-x": {} }),
+                        config: isAnalogDriverConfig({ input, scheduler, inputs: INPUTS }),
+                    };
+                }, P.equals<unknown>({
+                    defaults: { keySpeed: 0.02, centreSpeed: 0.02, travel: 1, invert: false },
+                    setting: true,
+                    badTravel: false,
+                    settings: true,
+                    badKey: false,
+                    config: true,
+                }))
+                .start(undefined),
+        },
+        {
+            label: "keyboard integration ramps, centres, holds, bounds pedals and emits relative deltas",
+            run: () => CTGTest.init("analogue keyboard arithmetic")
+                .stage("drive four declared port policies", () => {
+                    const session = new FakeArcadeSession();
+                    const input = new ArcadeInput({ session });
+                    const scheduler = new FakeFrameScheduler();
+                    const keys = input.createChannel();
+                    const driver = new AnalogDriver({
+                        input,
+                        scheduler,
+                        inputs: INPUTS,
+                        settings: {
+                            "p1:stick-x": { keySpeed: 0.1, centreSpeed: 0.05 },
+                            "p2:paddle": { keySpeed: 0.2 },
+                            "p3:pedal-1": { keySpeed: 0.4, centreSpeed: 0.25 },
+                            "p4:dial-v": { keySpeed: 0.03 },
+                        },
+                    });
+                    keys.press(STICK_RIGHT);
+                    keys.press(PADDLE_RIGHT);
+                    keys.press(PEDAL);
+                    keys.press(DIAL_UP);
+                    scheduler.tick(16); scheduler.tick(16); scheduler.tick(16);
+                    const held = {
+                        stick: valueFor(session, 1, "stick-x"),
+                        paddle: valueFor(session, 2, "stick-x"),
+                        pedal: valueFor(session, 3, "pedal-1"),
+                        relative: valueFor(session, 4, "spin-y"),
+                        digital: session.held,
+                    };
+                    keys.release(STICK_RIGHT);
+                    keys.release(PADDLE_RIGHT);
+                    keys.release(PEDAL);
+                    keys.release(DIAL_UP);
+                    scheduler.tick(16);
+                    const released = {
+                        stick: valueFor(session, 1, "stick-x"),
+                        paddle: valueFor(session, 2, "stick-x"),
+                        pedal: valueFor(session, 3, "pedal-1"),
+                        relative: valueFor(session, 4, "spin-y"),
+                    };
+                    driver.destroy();
+                    return { held, released, pending: scheduler.pending };
+                })
+                .assert("each kind follows its centre, hold or relative policy", (state) => state.subject, P.equals<unknown>({
+                    held: { stick: 0.30000000000000004, paddle: 0.6000000000000001, pedal: 1, relative: -0.03, digital: [] },
+                    released: { stick: 0.25000000000000006, paddle: 0.6000000000000001, pedal: 0.75, relative: -0.03 },
+                    pending: 0,
+                }))
+                .start(undefined),
+        },
+        {
+            label: "live updates change keyboard slope and inversion while the gamepad filter applies travel",
+            run: () => CTGTest.init("analogue live update and filter")
+                .stage("update one running driver", () => {
+                    const session = new FakeArcadeSession();
+                    const input = new ArcadeInput({ session });
+                    const scheduler = new FakeFrameScheduler();
+                    const keys = input.createChannel();
+                    const driver = new AnalogDriver({
+                        input, scheduler, inputs: INPUTS,
+                        settings: { "p1:stick-x": { keySpeed: 0.1, centreSpeed: 0 } },
+                    });
+                    keys.press(STICK_RIGHT);
+                    scheduler.tick(16);
+                    const initial = valueFor(session, 1, "stick-x");
+                    driver.update({ "p1:stick-x": { keySpeed: 0.3, centreSpeed: 0, travel: 2, invert: true } });
+                    scheduler.tick(16);
+                    const updated = valueFor(session, 1, "stick-x");
+                    const absolute = driver.axisFilter(STICK_X, 0.75);
+                    const relative = driver.axisFilter(SPIN_Y, 12);
+                    return { initial, updated, absolute, relative, retained: driver.settings };
+                })
+                .assert("new settings take effect on the next frame without a restart", (state) => state.subject, P.equals<unknown>({
+                    initial: 0.1,
+                    updated: -0.4,
+                    absolute: -1,
+                    relative: 12,
+                    retained: { "p1:stick-x": { keySpeed: 0.3, centreSpeed: 0, travel: 2, invert: true } },
+                }))
+                .start(undefined),
+        },
+    ],
+};
+
+export default testFile;

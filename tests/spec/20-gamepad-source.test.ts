@@ -8,6 +8,7 @@ import GamepadSource, { DEFAULT_GAMEPAD_CHORDS } from "../../src/GamepadSource/G
 import {
     controlsFor,                                                  // Pure full-control mapper
     directionsFor,                                                // Pure directional mapper
+    isGamepadDevice,                                               // Public device snapshot guard
     isGamepadLike,                                                // Pad subset guard
     isGamepadMapping,                                             // Physical mapping guard
     isGamepadProviderLike,                                        // Provider guard
@@ -447,6 +448,40 @@ const testFile: TestFile = {
                 .start(undefined),
         },
         {
+            label: "axisFilter transforms absolute values and relative deltas before ArcadeInput receives them",
+            run: () => CTGTest.init("gamepad axis filter")
+                .stage("poll a filtered stick and spinner", () => {
+                    const provider = new FakeGamepadProvider();
+                    provider.pads = [pad("pad", 0, [], [0.625, 0])];
+                    const scheduler = new FakeFrameScheduler();
+                    const target = new FakeEventTarget();
+                    const session = new FakeArcadeSession({ ...validMachineInfo(), inputs: {
+                        analog: [{ player: 1, kind: "stick-x" }, { player: 1, kind: "dial" }],
+                        dualStick: false, keys: [], volume: false,
+                    } });
+                    const input = new ArcadeInput({ session });
+                    const seen: unknown[] = [];
+                    const source = new GamepadSource({
+                        input, provider, scheduler, target,
+                        axisFilter: (axis, value) => { seen.push([axis, value]); return value * -2; },
+                    });
+                    source.attach();
+                    scheduler.tick(16);
+                    return { seen, axes: input.axes };
+                })
+                .assert("the filter sees normalized source values and may scale relative output", (state) => state.subject, P.equals<unknown>({
+                    seen: [
+                        [{ player: 1, kind: "stick-x" }, 0.5],
+                        [{ player: 1, kind: "spin-x" }, 10],
+                    ],
+                    axes: [
+                        { axis: { player: 1, kind: "spin-x" }, value: -20 },
+                        { axis: { player: 1, kind: "stick-x" }, value: -1 },
+                    ],
+                }))
+                .start(undefined),
+        },
+        {
             label: "dual-stick discovery maps both sticks separately while the d-pad remains ordinary",
             run: () => CTGTest.init("gamepad dual-stick binding")
                 .stage("poll diagonal sticks and one d-pad direction", () => {
@@ -513,6 +548,32 @@ const testFile: TestFile = {
                     ],
                     namedPlayers: [{ player: 1, id: "custom pad" }],
                     namedHeld: ["p1:button:1"],
+                }))
+                .start(undefined),
+        },
+        {
+            label: "devices lists standard and non-standard provider entries with current seat assignment",
+            run: () => CTGTest.init("gamepad device list")
+                .stage("read devices before and after assignment", () => {
+                    const provider = new FakeGamepadProvider();
+                    provider.pads = [pad("motion sensor", 6, [], [0, 0], ""), pad("standard pad", 2)];
+                    const scheduler = new FakeFrameScheduler();
+                    const { source } = attachedSource(provider, scheduler, new FakeEventTarget());
+                    const before = source.devices;
+                    scheduler.tick(16);
+                    const after = source.devices;
+                    return { before, after, valid: after.every(isGamepadDevice) };
+                })
+                .assert("both devices remain visible while only the assignable pad gets a player", (state) => state.subject, P.equals<unknown>({
+                    before: [
+                        { index: 2, id: "standard pad", standard: true, player: null },
+                        { index: 6, id: "motion sensor", standard: false, player: null },
+                    ],
+                    after: [
+                        { index: 2, id: "standard pad", standard: true, player: 1 },
+                        { index: 6, id: "motion sensor", standard: false, player: null },
+                    ],
+                    valid: true,
                 }))
                 .start(undefined),
         },

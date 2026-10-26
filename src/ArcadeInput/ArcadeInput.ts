@@ -17,8 +17,10 @@ import {
 } from "../shared.types.js";
 import {
     isArcadeInputConfig,                                          // Guards construction
+    isArcadeInputHoldListener,                                    // Guards hold observers
     type ArcadeInputChannel,                                      // Independently owned source channel
     type ArcadeInputConfig,                                       // Construction config
+    type ArcadeInputHoldListener,                                 // Effective hold observer
 } from "./types.js";
 
 /**
@@ -41,6 +43,7 @@ interface ChannelState {
 interface HeldControl {
     readonly control: ArcadeControl;                               // Stable copied control sent to the session
     readonly holders: Set<ChannelState>;                           // Channels currently holding it
+    readonly forwarded: boolean;                                  // Whether the digital edge reached ArcadeSession
 }
 
 // INTERFACE :: {axis:arcadeAxis, value:NUMBER, owner:channelState}
@@ -67,6 +70,7 @@ export default class ArcadeInput {
     private readonly _session: ArcadeSession;                      // Session receiving first presses and last releases
     private readonly _channels = new Set<ChannelState>();          // Every live channel, including the default
     private readonly _held = new Map<ArcadeControlKey, HeldControl>();   // Globally held controls and reference owners
+    private readonly _holdListeners = new Set<ArcadeInputHoldListener>();   // Effective first/last hold observers
     private readonly _axes = new Map<string, AxisValue>();        // Effective axes by canonical player/kind key
     private readonly _defaultChannel: ArcadeInputChannel;          // Channel behind the instance convenience methods
     private readonly _unsubscribeTick: Unsubscribe;                // Removes the tap clock subscription
@@ -108,6 +112,16 @@ export default class ArcadeInput {
     // Exposes the session's discovered controls to input sources.
     get machine(): MachineInfo {
         return this._session.machine;
+    }
+
+    // INSTANCE :: arcadeInputHoldListener -> unsubscribe
+    // Reports effective first-press and last-release edges across every channel.
+    // A true press result consumes the session's digital edge for an axis driver.
+    onHold(listener: ArcadeInputHoldListener): Unsubscribe {
+        this.assertLive();
+        if (!isArcadeInputHoldListener(listener)) throw ArcadeInput.invalidConfig("ArcadeInput onHold requires a listener function.", listener);
+        this._holdListeners.add(listener);
+        return () => { this._holdListeners.delete(listener); };
     }
 
     /**
@@ -167,6 +181,7 @@ export default class ArcadeInput {
         if (this._destroyed) return;
         this.releaseEverything();
         this._unsubscribeTick();
+        this._holdListeners.clear();
         this._destroyed = true;
         for (const channel of this._channels) {
             channel.taps.clear();
@@ -208,8 +223,9 @@ export default class ArcadeInput {
         if (opposite !== null && this._held.has(opposite)) this.releaseEveryHolder(opposite);
         const existing = this._held.get(key);
         if (existing === undefined) {
-            this._session.setControl(stable, true);
-            this._held.set(key, { control: stable, holders: new Set([channel]) });
+            const consumed = this.reportHold(stable, true);
+            if (!consumed) this._session.setControl(stable, true);
+            this._held.set(key, { control: stable, holders: new Set([channel]), forwarded: !consumed });
         } else {
             existing.holders.add(channel);
         }
@@ -287,7 +303,8 @@ export default class ArcadeInput {
             return;
         }
         if (held.holders.size === 1) {
-            this._session.setControl(held.control, false);
+            this.reportHold(held.control, false);
+            if (held.forwarded) this._session.setControl(held.control, false);
             this._held.delete(key);
         } else {
             held.holders.delete(channel);
@@ -301,7 +318,8 @@ export default class ArcadeInput {
     private releaseEveryHolder(key: ArcadeControlKey): void {
         const held = this._held.get(key);
         if (held === undefined) return;
-        this._session.setControl(held.control, false);
+        this.reportHold(held.control, false);
+        if (held.forwarded) this._session.setControl(held.control, false);
         this._held.delete(key);
         for (const channel of held.holders) {
             channel.held.delete(key);
@@ -341,6 +359,14 @@ export default class ArcadeInput {
                 this.releaseKeyFor(channel, key);
             }
         }
+    }
+
+    // PRIVATE :: arcadeControl, BOOLEAN -> BOOLEAN
+    // Delivers a stable listener snapshot; any true press result consumes the digital session edge.
+    private reportHold(control: ArcadeControl, pressed: boolean): boolean {
+        let consumed = false;
+        for (const listener of [...this._holdListeners]) if (listener(control, pressed) === true) consumed = true;
+        return consumed;
     }
 
     // PRIVATE :: VOID -> VOID

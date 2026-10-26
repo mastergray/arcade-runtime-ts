@@ -6,6 +6,7 @@ import ArcadeRuntimeError from "../ArcadeRuntimeError/ArcadeRuntimeError.js";   
 // Type dependencies:
 import {
     arcadeControlKey,
+    type ArcadeAxis,
     type ArcadeControl,
     type ArcadeControlKey,
     type ArcadeDirection,
@@ -25,6 +26,7 @@ import {
     type GamepadLike,                                             // Provider snapshot entry
     type GamepadChord,                                            // One operator-layer physical binding
     type GamepadChords,                                           // Modifier and binding configuration
+    type GamepadDevice,                                           // Public provider-device snapshot
     type GamepadMapping,                                          // Physical-index overrides
     type GamepadProviderLike,                                     // Injectable Gamepad API boundary
     type GamepadSourceConfig,                                     // Direct construction config
@@ -185,6 +187,7 @@ export default class GamepadSource {
     private readonly _visibilityTarget: KeyboardVisibilityTargetLike;   // visibilitychange target
     private readonly _deadZone: number;                           // Validated axis threshold
     private readonly _mapping: GamepadMapping | undefined;        // Optional standard override/non-standard opt-in
+    private readonly _axisFilter: ((axis: ArcadeAxis, value: number) => number) | null;   // Live travel/invert filter
     private readonly _assignments = new Map<number, AssignedPad>();   // Assigned pads keyed by Gamepad index
     private readonly _onFrame: (time: number) => void;            // Bound scheduler callback
     private readonly _onBlur: (event: Event) => void;             // Bound blur listener
@@ -206,6 +209,7 @@ export default class GamepadSource {
         this._visibilityTarget = config.visibilityTarget ?? config.target;
         this._deadZone = config.deadZone ?? GamepadSource.DEFAULT_DEAD_ZONE;
         this._mapping = config.mapping;
+        this._axisFilter = config.axisFilter ?? null;
         this._onFrame = () => {
             this._frameHandle = null;
             if (this._destroyed || !this._attached || !this._enabled) return;
@@ -257,6 +261,22 @@ export default class GamepadSource {
         return [...this._assignments.values()]
             .sort((left, right) => left.player - right.player)
             .map(({ player, id }) => ({ player, id }));
+    }
+
+    // GETTER :: VOID -> [{index:NUMBER,id:STRING,standard:BOOLEAN,player:playerIndex?}]
+    // Reports every connected provider device, including non-standard pads that are not assignable.
+    get devices(): ReadonlyArray<GamepadDevice> {
+        const devices = new Map<number, GamepadDevice>();
+        for (const candidate of this._provider.getGamepads()) {
+            if (!isGamepadLike(candidate) || !candidate.connected || devices.has(candidate.index)) continue;
+            devices.set(candidate.index, {
+                index: candidate.index,
+                id: candidate.id,
+                standard: candidate.mapping === "standard",
+                player: this._assignments.get(candidate.index)?.player ?? null,
+            });
+        }
+        return [...devices.values()].sort((left, right) => left.index - right.index);
     }
 
     /**
@@ -385,7 +405,7 @@ export default class GamepadSource {
         const declared = new Set<MachineAnalogKind>(inputs.analog
             .filter((input) => input.player === assignment.player)
             .map((input) => input.kind));
-        const leftAnalog = ["stick-x", "stick-y", "paddle", "paddle-v", "lightgun-x", "lightgun-y", "dial", "dial-v", "trackball-x", "trackball-y"]
+        const leftAnalog = ["stick-x", "stick-y", "paddle", "paddle-v", "positional", "positional-v", "lightgun-x", "lightgun-y", "dial", "dial-v", "trackball-x", "trackball-y", "mouse-x", "mouse-y"]
             .some((kind) => declared.has(kind as MachineAnalogKind));
         const chordLayer = mapping.chords !== false;
         const modifier = mapping.chords !== false ? mapping.chords?.modifier ?? mapping.coin ?? DEFAULT_COIN : -1;
@@ -467,18 +487,24 @@ export default class GamepadSource {
         const pedals = mapping.pedals ?? DEFAULT_PEDALS;
         const horizontal = rescaledAxis(pad.axes[left[0]] ?? 0, this._deadZone);
         const vertical = rescaledAxis(pad.axes[left[1]] ?? 0, this._deadZone);
-        if (declared.has("stick-x") || declared.has("paddle") || declared.has("lightgun-x")) assignment.channel.setAxis({ player: assignment.player, kind: "stick-x" }, horizontal);
-        if (declared.has("stick-y") || declared.has("paddle-v") || declared.has("lightgun-y")) assignment.channel.setAxis({ player: assignment.player, kind: "stick-y" }, vertical);
-        if ((declared.has("dial") || declared.has("trackball-x")) && horizontal !== 0)
-            assignment.channel.setAxis({ player: assignment.player, kind: "spin-x" }, horizontal * SPIN_PIXELS_PER_POLL);
-        if ((declared.has("dial-v") || declared.has("trackball-y")) && vertical !== 0)
-            assignment.channel.setAxis({ player: assignment.player, kind: "spin-y" }, vertical * SPIN_PIXELS_PER_POLL);
+        if (declared.has("stick-x") || declared.has("paddle") || declared.has("positional") || declared.has("lightgun-x")) this.writeAxis(assignment, { player: assignment.player, kind: "stick-x" }, horizontal);
+        if (declared.has("stick-y") || declared.has("paddle-v") || declared.has("positional-v") || declared.has("lightgun-y")) this.writeAxis(assignment, { player: assignment.player, kind: "stick-y" }, vertical);
+        if ((declared.has("dial") || declared.has("trackball-x") || declared.has("mouse-x")) && horizontal !== 0)
+            this.writeAxis(assignment, { player: assignment.player, kind: "spin-x" }, horizontal * SPIN_PIXELS_PER_POLL);
+        if ((declared.has("dial-v") || declared.has("trackball-y") || declared.has("mouse-y")) && vertical !== 0)
+            this.writeAxis(assignment, { player: assignment.player, kind: "spin-y" }, vertical * SPIN_PIXELS_PER_POLL);
         if (declared.has("stick-z"))
-            assignment.channel.setAxis({ player: assignment.player, kind: "stick-z" }, rescaledAxis(pad.axes[right[1]] ?? 0, this._deadZone));
+            this.writeAxis(assignment, { player: assignment.player, kind: "stick-z" }, rescaledAxis(pad.axes[right[1]] ?? 0, this._deadZone));
         if (declared.has("pedal-1"))
-            assignment.channel.setAxis({ player: assignment.player, kind: "pedal-1" }, (pad.buttons[pedals[0]]?.value ?? 0) * 2 - 1);
+            this.writeAxis(assignment, { player: assignment.player, kind: "pedal-1" }, (pad.buttons[pedals[0]]?.value ?? 0) * 2 - 1);
         if (declared.has("pedal-2"))
-            assignment.channel.setAxis({ player: assignment.player, kind: "pedal-2" }, (pad.buttons[pedals[1]]?.value ?? 0) * 2 - 1);
+            this.writeAxis(assignment, { player: assignment.player, kind: "pedal-2" }, (pad.buttons[pedals[1]]?.value ?? 0) * 2 - 1);
+    }
+
+    // PRIVATE :: assignedPad, arcadeAxis, NUMBER -> VOID
+    // Applies an optional live settings filter immediately before the channel write.
+    private writeAxis(assignment: AssignedPad, axis: ArcadeAxis, value: number): void {
+        assignment.channel.setAxis(axis, this._axisFilter?.(axis, value) ?? value);
     }
 
     // PRIVATE :: assignedPad -> VOID

@@ -21,6 +21,7 @@ import type {
     RomSource,                                                     // URL, bytes or picked Blob
     ScalingMode,                                                   // Display scaling choice
 } from "../shared.types.js";
+import { isDisplayCrop, type DisplayCrop } from "../ArcadeDisplay/types.js";   // Guards side-border crop
 import type { AuditStrictness } from "../RomSetAudit/types.js";     // Pre-start ROM-set policy
 
 /**
@@ -49,6 +50,7 @@ export interface ArcadeGameConfig {
     readonly display?: {
         readonly scaling?: ScalingMode;                            // Fit, integer or vertical fill-height
         readonly imageRendering?: "pixelated" | "smooth";         // Canvas interpolation policy
+        readonly crop?: DisplayCrop;                              // Native left/right columns hidden by ArcadeDisplay
     };
 }
 
@@ -122,7 +124,8 @@ export function isArcadeGameConfig(value: unknown): value is ArcadeGameConfig {
     if (game.display === undefined) return true;
     return typeof game.display === "object" && game.display !== null
         && (game.display.scaling === undefined || isScalingMode(game.display.scaling))
-        && (game.display.imageRendering === undefined || game.display.imageRendering === "pixelated" || game.display.imageRendering === "smooth");
+        && (game.display.imageRendering === undefined || game.display.imageRendering === "pixelated" || game.display.imageRendering === "smooth")
+        && (game.display.crop === undefined || isDisplayCrop(game.display.crop));
 }
 
 // PREDICATE :: UNKNOWN -> BOOLEAN

@@ -166,6 +166,19 @@ export interface ArcadeAxis {
     readonly kind: ArcadeAxisKind;                                // Native bridge axis role
 }
 
+// INTERFACE :: optional live tuning for one discovered analogue port
+// Speeds are fractions of full travel per frame; travel applies to gamepad values only.
+export interface AnalogSetting {
+    readonly keySpeed?: number;                                   // Keyboard travel per frame; default 0.02
+    readonly centreSpeed?: number;                                // Return travel per frame; defaults by port kind
+    readonly travel?: number;                                     // Gamepad travel multiplier in [0.1, 4]
+    readonly invert?: boolean;                                    // Negates the value after scaling
+}
+
+// TYPE :: partial p<player>:<machineAnalogKind> -> analogSetting map
+// Keys address the rows reported by MachineInfo.inputs.analog.
+export type AnalogSettings = Readonly<Partial<Record<`p${PlayerIndex}:${MachineAnalogKind}`, AnalogSetting>>>;
+
 /**
  *
  * Type Declarations: machine description (§2.2)
@@ -357,6 +370,15 @@ const SESSION_METHODS = [                                                       
 ] as const;
 const BUILD_ID_PATTERN = /^[0-9a-f]{64}$/;                                                                           // SHA-256 hex
 const ROM_NAME_PATTERN = /^[^/\\\0]+$/;                                                                              // No separators or NUL
+
+// Defaults shared by settings UIs and the runtime driver. Hold kinds resolve an
+// omitted centreSpeed to zero in AnalogDriver; centring kinds retain 0.02.
+export const DEFAULT_ANALOG_SETTING: Required<AnalogSetting> = Object.freeze({
+    keySpeed: 0.02,
+    centreSpeed: 0.02,
+    travel: 1,
+    invert: false,
+});
 
 /**
  *
@@ -575,6 +597,26 @@ export function isBiosOption(value: unknown): value is BiosOption {
 // True when value is one of the analog kinds emitted by machine discovery.
 export function isMachineAnalogKind(value: unknown): value is MachineAnalogKind {
     return (MACHINE_ANALOG_KINDS as readonly unknown[]).includes(value);
+}
+
+// PREDICATE :: UNKNOWN -> BOOLEAN
+// True when every supplied tuning field is within its documented live range.
+export function isAnalogSetting(value: unknown): value is AnalogSetting {
+    if (!isObject(value) || Array.isArray(value)) return false;
+    return (value.keySpeed === undefined || (isFiniteNumber(value.keySpeed) && value.keySpeed >= 0 && value.keySpeed <= 1))
+        && (value.centreSpeed === undefined || (isFiniteNumber(value.centreSpeed) && value.centreSpeed >= 0 && value.centreSpeed <= 1))
+        && (value.travel === undefined || (isFiniteNumber(value.travel) && value.travel >= 0.1 && value.travel <= 4))
+        && (value.invert === undefined || typeof value.invert === "boolean");
+}
+
+// PREDICATE :: UNKNOWN -> BOOLEAN
+// True when every own key addresses one player/kind pair and every value is an AnalogSetting.
+export function isAnalogSettings(value: unknown): value is AnalogSettings {
+    if (!isObject(value) || Array.isArray(value)) return false;
+    return Object.entries(value).every(([key, setting]) => {
+        const match = /^p([1-4]):(.+)$/.exec(key);
+        return match !== null && isPlayerIndex(Number(match[1])) && isMachineAnalogKind(match[2]) && isAnalogSetting(setting);
+    });
 }
 
 // PREDICATE :: UNKNOWN -> BOOLEAN
