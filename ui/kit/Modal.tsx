@@ -1,0 +1,21 @@
+// realizes: docs/ui-design-language.md > §3.3 Modal
+
+import type { ReactNode } from "react";
+import { TitleBar } from "./TitleBar.js";
+
+export interface ModalProps {
+    readonly title: string;
+    readonly children: ReactNode;
+    readonly foot?: ReactNode;
+    readonly onClose?: () => void;
+    readonly veil?: boolean;
+}
+
+export function Modal({ title, children, foot, onClose, veil = true }: ModalProps) {
+    const modal = <section className="window modal" role="dialog" aria-label={title} data-component="modal">
+        <TitleBar title={title} onClose={onClose} />
+        <div className="modal-body">{children}</div>
+        {foot === undefined ? null : <footer className="modal-foot">{foot}</footer>}
+    </section>;
+    return veil ? <div className="veil" data-component="veil">{modal}</div> : modal;
+}

@@ -59,6 +59,7 @@ export interface HarnessServerConfig {
     readonly host?: string;                                        // Defaults to loopback
     readonly port?: number;                                        // Defaults to 8787; zero requests an ephemeral test port
     readonly buildRoot?: string;                                   // Defaults to dist/mame from the invoking directory
+    readonly uiRoot?: string;                                      // Defaults to dist/ui from the invoking directory
     readonly preload?: string;                                     // Optional private preload config
     readonly pages?: ReadonlyArray<string>;                        // Optional extra local HTML pages, served at /<basename without .html>
 }
@@ -82,6 +83,7 @@ const FFLATE_FILE = resolve(WORKSPACE, "node_modules/fflate/esm/browser.js");   
 const DEFAULT_HOST = "127.0.0.1";
 const DEFAULT_PORT = 8_787;
 const DEFAULT_BUILD_ROOT = "dist/mame";
+const DEFAULT_UI_ROOT = "dist/ui";
 const FAMILY_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
 const MACHINE_PATTERN = /^[a-z0-9][a-z0-9_]*$/;
 
@@ -124,7 +126,7 @@ export function isPreloadConfig(value: unknown): value is PreloadConfig {
 const preloadUrl = (name: string): string => `/preload/${encodeURIComponent(name)}`;
 
 // Routes the server reserves for itself; an extra page may not shadow any of them.
-const RESERVED_PAGE_ROUTES = new Set(["/", "/builds.json", "/preload.json", "/harness.js", "/src", "/mame", "/preload", "/-"]);
+const RESERVED_PAGE_ROUTES = new Set(["/", "/builds.json", "/preload.json", "/harness.js", "/src", "/mame", "/preload", "/ui", "/-"]);
 
 // PUBLIC :: [STRING] -> MAP(STRING, STRING)
 // Resolves each explicitly named local HTML page to its one public route, /<basename without extension>. Only these
@@ -222,6 +224,8 @@ const contentTypeFor = (path: string): string => {
     switch (extname(path).toLowerCase()) {
         case ".html": return "text/html; charset=utf-8";
         case ".js": return "text/javascript; charset=utf-8";
+        case ".css": return "text/css; charset=utf-8";
+        case ".map": return "application/json; charset=utf-8";
         case ".json": return "application/json; charset=utf-8";
         case ".wasm": return "application/wasm";
         case ".zip": return "application/zip";
@@ -291,6 +295,7 @@ export const startHarnessServer = async (config: HarnessServerConfig = {}): Prom
     const port = config.port ?? DEFAULT_PORT;
     if (!isText(host) || !Number.isInteger(port) || port < 0 || port > 65_535) throw new Error("Harness host or port is invalid.");
     const buildRoot = resolve(config.buildRoot ?? DEFAULT_BUILD_ROOT);
+    const uiRoot = resolve(config.uiRoot ?? DEFAULT_UI_ROOT);
     const preload = config.preload === undefined ? null : loadPreloadConfig(config.preload);
     const preloadFiles = new Map(preload?.files.map((file) => [file.url, file.path]));
     const pageFiles = loadPages(config.pages ?? []);
@@ -316,6 +321,22 @@ export const startHarnessServer = async (config: HarnessServerConfig = {}): Prom
             if (pathname === "/preload.json") {
                 if (preload === null) { notFound(response, head); return; }
                 send(response, 200, "application/json; charset=utf-8", `${JSON.stringify(preload.config)}\n`, head);
+                return;
+            }
+            if (pathname === "/ui/gallery" || pathname === "/ui/gallery/") {
+                const file = await confinedFile(uiRoot, "index.html");
+                if (file === null) { notFound(response, head); return; }
+                send(response, 200, contentTypeFor(file), await readFile(file), head);
+                return;
+            }
+            if (pathname.startsWith("/ui/")) {
+                let requested: string;
+                try { requested = decodeURIComponent(pathname.slice("/ui/".length)); }
+                catch { notFound(response, head); return; }
+                if (![".js", ".css", ".html", ".map"].includes(extname(requested).toLowerCase())) { notFound(response, head); return; }
+                const file = await confinedFile(uiRoot, requested);
+                if (file === null) { notFound(response, head); return; }
+                send(response, 200, contentTypeFor(file), await readFile(file), head);
                 return;
             }
             const preloadPath = preloadFiles.get(pathname);
@@ -368,7 +389,7 @@ export const startHarnessServer = async (config: HarnessServerConfig = {}): Prom
 };
 
 // HELPER :: [STRING] -> harnessServerConfig
-// Parses the five documented command-line options without accepting positional or unknown arguments.
+// Parses the documented command-line options without accepting positional or unknown arguments.
 const parseArguments = (args: string[]): HarnessServerConfig => {
     const config: { -readonly [K in keyof HarnessServerConfig]: HarnessServerConfig[K] } = {};
     const pages: string[] = [];
@@ -381,6 +402,7 @@ const parseArguments = (args: string[]): HarnessServerConfig => {
             if (!/^\d+$/.test(value)) throw new Error("--port requires an integer from 0 through 65535.");
             config.port = Number(value);
         } else if (option === "--build-root") config.buildRoot = value;
+        else if (option === "--ui-root") config.uiRoot = value;
         else if (option === "--preload") config.preload = value;
         else if (option === "--page") pages.push(value);
         else throw new Error(`Unknown option ${option}.`);
