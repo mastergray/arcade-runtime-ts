@@ -199,3 +199,21 @@ Without that variable the synthetic browser case remains defined and the
 production case is omitted. The W32 completion gate is not fully satisfied
 until the changes can be committed and the environment-bound spec cases and
 browser suite pass there.
+
+## Integration (2026-10-26, on main)
+
+- The agent's sandbox could not write the worktree index; the integrator
+  committed the package as `cc3cab6` after a clean sweep.
+- `MameSession` services a state operation scheduled while paused by
+  resuming natively for one frame and pausing again: `web_run_frames`
+  declines while the machine is paused, so a save over the paused game
+  never completed (spec case in test 23).
+- `KeyboardSource` leaves browser defaults alone while its input is
+  suspended, so the arrows and Enter reach the window and the dialogs
+  (spec case in test 16).
+- Browser test 43: the slot step split, the tsx `__name` helper defined
+  on the page, the fullscreen assertion reads the log before closing
+  that modal, the reload step no longer closes a closed modal.
+- Gate on the branch: browser 43 passed, 0 failed, 23 skipped with the
+  general and analogue preload configs; spec 607; check clean.
+  Merged as `74cfd89`.
