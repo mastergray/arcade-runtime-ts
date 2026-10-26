@@ -253,11 +253,11 @@ const cases: TestCase[] = [{
             await page.locator('[data-menu-title="log"]').click();
             await page.locator('[data-menu-item="technical-log"]').click();
             await page.waitForSelector('[data-modal="technical-log"]');
-            await page.locator("[data-close-log]").click();
+            await page.locator('[data-modal="technical-log"] [data-modal-close]').click();
             await page.locator('[data-menu-title="log"]').click();
             await page.locator('[data-menu-item="file-check"]').click();
             await page.waitForSelector('[data-modal="file-check"]');
-            await page.locator("[data-close-file-check]").click();
+            await page.locator('[data-modal="file-check"] [data-modal-close]').click();
             await page.evaluate(() => {
                 const state = (window as unknown as Window & { __arcadeLocalTest: SyntheticState }).__arcadeLocalTest;
                 const cabinet = (window as unknown as { __arcadeLocalCabinet?: { player: { display: { scaling: string } } } }).__arcadeLocalCabinet;

@@ -302,7 +302,7 @@ button { color: inherit; }
 .selector-arrow { align-self: stretch; min-inline-size: var(--role-min-target); padding: 0 calc(var(--role-control-x) / 2); }
 .selector-value { padding: 0 var(--role-control-x); text-align: center; font-weight: var(--weight-bold); }
 
-.tabs { display: flex; align-items: end; gap: calc(var(--role-gutter) / 3); padding: var(--role-gutter) var(--role-gutter) 0; border-bottom: var(--role-bevel) solid var(--mid); background: var(--face); overflow-x: auto; }
+.tabs { display: flex; align-items: end; gap: calc(var(--role-gutter) / 3); padding: var(--role-gutter) var(--role-gutter) 0; border-bottom: var(--role-bevel) solid var(--mid); background: var(--face); }
 .tab { min-height: var(--role-min-target); padding: calc(var(--role-control-y) / 2) var(--role-control-x); background: var(--tab-off); border-bottom-color: var(--tab-off); box-shadow: none; }
 .tab[data-on="true"] { position: relative; margin-block-end: calc(-1 * var(--role-bevel)); padding-block-end: calc(var(--role-control-y) / 2 + var(--role-bevel)); background: var(--face); border-bottom-color: var(--face); font-weight: var(--weight-bold); }
 .tab:not([data-on="true"]) { margin-block-start: var(--role-bevel); }

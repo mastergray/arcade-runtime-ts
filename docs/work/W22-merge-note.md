@@ -132,8 +132,8 @@ press/release ownership.
   `[data-stored-files-tab]`, `[data-stored-file]`, `[data-remove-stored]`,
   `[data-remove-all-stored]`.
 - Diagnostics and confirmations: `[data-modal="technical-log"]`,
-  `[data-copy-log]`, `[data-close-log]`, `[data-modal="file-check"]`,
-  `[data-file-check-warnings]`, `[data-close-file-check]`,
+  `[data-copy-log]`, `[data-modal="file-check"]`,
+  `[data-file-check-warnings]`, (both diagnostic modals close through the title bar's `[data-modal-close]`),
   `[data-modal="clear-saved-play"]`, `[data-modal="restart"]`,
   `[data-confirm]`, `[data-cancel]`, `[data-modal-close]`.
 - Bootstrap: `[data-local-loading]` and `[data-local-error]`.

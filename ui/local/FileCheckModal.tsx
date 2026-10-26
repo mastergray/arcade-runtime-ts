@@ -1,6 +1,6 @@
 // realizes: docs/ui-spec.md > §3.2 and §7.4 Detailed file check
 
-import { Button, Modal, Table } from "../kit/index.js";
+import { Modal, Table } from "../kit/index.js";
 import type { LibraryCard } from "../model/types.js";
 
 export function FileCheckModal({ card, onClose }: { readonly card: LibraryCard; readonly onClose: () => void }) {
@@ -18,7 +18,7 @@ export function FileCheckModal({ card, onClose }: { readonly card: LibraryCard; 
         })),
         ...report.problems.map((problem) => ({ id: `problem:${problem.archive}`, cells: [problem.archive, "Bad file", problem.reason] })),
     ];
-    return <div data-modal="file-check"><Modal title="Detailed file check" onClose={onClose} foot={<Button label="Close" data-close-file-check primary onClick={onClose} />}>
+    return <div data-modal="file-check"><Modal title="Detailed file check" onClose={onClose}>
         <p><strong>{card.metadata?.description ?? card.indexed.machine}</strong> — {report?.status ?? card.checkState}</p>
         <Table id="file-check-report" columns={["File", "Status", "Details"]} rows={rows} />
         {report?.warnings.length ? <p className="note" data-file-check-warnings>{report.warnings.length} file differences are accepted by the selected policy.</p> : null}

@@ -66,7 +66,7 @@ function CardDetail({ card, library, onImport, onFileCheck }: {
         <div className="game-detail-actions">
             <span data-card-action="file-check"><Button size="sm" label="File check" disabled={card.report === null} onClick={onFileCheck} /></span>
             {primary === undefined ? null : <span data-card-action="remove"><Button size="sm" label="Remove" onClick={() => { void library.removeArchive(primary.name); }} /></span>}
-            <span data-card-action="import"><Button size="sm" label="Import" onClick={onImport} /></span>
+            {library.verdict(card.key) === "ready" ? null : <span data-card-action="import"><Button size="sm" label="Import" onClick={onImport} /></span>}
         </div>
     </div>;
 }
