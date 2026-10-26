@@ -35,6 +35,10 @@ export interface FocusProviderProps {
     readonly onTabPrevious?: () => void;
     readonly onTabNext?: () => void;
     readonly gamepadEnabled?: boolean;
+    readonly keyboardEnabled?: boolean;
+    readonly escapeEnabled?: boolean;
+    readonly columns?: boolean;
+    readonly acceptGamepad?: (pad: Gamepad) => boolean;
 }
 
 export interface FocusableProps {
@@ -58,7 +62,7 @@ const buttonAction = (button: number): FocusAction | null => {
     return null;
 };
 
-export function FocusProvider({ children, initialId, onBack, onTabPrevious, onTabNext, gamepadEnabled = true }: FocusProviderProps): ReactNode {
+export function FocusProvider({ children, initialId, onBack, onTabPrevious, onTabNext, gamepadEnabled = true, keyboardEnabled = true, escapeEnabled = true, columns = false, acceptGamepad }: FocusProviderProps): ReactNode {
     const targets = useRef(new Map<string, FocusTarget>());
     const [focusedId, setFocusedId] = useState<string | null>(initialId ?? null);
     const focusedIdRef = useRef<string | null>(initialId ?? null);
@@ -80,9 +84,9 @@ export function FocusProvider({ children, initialId, onBack, onTabPrevious, onTa
     }, [focus]);
 
     const dispatch = useCallback((action: FocusAction): void => {
-        const available = [...targets.current.values()].filter((target) => !target.disabled);
+        const available = [...targets.current.values()].filter((target) => !target.disabled && target.element.isConnected);
         if (available.length === 0) return;
-        const current = targets.current.get(focusedIdRef.current ?? "") ?? available[0]!;
+        const current = available.find((target) => target.id === focusedIdRef.current) ?? available[0]!;
         if (action === "activate") {
             if (current.onActivate === undefined) current.element.click();
             else current.onActivate();
@@ -95,9 +99,9 @@ export function FocusProvider({ children, initialId, onBack, onTabPrevious, onTa
         if (current.selector && action === "right") { current.onRight?.(); return; }
 
         const groups = [...new Set(available.map((target) => target.group))];
-        if (action === "group-previous" || action === "group-next") {
+        if (action === "group-previous" || action === "group-next" || columns && (action === "left" || action === "right")) {
             const groupIndex = Math.max(0, groups.indexOf(current.group));
-            const step = action === "group-previous" ? -1 : 1;
+            const step = action === "group-previous" || action === "left" ? -1 : 1;
             const nextGroup = groups[(groupIndex + step + groups.length) % groups.length];
             const next = available.find((target) => target.group === nextGroup);
             if (next !== undefined) focus(next.id);
@@ -113,10 +117,16 @@ export function FocusProvider({ children, initialId, onBack, onTabPrevious, onTa
         const adjacentTargets = available.filter((target) => target.group === adjacentGroup);
         const next = sameGroupNext ?? (step < 0 ? adjacentTargets.at(-1) : adjacentTargets[0]);
         if (next !== undefined) focus(next.id);
-    }, [focus, onBack, onTabNext, onTabPrevious]);
+    }, [columns, focus, onBack, onTabNext, onTabPrevious]);
+    const dispatchRef = useRef(dispatch);
+    dispatchRef.current = dispatch;
+    const acceptGamepadRef = useRef(acceptGamepad);
+    acceptGamepadRef.current = acceptGamepad;
 
     useEffect(() => {
+        if (!keyboardEnabled) return;
         const handleKey = (event: KeyboardEvent): void => {
+            if (event.defaultPrevented || event.key === "Escape" && !escapeEnabled) return;
             document.documentElement.dataset.input = "keyboard";
             const action: FocusAction | null = event.key === "ArrowUp" ? "up"
                 : event.key === "ArrowDown" ? "down"
@@ -131,7 +141,7 @@ export function FocusProvider({ children, initialId, onBack, onTabPrevious, onTa
                                                 : null;
             if (action === null) return;
             event.preventDefault();
-            dispatch(action);
+            dispatchRef.current(action);
         };
         const handlePointer = (): void => { document.documentElement.dataset.input = "touch"; };
         window.addEventListener("keydown", handleKey);
@@ -140,37 +150,45 @@ export function FocusProvider({ children, initialId, onBack, onTabPrevious, onTa
             window.removeEventListener("keydown", handleKey);
             window.removeEventListener("pointerdown", handlePointer);
         };
-    }, [dispatch]);
+    }, [keyboardEnabled, escapeEnabled]);
 
     useEffect(() => {
         if (!gamepadEnabled) return;
         let frame = 0;
         let previous = new Set<string>();
+        let primed = false;
         const poll = (): void => {
             const active = new Set<string>();
+            const blocked = new Set<string>();
             for (const pad of navigator.getGamepads?.() ?? []) {
                 if (pad === null || pad.mapping !== "standard") continue;
+                const accepted = acceptGamepadRef.current?.(pad) !== false;
+                const add = (action: FocusAction): void => {
+                    active.add(action);
+                    if (!accepted) blocked.add(action);
+                };
                 pad.buttons.forEach((button, index) => {
                     const action = button.pressed ? buttonAction(index) : null;
-                    if (action !== null) active.add(action);
+                    if (action !== null) add(action);
                 });
                 const horizontal = pad.axes[0] ?? 0;
                 const vertical = pad.axes[1] ?? 0;
-                if (horizontal < -.55) active.add("left");
-                if (horizontal > .55) active.add("right");
-                if (vertical < -.55) active.add("up");
-                if (vertical > .55) active.add("down");
+                if (horizontal < -.55) add("left");
+                if (horizontal > .55) add("right");
+                if (vertical < -.55) add("up");
+                if (vertical > .55) add("down");
             }
-            for (const action of active) if (!previous.has(action)) {
+            for (const action of active) if (primed && !previous.has(action) && !blocked.has(action)) {
                 document.documentElement.dataset.input = "gamepad";
-                dispatch(action as FocusAction);
+                dispatchRef.current(action as FocusAction);
             }
             previous = active;
+            primed = true;
             frame = requestAnimationFrame(poll);
         };
         frame = requestAnimationFrame(poll);
         return () => { cancelAnimationFrame(frame); };
-    }, [dispatch, gamepadEnabled]);
+    }, [gamepadEnabled]);
 
     const value = useMemo<FocusContextValue>(() => ({ focusedId, register, focus }), [focus, focusedId, register]);
     return <FocusContext.Provider value={value}>{children}</FocusContext.Provider>;
@@ -190,7 +208,10 @@ export function useFocusable(id: string, group: string, options: FocusableOption
             element: element.current,
             disabled: optionsRef.current.disabled,
             selector: optionsRef.current.selector,
-            onActivate: () => optionsRef.current.onActivate?.(),
+            onActivate: () => {
+                if (optionsRef.current.onActivate === undefined) element.current?.click();
+                else optionsRef.current.onActivate();
+            },
             onBack: optionsRef.current.onBack === undefined ? undefined : () => optionsRef.current.onBack?.(),
             onLeft: optionsRef.current.onLeft === undefined ? undefined : () => optionsRef.current.onLeft?.(),
             onRight: optionsRef.current.onRight === undefined ? undefined : () => optionsRef.current.onRight?.(),

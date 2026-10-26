@@ -17,7 +17,7 @@ import {
     type MachineInfo,
     type PlayerIndex,
 } from "../../src/index.js";
-import { Bar, Button, Chip, Confirm, ControlsPicture, Modal, Range, Table, Tabs } from "../kit/index.js";
+import { Bar, Button, Chip, Confirm, ControlsPicture, Modal, Range, Selector, Table, Tabs } from "../kit/index.js";
 import {
     BindingCapture,
     gamepadButtonFor,
@@ -29,6 +29,7 @@ import {
     moveKeyboardBinding,
     type CaptureResult,
 } from "../model/bindings.js";
+import { FocusProvider } from "../focus/FocusController.js";
 import { type PreferenceStore } from "../model/preferences.js";
 import type { SessionModel } from "../model/session.js";
 
@@ -39,6 +40,7 @@ type CaptureTarget =
     | { readonly id: string; readonly kind: "menu" };
 
 export interface ControlsModalProps {
+    readonly inline?: boolean;
     readonly preferences: PreferenceStore;
     readonly session: SessionModel | null;
     readonly gameKey: string | null;
@@ -117,6 +119,7 @@ const axisKindFor = (kind: MachineAnalogKind): ArcadeAxis["kind"] | null => {
 export function ControlsModal(props: ControlsModalProps) {
     const resolved = useMemo(() => props.preferences.resolveGame(props.gameKey ?? "defaults/defaults"), [props.preferences, props.gameKey]);
     const originalAnalog = useRef(resolved.analog);
+    const applied = useRef(false);
     const capture = useRef(new BindingCapture());
     const [tab, setTab] = useState<ControlsTab>("player1");
     const [scope, setScope] = useState<ApplyScope>(props.gameKey === null ? "global" : "game");
@@ -134,6 +137,11 @@ export function ControlsModal(props: ControlsModalProps) {
     const [held, setHeld] = useState<ReadonlySet<string>>(new Set());
     const [, setInputVersion] = useState(0);
     const devices = props.session?.controlDevices() ?? [];
+
+    useEffect(() => () => {
+        // Closing the presentation window through its gesture also cancels live previews.
+        if (props.inline && !applied.current) props.session?.previewAnalog(originalAnalog.current);
+    }, [props.inline, props.session]);
 
     const finishCapture = (result: CaptureResult, target: CaptureTarget): void => {
         if (target.kind === "menu") {
@@ -200,6 +208,13 @@ export function ControlsModal(props: ControlsModalProps) {
         data-capturing={captureTarget?.id === target.id}
         onClick={() => begin(target)} />;
 
+    const scopeChoice = (name: string): ReactElement => props.inline
+        ? <div className="scope-choice" data-apply-scope><span>Apply to</span><Selector id={`${name}-scope`} label="Apply to" values={props.gameKey === null ? ["all games"] : ["this game", "all games"]} value={scope === "game" ? "this game" : "all games"} onChange={(value) => setScope(value === "this game" ? "game" : "global")} /></div>
+        : <fieldset className="scope-choice" data-apply-scope><legend>Apply to</legend>
+            <label><input type="radio" name={`${name}-scope`} value="game" checked={scope === "game"} disabled={props.gameKey === null} onChange={() => setScope("game")} /> this game</label>
+            <label><input type="radio" name={`${name}-scope`} value="global" checked={scope === "global"} onChange={() => setScope("global")} /> all games</label>
+        </fieldset>;
+
     const playerPane = (player: PlayerIndex): ReactElement => {
         const pad = currentPad(player);
         const map = currentMapping(player);
@@ -213,10 +228,7 @@ export function ControlsModal(props: ControlsModalProps) {
                 onActivate: () => begin({ id: arcadeControlKey(control), kind: "control", control, chord: false }),
                 cells: [label, keyLabel(keyboardCodeFor(keyboard, control)), gamepadButtonLabel(gamepadButtonFor(map, control)), captureButton({ id: arcadeControlKey(control), kind: "control", control, chord: false })],
             }))} />
-            <fieldset className="scope-choice" data-apply-scope><legend>Apply to</legend>
-                <label><input type="radio" name="controls-scope" value="game" checked={scope === "game"} disabled={props.gameKey === null} onChange={() => setScope("game")} /> this game</label>
-                <label><input type="radio" name="controls-scope" value="global" checked={scope === "global"} onChange={() => setScope("global")} /> all games</label>
-            </fieldset>
+            {scopeChoice("controls")}
         </div>;
     };
 
@@ -251,10 +263,7 @@ export function ControlsModal(props: ControlsModalProps) {
             ...cabinetRows,
             { id: "menu-gesture", focusable: true, onActivate: () => begin({ id: "menu-gesture", kind: "menu" }), cells: ["Open the menu while playing", "Escape", gamepadChordLabel(menuButtons), captureButton({ id: "menu-gesture", kind: "menu" })] },
         ]} />
-        <fieldset className="scope-choice" data-apply-scope><legend>Apply to</legend>
-            <label><input type="radio" name="cabinet-scope" checked={scope === "game"} disabled={props.gameKey === null} onChange={() => setScope("game")} /> this game</label>
-            <label><input type="radio" name="cabinet-scope" checked={scope === "global"} onChange={() => setScope("global")} /> all games</label>
-        </fieldset>
+        {scopeChoice("cabinet")}
     </div>;
 
     const updateAnalog = (key: keyof AnalogSettings, changes: Partial<AnalogSetting>): void => {
@@ -272,9 +281,9 @@ export function ControlsModal(props: ControlsModalProps) {
                     id: String(key),
                     cells: [
                         analogName(kind, player),
-                        <Range label="Speed" aria-label={`${analogName(kind, player)} keyboard speed`} min={0.5} max={20} step={0.5} value={setting.keySpeed * 100} valueLabel={`${(setting.keySpeed * 100).toFixed(1)} %`} onChange={(value) => updateAnalog(key, { keySpeed: value / 100 })} key="speed" />,
-                        <Range label="Travel" aria-label={`${analogName(kind, player)} gamepad travel`} min={10} max={400} step={10} value={setting.travel * 100} valueLabel={`${Math.round(setting.travel * 100)} %`} onChange={(value) => updateAnalog(key, { travel: value / 100 })} key="travel" />,
-                        <input aria-label={`Invert ${analogName(kind, player)}`} data-analog-invert={String(key)} type="checkbox" checked={setting.invert} onChange={(event) => updateAnalog(key, { invert: event.currentTarget.checked })} key="invert" />,
+                        props.inline ? <Selector id={`${key}-speed`} label="Keyboard speed" values={Array.from({ length: 40 }, (_, index) => `${(index + 1) / 2} %`)} value={`${setting.keySpeed * 100} %`} onChange={(value) => updateAnalog(key, { keySpeed: parseFloat(value) / 100 })} key="speed" /> : <Range label="Speed" aria-label={`${analogName(kind, player)} keyboard speed`} min={0.5} max={20} step={0.5} value={setting.keySpeed * 100} valueLabel={`${(setting.keySpeed * 100).toFixed(1)} %`} onChange={(value) => updateAnalog(key, { keySpeed: value / 100 })} key="speed" />,
+                        props.inline ? <Selector id={`${key}-travel`} label="Gamepad travel" values={Array.from({ length: 40 }, (_, index) => `${(index + 1) * 10} %`)} value={`${Math.round(setting.travel * 100)} %`} onChange={(value) => updateAnalog(key, { travel: parseFloat(value) / 100 })} key="travel" /> : <Range label="Travel" aria-label={`${analogName(kind, player)} gamepad travel`} min={10} max={400} step={10} value={setting.travel * 100} valueLabel={`${Math.round(setting.travel * 100)} %`} onChange={(value) => updateAnalog(key, { travel: value / 100 })} key="travel" />,
+                        props.inline ? <Selector id={`${key}-invert`} label="Invert" values={["Off", "On"]} value={setting.invert ? "On" : "Off"} onChange={(value) => updateAnalog(key, { invert: value === "On" })} key="invert" /> : <input aria-label={`Invert ${analogName(kind, player)}`} data-analog-invert={String(key)} type="checkbox" checked={setting.invert} onChange={(event) => updateAnalog(key, { invert: event.currentTarget.checked })} key="invert" />,
                         <Button size="sm" label="Use for all games" data-analog-global={String(key)} onClick={() => {
                             setGlobalAnalog((current) => ({ ...current, [key]: setting }));
                         }} key="global" />,
@@ -282,7 +291,7 @@ export function ControlsModal(props: ControlsModalProps) {
                 };
             })} />
         </>}
-        <Range data-stick-centre label="Stick centre tolerance" min={0} max={90} step={1} value={deadZone * 100} valueLabel={`${Math.round(deadZone * 100)} %`} onChange={(value) => setDeadZone(value / 100)} />
+        {props.inline ? <Selector id="stick-centre" label="Stick centre tolerance" values={Array.from({ length: 91 }, (_, index) => `${index} %`)} value={`${Math.round(deadZone * 100)} %`} onChange={(value) => setDeadZone(parseFloat(value) / 100)} /> : <Range data-stick-centre label="Stick centre tolerance" min={0} max={90} step={1} value={deadZone * 100} valueLabel={`${Math.round(deadZone * 100)} %`} onChange={(value) => setDeadZone(value / 100)} />}
         <p className="note">How far a stick must move before it counts; applies to every pad and every game.</p>
     </div>;
 
@@ -332,6 +341,7 @@ export function ControlsModal(props: ControlsModalProps) {
         }
     };
     const apply = (): void => {
+        applied.current = true;
         const global = props.preferences.getGlobal();
         props.preferences.setGlobal({
             ...global,
@@ -365,17 +375,27 @@ export function ControlsModal(props: ControlsModalProps) {
         props.onClose();
     };
 
-    return <div data-modal="controls"><Modal title={`Controls — ${props.gameName ?? "defaults"}`} onClose={cancel} foot={<>
+    const foot = <>
         <Button label="Restore defaults" data-controls-restore onClick={() => setConfirmRestore(true)} />
         <Button label="OK" primary data-controls-ok onClick={apply} />
         <Button label="Cancel" data-controls-cancel onClick={cancel} />
-    </>}>
-        <Tabs id="controls-tabs" active={tab} onChange={(id) => setTab(id as ControlsTab)} tabs={[
+    </>;
+    const content = <>
+        <Tabs arrowSelect={props.inline} id="controls-tabs" active={tab} onChange={(id) => setTab(id as ControlsTab)} tabs={[
             { id: "player1", label: "Player 1" }, { id: "player2", label: "Player 2" },
             { id: "cabinet", label: "Cabinet" }, { id: "analogue", label: "Analogue" }, { id: "test", label: "Test input" },
         ]} />
         {tab === "player1" ? playerPane(1) : tab === "player2" ? playerPane(2) : tab === "cabinet" ? cabinetPane : tab === "analogue" ? analogPane : testPane}
-    </Modal>
-    {confirmRestore ? <div data-modal="restore-controls"><Confirm veil question={`Restore controls for ${scope === "game" ? "this game" : "all games"}?`} consequence={scope === "game" ? "This game's own keyboard and gamepad bindings are removed; it uses the all-games bindings again. Saved play is untouched." : "Keyboard and gamepad bindings for all games return to the built-in defaults, and this game's own bindings are removed. Saved play is untouched."} confirmLabel="Restore defaults" onCancel={() => setConfirmRestore(false)} onConfirm={() => { setConfirmRestore(false); restore(); }} /></div> : null}
+    </>;
+    const body = <div data-modal={props.inline ? undefined : "controls"} data-controls-inline={props.inline || undefined}>
+        {props.inline ? <><div className="inline-controls-body">{content}</div><footer className="modal-foot">{foot}</footer></> : <Modal title={`Controls — ${props.gameName ?? "defaults"}`} onClose={cancel} foot={foot}>{content}</Modal>}
+    {confirmRestore ? <FocusProvider onBack={() => setConfirmRestore(false)}><div data-modal="restore-controls"><Confirm veil question={`Restore controls for ${scope === "game" ? "this game" : "all games"}?`} consequence={scope === "game" ? "This game's own keyboard and gamepad bindings are removed; it uses the all-games bindings again. Saved play is untouched." : "Keyboard and gamepad bindings for all games return to the built-in defaults, and this game's own bindings are removed. Saved play is untouched."} confirmLabel="Restore defaults" onCancel={() => setConfirmRestore(false)} onConfirm={() => { setConfirmRestore(false); restore(); }} /></div></FocusProvider> : null}
     </div>;
+    const stepTab = (step: number): void => {
+        const tabs: ControlsTab[] = ["player1", "player2", "cabinet", "analogue", "test"];
+        setTab(tabs[(tabs.indexOf(tab) + step + tabs.length) % tabs.length]!);
+    };
+    return props.inline ? <FocusProvider initialId="controls-tabs-player1" escapeEnabled={false} keyboardEnabled={captureTarget === null && !confirmRestore} gamepadEnabled={captureTarget === null && !confirmRestore}
+        acceptGamepad={(pad) => props.session?.snapshot().windowOpen === true && !(resolved.controls.menuGesture[pad.id] ?? [10, 11]).every((button) => pad.buttons[button]?.pressed)}
+        onBack={() => { if (confirmRestore) setConfirmRestore(false); else cancel(); }} onTabPrevious={() => stepTab(-1)} onTabNext={() => stepTab(1)}>{body}</FocusProvider> : body;
 }
