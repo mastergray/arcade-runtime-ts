@@ -54,7 +54,7 @@ export function menuDefinitions(props: LocalMenusProps): ReadonlyArray<MenuDefin
         { id: `load-${slot}`, label: `Load ${slotLabel(slot)}`, small: saveDisabled ?? slotTime(props.gamePreferences, slot), disabled: saveDisabled !== undefined || props.gamePreferences.slots[slot] === undefined, onSelect: () => props.actions.loadSlot(slot) },
     ]);
     return [
-        { id: "settings", label: <><u>S</u>ettings</>, entries: [
+        { id: "configure", label: <><u>C</u>onfigure</>, entries: [
             { id: "settings", label: "Settings…", small: "next package", disabled: true, onSelect: props.actions.settings },
             { id: "controls", label: "Controls…", small: "next package", disabled: true, onSelect: props.actions.controls },
             { id: "settings-separator", label: "", separator: true },

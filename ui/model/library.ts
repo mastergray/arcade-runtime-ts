@@ -224,6 +224,13 @@ export class LibraryModel {
         await this.removeStored(name);
     }
 
+    // PUBLIC :: VOID -> VOID
+    // Drops the import rows that are resolved (stored, pending a companion, or skipped); chosen files not yet stored stay listed.
+    dismissImports(): void {
+        for (const [key, row] of this.imports) if (row.status !== "Ready") this.imports.delete(key);
+        this.emit();
+    }
+
     async removeStored(name: string): Promise<void> {
         if (this.busy) return;
         const key = archiveKey(name);

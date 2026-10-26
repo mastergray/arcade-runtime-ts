@@ -272,13 +272,13 @@ const cases: TestCase[] = [{
             await page.waitForSelector('[data-modal="clear-saved-play"]');
             await page.locator('[data-modal="clear-saved-play"] button').filter({ hasText: "Clear saved play" }).click();
             await page.waitForFunction(() => document.querySelector<HTMLSelectElement>("[data-slot-picker]")?.selectedOptions[0]?.textContent?.includes("empty") === true);
-            await page.locator('[data-menu-title="settings"]').focus();
+            await page.locator('[data-menu-title="configure"]').focus();
             await page.keyboard.press("ArrowRight");
             const menuFocused = await page.locator('[data-menu-title="state"]').getAttribute("data-focus") === "true";
             await page.keyboard.press("Tab");
             await page.keyboard.press("Tab");
             const rowFocused = await page.evaluate(() => document.activeElement?.closest('[data-row="synthetic-family/synthetic_machine"]') !== null);
-            await page.locator('[data-menu-title="settings"]').click();
+            await page.locator('[data-menu-title="configure"]').click();
             await page.locator('[data-menu-item="stored-files"]').click();
             await page.waitForSelector('[data-modal="import"] [data-stored-files-tab]');
             await page.locator(`[data-remove-stored="${ARCHIVE}"]`).click();

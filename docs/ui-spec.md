@@ -282,7 +282,10 @@ details move into the games column as accordions.
   notice, Store all and check, Close. **The modal stays open after Store
   all and check**: rows update in place to Stored, Pending (naming the
   companion still needed) or Skip, more files can be dropped while it is
-  open, and the games column behind it updates live. Second tab Stored
+  open, and the games column behind it updates live. Closing the modal
+  clears the rows that are resolved (Stored, Pending, Skip): they now
+  live in the games column and the Stored files tab; files chosen but not
+  yet stored stay listed for the next opening. Second tab Stored
   files (§7.4). No search or filter in 1.0: the column scrolls.
 - **One row per game found**, the harness's cards folded into
   **accordions**: the closed row shows the generated icon, the name, and
@@ -331,7 +334,7 @@ desktop mockup's, followed by a fixed row of **shortcuts**.
 
 | Menu | Items |
 | --- | --- |
-| Settings | Settings…, Controls…; Stored files… (the modal that manages every archive in the browser: size, which games use it, Remove, Remove all) |
+| Configure (renamed from Settings 2026-10-25) | Settings…, Controls…; Stored files… (the modal that manages every archive in the browser: size, which games use it, Remove, Remove all) |
 | State | Save to slot 1–3 and Load slot 1–3, each with its timestamp or "empty"; Save changes; Clear saved play for this game…; Reset; Restart from power-on… |
 | View | Controller view (checked), Show FPS; Size: Fit (keep aspect) / Stretch (fill the play area) / Integer (whole pixels); Fullscreen (keep aspect) / Fullscreen, stretched; Mode: Play / Presentation… |
 | Log | Technical log…, Detailed file check…, Copy log |
