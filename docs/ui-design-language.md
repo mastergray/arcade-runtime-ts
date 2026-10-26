@@ -173,8 +173,8 @@ reused. "Local" is `/local`, "phone" is `/mobile-local-*`, "TV" is
 
 | Component | Definition | Local | Phone | TV |
 | --- | --- | --- | --- | --- |
-| **Game card** | icon · name (18, 700) · meta line (manufacturer · year · resolution at Hz · players · buttons) · status line (saved progress, slots) | centre of the controller strip | top of the Menu window's State tab | right column, under the last frame, at TV size |
-| **Controller strip** | three columns: d-pad · card with Cabinet / Operator switch rows and COIN / START below · six red buttons; hidden by View › Controller | under the canvas | portrait: switches row, then controller; landscape: split either side | never (the pad is real) |
+| **Game card** | icon · name (18, 700) · meta line (manufacturer · year · resolution at Hz · players · buttons) · status line (saved progress, slots) | not on the page: the status bar carries the running game's name and meta, the open list row its info | top of the Menu window's State tab | right column, under the last frame, at TV size |
+| **Controller strip** | three columns: d-pad · the **Cabinet** row (Service, Test, Vol −, Vol + as small buttons) and the **Operator** row (the keys the game reports) each with a tiny uppercase label, COIN / START pills below, a one-line note instead of the rows when no game runs · six red buttons; no game card and no name on the strip; hidden by View › Controller | under the canvas | portrait: switches row, then controller; landscape: split either side | never (the pad is real) |
 | **Controls picture** | sunken box: mini d-pad, six mini red buttons (off for undeclared), COIN / START mini pills, one-line note | Controls › Player n | same | same |
 | **Canvas frame** | black stage, canvas sized by Fit / Stretch / Integer, dashed placeholder before load, PAUSED overlay (`.55` black, 26 px 700 letter-spaced) | | | fullscreen while playing; the menu shows the last frame in a sunken frame |
 | **Start hint** | pill-shaped `rgba(0,0,0,.7)` band over the bottom of the game, yellow `b` for the keys, fades after three seconds | — | first start (menu gesture) | first start |

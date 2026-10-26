@@ -77,6 +77,7 @@
   --bar-width: 90px;
   --bar-height: 10px;
   --action-glyph-width: 34px;
+  --switch-label-width: 60px;
   --section-gap: 28px;
   --gallery-max: 1320px;
   --instance-min: 220px;
@@ -383,8 +384,10 @@ button { color: inherit; }
 
 .controller-strip { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--role-gutter); padding: var(--role-row-y) var(--role-row-x); background: var(--face); }
 .controller-centre { display: grid; gap: var(--role-gutter); }
-.switch-row, .pill-row, .button-bank { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: var(--role-gutter); }
-.switch-row { justify-content: space-between; font-size: var(--role-tiny); }
+.switch-row, .pill-row { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: var(--role-gutter); }
+.button-bank { display: grid; grid-template-columns: repeat(3, auto); justify-content: end; gap: var(--role-gutter); }
+.switch-row { justify-content: center; }
+.switch-label { font-size: var(--role-tiny); color: var(--note); text-transform: uppercase; letter-spacing: .06em; min-inline-size: var(--switch-label-width); text-align: end; }
 .controls-picture { display: flex; align-items: center; justify-content: space-around; flex-wrap: wrap; gap: var(--role-gutter); padding: var(--role-row-y) var(--role-row-x); }
 .controls-note { flex-basis: 100%; font-size: var(--role-small); text-align: center; }
 .drop-zone { display: grid; place-items: center; min-height: calc(var(--term-min-height) * 1.2); padding: var(--role-row-y) var(--role-row-x); border: var(--role-bevel) dashed var(--dark); background: var(--drop-fill); text-align: center; }
