@@ -10,11 +10,16 @@ export type GameStatus = "ready" | "Missing files" | "Bad file" | "Not stored" |
 export interface GameListRow {
     readonly id: string;
     readonly seed: string;
+    readonly name?: ReactNode;
     readonly selected?: boolean;
     readonly active?: boolean;
     readonly status?: GameStatus;
     readonly open?: boolean;
     readonly detail?: ReactNode;
+    readonly detailActions?: ReactNode | false;
+    readonly actionLabel?: string | null;
+    readonly actionDisabled?: boolean;
+    readonly onAction?: () => void;
     readonly onPlay?: () => void;
     readonly onToggle?: () => void;
 }
@@ -33,7 +38,10 @@ function statusTone(status: GameStatus, active: boolean): "ok" | "bad" | "off" {
 function GameRow({ listId, row, flat }: { readonly listId: string; readonly row: GameListRow; readonly flat: boolean }) {
     const focusable = useFocusable(`${listId}-${row.id}`, listId, { onActivate: flat ? row.onPlay : row.onToggle });
     const status = row.active ? "playing" : row.status ?? "ready";
-    return <article className="game-row" data-component="games-list-row" data-selected={row.selected ?? false} data-active={row.active ?? false} data-state={row.active ? "active" : row.selected ? "selected" : "default"}>
+    const actionLabel = row.actionLabel === undefined ? (row.active ? "Resume" : row.status === "ready" || row.status === undefined ? "Play" : "File check") : row.actionLabel;
+    const onAction = row.onAction ?? row.onPlay;
+    const actionDisabled = row.actionDisabled ?? (row.status !== undefined && row.status !== "ready" && !row.active);
+    return <article className="game-row" data-component="games-list-row" data-row={row.id} data-selected={row.selected ?? false} data-active={row.active ?? false} data-state={row.active ? "active" : row.selected ? "selected" : "default"}>
         <div
             ref={focusable.ref as never}
             className="game-row-main"
@@ -43,13 +51,13 @@ function GameRow({ listId, row, flat }: { readonly listId: string; readonly row:
             onClick={flat ? row.onPlay : row.onToggle}
         >
             <Icon seed={row.seed} />
-            <span className="game-name">Game name</span>
+            <span className="game-name">{row.name ?? "Game name"}</span>
             <span className="game-status" data-tone={statusTone(row.status ?? "ready", row.active ?? false)}>{status}</span>
-            <Button focusId={`${listId}-${row.id}-play`} focusGroup={listId} size="sm" play label={row.active ? "Resume" : row.status === "ready" || row.status === undefined ? "Play" : "File check"} disabled={row.status !== undefined && row.status !== "ready" && !row.active} onClick={row.onPlay} />
+            {actionLabel === null ? null : <Button data-row-action={row.id} focusId={`${listId}-${row.id}-play`} focusGroup={listId} size="sm" play label={actionLabel} disabled={actionDisabled} onClick={onAction} />}
         </div>
         {flat || !row.open ? null : <div className="game-detail">
             {row.detail ?? <><strong>Game name</strong><div>ready</div></>}
-            <div className="game-detail-actions"><Button size="sm" label="File check" /><Button size="sm" label="Remove" /><Button size="sm" label="Import" /></div>
+            {row.detailActions === false ? null : <div className="game-detail-actions">{row.detailActions ?? <><Button size="sm" label="File check" /><Button size="sm" label="Remove" /><Button size="sm" label="Import" /></>}</div>}
         </div>}
     </article>;
 }

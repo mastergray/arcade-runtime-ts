@@ -329,6 +329,12 @@ export const startHarnessServer = async (config: HarnessServerConfig = {}): Prom
                 send(response, 200, contentTypeFor(file), await readFile(file), head);
                 return;
             }
+            if (pathname === "/ui/local" || pathname === "/ui/local/") {
+                const file = await confinedFile(uiRoot, "local.html");
+                if (file === null) { notFound(response, head); return; }
+                send(response, 200, contentTypeFor(file), await readFile(file), head);
+                return;
+            }
             if (pathname.startsWith("/ui/")) {
                 let requested: string;
                 try { requested = decodeURIComponent(pathname.slice("/ui/".length)); }

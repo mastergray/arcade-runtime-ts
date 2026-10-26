@@ -34,6 +34,7 @@ export interface FocusProviderProps {
     readonly onBack?: () => void;
     readonly onTabPrevious?: () => void;
     readonly onTabNext?: () => void;
+    readonly gamepadEnabled?: boolean;
 }
 
 export interface FocusableProps {
@@ -57,7 +58,7 @@ const buttonAction = (button: number): FocusAction | null => {
     return null;
 };
 
-export function FocusProvider({ children, initialId, onBack, onTabPrevious, onTabNext }: FocusProviderProps): ReactNode {
+export function FocusProvider({ children, initialId, onBack, onTabPrevious, onTabNext, gamepadEnabled = true }: FocusProviderProps): ReactNode {
     const targets = useRef(new Map<string, FocusTarget>());
     const [focusedId, setFocusedId] = useState<string | null>(initialId ?? null);
     const focusedIdRef = useRef<string | null>(initialId ?? null);
@@ -142,6 +143,7 @@ export function FocusProvider({ children, initialId, onBack, onTabPrevious, onTa
     }, [dispatch]);
 
     useEffect(() => {
+        if (!gamepadEnabled) return;
         let frame = 0;
         let previous = new Set<string>();
         const poll = (): void => {
@@ -168,7 +170,7 @@ export function FocusProvider({ children, initialId, onBack, onTabPrevious, onTa
         };
         frame = requestAnimationFrame(poll);
         return () => { cancelAnimationFrame(frame); };
-    }, [dispatch]);
+    }, [dispatch, gamepadEnabled]);
 
     const value = useMemo<FocusContextValue>(() => ({ focusedId, register, focus }), [focus, focusedId, register]);
     return <FocusContext.Provider value={value}>{children}</FocusContext.Provider>;

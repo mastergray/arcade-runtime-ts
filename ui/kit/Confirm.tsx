@@ -14,8 +14,8 @@ export interface ConfirmProps {
 
 export function Confirm({ question, consequence, confirmLabel, onConfirm, onCancel, veil = false }: ConfirmProps) {
     return <div data-component="confirmation"><Modal title="Confirm" veil={veil} onClose={onCancel} foot={<>
-        <Button label={confirmLabel} onClick={onConfirm} />
-        <Button label="Cancel" primary onClick={onCancel} />
+        <Button label={confirmLabel} data-confirm onClick={onConfirm} />
+        <Button label="Cancel" data-cancel primary onClick={onCancel} />
     </>}>
         <p className="confirm-question">{question}</p>
         <p className="confirm-consequence">{consequence}</p>

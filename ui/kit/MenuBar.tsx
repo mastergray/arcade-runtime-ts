@@ -36,6 +36,7 @@ function MenuItem({ entry, menuId }: { readonly entry: MenuEntry; readonly menuI
         className="menu-item"
         disabled={entry.disabled}
         data-component="menu-item"
+        data-menu-item={entry.id}
         data-disabled={entry.disabled ?? false}
         data-checked={entry.checked ?? false}
         data-radio={entry.radio ?? false}
@@ -51,10 +52,16 @@ function MenuItem({ entry, menuId }: { readonly entry: MenuEntry; readonly menuI
     </button>;
 }
 
+function MenuTitle({ menu, open, onOpen }: { readonly menu: MenuDefinition; readonly open: boolean; readonly onOpen?: (id: string) => void }) {
+    const focusable = useFocusable(`menu-title-${menu.id}`, "menu-titles", { onActivate: () => onOpen?.(menu.id) });
+    return <button ref={focusable.ref as never} type="button" className="menu-title" data-menu-title={menu.id} data-focus={focusable["data-focus"]}
+        tabIndex={focusable.tabIndex} onFocus={focusable.onFocus} onClick={() => onOpen?.(menu.id)} aria-expanded={open}>{menu.label}</button>;
+}
+
 export function MenuBar({ menus, openId, onOpen, shortcuts }: MenuBarProps) {
     return <nav className="menu-bar" data-component="menu-bar">
-        {menus.map((menu) => <div className="menu" data-open={menu.id === openId} key={menu.id}>
-            <button type="button" className="menu-title" onClick={() => onOpen?.(menu.id)}>{menu.label}</button>
+        {menus.map((menu) => <div className="menu" data-menu={menu.id} data-open={menu.id === openId} key={menu.id}>
+            <MenuTitle menu={menu} open={menu.id === openId} onOpen={onOpen} />
             {menu.id !== openId ? null : <div className="menu-dropdown">
                 {menu.entries.map((entry) => <MenuItem entry={entry} menuId={menu.id} key={entry.id} />)}
             </div>}

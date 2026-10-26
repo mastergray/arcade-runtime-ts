@@ -14,6 +14,6 @@ export function TitleBar({ title, secondary, onClose }: TitleBarProps) {
         <span className="title-glyph" aria-hidden="true" />
         <span className="title-text">{title}</span>
         {secondary === undefined ? null : <span className="title-secondary">{secondary}</span>}
-        {onClose === undefined ? null : <Button className="title-close" size="sm" label="×" aria-label="Close" onClick={onClose} />}
+        {onClose === undefined ? null : <Button className="title-close" size="sm" label="×" aria-label="Close" data-modal-close onClick={onClose} />}
     </header>;
 }
