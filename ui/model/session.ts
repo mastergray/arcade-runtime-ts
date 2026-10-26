@@ -176,7 +176,8 @@ export class SessionModel {
         const cabinet = this.running();
         if (cabinet === null) return;
         cabinet.player.reset(kind);
-        this.update({ message: kind === "soft" ? "Reset requested." : "Restart from power-on requested.", status: "loading" });
+        // A soft reset keeps the session running; a hard one restarts it and the player's status events follow.
+        this.update({ message: kind === "soft" ? "Reset requested." : "Restart from power-on requested." });
     }
 
     async saveSlot(slot: LocalSlot): Promise<void> {
