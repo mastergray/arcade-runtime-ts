@@ -16,9 +16,12 @@ export interface ControllerStripProps {
     readonly idle?: boolean;                                        // No game running: the switch rows give way to a note
     readonly pressedButton?: number;
     readonly pressedDirection?: "up" | "down" | "left" | "right";
+    readonly buttons?: number;
     readonly onSwitch?: (id: string) => void;
     readonly onButton?: (number: number) => void;
     readonly onDirection?: (direction: "up" | "down" | "left" | "right") => void;
+    readonly onButtonHold?: (number: number, pressed: boolean) => void;
+    readonly onDirectionHold?: (direction: "up" | "down" | "left" | "right", pressed: boolean) => void;
     readonly onCoin?: () => void;
     readonly onStart?: () => void;
 }
@@ -33,22 +36,22 @@ const DEFAULT_OPERATOR: ReadonlyArray<StripSwitch> = [
 function SwitchRow({ label, switches, onSwitch }: { readonly label: string; readonly switches: ReadonlyArray<StripSwitch>; readonly onSwitch?: (id: string) => void }) {
     return <div className="switch-row" data-row={label.toLowerCase()}>
         <span className="switch-label">{label}</span>
-        {switches.map((item) => <Button size="sm" label={item.label} onClick={() => onSwitch?.(item.id)} key={item.id} />)}
+        {switches.map((item) => <Button size="sm" label={item.label} data-control={item.id} onClick={() => onSwitch?.(item.id)} key={item.id} />)}
     </div>;
 }
 
 export function ControllerStrip({
     cabinet = DEFAULT_CABINET, operator = DEFAULT_OPERATOR, idle = false,
-    pressedButton, pressedDirection, onSwitch, onButton, onDirection, onCoin, onStart,
+    pressedButton, pressedDirection, buttons = 6, onSwitch, onButton, onDirection, onButtonHold, onDirectionHold, onCoin, onStart,
 }: ControllerStripProps) {
     return <section className="controller-strip" data-component="controller-strip" data-idle={idle || undefined}>
-        <DPad pressed={pressedDirection} onPress={onDirection} />
+        <DPad pressed={pressedDirection} onPress={onDirection} onHold={onDirectionHold} />
         <div className="controller-centre">
             {idle
                 ? <p className="note">Cabinet and operator switches appear here when a game runs.</p>
                 : <><SwitchRow label="Cabinet" switches={cabinet} onSwitch={onSwitch} /><SwitchRow label="Operator" switches={operator} onSwitch={onSwitch} /></>}
             <div className="pill-row"><Pill label="COIN" onPress={onCoin} /><Pill label="START" onPress={onStart} /></div>
         </div>
-        <div className="button-bank">{[1, 2, 3, 4, 5, 6].map((number) => <RedButton number={number} pressed={number === pressedButton} onPress={() => onButton?.(number)} key={number} />)}</div>
+        <div className="button-bank">{[1, 2, 3, 4, 5, 6].map((number) => <RedButton number={number} off={number > buttons} pressed={number === pressedButton} onPress={() => onButton?.(number)} onHold={(held) => onButtonHold?.(number, held)} key={number} />)}</div>
     </section>;
 }

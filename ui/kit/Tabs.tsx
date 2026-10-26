@@ -24,6 +24,7 @@ function Tab({ stripId, tab, active, onChange }: { readonly stripId: string; rea
         className="tab"
         disabled={tab.disabled}
         data-component="tab"
+        data-tab={tab.id}
         data-on={active}
         data-disabled={tab.disabled ?? false}
         data-focus={focusable["data-focus"]}
