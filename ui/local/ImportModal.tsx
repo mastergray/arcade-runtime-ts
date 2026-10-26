@@ -19,12 +19,11 @@ export function ImportModal({ library, snapshot, tab, onTab, onClose, dragOver }
     const picker = useRef<HTMLInputElement>(null);
     const companion = library.companionNotice();
     const importPane = <div className="import-pane" data-import-tab>
-        <div data-import-drop-zone><DropZone dragOver={dragOver} /></div>
+        <div data-import-drop-zone><DropZone dragOver={dragOver}><Button label="Choose files" data-choose-files onClick={() => picker.current?.click()} /></DropZone></div>
         <input ref={picker} className="visually-hidden" data-import-picker type="file" accept=".zip,application/zip" multiple onChange={(event) => {
             void library.chooseFiles(Array.from(event.target.files ?? []));
             event.target.value = "";
         }} />
-        <div className="pane-actions"><Button label="Choose files" data-choose-files onClick={() => picker.current?.click()} /></div>
         <Table id="import-files" columns={["File", "Identified as", "Status", "Details"]} rows={snapshot.importRows.map((row) => ({
             id: row.key,
             dim: row.status === "Skip",

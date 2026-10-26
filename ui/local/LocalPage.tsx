@@ -222,8 +222,8 @@ function LocalWorkspace({ models }: { readonly models: LocalModels }) {
                         onResume={() => { if (paused) session?.pauseResume(); }}
                         onFileCheck={openFileCheck}
                     />
-                    <div className="play-region" ref={containerRef} data-region="play-and-controller" data-controller-visible={preferences.controllerView}>
-                        <PlaySurface canvasRef={canvasRef} session={sessionState} showFps={preferences.showFps} />
+                    <div className="play-region" data-region="play-and-controller" data-controller-visible={preferences.controllerView}>
+                        <PlaySurface canvasRef={canvasRef} containerRef={containerRef} session={sessionState} showFps={preferences.showFps} />
                         {preferences.controllerView && session !== null ? <Strip model={session} session={sessionState} /> : null}
                     </div>
                 </div>

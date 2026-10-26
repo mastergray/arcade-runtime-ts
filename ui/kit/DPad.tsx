@@ -8,6 +8,7 @@ export interface DPadProps {
 }
 
 const cells = ["", "up", "", "left", "centre", "right", "", "down", ""] as const;
+const glyphs = { up: "▲", down: "▼", left: "◀", right: "▶", centre: "" } as const;
 
 export function DPad({ mini = false, pressed, onPress, onHold }: DPadProps) {
     return <div className="dpad" data-component="d-pad" data-mini={mini} data-state={pressed === undefined ? "default" : "pressed"}>{cells.map((cell, index) => cell === ""
@@ -16,5 +17,5 @@ export function DPad({ mini = false, pressed, onPress, onHold }: DPadProps) {
             onClick={cell === "centre" || onHold !== undefined ? undefined : () => onPress?.(cell)}
             onPointerDown={cell === "centre" ? undefined : (event) => { event.currentTarget.setPointerCapture(event.pointerId); onHold?.(cell, true); }}
             onPointerUp={cell === "centre" ? undefined : () => onHold?.(cell, false)}
-            onPointerCancel={cell === "centre" ? undefined : () => onHold?.(cell, false)} key={cell} />)}</div>;
+            onPointerCancel={cell === "centre" ? undefined : () => onHold?.(cell, false)} key={cell}>{glyphs[cell]}</button>)}</div>;
 }

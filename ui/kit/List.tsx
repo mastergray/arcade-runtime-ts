@@ -65,7 +65,7 @@ export function List({ id, rows, flat = false }: ListProps) {
 }
 
 export function ListHead({ count, action }: { readonly count: string; readonly action?: ReactNode }) {
-    return <header className="list-head" data-component="list-head"><span className="list-title">Games</span><span className="list-count">{count}</span>{action}</header>;
+    return <header className="list-head" data-component="list-head"><span className="list-title">Games <span className="list-count">({count})</span></span>{action}</header>;
 }
 
 export function ListFoot({ children }: { readonly children: ReactNode }) {
