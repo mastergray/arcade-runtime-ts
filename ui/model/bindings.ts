@@ -1,6 +1,7 @@
 // realizes: docs/ui-spec.md > §3.4 key, pad, chord and menu-gesture capture
 
 import {
+    DEFAULT_GAMEPAD_CHORDS,
     arcadeControlKey,
     type ArcadeControl,
     type GamepadLike,
@@ -130,8 +131,23 @@ export const gamepadButtonFor = (mapping: GamepadMapping, control: ArcadeControl
     if (control.kind === "button") return (mapping.buttons ?? DEFAULT_BUTTONS)[control.button - 1] ?? null;
     if (control.kind === "coin") return mapping.coin ?? 8;
     if (control.kind === "start") return mapping.start ?? 9;
-    const chord = mapping.chords === false ? undefined : mapping.chords?.bindings?.find((binding) => controlMatches(binding.control, control));
+    const chord = mapping.chords === false ? undefined : (mapping.chords?.bindings ?? defaultChordBindings(mapping))
+        .find((binding) => controlMatches(binding.control, control));
     return chord?.button ?? null;
+};
+
+const defaultChordBindings = (mapping: GamepadMapping) => {
+    const dpad = mapping.dpad ?? DEFAULT_DPAD;
+    const buttons = mapping.buttons ?? DEFAULT_BUTTONS;
+    const remap: Readonly<Record<number, number>> = {
+        9: mapping.start ?? 9,
+        12: dpad.up, 13: dpad.down, 14: dpad.left, 15: dpad.right,
+        0: buttons[0], 1: buttons[1], 2: buttons[2], 4: buttons[4], 5: buttons[5],
+    };
+    return (DEFAULT_GAMEPAD_CHORDS.bindings ?? []).map((binding) => ({
+        button: remap[binding.button] ?? binding.button,
+        control: binding.control,
+    }));
 };
 
 const clearDuplicate = (values: number[], button: number, except: number): void => {
@@ -142,7 +158,7 @@ export const moveGamepadBinding = (mapping: GamepadMapping, control: ArcadeContr
     if (chord || control.kind === "service" || control.kind === "test" || control.kind === "tilt"
         || control.kind === "volume" || control.kind === "key") {
         const modifier = mapping.chords === false ? mapping.coin ?? 8 : mapping.chords?.modifier ?? mapping.coin ?? 8;
-        const bindings = (mapping.chords === false ? [] : [...mapping.chords?.bindings ?? []])
+        const bindings = (mapping.chords === false ? defaultChordBindings(mapping) : [...mapping.chords?.bindings ?? defaultChordBindings(mapping)])
             .filter((binding) => !controlMatches(binding.control, control) && binding.button !== button);
         bindings.push({ button, control: Object.freeze({ ...control }) });
         return Object.freeze({ ...mapping, chords: Object.freeze({ modifier, bindings: Object.freeze(bindings) }) });

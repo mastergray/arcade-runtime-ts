@@ -279,6 +279,45 @@ const testFile: TestFile = {
                 .start(undefined),
         },
         {
+            label: "suspension keeps input observable while isolating the session and restores current state",
+            run: () => CTGTest.init("ArcadeInput suspension")
+                .stage("hold controls and axes across the suspension gate", () => {
+                    const { input, session } = rig();
+                    input.press(BUTTON_1);
+                    input.setAxis(STICK_X_1, 0.5);
+                    input.suspended = true;
+                    const isolatedAtOpen = session.calls.slice();
+                    input.press(BUTTON_2);
+                    input.setAxis(PEDAL_1, 0.75);
+                    const observed = { suspended: input.suspended, snapshot: input.snapshot, axes: input.axes };
+                    const isolatedDuring = session.calls.slice();
+                    input.suspended = false;
+                    return { isolatedAtOpen, isolatedDuring, observed, resumed: session.calls.slice() };
+                })
+                .assert("logical state remains visible and only resume forwards it", (state) => state.subject, P.equals<unknown>({
+                    isolatedAtOpen: [
+                        controlCall(BUTTON_1, true), axisCall(STICK_X_1, 0.5),
+                        controlCall(BUTTON_1, false), axisCall(STICK_X_1, 0),
+                    ],
+                    isolatedDuring: [
+                        controlCall(BUTTON_1, true), axisCall(STICK_X_1, 0.5),
+                        controlCall(BUTTON_1, false), axisCall(STICK_X_1, 0),
+                    ],
+                    observed: {
+                        suspended: true,
+                        snapshot: [BUTTON_1, BUTTON_2],
+                        axes: [{ axis: PEDAL_1, value: 0.75 }, { axis: STICK_X_1, value: 0.5 }],
+                    },
+                    resumed: [
+                        controlCall(BUTTON_1, true), axisCall(STICK_X_1, 0.5),
+                        controlCall(BUTTON_1, false), axisCall(STICK_X_1, 0),
+                        controlCall(BUTTON_1, true), controlCall(BUTTON_2, true),
+                        axisCall(STICK_X_1, 0.5), axisCall(PEDAL_1, 0.75),
+                    ],
+                }))
+                .start(undefined),
+        },
+        {
             label: "tap defaults to three session ticks and an explicit one-frame tap releases on the next tick",
             run: () => CTGTest.init("tap tick timing")
                 .stage("drive default and explicit tap countdowns", () => {

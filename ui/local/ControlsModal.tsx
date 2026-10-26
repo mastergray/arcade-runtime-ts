@@ -7,6 +7,7 @@ import {
     arcadeControlKey,
     type AnalogSetting,
     type AnalogSettings,
+    type ArcadeAxis,
     type ArcadeControl,
     type GamepadDevice,
     type GamepadLike,
@@ -34,7 +35,7 @@ import type { SessionModel } from "../model/session.js";
 type ControlsTab = "player1" | "player2" | "cabinet" | "analogue" | "test";
 type ApplyScope = "game" | "global";
 type CaptureTarget =
-    | { readonly id: string; readonly kind: "control"; readonly control: ArcadeControl; readonly chord: boolean }
+    | { readonly id: string; readonly kind: "control"; readonly control: ArcadeControl; readonly chord: boolean; readonly modifier?: number }
     | { readonly id: string; readonly kind: "menu" };
 
 export interface ControlsModalProps {
@@ -93,6 +94,16 @@ const meterValue = (value: number): 0 | 25 | 50 | 75 | 100 => {
     return (normalized < 13 ? 0 : normalized < 38 ? 25 : normalized < 63 ? 50 : normalized < 88 ? 75 : 100);
 };
 
+const axisKindFor = (kind: MachineAnalogKind): ArcadeAxis["kind"] | null => {
+    if (kind === "stick-x" || kind === "paddle" || kind === "positional" || kind === "lightgun-x") return "stick-x";
+    if (kind === "stick-y" || kind === "paddle-v" || kind === "positional-v" || kind === "lightgun-y") return "stick-y";
+    if (kind === "stick-z") return "stick-z";
+    if (kind === "pedal-1" || kind === "pedal-2") return kind;
+    if (kind === "dial" || kind === "trackball-x" || kind === "mouse-x") return "spin-x";
+    if (kind === "dial-v" || kind === "trackball-y" || kind === "mouse-y") return "spin-y";
+    return null;
+};
+
 export function ControlsModal(props: ControlsModalProps) {
     const resolved = useMemo(() => props.preferences.resolveGame(props.gameKey ?? "defaults/defaults"), [props.preferences, props.gameKey]);
     const originalAnalog = useRef(resolved.analog);
@@ -104,9 +115,12 @@ export function ControlsModal(props: ControlsModalProps) {
     const [gestures, setGestures] = useState<Record<string, ReadonlyArray<number>>>(() => ({ ...resolved.controls.menuGesture }));
     const [deadZone, setDeadZone] = useState(resolved.controls.stickCentre);
     const [analog, setAnalog] = useState<AnalogSettings>(resolved.analog);
+    const [globalAnalog, setGlobalAnalog] = useState<AnalogSettings>(() => props.preferences.getGlobal().analog);
     const [analogTouched, setAnalogTouched] = useState<ReadonlySet<string>>(new Set());
     const [captureTarget, setCaptureTarget] = useState<CaptureTarget | null>(null);
     const [confirmRestore, setConfirmRestore] = useState(false);
+    const [clearGameControls, setClearGameControls] = useState(false);
+    const [clearGameAnalog, setClearGameAnalog] = useState(false);
     const [held, setHeld] = useState<ReadonlySet<string>>(new Set());
     const [, setInputVersion] = useState(0);
     const devices = props.session?.controlDevices() ?? [];
@@ -117,6 +131,7 @@ export function ControlsModal(props: ControlsModalProps) {
             setCaptureTarget(null);
             return;
         }
+        if (scope === "game") setClearGameControls(false);
         if (result.device === "keyboard") setKeyboard((current) => moveKeyboardBinding(current, target.control, result.code));
         else setMappings((current) => ({
             ...current,
@@ -127,7 +142,11 @@ export function ControlsModal(props: ControlsModalProps) {
 
     useEffect(() => {
         if (captureTarget === null) return;
-        capture.current.begin({ id: captureTarget.id, mode: captureTarget.kind === "menu" ? "gesture" : captureTarget.chord ? "chord" : "binding" }, rawPads());
+        capture.current.begin({
+            id: captureTarget.id,
+            mode: captureTarget.kind === "menu" ? "gesture" : captureTarget.chord ? "chord" : "binding",
+            ...(captureTarget.kind === "control" && captureTarget.modifier !== undefined ? { modifier: captureTarget.modifier } : {}),
+        }, rawPads());
         const key = (event: KeyboardEvent): void => {
             event.preventDefault();
             event.stopPropagation();
@@ -210,8 +229,8 @@ export function ControlsModal(props: ControlsModalProps) {
         return {
             id,
             focusable: true,
-            onActivate: () => begin({ id, kind: "control" as const, control, chord: true }),
-            cells: [label, keyLabel(keyboardCodeFor(keyboard, control)), button === null ? "unbound" : gamepadChordLabel([modifier, button]), captureButton({ id, kind: "control", control, chord: true })],
+            onActivate: () => begin({ id, kind: "control" as const, control, chord: true, modifier }),
+            cells: [label, keyLabel(keyboardCodeFor(keyboard, control)), button === null ? "unbound" : gamepadChordLabel([modifier, button]), captureButton({ id, kind: "control", control, chord: true, modifier })],
         };
     });
     const menuPadId = cabinetPad?.id ?? Object.keys(gestures)[0] ?? "";
@@ -247,9 +266,7 @@ export function ControlsModal(props: ControlsModalProps) {
                         <Range label="Travel" aria-label={`${analogName(kind, player)} gamepad travel`} min={10} max={400} step={10} value={setting.travel * 100} valueLabel={`${Math.round(setting.travel * 100)} %`} onChange={(value) => updateAnalog(key, { travel: value / 100 })} key="travel" />,
                         <input aria-label={`Invert ${analogName(kind, player)}`} data-analog-invert={String(key)} type="checkbox" checked={setting.invert} onChange={(event) => updateAnalog(key, { invert: event.currentTarget.checked })} key="invert" />,
                         <Button size="sm" label="Use for all games" data-analog-global={String(key)} onClick={() => {
-                            const global = props.preferences.getGlobal();
-                            props.preferences.setGlobal({ ...global, analog: { ...global.analog, [key]: setting } });
-                            props.onApplied();
+                            setGlobalAnalog((current) => ({ ...current, [key]: setting }));
                         }} key="global" />,
                     ],
                 };
@@ -272,8 +289,8 @@ export function ControlsModal(props: ControlsModalProps) {
         };
     });
     const analogTestRows = props.machine?.inputs.analog.map(({ player, kind }) => {
-        const axisKind = kind === "pedal-1" || kind === "pedal-2" ? kind : kind.endsWith("-y") ? "stick-y" : "stick-x";
-        const value = input?.axes.find((entry) => entry.axis.player === player && entry.axis.kind === axisKind)?.value ?? 0;
+        const axisKind = axisKindFor(kind);
+        const value = axisKind === null ? 0 : input?.axes.find((entry) => entry.axis.player === player && entry.axis.kind === axisKind)?.value ?? 0;
         return { id: `test:p${player}:${kind}`, cells: [analogName(kind, player), "axis", "axis", "axis", <Bar value={meterValue(value)} label={`${analogName(kind, player)} input`} key="now" />] };
     }) ?? [];
     const testPane = <div className="controls-pane" data-controls-tab="test">
@@ -282,29 +299,50 @@ export function ControlsModal(props: ControlsModalProps) {
     </div>;
 
     const restore = (): void => {
-        setKeyboard(DEFAULT_KEYBOARD_MAP);
-        setMappings({});
-        if (scope === "global") setGestures({});
+        if (scope === "global") {
+            setKeyboard(DEFAULT_KEYBOARD_MAP);
+            setMappings({});
+            setGestures({});
+            setDeadZone(0.25);
+            setGlobalAnalog({});
+            const gameAnalog = props.gameKey === null ? {} : props.preferences.getGame(props.gameKey).analog ?? {};
+            setAnalog(gameAnalog);
+            setAnalogTouched(new Set());
+            props.session?.previewAnalog(gameAnalog);
+        } else {
+            const global = props.preferences.getGlobal();
+            setKeyboard(global.controls.keyboard ?? DEFAULT_KEYBOARD_MAP);
+            setMappings(copyMappings(global.controls.gamepads));
+            setAnalog(global.analog);
+            setAnalogTouched(new Set());
+            setClearGameControls(true);
+            setClearGameAnalog(true);
+            props.session?.previewAnalog(global.analog);
+        }
     };
     const apply = (): void => {
         const global = props.preferences.getGlobal();
-        props.preferences.setGlobal({ ...global, controls: {
-            ...global.controls,
-            ...(scope === "global" ? { keyboard, gamepads: mappings } : {}),
-            menuGesture: gestures,
-            stickCentre: deadZone,
-        } });
+        props.preferences.setGlobal({
+            ...global,
+            controls: {
+                ...global.controls,
+                ...(scope === "global" ? { keyboard, gamepads: mappings } : {}),
+                menuGesture: gestures,
+                stickCentre: deadZone,
+            },
+            analog: globalAnalog,
+        });
         if (props.gameKey !== null) {
             const game = props.preferences.getGame(props.gameKey);
-            const nextAnalog = { ...game.analog } as Record<string, AnalogSetting>;
+            const nextAnalog = clearGameAnalog ? {} as Record<string, AnalogSetting> : { ...game.analog } as Record<string, AnalogSetting>;
             for (const key of analogTouched) {
                 const setting = analog[key as keyof AnalogSettings];
                 if (setting !== undefined) nextAnalog[key] = setting;
             }
             props.preferences.setGame(props.gameKey, {
                 ...game,
-                ...(scope === "game" ? { controls: { keyboard, gamepads: mappings } } : {}),
-                ...(Object.keys(nextAnalog).length === 0 ? {} : { analog: nextAnalog as AnalogSettings }),
+                ...(scope === "game" ? { controls: clearGameControls ? undefined : { keyboard, gamepads: mappings } } : {}),
+                ...(Object.keys(nextAnalog).length === 0 ? { analog: undefined } : { analog: nextAnalog as AnalogSettings }),
             });
         }
         void props.session?.applyPreferences();

@@ -237,20 +237,21 @@ export class SessionModel {
     async applyPreferences(): Promise<void> {
         const key = this.snapshotValue.activeKey;
         const global = this.preferences.getGlobal();
+        if (key !== null && this.cabinetValue !== null) {
+            const resolved = this.preferences.resolveGame(key);
+            const cabinet = this.cabinetValue;
+            cabinet.player.audio.volume = resolved.audio.volume;
+            cabinet.player.display.scaling = displayScaling(resolved.size);
+            cabinet.player.display.imageRendering = resolved.video.filter;
+            cabinet.player.display.crop = resolved.video.crop;
+            cabinet.setControls({
+                analog: resolved.analog,
+                keyboard: { enabled: true, map: resolved.controls.keyboard },
+                gamepads: { enabled: true, mappings: resolved.controls.gamepads, deadZone: resolved.controls.stickCentre },
+            });
+            this.update({ muted: cabinet.player.audio.isMuted, message: "Settings were applied." });
+        }
         await this.library.setStrictness(global.storage.strictness);
-        if (key === null || this.cabinetValue === null) return;
-        const resolved = this.preferences.resolveGame(key);
-        const cabinet = this.cabinetValue;
-        cabinet.player.audio.volume = resolved.audio.volume;
-        cabinet.player.display.scaling = displayScaling(resolved.size);
-        cabinet.player.display.imageRendering = resolved.video.filter;
-        cabinet.player.display.crop = resolved.video.crop;
-        cabinet.setControls({
-            analog: resolved.analog,
-            keyboard: { enabled: true, map: resolved.controls.keyboard },
-            gamepads: { enabled: true, mappings: resolved.controls.gamepads, deadZone: resolved.controls.stickCentre },
-        });
-        this.update({ muted: cabinet.player.audio.isMuted, message: "Settings were applied." });
     }
 
     previewGlobal(preferences: GlobalPreferences): void {
