@@ -33,7 +33,7 @@ export function ImportModal({ library, snapshot, tab, onTab, onClose, dragOver, 
                 <span className="technical" data-import-file={row.file} key="file">{row.file}</span>,
                 row.identifiedAs,
                 <strong data-import-status={row.status} key="status">{row.status}</strong>,
-                row.details,
+                <span className="import-details" data-tone={row.detailsTone} key="details">{row.details}</span>,
             ],
         }))} />
         <p className="note">{snapshot.importRows.length === 0 ? "Choose or drop one or more zip files." : "Files added since this page was opened. Everything stored in this browser is under Stored files."}</p>

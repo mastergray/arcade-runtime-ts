@@ -38,6 +38,7 @@ interface MutableImportRow {
     readonly key: string;
     readonly file: string;
     identifiedAs: string;
+    detailsTone?: "bad";
     status: ImportRow["status"];
     details: string;
 }
@@ -320,7 +321,7 @@ export class LibraryModel {
         for (const card of this.visibleCards()) {
             if (card.metadata === null) continue;
             const missing = card.metadata.archives.find((archive) => !this.hasArchive(archive.name));
-            if (missing !== undefined) return `${card.metadata.description} also needs ${missing.name}.`;
+            if (missing !== undefined) return `${card.metadata.description} is missing ${missing.name}.`;
         }
         return null;
     }
@@ -497,10 +498,12 @@ export class LibraryModel {
             const missing = card.metadata.archives.find((entry) => !this.hasArchive(entry.name));
             if (this.pendingFiles.has(row.key)) {
                 row.status = "Ready";
-                row.details = missing === undefined ? "Ready to store and check." : `Companion needed: ${missing.name}.`;
+                row.details = missing === undefined ? "Ready to store and check." : `Missing files: ${missing.name}.`;
+                row.detailsTone = missing === undefined ? undefined : "bad";
             } else if (missing !== undefined || card.report?.status === "incomplete") {
                 row.status = "Pending";
-                row.details = `Companion needed: ${missing?.name ?? "another archive"}.`;
+                row.details = `Missing files: ${missing?.name ?? "another archive"}.`;
+                row.detailsTone = "bad";
             } else if (card.report?.status === "bad") {
                 row.status = "Skip";
                 row.details = "The stored archive does not match the available build.";

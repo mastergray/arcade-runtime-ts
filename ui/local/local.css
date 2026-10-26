@@ -60,6 +60,7 @@
 .game-info dt { font-weight: var(--weight-bold); }
 .game-info dd { margin: 0; }
 .technical { font-family: var(--font-mono); }
+.import-details[data-tone="bad"] { color: var(--bad); font-weight: var(--weight-bold); }
 
 .link-button {
   border: 0;

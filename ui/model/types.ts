@@ -64,6 +64,7 @@ export interface ImportRow {
     readonly identifiedAs: string;
     readonly status: ImportRowStatus;
     readonly details: string;
+    readonly detailsTone?: "bad";                                  // Red details: the set is still missing a file
 }
 
 export interface LibrarySnapshot {
