@@ -691,6 +691,10 @@ bridge reports `cli_frontend::execute()` completion directly because the
 pinned runtime does not call `Module.onExit` after an early frontend return
 (P11).
 
+M32 analogue tuning requires no additional bridge export. The TypeScript
+`AnalogDriver` integrates keyboard holds and filters pad values, then uses
+this same `web_set_axis` path through `ArcadeInput.setAxis`.
+
 #### 4.3.1 JavaScript-facing module shape
 
 This is the **cross-package contract** between the bridge (W3) and the
@@ -1045,6 +1049,10 @@ class ArcadeInput {
   no-op.
 - `releaseAll` on blur, visibility loss, pause and destroy, as in the DOS
   runtime.
+- `onHold(listener)` observes the first effective press and final effective
+  release across all channels. A listener that returns `true` consumes that
+  edge from the session's digital path; M32 uses this only for declared
+  stick and pedal controls while leaving ordinary directions digital.
 - **Axes (M11).** `ArcadeInput` and every channel expose
   `setAxis(axis, value)`. Axis writes are last-writer-wins rather than
   reference-counted; releasing or destroying the owning channel writes 0
@@ -1074,6 +1082,11 @@ Port of `DosDisplay` with arcade layout:
   `stretch` fills the container on both axes and ignores the aspect ratio
   (added 2026-10-25 for the local page's Size: Stretch).
 - `imageRendering`: `"pixelated"` (default) or `"smooth"`.
+- `crop: { left, right }` hides native side columns without changing the
+  frame buffer or bridge. Layout preserves the cropped-frame aspect; CSS
+  `clip-path: inset(0 R% 0 L%)` and a matching horizontal scale make the
+  visible columns fill the computed rectangle. Both edges default to zero
+  and the mutable `crop` property applies immediately.
 - Fullscreen, resize observation and `onLayout` as in the DOS runtime.
 - A `starting` placeholder: while `ArcadePlayer.status` is `starting` the
   display shows a page-supplied element or a blank canvas, so CPS-2 and Neo
@@ -1092,6 +1105,9 @@ buffer playback, the latency cap and mute. Differences:
 
 - Stereo buffers, de-interleaved on copy; mono boards still arrive as
   duplicated stereo from MAME's mixer.
+- `volume` is a mutable normalized value in [0, 1], default 1. It owns a
+  second gain node in series with the mute gain, so changing volume never
+  changes `isMuted` and mute/unmute never loses the chosen volume.
 - Context construction requests `session.sampleRate` (48000), but browsers
   may choose another device rate. Each `AudioBuffer` is tagged with the
   session rate and Web Audio converts; queue accounting uses buffer
@@ -1129,7 +1145,7 @@ interface ArcadeGameConfig {
     readonly bios?: string;
     readonly dipswitches?: Readonly<Record<string, string>>;
     readonly options?: Readonly<Record<string, string | number | boolean>>;
-    readonly display?: { readonly scaling?: ScalingMode; readonly imageRendering?: "pixelated" | "smooth" };
+    readonly display?: { readonly scaling?: ScalingMode; readonly imageRendering?: "pixelated" | "smooth"; readonly crop?: { readonly left: number; readonly right: number } };
 }
 
 class ArcadePlayer {
@@ -1235,6 +1251,50 @@ control in addition to whatever the map says (so `F2` presses both the
 enabled, repeat, blur and `preventDefault` rules; `passthroughKeys: false`
 turns the layer off.
 
+The frozen default map also reaches players 3 and 4. Player 3 uses
+`Numpad8`/`Numpad2`/`Numpad4`/`Numpad6` for directions, with
+`ControlRight`, `ShiftRight`, `Enter`, `Digit7` and `Digit3` for its first
+three buttons, coin and start. Player 4 uses `I`/`K`/`J`/`L` for directions,
+with `Numpad0`, `NumpadDecimal`, `NumpadEnter`, `Digit8` and `Digit4`. The
+direction clusters are swapped from the pinned emulator's later-player
+defaults because the Settings/Controls contract reserves the Numpad arrows
+for player 3; the button, coin and start groups retain the pinned choices.
+
+#### 10.3.1 `AnalogDriver` (M32)
+
+One driver is owned by `ArcadeCabinet` for each started session whose
+`MachineInfo.inputs.analog` is non-empty. Settings are addressed by
+``p${PlayerIndex}:${MachineAnalogKind}`` and contain optional `keySpeed`,
+`centreSpeed`, `travel` and `invert` fields. `keySpeed` defaults to 0.02 of
+full travel per frame; centring kinds default `centreSpeed` to `keySpeed`,
+hold kinds default it to zero, `travel` defaults to 1 and `invert` defaults
+to false. `travel` accepts 0.1–4. Relative `keySpeed` is a delta per frame in
+axis units (the default is therefore 0.02 times the port's full scale) and
+ignores `centreSpeed`.
+
+The driver observes `stick` and `pedal` holds through `ArcadeInput.onHold`
+and writes its own channel once per animation frame. Stick values integrate
+toward −1 or 1 and return toward zero; pedals integrate from 0 to 1 and
+return toward zero. Paddles and positional controls hold their last value
+unless a page supplies a nonzero `centreSpeed`. Dial, trackball and mouse
+kinds emit per-frame deltas. `setAnalogSettings` replaces the immutable
+settings snapshot live without resetting integrated positions; the next
+fresh session receives the retained snapshot.
+
+| Machine kind | Default policy | Bridge axis |
+| ------------ | -------------- | ----------- |
+| `stick-x`, `stick-y`, `stick-z` | centre | matching stick axis |
+| `pedal-1`, `pedal-2` | return to zero | matching pedal axis |
+| `paddle`, `positional`, `lightgun-x` | hold | `stick-x` |
+| `paddle-v`, `positional-v`, `lightgun-y` | hold | `stick-y` |
+| `dial`, `trackball-x`, `mouse-x` | relative | `spin-x` |
+| `dial-v`, `trackball-y`, `mouse-y` | relative | `spin-y` |
+| `pedal-3` | native digital increment path | no axis slot |
+
+Ordinary `direction` controls and every machine with no declared analogue
+port keep the existing digital path. `pedal-3` also remains digital because
+the seven-axis W26 bridge has no third pedal slot.
+
 ### 10.4 `GamepadSource`
 
 Polled Gamepad API → `ArcadeInput`. Standard-mapping pads get a default
@@ -1259,6 +1319,14 @@ into logical sticks 1 and 2 while the d-pad keeps emitting ordinary
 directions. `GamepadMapping.rightAxes` and `GamepadMapping.pedals`
 override the standard indices. A board that declares nothing behaves
 exactly as before.
+
+`axisFilter?: (axis, value) => number` lets `ArcadeCabinet` apply the live
+driver's `travel` and `invert` values to pad output without duplicating pad
+writes; absolute results clamp to [−1, 1] and relative deltas remain
+unbounded after scaling. The read-only `devices` snapshot reports every
+connected provider entry as `{ index, id, standard, player }`, including
+non-standard devices that remain unassigned; `player` is null until a seat
+is assigned. Assignment behavior itself is unchanged.
 
 Since M39, a held operator modifier replaces the pad's digital layer with
 chords that hold `key`, `volume`, `test`, `service` and `tilt` controls using
@@ -1388,6 +1456,7 @@ no manifest and nothing is built from it.
 
 ```ts
 interface ArcadeControlsConfig {
+    readonly analog?: AnalogSettings;
     readonly keyboard?: { readonly enabled?: boolean; readonly map?: Readonly<Record<string, ArcadeControl>>; readonly preventDefault?: boolean };
     readonly gamepads?: { readonly enabled?: boolean; readonly deadZone?: number; readonly mapping?: GamepadMapping };
     // The three touch fields below are accepted from M10; v1.0.0 rejects them with UNSUPPORTED.
@@ -1408,6 +1477,7 @@ interface ArcadeCabinetConfig {
     readonly storage?: ArcadeStorage;      // overlay persistence, keyed by the page
     readonly romStore?: ArcadeRomStore;    // fills missing game.roms from the user's local store; saves picked files back
     readonly autosave?: boolean;           // persist on visibilitychange; default false
+    readonly audio?: { readonly volume?: number };   // [0, 1], reapplied after a fresh session starts
 }
 
 class ArcadeCabinet {
@@ -1417,6 +1487,8 @@ class ArcadeCabinet {
     get mapper(): ArcadeMapper | null;
     get keyboard(): KeyboardSource | null;
     get gamepads(): GamepadSource | null;
+    get analogSettings(): AnalogSettings;
+    setAnalogSettings(settings: AnalogSettings): void;
     get keyboardEnabled(): boolean;  set keyboardEnabled(value: boolean);
     get gamepadsEnabled(): boolean;  set gamepadsEnabled(value: boolean);
     get isStarted(): boolean;
@@ -1596,13 +1668,14 @@ row passes on `main`.
 | M8 | **BIOS and DIP switches.** `MachineInfo.bios`, `-bios` selection, generated DIP cfg, harness selectors; answer F7. | Neo Geo switches region and MVS/AES without a rebuild; a Namco classic's lives/difficulty DIP change is visible. DIP and BIOS choices are page state passed on every start (`ArcadeStartConfig`), not overlay state: the generated cfg is excluded from dirty detection so an explicit selection always wins |
 | M9 | **v1.0.0 release gate.** Licence review of distributed emulator artifacts, `npm pack` contents, hosted-harness policy, the §14.1 flows. | A tagged `v1.0.0` whose tarball contains no ROM, cache, `res/`, harness or WASM, with a written decision on whether family builds are published separately |
 | M10 | **Mobile: touch primitives + `ArcadeMapper` + portrait layouts.** | Playable with d-pad, buttons, coin and start while sustaining full speed for 60 s on a documented mid-range physical phone, for one vertical and one horizontal title; F6 labels updated from measured phones |
-| M11 | **Analogue inputs** (W26). `ArcadeAxis` and `setAxis`, `web_set_axis`, machine input discovery, controller-config analogue and dual-stick sequences, gamepad axis binding, keyboard pedal keys; answer F11. | Through the production bridge: a `tempest.c` dial turns from a relative axis and from a held hat; a `rampart.c` trackball moves; the `bzone.c` tank drives from one hat and from the second stick alone; the controller file loads without warnings; the `segaxbd.c`, `segaorun.c`, `segahang.c`, `polepos.c` and `taito_z.c` boards steer by hand after the family rebuilds |
+| M11 | **Analogue inputs** (W26, W23a runtime extension). `ArcadeAxis` and `setAxis`, `web_set_axis`, machine input discovery, controller-config analogue and dual-stick sequences, gamepad axis binding, keyboard pedal keys and the TypeScript settings driver; answer F11. | Through the production bridge: relative controls and dual-stick controls reach their declared axes; the controller file loads without warnings; the `segaxbd.c`, `segaorun.c`, `segahang.c`, `polepos.c` and `taito_z.c` boards steer by hand after the family rebuilds; a declared paddle or stick changes keyboard slope and sign through a live settings update without a restart |
 | M12 | **High-score persistence bridge.** RAM-range read/write exports and a per-machine range table (§12.2); answer H1–H4. | A `pacman.c`-class title's high-score table survives exit and reload through the overlay without NVRAM, and a title with no table entry is unaffected |
 | M13 | **Local compatibility matrix.** Audit and manually verify user-supplied local sets per family, parents/BIOS/samples supplied by the user. | Each set either boots with verified metadata or has a precise audit/driver blocker recorded under `docs/probes/families/`; no local ROM or set identity enters source or CI |
 | M14 | **Optional FBNeo probe.** Parent spec L1–L8. | Written evidence of a measured benefit worth the separate ROM lineage and licence constraints |
 | M15 | **Optional `LibretroAdapter`.** | One optional-core title runs through the unchanged player, cabinet, controls and storage APIs |
 | M16 | **Pinned MAME upgrade probe.** Evaluate a newer source tag through the direct bridge without changing the 0.161 build. | Side-by-side build plus documented ROM, save-state, size and performance migration costs |
 | M17 | **Deferred families.** `taito-multi` and multi-screen display; `galaxian-misc`. | Multi-screen titles present correctly or have a documented blocker |
+| M32 | **Runtime analogue settings mechanism.** `AnalogDriver`, live cabinet settings and the pad filter, with no family rebuild. | Fake-scheduler arithmetic covers centre, hold, pedal and relative policies; the production gate shows `keySpeed` and `invert` changing a declared axis live through `ArcadeInput.axes` |
 
 ### 12.1 M1 implementation slices
 
@@ -1899,6 +1972,7 @@ TypeScript).
 | W16 | BIOS and DIP: `web_machine_info` BIOS fields, generated DIP cfg | `mame/bridge/web_bridge.cpp` (BIOS struct only), `src/DipConfig/` | W4, W13 | §4.5, §12 M8 | N+T | M8 |
 | W17 | Release gate: licence notices in build output, `npm pack` tests, hosted-harness policy | `scripts/build-mame.ts` (notice copy only), `tests/spec/*package*` | W2, W12 | §0.4, §14.1 | T | M9 |
 | W18 | Harness library view: zip-driven identification, per-game start | `harness/`, `scripts/serve-harness.ts`, harness browser tests | W13c | §11 | T | post-1.0 polish |
+| W23a | Analogue settings driver, audio volume, side-border crop, pad device list, player 3–4 keyboard map | `src/AnalogDriver/`, `src/ArcadeCabinet/`, `src/ArcadeAudio/`, `src/ArcadeDisplay/`, `src/GamepadSource/`, `src/KeyboardSource/KeyboardSource.ts`, `src/shared.types.ts`, `src/index.ts`, `harness/harness.ts`, tests and this spec | W26, W29, W30 | §4.3, §10.3, §10.4, §12 M11/M32 | T | M32, M26 (runtime), M10 (keyboard) |
 
 `src/ControllerConfig/` and `src/DipConfig/` are internal modules (pure
 text generators) added to the layout of §1.2 by this section; they are not
