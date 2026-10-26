@@ -173,6 +173,7 @@ function LocalWorkspace({ models }: { readonly models: LocalModels }) {
     const menus = <LocalMenus
         openId={openMenu}
         onOpen={(id) => setOpenMenu(openMenu === id ? undefined : id)}
+        onDismiss={() => setOpenMenu(undefined)}
         running={running}
         paused={paused}
         muted={sessionState.muted}

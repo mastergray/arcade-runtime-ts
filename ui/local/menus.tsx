@@ -29,6 +29,7 @@ export interface LocalMenuActions {
 export interface LocalMenusProps {
     readonly openId?: string;
     readonly onOpen: (id: string) => void;
+    readonly onDismiss: () => void;
     readonly running: boolean;
     readonly paused: boolean;
     readonly muted: boolean;
@@ -98,7 +99,7 @@ function Shortcut({ id, children }: { readonly id: string; readonly children: Re
 export function LocalMenus(props: LocalMenusProps) {
     const saveReason = disabledReason(props.running, props.supportsSave);
     const saveDisabled = saveReason !== undefined;
-    return <MenuBar menus={menuDefinitions(props)} openId={props.openId} onOpen={props.onOpen} shortcuts={<>
+    return <MenuBar menus={menuDefinitions(props)} openId={props.openId} onOpen={props.onOpen} onDismiss={props.onDismiss} shortcuts={<>
         <Shortcut id="pause"><Button size="sm" glyph={props.paused ? "▶" : "⏸"} label={props.paused ? "Resume" : "Pause"} disabled={!props.running} onClick={props.actions.pauseResume} /></Shortcut>
         <Shortcut id="mute"><Button size="sm" glyph={props.muted ? "🔊" : "🔇"} label={props.muted ? "Unmute" : "Mute"} disabled={!props.running} onClick={props.actions.mute} /></Shortcut>
         <Shortcut id="reset"><Button size="sm" glyph="↺" label="Reset" disabled={!props.running} onClick={props.actions.reset} /></Shortcut>

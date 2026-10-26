@@ -1,6 +1,6 @@
 // realizes: docs/ui-design-language.md > §3.1 Menu bar and pinned shortcuts
 
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { useFocusable } from "../focus/FocusController.js";
 
 export interface MenuEntry {
@@ -24,6 +24,7 @@ export interface MenuBarProps {
     readonly menus: ReadonlyArray<MenuDefinition>;
     readonly openId?: string;
     readonly onOpen?: (id: string) => void;
+    readonly onDismiss?: () => void;                               // A click outside the bar or Escape while a menu is open
     readonly shortcuts?: ReactNode;
 }
 
@@ -58,8 +59,17 @@ function MenuTitle({ menu, open, onOpen }: { readonly menu: MenuDefinition; read
         tabIndex={focusable.tabIndex} onFocus={focusable.onFocus} onClick={() => onOpen?.(menu.id)} aria-expanded={open}>{menu.label}</button>;
 }
 
-export function MenuBar({ menus, openId, onOpen, shortcuts }: MenuBarProps) {
-    return <nav className="menu-bar" data-component="menu-bar">
+export function MenuBar({ menus, openId, onOpen, onDismiss, shortcuts }: MenuBarProps) {
+    const bar = useRef<HTMLElement>(null);
+    useEffect(() => {
+        if (openId === undefined || onDismiss === undefined) return;
+        const onPointer = (event: PointerEvent): void => { if (bar.current !== null && !bar.current.contains(event.target as Node)) onDismiss(); };
+        const onKey = (event: KeyboardEvent): void => { if (event.key === "Escape") onDismiss(); };
+        document.addEventListener("pointerdown", onPointer, true);
+        document.addEventListener("keydown", onKey, true);
+        return () => { document.removeEventListener("pointerdown", onPointer, true); document.removeEventListener("keydown", onKey, true); };
+    }, [openId, onDismiss]);
+    return <nav ref={bar} className="menu-bar" data-component="menu-bar">
         {menus.map((menu) => <div className="menu" data-menu={menu.id} data-open={menu.id === openId} key={menu.id}>
             <MenuTitle menu={menu} open={menu.id === openId} onOpen={onOpen} />
             {menu.id !== openId ? null : <div className="menu-dropdown">
