@@ -1051,8 +1051,11 @@ class ArcadeInput {
   runtime.
 - `onHold(listener)` observes the first effective press and final effective
   release across all channels. A listener that returns `true` consumes that
-  edge from the session's digital path; M32 uses this only for declared
-  stick and pedal controls while leaving ordinary directions digital.
+  edge from the session's digital path; M32 uses this for declared stick
+  and pedal controls and for ordinary directions on an axis a declared
+  port covers (left/right for a horizontal port, up/down for a vertical
+  one), so arrow keys and the d-pad drive the analogue port through the
+  driver's speed and inversion rather than MAME's native increment.
 - **Axes (M11).** `ArcadeInput` and every channel expose
   `setAxis(axis, value)`. Axis writes are last-writer-wins rather than
   reference-counted; releasing or destroying the owning channel writes 0
@@ -1291,9 +1294,17 @@ fresh session receives the retained snapshot.
 | `dial-v`, `trackball-y`, `mouse-y` | relative | `spin-y` |
 | `pedal-3` | native digital increment path | no axis slot |
 
-Ordinary `direction` controls and every machine with no declared analogue
-port keep the existing digital path. `pedal-3` also remains digital because
-the seven-axis W26 bridge has no third pedal slot.
+Ordinary `direction` controls become stick input on the axes a player's
+declared ports cover: left/right when a horizontal kind is declared, up/down
+when a vertical kind is. Depth (`stick-z`) and pedal kinds never claim
+directions, so a shifter joystick on a racing board stays digital; so does
+every direction on a machine with no declared analogue port. `pedal-3` also
+remains digital because the seven-axis W26 bridge has no third pedal slot.
+
+The driver writes an absolute axis only when its integrated value changes,
+and `GamepadSource` writes an absolute axis only when the pad's filtered
+value changes. Under last-writer-wins this lets a resting pad and a held key
+coexist: whichever moved last holds the axis. Spin deltas always go through.
 
 ### 10.4 `GamepadSource`
 

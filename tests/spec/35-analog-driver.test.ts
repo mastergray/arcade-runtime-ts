@@ -21,6 +21,8 @@ const STICK_RIGHT = { kind: "stick", player: 1, stick: 1, direction: "right" } a
 const PADDLE_RIGHT = { kind: "stick", player: 2, stick: 1, direction: "right" } as const satisfies ArcadeControl;
 const PEDAL = { kind: "pedal", player: 3, pedal: 1 } as const satisfies ArcadeControl;
 const DIAL_UP = { kind: "stick", player: 4, stick: 1, direction: "up" } as const satisfies ArcadeControl;
+const DIRECTION_RIGHT = { kind: "direction", player: 1, direction: "right" } as const satisfies ArcadeControl;
+const DIRECTION_UP = { kind: "direction", player: 1, direction: "up" } as const satisfies ArcadeControl;
 const STICK_X = { player: 1, kind: "stick-x" } as const satisfies ArcadeAxis;
 const SPIN_Y = { player: 4, kind: "spin-y" } as const satisfies ArcadeAxis;
 const INPUTS = Object.freeze([
@@ -109,6 +111,46 @@ const testFile: TestFile = {
                     held: { stick: 0.30000000000000004, paddle: 0.6000000000000001, pedal: 1, relative: -0.03, digital: [] },
                     released: { stick: 0.25000000000000006, paddle: 0.6000000000000001, pedal: 0.75, relative: -0.03 },
                     pending: 0,
+                }))
+                .start(undefined),
+        },
+        {
+            label: "directions drive a covered axis, uncovered directions stay digital, and static values are not resent",
+            run: () => CTGTest.init("analogue directions and silence")
+                .stage("hold a direction on a horizontal-only board", () => {
+                    const session = new FakeArcadeSession();
+                    const input = new ArcadeInput({ session });
+                    const scheduler = new FakeFrameScheduler();
+                    const keys = input.createChannel();
+                    const pad = input.createChannel();
+                    const driver = new AnalogDriver({
+                        input, scheduler, inputs: [{ player: 1, kind: "stick-x" }],
+                        settings: { "p1:stick-x": { keySpeed: 0.25, centreSpeed: 0.25, invert: true } },
+                    });
+                    scheduler.tick(16);
+                    const writesAtRest = session.calls.filter((call) => call.method === "setAxis").length;
+                    scheduler.tick(16); scheduler.tick(16);
+                    const writesAfterIdle = session.calls.filter((call) => call.method === "setAxis").length;
+                    pad.setAxis(STICK_X, 0.6);
+                    scheduler.tick(16);
+                    const padHeld = valueFor(session, 1, "stick-x");
+                    keys.press(DIRECTION_RIGHT);
+                    keys.press(DIRECTION_UP);
+                    scheduler.tick(16); scheduler.tick(16);
+                    const held = { axis: valueFor(session, 1, "stick-x"), digital: session.held };
+                    keys.release(DIRECTION_RIGHT);
+                    keys.release(DIRECTION_UP);
+                    scheduler.tick(16); scheduler.tick(16);
+                    const released = valueFor(session, 1, "stick-x");
+                    driver.destroy();
+                    return { writesAtRest, writesAfterIdle, padHeld, held, released };
+                })
+                .assert("right and left ramp the inverted axis, up stays a digital hold, a resting driver leaves the pad's value alone", (state) => state.subject, P.equals<unknown>({
+                    writesAtRest: 1,
+                    writesAfterIdle: 1,
+                    padHeld: 0.6,
+                    held: { axis: -0.5, digital: ["p1:direction:up"] },
+                    released: 0,
                 }))
                 .start(undefined),
         },

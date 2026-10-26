@@ -40,6 +40,7 @@ interface DrivenPort {
     readonly axis: ArcadeAxis;
     readonly mode: AnalogMode;
     value: number;
+    written: number | null;                                       // Last absolute value sent; unchanged values are not resent so a pad can hold the axis
 }
 
 /**
@@ -130,7 +131,7 @@ export default class AnalogDriver {
             const axisKey = `p${player}:${axisKind}`;
             if (seenAxes.has(axisKey)) return [];                 // Conditional alternatives sharing one bridge slot use the first row.
             seenAxes.add(axisKey);
-            return [{ player, kind, axis: Object.freeze({ player, kind: axisKind }), mode: modeFor(kind), value: 0 }];
+            return [{ player, kind, axis: Object.freeze({ player, kind: axisKind }), mode: modeFor(kind), value: 0, written: null }];
         });
         this._unsubscribeHold = config.input.onHold((control, pressed) => {
             const key = arcadeControlKey(control);
@@ -227,7 +228,10 @@ export default class AnalogDriver {
             } else {
                 port.value = towardZero(port.value, setting.centreSpeed);
             }
-            this._channel.setAxis(port.axis, port.value * (setting.invert ? -1 : 1));
+            const output = (port.value * (setting.invert ? -1 : 1)) || 0;   // Normalises -0 so inverted centre reads as 0
+            if (output === port.written) continue;                // Silent while static: the last writer (a pad's absolute value) keeps the axis
+            port.written = output;
+            this._channel.setAxis(port.axis, output);
         }
     }
 
@@ -263,19 +267,29 @@ export default class AnalogDriver {
     }
 
     // PRIVATE :: playerIndex, arcadeDirection -> BOOLEAN
-    // Reads stick-1 controls only; ordinary direction controls remain exclusively digital.
+    // Reads stick-1 controls, plus ordinary direction controls on the axes this player's declared ports cover.
     private hasStickDirection(player: PlayerIndex, direction: "up" | "down" | "left" | "right"): boolean {
-        return this._held.has(`p${player}:stick:1:${direction}`);
+        return this._held.has(`p${player}:stick:1:${direction}`)
+            || (this._held.has(`p${player}:direction:${direction}`) && this.coversDirection(player, direction));
+    }
+
+    // PRIVATE :: playerIndex, arcadeDirection -> BOOLEAN
+    // True when a declared horizontal (left/right) or vertical (up/down) port exists for the player.
+    // Depth (stick-z) and pedals never claim directions, so a shifter joystick on a racing board stays digital.
+    private coversDirection(player: PlayerIndex, direction: "up" | "down" | "left" | "right"): boolean {
+        const kinds = direction === "left" || direction === "right" ? HORIZONTAL_KINDS : VERTICAL_KINDS;
+        return this._ports.some((port) => port.player === player && kinds.has(port.kind));
     }
 
     // PRIVATE :: arcadeControl -> BOOLEAN
-    // Consumes only digital stick/pedal paths backed by a declared driver axis; direction controls remain digital.
+    // Consumes digital stick/pedal paths backed by a declared driver axis, and directions on a covered axis.
     private consumesDigital(control: ArcadeControl): boolean {
         if (control.kind === "pedal") {
             if (control.pedal === 3) return false;
             return this._ports.some((port) => port.player === control.player
                 && (port.kind === `pedal-${control.pedal}` || port.kind === "stick-z"));
         }
+        if (control.kind === "direction") return this.coversDirection(control.player, control.direction);
         if (control.kind !== "stick" || control.stick !== 1) return false;
         return this._ports.some((port) => port.player === control.player
             && port.kind !== "pedal-1" && port.kind !== "pedal-2");

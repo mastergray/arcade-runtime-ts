@@ -51,6 +51,7 @@ interface AssignedPad {
     readonly previousChordButtons: Set<number>;                   // Chord buttons down on the previous poll
     modifierHeld: boolean;                                        // Previous physical modifier state
     chordFired: boolean;                                          // Suppresses the deferred coin tap for this hold
+    readonly written: Map<string, number>;                        // Last absolute value sent per axis; unchanged values are not resent
 }
 
 // INTERFACE :: validated provider entry with the mapping applicable to this pad
@@ -374,6 +375,7 @@ export default class GamepadSource {
                 previousChordButtons: new Set(),
                 modifierHeld: false,
                 chordFired: false,
+                written: new Map(),
             });
         }
 
@@ -507,8 +509,16 @@ export default class GamepadSource {
 
     // PRIVATE :: assignedPad, arcadeAxis, NUMBER -> VOID
     // Applies an optional live settings filter immediately before the channel write.
+    // Absolute axes are written only when they change, so a resting pad does not keep
+    // overwriting the analogue driver's keyboard integration; spin deltas always go through.
     private writeAxis(assignment: AssignedPad, axis: ArcadeAxis, value: number): void {
-        assignment.channel.setAxis(axis, this._axisFilter?.(axis, value) ?? value);
+        const output = this._axisFilter?.(axis, value) ?? value;
+        if (axis.kind !== "spin-x" && axis.kind !== "spin-y") {
+            const key = `p${axis.player}:${axis.kind}`;
+            if (assignment.written.get(key) === output) return;
+            assignment.written.set(key, output);
+        }
+        assignment.channel.setAxis(axis, output);
     }
 
     // PRIVATE :: assignedPad -> VOID
