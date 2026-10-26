@@ -1,0 +1,81 @@
+/* realizes: docs/ui-spec.md > §7 local desktop layout, using ui/tokens.css roles */
+
+.local-window {
+  min-block-size: calc(100vh - (var(--role-desk-margin) * 2));
+  block-size: calc(100vh - (var(--role-desk-margin) * 2));
+}
+
+.local-window > .window-main { min-block-size: 0; padding: 0; overflow: hidden; }
+
+.local-layout {
+  display: grid;
+  grid-template-columns: minmax(var(--columns-min), .7fr) minmax(0, 2fr);
+  min-block-size: 0;
+  block-size: 100%;
+  gap: var(--role-gutter);
+  padding: var(--role-gutter);
+}
+
+.games-column {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+  min-block-size: 0;
+  background: var(--face);
+}
+
+.games-column > .games-list { max-block-size: none; min-block-size: 0; }
+.games-column .list-head { border-bottom: var(--rule-width) solid var(--mid); }
+.games-column .list-foot { flex-wrap: wrap; border-top: var(--rule-width) solid var(--mid); }
+.empty-library, .build-warnings { margin: 0; padding: var(--role-row-y) var(--role-row-x); font-size: var(--role-small); }
+.build-warnings { color: var(--warn-note); }
+
+.play-region {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  min-block-size: 0;
+  background: var(--face);
+}
+
+.play-region[data-controller-visible="false"] { grid-template-rows: minmax(0, 1fr); }
+.play-surface { display: grid; grid-template-rows: minmax(0, 1fr) auto; min-block-size: 0; }
+.play-surface .canvas-frame { min-block-size: 0; block-size: 100%; overflow: hidden; }
+.play-surface canvas { display: block; max-inline-size: 100%; max-block-size: 100%; }
+.idle-prompt { position: absolute; inset-block-end: var(--role-row-y); margin: 0; color: var(--canvas-empty-text); font-size: var(--role-small); }
+.play-meta { display: flex; justify-content: center; gap: var(--role-gutter); padding: calc(var(--role-row-y) / 2) var(--role-row-x); background: var(--face); font-size: var(--role-small); }
+[data-region="controller"] { overflow: auto; border-top: var(--rule-width) solid var(--mid); }
+
+.slot-group, .slot-group label, .pane-actions {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--role-gutter) / 2);
+}
+
+.pane-actions { justify-content: flex-end; margin-block: var(--role-gutter); }
+.archive-detail-list { margin: 0; padding-inline-start: calc(var(--role-row-x) * 2); }
+.game-verdict { font-weight: var(--weight-bold); }
+.game-info { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: calc(var(--role-gutter) / 2) var(--role-gutter); }
+.game-info dt { font-weight: var(--weight-bold); }
+.game-info dd { margin: 0; }
+.technical { font-family: var(--font-mono); }
+
+.link-button {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--title);
+  text-decoration: underline;
+}
+
+.visually-hidden {
+  position: absolute;
+  inline-size: var(--rule-width);
+  block-size: var(--rule-width);
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+[data-modal="import"] .modal { inline-size: min(var(--modal-phone-width), var(--gallery-max)); }
+.import-pane, [data-stored-files-tab] { display: grid; gap: var(--role-gutter); }
+.status-bar { flex-wrap: wrap; }
+.status-bar .btn { min-height: auto; }
+
