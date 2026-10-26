@@ -231,7 +231,7 @@ function LocalWorkspace({ models }: { readonly models: LocalModels }) {
                 </div>
             </Window>
         </Desk>
-        {modal === "import" ? <ImportModal library={models.library} snapshot={library} tab={importTab} onTab={setImportTab} onClose={() => setModal(null)} dragOver={dragOver} onRemove={(name) => setRemoval({ name })} onRemoveAll={() => setRemoval({ all: true })} /> : null}
+        {modal === "import" ? <ImportModal library={models.library} snapshot={library} tab={importTab} onTab={setImportTab} onClose={() => setModal(null)} dragOver={dragOver} onRemove={(name) => setRemoval({ name })} onRemoveAll={() => setRemoval({ all: true })} onPlay={(key) => { if (session !== null) void session.start(key); }} /> : null}
         {modal === "log" ? <LogModal lines={sessionState.log} onCopy={copyLog} onClose={() => setModal(null)} /> : null}
         {modal === "file-check" && fileCheckCard !== null ? <FileCheckModal card={fileCheckCard} onClose={() => setModal(null)} /> : null}
         {modal === "clear-saved-play" ? <div data-modal="clear-saved-play"><Confirm veil question="Clear saved play for this game?" consequence="NVRAM, configuration and all three slots will be removed. Game files stay." confirmLabel="Clear saved play for this game…" onCancel={() => setModal(null)} onConfirm={() => {

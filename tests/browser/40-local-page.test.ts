@@ -221,6 +221,7 @@ const cases: TestCase[] = [{
             });
             await page.locator("[data-store-all-check]").click();
             await page.waitForFunction(() => document.querySelector('[data-row-action="synthetic-family/synthetic_machine"]')?.textContent?.trim() === "Play");
+            await page.waitForSelector('[data-import-play="synthetic-family/synthetic_machine"]');
             await page.evaluate(() => { (window as unknown as Window & { __arcadeLocalTest: SyntheticState }).__arcadeLocalTest.checkThenPlay = true; });
             await page.locator('[data-modal="import"] [data-modal-close]').click();
         })

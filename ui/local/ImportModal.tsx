@@ -15,9 +15,14 @@ export interface ImportModalProps {
     readonly dragOver: boolean;
     readonly onRemove: (name: string) => void;
     readonly onRemoveAll: () => void;
+    readonly onPlay: (key: string) => void;                         // Starts a game the modal just stored and checked
 }
 
-export function ImportModal({ library, snapshot, tab, onTab, onClose, dragOver, onRemove, onRemoveAll }: ImportModalProps) {
+export function ImportModal({ library, snapshot, tab, onTab, onClose, dragOver, onRemove, onRemoveAll, onPlay }: ImportModalProps) {
+    // Games whose archive was stored from this table and that are ready to play now.
+    const storedKeys = new Set(snapshot.importRows.filter((row) => row.status === "Stored").map((row) => row.key));
+    const playable = snapshot.cards.filter((card) => card.metadata !== null && library.verdict(card.key) === "ready"
+        && card.metadata.archives.some((archive) => storedKeys.has(archive.name.toLowerCase())));
     const picker = useRef<HTMLInputElement>(null);
     const companion = library.companionNotice();
     const importPane = <div className="import-pane" data-import-tab>
@@ -41,6 +46,7 @@ export function ImportModal({ library, snapshot, tab, onTab, onClose, dragOver, 
     </div>;
     return <div data-modal="import">
         <Modal title="Import" onClose={onClose} foot={tab !== "import" ? undefined : <>
+            {playable.map((card) => <Button glyph="▶" play label={`Play ${card.metadata?.description ?? card.indexed.machine}`} data-import-play={card.key} onClick={() => { onClose(); onPlay(card.key); }} key={card.key} />)}
             {tab === "import" ? <Button label="Store all and check" primary data-store-all-check disabled={snapshot.busy || !snapshot.importRows.some((row) => row.status === "Ready")} onClick={() => { void library.storeAllAndCheck(); }} /> : null}
         </>}>
             <Tabs id="import-tabs" tabs={[{ id: "import", label: "Import" }, { id: "stored", label: "Stored files" }]} active={tab} onChange={(id) => onTab(id as "import" | "stored")} />
