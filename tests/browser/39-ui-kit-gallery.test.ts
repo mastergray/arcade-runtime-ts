@@ -72,7 +72,7 @@ const testFile: TestFile = {
         run: () => withGallery((url) => CTGBrowserTest.init("UI kit gallery")
             .interact("inspect component coverage and all density role sizes", async ({ page }) => {
                 await page.waitForSelector('[data-section="game-specific"]');
-                const allComponentsPresent = await page.evaluate((components) => components.every((component) => document.querySelector(`[data-component="${component}"]`) !== null), REQUIRED_COMPONENTS);
+                const allComponentsPresent = await page.evaluate((components) => components.every((component) => Boolean(document.querySelector(`[data-component="${component}"]`)?.closest("[data-section]"))), REQUIRED_COMPONENTS);
                 const densityFonts: string[] = [];
                 for (const density of ["desktop", "phone", "tv"]) {
                     await page.locator("#density").selectOption(density);
@@ -87,8 +87,10 @@ const testFile: TestFile = {
             .interact("move the TV action focus, change its selector and step back with Escape", async ({ page }) => {
                 await page.locator("#density").selectOption("tv");
                 await page.locator('[data-focus-column] [data-component="button"]').first().focus();
+                await page.waitForFunction(() => document.querySelector('[data-focus-column] [data-component="button"]')?.getAttribute("data-focus") === "true");
                 const before = await page.locator('[data-focus-column] [data-focus="true"]').getAttribute("data-focus");
                 await page.keyboard.press("ArrowDown");
+                await page.waitForFunction(() => document.querySelector('[data-focus-column] [data-focus="true"]')?.textContent?.includes("Save state") === true);
                 const focused = page.locator('[data-focus-column] [data-focus="true"]');
                 const focusedLabel = (await focused.textContent())?.trim() ?? "";
                 const colours = await focused.evaluate((element) => ({ background: getComputedStyle(element).backgroundColor, colour: getComputedStyle(element).color }));

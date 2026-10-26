@@ -119,7 +119,13 @@ function ListsSection({ allStates }: { readonly allStates: boolean }) {
     </section>;
 }
 
-function GameSection({ allStates, view, setView }: { readonly allStates: boolean; readonly view: string; readonly setView: (view: string) => void }) {
+function GameSection({ allStates, view, setView, tvTab, setTvTab }: {
+    readonly allStates: boolean;
+    readonly view: string;
+    readonly setView: (view: string) => void;
+    readonly tvTab: string;
+    readonly setTvTab: (tab: string) => void;
+}) {
     const [slot, setSlot] = useState("slot 1");
     return <section id="game-specific" className="gallery-section" data-section="game-specific" data-view={view}>
         <h2>Game-specific and TV presentation</h2>
@@ -140,7 +146,7 @@ function GameSection({ allStates, view, setView }: { readonly allStates: boolean
                             <Selector id="tv-slot" group="tv-actions" values={["slot 1", "slot 2", "slot 3"]} value={slot} label="Slot" onChange={setSlot} />
                             <ActionButton focusId="tv-mode" focusGroup="tv-actions" glyph="←" label="Play mode" />
                         </div>
-                        <div className="demo-stack">{view === "controls" ? <><Tabs id="tv-tabs" tabs={TAB_DEFINITIONS} active="state" onChange={() => undefined} /><ControlsPicture /></> : <><CanvasFrame /><Card seed="tv-card" /></>}</div>
+                        <div className="demo-stack">{view === "controls" ? <><Tabs id="tv-tabs" tabs={TAB_DEFINITIONS} active={tvTab} onChange={setTvTab} /><ControlsPicture /></> : <><CanvasFrame /><Card seed="tv-card" /></>}</div>
                     </div>
                 </Window>
             </Sample>
@@ -152,6 +158,7 @@ export function Gallery() {
     const [density, setDensity] = useState<Density>("desktop");
     const [allStates, setAllStates] = useState(true);
     const [view, setView] = useState("menu");
+    const [tvTab, setTvTab] = useState("state");
 
     useEffect(() => { document.documentElement.dataset.density = density; }, [density]);
 
@@ -165,8 +172,12 @@ export function Gallery() {
         <ControlsSection allStates={allStates} />
         <ContainersSection allStates={allStates} />
         <ListsSection allStates={allStates} />
-        <GameSection allStates={allStates} view={view} setView={setView} />
+        <GameSection allStates={allStates} view={view} setView={setView} tvTab={tvTab} setTvTab={setTvTab} />
     </div>;
 
-    return <FocusProvider initialId="tv-play" onBack={() => setView("menu")}>{density === "phone" ? <div className="bevel phone-frame">{contents}</div> : contents}</FocusProvider>;
+    const cycleTab = (step: number): void => setTvTab((current) => {
+        const index = Math.max(0, TAB_DEFINITIONS.findIndex((tab) => tab.id === current));
+        return TAB_DEFINITIONS[(index + step + TAB_DEFINITIONS.length) % TAB_DEFINITIONS.length]!.id;
+    });
+    return <FocusProvider initialId="tv-play" onBack={() => setView("menu")} onTabPrevious={() => cycleTab(-1)} onTabNext={() => cycleTab(1)}>{density === "phone" ? <div className="bevel phone-frame">{contents}</div> : contents}</FocusProvider>;
 }

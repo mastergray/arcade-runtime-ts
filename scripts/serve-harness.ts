@@ -4,7 +4,7 @@
 
 // Dependencies:
 import { existsSync, readFileSync, statSync } from "node:fs";       // Loads and validates the explicitly named preload files
-import { readFile, readdir, realpath, stat } from "node:fs/promises";   // Serves harness, source and family-build resources
+import { readFile, readdir, realpath, stat } from "node:fs/promises";   // Serves harness, source, UI and family-build resources
 import { createServer, type Server, type ServerResponse } from "node:http";   // Loopback development server
 import { basename, dirname, extname, isAbsolute, relative, resolve, sep } from "node:path";   // Resolves and confines served paths
 import { fileURLToPath, pathToFileURL } from "node:url";           // Locates repository resources and detects command execution
@@ -288,8 +288,8 @@ const availableBuilds = async (buildRoot: string): Promise<string[]> => {
 const hostForUrl = (host: string): string => host.includes(":") && !host.startsWith("[") ? `[${host}]` : host;
 
 // PUBLIC :: harnessServerConfig -> PROMISE(harnessServer)
-// Starts the development server. It exposes repository source only as transpiled modules, the configured build root
-// only beneath /mame/, and private files only through the exact allowlist derived from --preload.
+// Starts the development server. It exposes repository source only as transpiled modules, the configured build and UI
+// roots only beneath their reserved prefixes, and private files only through the exact allowlist derived from --preload.
 export const startHarnessServer = async (config: HarnessServerConfig = {}): Promise<HarnessServer> => {
     const host = config.host ?? DEFAULT_HOST;
     const port = config.port ?? DEFAULT_PORT;
