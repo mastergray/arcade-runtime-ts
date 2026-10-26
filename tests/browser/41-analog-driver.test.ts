@@ -117,6 +117,7 @@ const testFile: TestFile = {
         label: "a declared absolute port changes slope on a live update and changes sign when inverted",
         run: () => withHarness((url) => CTGBrowserTest.init("analogue live settings")
             .interact("start and measure three keyboard ramps", async ({ page }) => {
+                await page.evaluate("globalThis.__name = (value) => value");   // tsx wraps nested functions in a __name helper the page lacks
                 const verdict = await page.evaluate(exerciseAnalogDriver);
                 await page.evaluate((result) => { (window as unknown as { analogVerdict: AnalogVerdict }).analogVerdict = result; }, verdict);
             })
