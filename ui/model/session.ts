@@ -26,6 +26,7 @@ import type {
 export interface SessionModelConfig {
     readonly canvas: HTMLCanvasElement;
     readonly container: HTMLElement;
+    readonly presentationRoot?: HTMLElement;
     readonly library: LibraryModel;
     readonly romStore: ArcadeRomStore;
     readonly preferences: PreferenceStore;
@@ -41,6 +42,7 @@ const messageFrom = (error: unknown, fallback: string): string => error instance
 export class SessionModel {
     private readonly canvas: HTMLCanvasElement;
     private readonly container: HTMLElement;
+    private readonly presentationRoot: HTMLElement | undefined;
     private readonly library: LibraryModel;
     private readonly romStore: ArcadeRomStore;
     private readonly preferences: PreferenceStore;
@@ -51,7 +53,11 @@ export class SessionModel {
     private readonly listeners = new Set<ModelListener>();
     private cabinetValue: ArcadeCabinet | null = null;
     private stripChannel: ArcadeInputChannel | null = null;
+    private windowPausedCabinet: ArcadeCabinet | null = null;
+    private inputPaused = false;
+    private hintShown = false;
     private snapshotValue: SessionSnapshot = {
+        mode: "local", windowOpen: false, windowView: "game", lastFrame: null, hintVisible: false,
         status: "idle", message: "Import a game archive to begin.", activeKey: null, machine: null,
         muted: false, fullscreen: false, layout: null, pads: [], log: [], busy: false,
     };
@@ -59,6 +65,7 @@ export class SessionModel {
     constructor(config: SessionModelConfig) {
         this.canvas = config.canvas;
         this.container = config.container;
+        this.presentationRoot = config.presentationRoot;
         this.library = config.library;
         this.romStore = config.romStore;
         this.preferences = config.preferences;
@@ -66,6 +73,9 @@ export class SessionModel {
         this.now = config.now ?? (() => new Date());
         this.getGamepads = config.getGamepads ?? (() => []);
         this.publishCabinet = config.publishCabinet ?? (() => undefined);
+        if (this.preferences.getGlobal().general.mode === "presentation") {
+            this.snapshotValue = { ...this.snapshotValue, mode: "presentation", windowOpen: true, windowView: "games" };
+        }
     }
 
     get cabinet(): ArcadeCabinet | null { return this.cabinetValue; }
@@ -80,6 +90,8 @@ export class SessionModel {
     async start(key: string): Promise<void> {
         const card = this.library.card(key);
         if (card?.metadata === null || card === null || card.report?.status !== "ok" || this.snapshotValue.busy) return;
+        // Invoke before any await, while the Play press still carries browser activation.
+        if (this.snapshotValue.mode === "presentation") void this.presentationFullscreen();
         this.update({ busy: true, status: "loading", message: `Starting ${card.metadata.description}…` });
         try {
             await this.stop();
@@ -124,10 +136,15 @@ export class SessionModel {
                 else if (status === "paused") this.update({ status: "paused", message: "Paused." });
             });
             cabinet.player.on("exit", () => {
-                if (this.cabinetValue === cabinet) this.update({ status: "idle", message: "The game exited. Play it again whenever you are ready." });
+                if (this.cabinetValue === cabinet) {
+                    this.windowPausedCabinet = null;
+                    this.update({ status: "idle", activeKey: null, machine: null, lastFrame: null, message: "The game exited. Play it again whenever you are ready." });
+                    if (this.snapshotValue.mode === "presentation") this.openWindow("games");
+                }
             });
             cabinet.player.on("error", (error) => this.appendLog(`Player error: ${error.message}`));
             await cabinet.start();
+            this.syncInputPaused();
             this.stripChannel = cabinet.player.input.createChannel();
             cabinet.player.display.onLayout((layout) => {
                 if (this.cabinetValue === cabinet) this.update({ layout: { width: layout.width, height: layout.height, scale: layout.scale } });
@@ -135,7 +152,7 @@ export class SessionModel {
             try { await cabinet.player.audio.unlock(); }
             catch (error) { this.appendLog(`Audio unlock needs another gesture: ${messageFrom(error, "unknown audio failure")}`); }
             if (preferences.general.muteOnStart) cabinet.player.audio.mute();
-            if (preferences.general.fullscreenOnStart) {
+            if (preferences.general.fullscreenOnStart && this.snapshotValue.mode === "local") {
                 try { await cabinet.fullscreen(); }
                 catch (error) { this.appendLog(`Fullscreen on start was unavailable: ${messageFrom(error, "unknown fullscreen failure")}`); }
             }
@@ -148,6 +165,10 @@ export class SessionModel {
                 status: "running",
                 message: "Running. Keyboard and gamepad controls are attached.",
             });
+            if (this.snapshotValue.mode === "presentation") {
+                this.closeWindow();
+                this.showPresentationHint();
+            }
         } catch (error) {
             this.appendLog(`Start failed: ${messageFrom(error, "unknown start failure")}`);
             this.update({ status: "error", message: messageFrom(error, "The game could not start.") });
@@ -157,6 +178,7 @@ export class SessionModel {
     }
 
     async stop(): Promise<void> {
+        this.windowPausedCabinet = null;
         const previous = this.cabinetValue;
         this.cabinetValue = null;
         this.publishCabinet(null);
@@ -166,7 +188,89 @@ export class SessionModel {
             try { await previous.destroy(); }
             catch (error) { this.appendLog(`Cabinet cleanup failed: ${messageFrom(error, "unknown cleanup failure")}`); }
         }
-        this.update({ activeKey: null, machine: null, layout: null, fullscreen: false });
+        this.update({ activeKey: null, machine: null, layout: null, fullscreen: false, lastFrame: null });
+        if (this.snapshotValue.mode === "presentation") this.openWindow("games");
+    }
+
+    enterPresentation(): void {
+        const general = this.preferences.getGlobal().general;
+        this.preferences.updateGlobal({ general: { ...general, mode: "presentation" } });
+        this.update({ mode: "presentation" });
+        void this.presentationFullscreen();
+        if (this.running() === null) this.openWindow("games");
+        else this.showPresentationHint();
+    }
+
+    leavePresentation(): void {
+        this.restoreWindowOwnership();
+        const general = this.preferences.getGlobal().general;
+        this.preferences.updateGlobal({ general: { ...general, mode: "local" } });
+        this.update({ mode: "local", windowOpen: false, hintVisible: false });
+        this.syncInputPaused();
+        const document = this.presentationRoot?.ownerDocument;
+        if (document?.fullscreenElement !== null && document?.fullscreenElement !== undefined) {
+            void document.exitFullscreen().catch((error: unknown) => this.appendLog(`Exit fullscreen was unavailable: ${messageFrom(error, "unknown fullscreen failure")}`));
+        }
+        try { document?.defaultView?.screen.orientation?.unlock?.(); }
+        catch (error) { this.appendLog(`Orientation unlock was unavailable: ${messageFrom(error, "unknown orientation failure")}`); }
+    }
+
+    toggleWindow(): void {
+        if (this.snapshotValue.mode !== "presentation") return;
+        if (this.snapshotValue.windowOpen) this.closeWindow();
+        else this.openWindow("game");
+    }
+
+    openWindow(view: SessionSnapshot["windowView"]): void {
+        if (this.snapshotValue.mode !== "presentation") return;
+        if (!this.snapshotValue.windowOpen) {
+            const cabinet = this.running();
+            this.update({ windowOpen: true, lastFrame: cabinet === null ? null : this.thumbnail() ?? null });
+            this.syncInputPaused();
+            if (cabinet?.player.status === "running") {
+                this.windowPausedCabinet = cabinet;
+                cabinet.player.pause();
+            }
+        }
+        this.update({ windowView: this.running() === null && view === "game" ? "games" : view });
+    }
+
+    closeWindow(): void {
+        if (this.running() === null) return; // An idle TV always has a way to select a game.
+        this.restoreWindowOwnership();
+        this.update({ windowOpen: false, windowView: "game" });
+        this.syncInputPaused();
+    }
+
+    hidePresentationHint(): void { this.update({ hintVisible: false }); }
+
+    async presentationFullscreen(): Promise<void> {
+        const root = this.presentationRoot;
+        if (root === undefined) return;
+        const orientation = root.ownerDocument.defaultView?.screen.orientation as (ScreenOrientation & { lock?: (orientation: string) => Promise<void> }) | undefined;
+        const attempt = async (label: string, action: () => Promise<void>): Promise<void> => {
+            try { await action(); }
+            catch (error) { this.appendLog(`${label} was unavailable: ${messageFrom(error, "browser refused the request")}`); }
+        };
+        if (root.ownerDocument.fullscreenElement !== root) await attempt("Presentation fullscreen", () => root.requestFullscreen());
+        if (this.snapshotValue.mode !== "presentation") {
+            if (root.ownerDocument.fullscreenElement === root) await attempt("Exit fullscreen", () => root.ownerDocument.exitFullscreen());
+            return;
+        }
+        if (orientation?.lock !== undefined) await attempt("Landscape orientation", () => orientation.lock!("landscape"));
+        this.refreshExternalState();
+    }
+
+    private showPresentationHint(): void {
+        if (this.hintShown || !this.preferences.getGlobal().general.presentationHint) return;
+        this.hintShown = true;
+        this.update({ hintVisible: true });
+    }
+
+    private restoreWindowOwnership(): void {
+        const cabinet = this.windowPausedCabinet;
+        this.windowPausedCabinet = null;
+        if (cabinet !== null && cabinet === this.running() && cabinet.player.status === "paused") cabinet.player.resume();
     }
 
     pauseResume(): void {
@@ -266,8 +370,14 @@ export class SessionModel {
     previewAnalog(settings: AnalogSettings): void { this.cabinetValue?.setAnalogSettings(settings); }
 
     setInputPaused(paused: boolean): void {
+        this.inputPaused = paused;
+        this.syncInputPaused();
+    }
+
+    private syncInputPaused(): void {
         const cabinet = this.cabinetValue;
         if (cabinet === null || !cabinet.isStarted) return;
+        const paused = this.inputPaused || this.snapshotValue.windowOpen;
         if (!paused) cabinet.player.input.releaseAll();
         cabinet.player.input.suspended = paused;
     }
@@ -283,6 +393,16 @@ export class SessionModel {
     }
 
     async fullscreen(stretched = false): Promise<void> {
+        if (this.running() === null && this.presentationRoot !== undefined) {
+            if (stretched) this.setSize("stretch");
+            try {
+                const document = this.presentationRoot.ownerDocument;
+                if (document.fullscreenElement !== null) await document.exitFullscreen();
+                else await this.presentationRoot.requestFullscreen();
+                this.refreshExternalState();
+            } catch (error) { this.appendLog(`Fullscreen was unavailable: ${messageFrom(error, "browser refused the request")}`); }
+            return;
+        }
         await this.run("Fullscreen could not be changed", async (cabinet) => {
             if (stretched) this.setSize("stretch");
             if (cabinet.player.display.isFullscreen) await cabinet.exitFullscreen();
@@ -322,7 +442,8 @@ export class SessionModel {
 
     refreshExternalState(): void {
         const pads = this.getGamepads().filter((pad): pad is Gamepad => pad !== null).map((pad, index) => ({ player: index + 1, id: pad.id }));
-        const fullscreen = this.cabinetValue?.player.display.isFullscreen ?? false;
+        const fullscreen = this.presentationRoot?.ownerDocument.fullscreenElement === this.presentationRoot && this.presentationRoot !== undefined
+            || (this.cabinetValue?.player.display.isFullscreen ?? false);
         this.update({ pads, fullscreen });
     }
 

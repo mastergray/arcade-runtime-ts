@@ -89,6 +89,11 @@ export interface LocalAdapterBoundary {
 }
 
 export interface SessionSnapshot {
+    readonly mode: "local" | "presentation";
+    readonly windowOpen: boolean;
+    readonly windowView: "game" | "games" | "controllers";
+    readonly lastFrame: string | null;
+    readonly hintVisible: boolean;
     readonly status: LocalStatusState;
     readonly message: string;
     readonly activeKey: string | null;

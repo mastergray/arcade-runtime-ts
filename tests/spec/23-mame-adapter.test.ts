@@ -722,6 +722,33 @@ const testFile: TestFile = {
                 .start(undefined),
         },
         {
+            label: "a state operation while paused resumes natively for one frame and pauses again",
+            run: () => CTGTest.init("MAME paused state service")
+                .stage("save while paused", async () => {
+                    const module = new FakeMameModule();
+                    const { session, web } = await startAndFrame(module);
+                    session.pause();
+                    const before = { runs: module.runCalls.length, pause: module.pauseCalls, resume: module.resumeCalls };
+                    const save = session.saveState("slot-1");
+                    const during = { runs: module.runCalls.slice(before.runs), pause: module.pauseCalls - before.pause, resume: module.resumeCalls - before.resume };
+                    web.onStateDone(1);
+                    await save;
+                    session.resume();
+                    const mark = { runs: module.runCalls.length, pause: module.pauseCalls, resume: module.resumeCalls };
+                    const load = session.loadState("slot-1");
+                    const whileRunning = { runs: module.runCalls.length - mark.runs, pause: module.pauseCalls - mark.pause, resume: module.resumeCalls - mark.resume };
+                    web.onStateDone(1);
+                    await load;
+                    return { during, calls: module.stateCalls, whileRunning };
+                })
+                .assert("the paused save ran one native frame between a resume and a pause; the running load touched neither", (state) => state.subject, P.equals<unknown>({
+                    during: { runs: [1], pause: 1, resume: 1 },
+                    calls: [["save", "slot-1"], ["load", "slot-1"]],
+                    whileRunning: { runs: 0, pause: 0, resume: 0 },
+                }))
+                .start(undefined),
+        },
+        {
             label: "persist is null when unchanged, then returns a complete cumulative overlay and advances its snapshot",
             run: () => CTGTest.init("MAME cumulative persistence")
                 .stage("persist three times", async () => {

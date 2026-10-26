@@ -40,6 +40,8 @@ export interface GlobalPreferences {
     readonly general: {
         readonly fullscreenOnStart: boolean;
         readonly muteOnStart: boolean;
+        readonly presentationHint: boolean;
+        readonly mode: "local" | "presentation";
     };
     readonly video: {
         readonly filter: VideoFilter;
@@ -107,7 +109,7 @@ export const DEFAULT_GLOBAL_PREFERENCES: GlobalPreferences = Object.freeze({
     size: "fit",
     showFps: false,
     autoSave: true,
-    general: Object.freeze({ fullscreenOnStart: false, muteOnStart: false }),
+    general: Object.freeze({ fullscreenOnStart: false, muteOnStart: false, presentationHint: true, mode: "local" }),
     video: Object.freeze({ filter: "pixelated", crop: DEFAULT_CROP }),
     audio: Object.freeze({ volume: 1 }),
     storage: Object.freeze({ strictness: "strict" }),
@@ -199,6 +201,8 @@ const globalRecord = (value: unknown): GlobalPreferences => {
         general: Object.freeze({
             fullscreenOnStart: typeof general?.fullscreenOnStart === "boolean" ? general.fullscreenOnStart : false,
             muteOnStart: typeof general?.muteOnStart === "boolean" ? general.muteOnStart : false,
+            presentationHint: typeof general?.presentationHint === "boolean" ? general.presentationHint : true,
+            mode: general?.mode === "presentation" ? "presentation" : "local",
         }),
         video: Object.freeze({
             filter: video?.filter === "smooth" || video?.filter === "pixelated" ? video.filter : "pixelated",
@@ -413,7 +417,13 @@ export class PreferenceStore {
         }
         if (record(source.global) === null || record(source.games) === null) throw new TypeError("The settings file is missing global or game records.");
         const global = globalRecord(source.global);
-        if (!jsonEqual(source.global, global)) throw new TypeError("The settings file contains invalid global values.");
+        // Older v2 exports predate these additive fields; still reject explicitly invalid values.
+        const importedGlobal = source.global as Record<string, unknown>;
+        const importedGeneral = record(importedGlobal.general);
+        const compatibleGlobal = { ...importedGlobal, general: {
+            presentationHint: true, mode: "local", ...importedGeneral,
+        } };
+        if (!jsonEqual(compatibleGlobal, global)) throw new TypeError("The settings file contains invalid global values.");
         const games: Record<string, GamePreferences> = {};
         for (const [key, value] of Object.entries(source.games as Record<string, unknown>)) {
             if (!validGameKey(key) || record(value) === null) throw new TypeError("The settings file contains an invalid game record.");

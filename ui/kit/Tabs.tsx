@@ -13,10 +13,11 @@ export interface TabsProps {
     readonly tabs: ReadonlyArray<TabDefinition>;
     readonly active: string;
     readonly onChange: (id: string) => void;
+    readonly arrowSelect?: boolean;
 }
 
-function Tab({ stripId, tab, active, onChange }: { readonly stripId: string; readonly tab: TabDefinition; readonly active: boolean; readonly onChange: (id: string) => void }) {
-    const focusable = useFocusable(`${stripId}-${tab.id}`, stripId, { disabled: tab.disabled, onActivate: () => onChange(tab.id) });
+function Tab({ stripId, tab, active, onChange, onStep }: { readonly stripId: string; readonly tab: TabDefinition; readonly active: boolean; readonly onChange: (id: string) => void; readonly onStep?: (step: number) => void }) {
+    const focusable = useFocusable(`${stripId}-${tab.id}`, stripId, { disabled: tab.disabled, onActivate: () => onChange(tab.id), selector: onStep !== undefined, onLeft: () => onStep?.(-1), onRight: () => onStep?.(1) });
     return <button
         ref={focusable.ref as never}
         type="button"
@@ -36,8 +37,13 @@ function Tab({ stripId, tab, active, onChange }: { readonly stripId: string; rea
     >{tab.label}</button>;
 }
 
-export function Tabs({ id, tabs, active, onChange }: TabsProps) {
+export function Tabs({ id, tabs, active, onChange, arrowSelect = false }: TabsProps) {
+    const step = (offset: number): void => {
+        const available = tabs.filter((tab) => !tab.disabled);
+        const next = available[(available.findIndex((tab) => tab.id === active) + offset + available.length) % available.length];
+        if (next !== undefined) onChange(next.id);
+    };
     return <div className="tabs" role="tablist" data-component="tabs">
-        {tabs.map((tab) => <Tab stripId={id} tab={tab} active={tab.id === active} onChange={onChange} key={tab.id} />)}
+        {tabs.map((tab) => <Tab stripId={id} tab={tab} active={tab.id === active} onChange={onChange} onStep={arrowSelect ? step : undefined} key={tab.id} />)}
     </div>;
 }

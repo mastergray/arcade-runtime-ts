@@ -29,6 +29,9 @@ class MemorySavedPlay implements SavedPlayStore {
 
 interface PreferenceV2Result {
     readonly fallbacks: boolean;
+    readonly presentationFallbacks: boolean;
+    readonly presentationTransfer: boolean;
+    readonly olderExport: boolean;
     readonly resolved: boolean;
     readonly listed: boolean;
     readonly roundTrip: boolean;
@@ -54,10 +57,16 @@ const inspectV2 = async (): Promise<PreferenceV2Result> => {
         && global.video.filter === "smooth" && global.video.crop.left === 0 && global.video.crop.right === 0
         && global.audio.volume === 0.4 && global.storage.strictness === "mame" && global.controls.stickCentre === 0.3;
 
+    const presentationDefault = global.general.presentationHint && global.general.mode === "local";
+    storage.setItem(preferenceRecordKeys.global, JSON.stringify({ ...global, general: { ...global.general, mode: "invalid", presentationHint: "invalid" } }));
+    const invalid = preferences.getGlobal();
+    const presentationFallbacks = presentationDefault && invalid.general.mode === "local" && invalid.general.presentationHint;
+
     const key = "sample-family/sample_machine";
     const keyboard = { ...DEFAULT_KEYBOARD_MAP, KeyT: { kind: "button" as const, player: 1 as const, button: 1 as const } };
     preferences.setGlobal({
         ...global,
+        general: { ...global.general, mode: "presentation", presentationHint: false },
         controls: { ...global.controls, keyboard: DEFAULT_KEYBOARD_MAP, gamepads: { "Sample pad": { id: "Sample pad", start: 7 } } },
         analog: { "p1:paddle": { travel: 1.5 } },
     });
@@ -87,6 +96,13 @@ const inspectV2 = async (): Promise<PreferenceV2Result> => {
     const first = await imported.importPreferences(exported, { overwrite: false });
     const roundTrip = first.applied && imported.resolveGame(key).video.crop.left === 6
         && imported.listOverrides().length === 1;
+    const presentationTransfer = imported.getGlobal().general.mode === "presentation" && !imported.getGlobal().general.presentationHint;
+    const oldDocument = JSON.parse(exported) as { global: { general: { mode?: string; presentationHint?: boolean } } };
+    delete oldDocument.global.general.mode;
+    delete oldDocument.global.general.presentationHint;
+    const oldImport = new PreferenceStore(new MemoryStorage(), new MemorySavedPlay());
+    const oldResult = await oldImport.importPreferences(JSON.stringify(oldDocument), { overwrite: false });
+    const olderExport = oldResult.applied && oldImport.getGlobal().general.mode === "local" && oldImport.getGlobal().general.presentationHint;
     const savedPlay = JSON.stringify([...(importedSaved.values.get(key) ?? [])]) === JSON.stringify([1, 3, 5, 7]);
 
     imported.updateGlobal({ audio: { volume: 0.9 } });
@@ -94,7 +110,7 @@ const inspectV2 = async (): Promise<PreferenceV2Result> => {
     const overwritePreview = !preview.applied && preview.overwrites.includes("global") && imported.getGlobal().audio.volume === 0.9;
     const replacement = await imported.importPreferences(exported, { overwrite: true });
     const overwritten = replacement.applied && imported.getGlobal().audio.volume === 0.4;
-    return { fallbacks, resolved: resolvedOk, listed, roundTrip, overwritePreview, overwritten, savedPlay };
+    return { fallbacks, presentationFallbacks, presentationTransfer, olderExport, resolved: resolvedOk, listed, roundTrip, overwritePreview, overwritten, savedPlay };
 };
 
 const testFile: TestFile = {
@@ -105,6 +121,9 @@ const testFile: TestFile = {
             .stage("exercise the complete store", inspectV2)
             .assert("the version 2 contract is stable", (state) => state.subject, P.equals<PreferenceV2Result>({
                 fallbacks: true,
+                presentationFallbacks: true,
+                presentationTransfer: true,
+                olderExport: true,
                 resolved: true,
                 listed: true,
                 roundTrip: true,

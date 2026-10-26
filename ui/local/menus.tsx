@@ -6,6 +6,8 @@ import type { GamePreferences } from "../model/preferences.js";
 import type { LocalSize, LocalSlot } from "../model/types.js";
 
 export interface LocalMenuActions {
+    readonly presentation: () => void;
+    readonly menuHint: () => void;
     readonly settings: () => void;
     readonly controls: () => void;
     readonly storedFiles: () => void;
@@ -36,6 +38,7 @@ export interface LocalMenusProps {
     readonly supportsSave: boolean;
     readonly controllerView: boolean;
     readonly showFps: boolean;
+    readonly menuHint: boolean;
     readonly size: LocalSize;
     readonly selectedSlot: LocalSlot;
     readonly onSelectedSlot: (slot: LocalSlot) => void;
@@ -58,6 +61,7 @@ export function menuDefinitions(props: LocalMenusProps): ReadonlyArray<MenuDefin
         { id: "configure", label: <><u>C</u>onfigure</>, entries: [
             { id: "settings", label: "Settings…", onSelect: props.actions.settings },
             { id: "controls", label: "Controls…", onSelect: props.actions.controls },
+            { id: "presentation", label: "Presentation…", onSelect: props.actions.presentation },
             { id: "settings-separator", label: "", separator: true },
             { id: "stored-files", label: "Stored files…", onSelect: props.actions.storedFiles },
         ] },
@@ -73,16 +77,17 @@ export function menuDefinitions(props: LocalMenusProps): ReadonlyArray<MenuDefin
         { id: "view", label: <><u>V</u>iew</>, entries: [
             { id: "controller-view", label: "Controller view", checked: props.controllerView, onSelect: props.actions.controller },
             { id: "show-fps", label: "Show FPS", checked: props.showFps, onSelect: props.actions.showFps },
+            { id: "menu-hint", label: "Menu hint", checked: props.menuHint, onSelect: props.actions.menuHint },
             { id: "view-separator-1", label: "", separator: true },
             { id: "size-fit", label: "Size: Fit", radio: props.size === "fit", onSelect: () => props.actions.size("fit") },
             { id: "size-stretch", label: "Size: Stretch", radio: props.size === "stretch", onSelect: () => props.actions.size("stretch") },
             { id: "size-integer", label: "Size: Integer", radio: props.size === "integer", onSelect: () => props.actions.size("integer") },
             { id: "view-separator-2", label: "", separator: true },
-            { id: "fullscreen", label: "Fullscreen", disabled: !props.running, onSelect: () => props.actions.fullscreen(false) },
-            { id: "fullscreen-stretched", label: "Fullscreen, stretched", disabled: !props.running, onSelect: () => props.actions.fullscreen(true) },
+            { id: "fullscreen", label: "Fullscreen", onSelect: () => props.actions.fullscreen(false) },
+            { id: "fullscreen-stretched", label: "Fullscreen, stretched", onSelect: () => props.actions.fullscreen(true) },
             { id: "view-separator-3", label: "", separator: true },
             { id: "mode-play", label: "Mode: Play", checked: true },
-            { id: "mode-presentation", label: "Mode: Presentation…", small: "next package", disabled: true },
+            { id: "mode-presentation", label: "Mode: Presentation…", onSelect: props.actions.presentation },
         ] },
         { id: "log", label: <><u>L</u>og</>, entries: [
             { id: "technical-log", label: "Technical log…", onSelect: props.actions.technicalLog },

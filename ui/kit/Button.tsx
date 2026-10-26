@@ -11,11 +11,13 @@ export interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement
     readonly primary?: boolean;
     readonly focusId?: string;
     readonly focusGroup?: string;
+    readonly focusLeft?: () => void;
+    readonly focusRight?: () => void;
 }
 
-export function Button({ label, glyph, size = "body", play = false, primary = false, disabled = false, focusId, focusGroup = "buttons", className = "", onClick, ...props }: ButtonProps) {
+export function Button({ label, glyph, size = "body", play = false, primary = false, disabled = false, focusId, focusGroup = "buttons", focusLeft, focusRight, className = "", onClick, ...props }: ButtonProps) {
     const generatedId = useId();
-    const focusable = useFocusable(focusId ?? `button-${generatedId}`, focusGroup, { disabled });
+    const focusable = useFocusable(focusId ?? `button-${generatedId}`, focusGroup, { disabled, selector: focusLeft !== undefined || focusRight !== undefined, onLeft: focusLeft, onRight: focusRight });
     return <button
         {...props}
         ref={focusable.ref as never}

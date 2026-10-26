@@ -570,6 +570,16 @@ export default class MameSession implements ArcadeSession, MameWebCallbacks {
         if (!this._destroyed) this._schedulerHandle = this._scheduler.request(() => this.schedulerTick());
     }
 
+    // PRIVATE :: VOID -> VOID
+    // MAME services a scheduled state operation only inside a frame advance, and web_run_frames declines while the
+    // machine is paused, so a paused session resumes natively for exactly one frame and pauses again. The session
+    // stays paused from the page's point of view; the machine advances one frame, which a save or load needs anyway.
+    private serviceStateWhilePaused(): void {
+        this._webResume();
+        try { this._runFrames(1); }
+        finally { this._webPause(); }
+    }
+
     // PRIVATE :: "save"|"load", STRING -> PROMISE(VOID)
     // Validates the logical slot and enforces one pending operation.
     private scheduleState(operation: "save" | "load", slot: string): Promise<void> {
@@ -584,6 +594,7 @@ export default class MameSession implements ArcadeSession, MameWebCallbacks {
         try {
             if (operation === "save") this._webSaveState(slot);
             else this._webLoadState(slot);
+            if (this._paused) this.serviceStateWhilePaused();
         } catch (error) {
             this._pendingState = null;
             return Promise.reject(new ArcadeRuntimeError({

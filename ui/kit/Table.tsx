@@ -12,6 +12,8 @@ export interface TableRow {
     readonly held?: boolean;
     readonly focusable?: boolean;
     readonly onActivate?: () => void;
+    readonly onFocus?: () => void;
+    readonly className?: string;
 }
 
 export interface TableProps {
@@ -24,6 +26,8 @@ function BodyRow({ tableId, row, columnCount }: { readonly tableId: string; read
     const focusable = useFocusable(`${tableId}-${row.id}`, tableId, { disabled: !row.focusable, onActivate: row.onActivate });
     if (row.section) return <tr className="section-row" data-section-row="true"><td colSpan={columnCount}>{row.cells[0]}</td></tr>;
     return <tr
+        data-table-row={row.id}
+        className={row.className}
         ref={row.focusable ? focusable.ref as never : undefined}
         data-selected={row.selected ?? false}
         data-dim={row.dim ?? false}
@@ -31,7 +35,7 @@ function BodyRow({ tableId, row, columnCount }: { readonly tableId: string; read
         data-focus={row.focusable ? focusable["data-focus"] : undefined}
         data-state={row.held ? "held" : row.selected ? "selected" : row.dim ? "dim" : row.focusable && focusable["data-focus"] ? "focus" : "default"}
         tabIndex={row.focusable ? focusable.tabIndex : undefined}
-        onFocus={row.focusable ? focusable.onFocus : undefined}
+        onFocus={row.focusable ? (event) => { if (event.target === event.currentTarget) focusable.onFocus(); row.onFocus?.(); } : undefined}
     >{row.cells.map((cell, index) => <td key={index}>{cell}</td>)}</tr>;
 }
 

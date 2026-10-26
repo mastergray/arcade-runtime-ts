@@ -230,6 +230,35 @@ const testFile: TestFile = {
                 .start(undefined),
         },
         {
+            label: "a suspended input leaves browser defaults alone so the page keeps the key, and resumes preventing them",
+            run: () => CTGTest.init("keyboard defaults under suspension")
+                .stage("dispatch a mapped key while suspended and after", () => {
+                    const target = new FakeEventTarget();
+                    const session = new FakeArcadeSession();
+                    const input = new ArcadeInput({ session });
+                    const source = new KeyboardSource({ input, map: TEST_MAP, target });
+                    source.attach();
+                    input.suspended = true;
+                    const suspendedDown = dispatchKey(target, "keydown", "ArrowUp");
+                    const suspendedUp = dispatchKey(target, "keyup", "ArrowUp");
+                    input.suspended = false;
+                    const liveDown = dispatchKey(target, "keydown", "ArrowUp");
+                    const liveUp = dispatchKey(target, "keyup", "ArrowUp");
+                    source.destroy();
+                    return {
+                        suspended: [suspendedDown.defaultPrevented, suspendedUp.defaultPrevented],
+                        live: [liveDown.defaultPrevented, liveUp.defaultPrevented],
+                        forwardedToMachine: session.calls.filter((call) => call.method === "setControl").length,
+                    };
+                })
+                .assert("defaults survive only while suspended", (state) => state.subject, P.equals<unknown>({
+                    suspended: [false, false],
+                    live: [true, true],
+                    forwardedToMachine: 2,
+                }))
+                .start(undefined),
+        },
+        {
             label: "operator keys pass through beside mapped controls and can be disabled independently",
             run: () => CTGTest.init("operator-key pass-through")
                 .stage("dispatch mapped, unmapped, repeated and disabled operator keys", () => {

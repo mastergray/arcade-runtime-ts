@@ -101,6 +101,7 @@ export default class KeyboardSource {
     /* Instance Fields */
     private readonly _channel: ArcadeInputChannel;                 // This source's independently releasable input ownership
     private readonly _map: KeyboardMap;                            // Physical codes to arcade controls
+    private readonly _input: ArcadeInput;                          // Owning input, read for its suspension gate
     private readonly _target: KeyboardEventTargetLike;            // keydown, keyup and blur target
     private readonly _visibilityTarget: KeyboardVisibilityTargetLike;   // visibilitychange target
     private readonly _preventDefault: boolean;                     // Whether handled events suppress browser defaults
@@ -118,6 +119,7 @@ export default class KeyboardSource {
     // NOTE: Throws ArcadeRuntimeError INVALID_CONFIG when config fails isKeyboardSourceConfig().
     constructor(config: KeyboardSourceConfig) {
         if (!isKeyboardSourceConfig(config)) throw KeyboardSource.invalidConfig("KeyboardSource config is invalid.", config);
+        this._input = config.input;
         this._channel = config.input.createChannel();
         this._map = config.map;
         this._target = config.target;
@@ -224,7 +226,8 @@ export default class KeyboardSource {
         };
         if (mapped !== undefined) forward(mapped);
         if (key !== undefined) forward({ kind: "key", key });
-        if (this._preventDefault) event.preventDefault();
+        // A suspended input forwards nothing to the machine, so the page keeps its own use of the key (menus, dialogs).
+        if (this._preventDefault && !this._input.suspended) event.preventDefault();
     }
 
     // PRIVATE :: VOID -> VOID

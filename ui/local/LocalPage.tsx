@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FocusProvider } from "../focus/FocusController.js";
-import { Button, Confirm, Desk, StatusBar, Window } from "../kit/index.js";
+import { Confirm, Desk, Hint, StatusBar, Window } from "../kit/index.js";
 import { LibraryModel } from "../model/library.js";
 import { IndexedDbSavedPlayStore, PreferenceStore } from "../model/preferences.js";
 import { SessionModel } from "../model/session.js";
@@ -17,6 +17,8 @@ import { Strip } from "./Strip.js";
 import { SettingsModal } from "./SettingsModal.js";
 import { ControlsModal } from "./ControlsModal.js";
 import { PerGameModal } from "./PerGameModal.js";
+import { PresentationWindow } from "./presentation/PresentationWindow.js";
+import { usePresentation } from "./presentation/usePresentation.js";
 
 interface LocalModels {
     readonly library: LibraryModel;
@@ -26,6 +28,7 @@ interface LocalModels {
 type OpenModal = "import" | "settings" | "controls" | "per-game" | "log" | "file-check" | "clear-saved-play" | "restart" | null;
 
 const EMPTY_SESSION: SessionSnapshot = {
+    mode: "local", windowOpen: false, windowView: "game", lastFrame: null, hintVisible: false,
     status: "idle", message: "Loading the arcade library…", activeKey: null, machine: null,
     muted: false, fullscreen: false, layout: null, pads: [], log: [], busy: false,
 };
@@ -45,6 +48,7 @@ function useSessionSnapshot(session: SessionModel | null): SessionSnapshot {
 const statusState = (status: SessionSnapshot["status"]): "running" | "paused" | "idle" => status === "running" ? "running" : status === "paused" ? "paused" : "idle";
 
 function LocalWorkspace({ models }: { readonly models: LocalModels }) {
+    const rootRef = useRef<HTMLDivElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const [session, setSession] = useState<SessionModel | null>(null);
@@ -52,6 +56,8 @@ function LocalWorkspace({ models }: { readonly models: LocalModels }) {
     const sessionState = useSessionSnapshot(session);
     const [preferenceVersion, setPreferenceVersion] = useState(0);
     const preferences = useMemo(() => models.preferences.getGlobal(), [models.preferences, preferenceVersion]);
+    const presentation = sessionState.mode === "presentation";
+    const { padHint, padStatus } = usePresentation(session, sessionState, preferences, canvasRef);
     const [openMenu, setOpenMenu] = useState<string>();
     const [modal, setModal] = useState<OpenModal>(null);
     const [importTab, setImportTab] = useState<"import" | "stored">("import");
@@ -68,6 +74,7 @@ function LocalWorkspace({ models }: { readonly models: LocalModels }) {
         const created = new SessionModel({
             canvas: canvasRef.current,
             container: containerRef.current,
+            presentationRoot: rootRef.current ?? undefined,
             library: models.library,
             romStore: models.library.store,
             preferences: models.preferences,
@@ -100,6 +107,12 @@ function LocalWorkspace({ models }: { readonly models: LocalModels }) {
     }, [modal, removal, session]);
 
     useEffect(() => {
+        document.documentElement.dataset.density = presentation ? "tv" : "desktop";
+        document.documentElement.dataset.mode = sessionState.mode;
+    }, [presentation, sessionState.mode]);
+
+    useEffect(() => {
+        if (presentation) return;
         const drag = (event: DragEvent): void => { event.preventDefault(); setDragOver(true); setModal("import"); setImportTab("import"); };
         const leave = (event: DragEvent): void => { if (event.relatedTarget === null) setDragOver(false); };
         const drop = (event: DragEvent): void => {
@@ -117,7 +130,7 @@ function LocalWorkspace({ models }: { readonly models: LocalModels }) {
             document.removeEventListener("dragleave", leave);
             document.removeEventListener("drop", drop);
         };
-    }, [models.library]);
+    }, [models.library, presentation]);
 
     useEffect(() => {
         if (session === null || !library.preloadAutostart || library.selectedKey === null) return;
@@ -160,6 +173,8 @@ function LocalWorkspace({ models }: { readonly models: LocalModels }) {
     };
 
     const actions: LocalMenuActions = {
+        presentation: closeMenu(() => { session?.enterPresentation(); refreshPreferences(); }),
+        menuHint: closeMenu(() => { models.preferences.updateGlobal({ general: { ...preferences.general, presentationHint: !preferences.general.presentationHint } }); refreshPreferences(); }),
         settings: closeMenu(() => setModal("settings")),
         controls: closeMenu(() => setModal("controls")),
         storedFiles: closeMenu(() => { setImportTab("stored"); setModal("import"); }),
@@ -189,6 +204,7 @@ function LocalWorkspace({ models }: { readonly models: LocalModels }) {
         supportsSave={supportsSave}
         controllerView={preferences.controllerView}
         showFps={preferences.showFps}
+        menuHint={preferences.general.presentationHint}
         size={preferences.size}
         selectedSlot={selectedSlot}
         onSelectedSlot={setSelectedSlot}
@@ -204,16 +220,23 @@ function LocalWorkspace({ models }: { readonly models: LocalModels }) {
     </StatusBar>;
 
     const closeTop = (): void => {
-        if (modal !== null) setModal(null);
+        if (presentation && session !== null) {
+            if (sessionState.windowView !== "game") session.openWindow("game");
+            else session.closeWindow();
+        } else if (modal !== null) setModal(null);
         else if (openMenu !== undefined) setOpenMenu(undefined);
         else if (openRows.size > 0) setOpenRows(new Set());
     };
 
-    return <FocusProvider onBack={closeTop} gamepadEnabled={!running}>
+    const presentationFocus = presentation && sessionState.windowOpen && sessionState.windowView !== "controllers";
+    return <div ref={rootRef} className="local-page" data-mode={sessionState.mode} data-density={presentation ? "tv" : "desktop"}>
+    <FocusProvider onBack={closeTop} gamepadEnabled={presentation ? presentationFocus : !running} keyboardEnabled={!presentation || presentationFocus} escapeEnabled={!presentation} columns={presentation}
+        acceptGamepad={presentation ? (pad) => session?.snapshot().windowOpen === true
+            && !(preferences.controls.menuGesture[pad.id] ?? [10, 11]).every((button) => pad.buttons[button]?.pressed) : undefined}>
         <Desk>
-            <Window className="local-window" title={`Arcade Library — ${titleGame}`} secondary="Play mode" menu={menus} status={status}>
+            <Window className="local-window" hideTitle={presentation} title={`Arcade Library — ${titleGame}`} secondary="Play mode" menu={presentation ? undefined : menus} status={presentation ? undefined : status}>
                 <div className="local-layout">
-                    <GamesColumn
+                    {presentation ? null : <GamesColumn
                         library={models.library}
                         snapshot={library}
                         activeKey={sessionState.activeKey}
@@ -232,14 +255,16 @@ function LocalWorkspace({ models }: { readonly models: LocalModels }) {
                         onPlay={(key) => { if (session !== null) void session.start(key); }}
                         onResume={() => { if (paused) session?.pauseResume(); }}
                         onFileCheck={openFileCheck}
-                    />
+                    />}
                     <div className="play-region" data-region="play-and-controller" data-controller-visible={preferences.controllerView}>
-                        <PlaySurface canvasRef={canvasRef} containerRef={containerRef} session={sessionState} showFps={preferences.showFps} />
-                        {preferences.controllerView && session !== null ? <Strip model={session} session={sessionState} /> : null}
+                        <PlaySurface canvasRef={canvasRef} containerRef={containerRef} session={sessionState} showFps={preferences.showFps} presentation={presentation} />
+                        {!presentation && preferences.controllerView && session !== null ? <Strip model={session} session={sessionState} /> : null}
                     </div>
                 </div>
             </Window>
         </Desk>
+        {presentation && sessionState.hintVisible ? <div data-presentation-hint><Hint><b>{padHint}</b> · <b>Esc</b> · <b>two-finger tap</b> to open the menu</Hint></div> : null}
+        {presentation && sessionState.windowOpen && session !== null ? <PresentationWindow session={session} state={sessionState} library={models.library} snapshot={library} preferences={models.preferences} padStatus={padStatus} onPreferences={refreshPreferences} /> : null}
         {modal === "import" ? <ImportModal library={models.library} snapshot={library} tab={importTab} onTab={setImportTab} onClose={() => setModal(null)} dragOver={dragOver} onRemove={(name) => setRemoval({ name })} onRemoveAll={() => setRemoval({ all: true })} onPlay={(key) => { if (session !== null) void session.start(key); }} /> : null}
         {modal === "settings" ? <SettingsModal
             preferences={models.preferences}
@@ -279,7 +304,7 @@ function LocalWorkspace({ models }: { readonly models: LocalModels }) {
             onCancel={() => setRemoval(null)}
             onConfirm={() => { const target = removal; setRemoval(null); void ("all" in target ? models.library.clearStored() : models.library.removeArchive(target.name)); }} /></div>}
         {modal === "restart" ? <div data-modal="restart"><Confirm veil question="Restart from power-on?" consequence="Current changes are saved, then the machine starts fresh." confirmLabel="Restart from power-on…" onCancel={() => setModal(null)} onConfirm={() => { setModal(null); session?.reset("hard"); }} /></div> : null}
-    </FocusProvider>;
+    </FocusProvider></div>;
 }
 
 export function LocalPage() {

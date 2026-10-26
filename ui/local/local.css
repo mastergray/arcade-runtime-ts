@@ -106,3 +106,47 @@
 
 /* Modal hosts: each [data-modal] wrapper is the full-screen layer its veil fills, so it has a box of its own. */
 [data-modal] { position: fixed; inset: 0; z-index: var(--z-modal); }
+
+/* Presentation keeps the same mounted canvas and cabinet inside the page fullscreen root. */
+.local-page[data-mode="presentation"] { block-size: 100vh; inline-size: 100%; overflow: hidden; background: var(--stage); }
+[data-mode="presentation"] > .desk { padding: 0; background: var(--stage); }
+[data-mode="presentation"] .local-window { border: 0; box-shadow: none; block-size: 100vh; min-block-size: 0; grid-template-rows: minmax(0, 1fr); }
+[data-mode="presentation"] .local-layout { display: block; padding: 0; }
+[data-mode="presentation"] .play-region { block-size: 100%; grid-template-rows: minmax(0, 1fr); }
+[data-mode="presentation"] .play-surface { grid-template-rows: minmax(0, 1fr); }
+[data-mode="presentation"] .canvas-frame { border: 0; box-shadow: none; }
+.presentation-overlay { position: absolute; inset: 0; padding: var(--role-desk-margin); background: var(--desk); z-index: var(--z-veil); }
+.local-page { position: relative; }
+.presentation-window[data-menu="false"] { block-size: 100%; grid-template-rows: auto minmax(0, 1fr); }
+.presentation-window > .window-main { min-block-size: 0; overflow: hidden; }
+.presentation-columns { display: grid; grid-template-columns: minmax(22em, 1fr) minmax(0, 2fr); gap: var(--role-gutter); block-size: 100%; }
+.presentation-actions { display: flex; flex-direction: column; gap: calc(var(--role-gutter) / 2); overflow: auto; }
+.presentation-actions .action-button { min-block-size: var(--role-min-target); }
+.presentation-actions .action-trailing { white-space: normal; text-align: end; max-inline-size: 10em; }
+.presentation-mode-switch { margin-block-start: auto; padding-block-start: var(--role-gutter); }
+.presentation-slot { display: grid; grid-template-columns: minmax(0, 1fr) auto; border: var(--rule-width) solid var(--mid); }
+.presentation-slot .action-button { block-size: 100%; }
+.presentation-slot .selector { inline-size: 100%; font-size: var(--role-small); }
+.presentation-slot .selector-value { max-inline-size: 8em; padding-inline: calc(var(--role-control-x) / 2); }
+.selector-value small { display: block; font-size: var(--role-tiny); font-weight: var(--weight-normal); overflow-wrap: anywhere; }
+.presentation-content { min-inline-size: 0; min-block-size: 0; overflow: auto; display: flex; flex-direction: column; }
+.presentation-games { min-block-size: 0; display: flex; flex-direction: column; }
+.presentation-games .table { font-size: var(--role-list); }
+.presentation-games tr.hl td { background: var(--active); color: var(--ink); }
+.presentation-games tr[data-focus="true"] td { background: var(--title); color: var(--light); }
+.presentation-playing { color: var(--ok); font-weight: var(--weight-bold); }
+.presentation-bad { color: var(--bad); font-weight: var(--weight-bold); }
+.presentation-frame { background: var(--stage); display: grid; place-items: center; min-block-size: var(--canvas-height); }
+.presentation-frame img { max-inline-size: 100%; max-block-size: 42vh; object-fit: contain; image-rendering: pixelated; }
+.presentation-card h1 { font-size: var(--role-heading); margin-block: var(--role-gutter); }
+.presentation-card p, .presentation-message { font-size: var(--role-small); }
+.presentation-message { margin-block-start: auto; padding-block-start: var(--role-gutter); }
+[data-controls-inline] { min-block-size: 0; display: grid; grid-template-rows: minmax(0, 1fr) auto; block-size: 100%; }
+.inline-controls-body { min-block-size: 0; overflow: auto; }
+[data-controls-inline] .tabs { flex-wrap: wrap; }
+[data-controls-inline] .controls-pane { padding-inline: 0; }
+[data-controls-inline] .modal-foot { flex-wrap: wrap; padding-inline: 0; }
+[data-controls-inline] .scope-choice { align-items: center; }
+[data-presentation-hint] { position: absolute; inset-inline: 0; inset-block-end: var(--role-gutter); z-index: 1; display: flex; justify-content: center; pointer-events: none; animation: presentation-hint 3s forwards; }
+[data-presentation-hint] .start-hint { position: static; transform: none; margin: 0; }
+@keyframes presentation-hint { 0%, 80% { opacity: 1; } 100% { opacity: 0; } }

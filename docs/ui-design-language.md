@@ -151,6 +151,15 @@ The kit's `Range` wrapper added for W23b keeps the label, native slider and
 formatted output in one focusable row; it does not replace the browser's range
 keyboard behavior.
 
+Presentation uses the existing `ActionButton` at TV density. Save and Load
+pair that button with a sibling `Selector` in the same action row, so the
+arrow buttons are never nested inside another button. Left/right while the
+action has focus changes its slot; A/Enter on either the action or selector
+performs it. The selector's optional `small` line shows the timestamp,
+`empty`, or the disabled reason. Disabled actions keep the standard disabled
+state; an empty Load slot leaves the selector enabled to choose another slot.
+Other actions retain the inverted TV focus and trailing small-text states.
+
 ### 3.3 Containers
 
 | Component | Definition | States | Local | Phone | TV |
@@ -163,6 +172,15 @@ keyboard behavior.
 | **Table** | white, collapsed, 1 px `--rule` cells, `--th` header; `tr.hl` inverted (the selected row); `tr.dim` `#777`; section rows `--th` 700 spanning the table | selected, dim, held (`--held`) | Controls, Test, File check, Per-game | same | same at TV density |
 | **Terminal** `.term` | `--term-bg` on `--term-fg`, monospace, pre, scroll | — | Technical log | same | never |
 | **Confirmation** | a small modal: question, one line of consequence, two buttons; the destructive one is not the primary | — | Clear saved play, Restart from power-on | same | never (both are Play mode) |
+
+The inline Controls variant retains its content and foot, without a veil or
+title bar; Apply to and analogue values use selectors at TV density. Tabs can
+opt into selecting on left/right; LB/RB also switch the active Controls tab.
+Tables expose `data-table-row` and an optional row class and focus callback;
+presentation's running row uses `tr.hl` with the active tint, green `playing`
+text and Resume. Selection and the inverted focus remain separate states.
+`Window.hideTitle` lets the persistent canvas shell omit local title chrome
+while a separate presentation `Window` supplies the visible title bar.
 
 ### 3.4 Lists
 
