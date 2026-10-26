@@ -98,17 +98,17 @@ function Shortcut({ id, children }: { readonly id: string; readonly children: Re
 export function LocalMenus(props: LocalMenusProps) {
     const saveDisabled = disabledReason(props.running, props.supportsSave) !== undefined;
     return <MenuBar menus={menuDefinitions(props)} openId={props.openId} onOpen={props.onOpen} shortcuts={<>
-        <Shortcut id="pause"><Button size="sm" label={props.paused ? "Resume" : "Pause"} disabled={!props.running} onClick={props.actions.pauseResume} /></Shortcut>
-        <Shortcut id="mute"><Button size="sm" label={props.muted ? "Unmute" : "Mute"} disabled={!props.running} onClick={props.actions.mute} /></Shortcut>
-        <Shortcut id="reset"><Button size="sm" label="Reset" disabled={!props.running} onClick={props.actions.reset} /></Shortcut>
+        <Shortcut id="pause"><Button size="sm" glyph={props.paused ? "▶" : "⏸"} label={props.paused ? "Resume" : "Pause"} disabled={!props.running} onClick={props.actions.pauseResume} /></Shortcut>
+        <Shortcut id="mute"><Button size="sm" glyph={props.muted ? "🔊" : "🔇"} label={props.muted ? "Unmute" : "Mute"} disabled={!props.running} onClick={props.actions.mute} /></Shortcut>
+        <Shortcut id="reset"><Button size="sm" glyph="↺" label="Reset" disabled={!props.running} onClick={props.actions.reset} /></Shortcut>
         <span className="slot-group" data-shortcut="slots">
             <label>Slot <select data-slot-picker value={props.selectedSlot} onChange={(event) => props.onSelectedSlot(event.target.value as LocalSlot)}>
                 {(["slot1", "slot2", "slot3"] as const).map((slot) => <option value={slot} key={slot}>{slot.slice(-1)} — {slotTime(props.gamePreferences, slot)}</option>)}
             </select></label>
-            <Button size="sm" label="Save" disabled={saveDisabled} onClick={() => props.actions.saveSlot(props.selectedSlot)} />
-            <Button size="sm" label="Load" disabled={saveDisabled || props.gamePreferences.slots[props.selectedSlot] === undefined} onClick={() => props.actions.loadSlot(props.selectedSlot)} />
+            <Button size="sm" glyph="💾" label="Save" disabled={saveDisabled} onClick={() => props.actions.saveSlot(props.selectedSlot)} />
+            <Button size="sm" glyph="📂" label="Load" disabled={saveDisabled || props.gamePreferences.slots[props.selectedSlot] === undefined} onClick={() => props.actions.loadSlot(props.selectedSlot)} />
         </span>
-        <Shortcut id="fullscreen"><Button size="sm" label="Fullscreen" disabled={!props.running} onClick={() => props.actions.fullscreen(false)} /></Shortcut>
-        <Shortcut id="controller"><Button size="sm" label="Controller" onClick={props.actions.controller} /></Shortcut>
+        <Shortcut id="fullscreen"><Button size="sm" glyph="⛶" label="Fullscreen" disabled={!props.running} onClick={() => props.actions.fullscreen(false)} /></Shortcut>
+        <Shortcut id="controller"><Button size="sm" glyph="🕹" label="Controller" onClick={props.actions.controller} /></Shortcut>
     </>} />;
 }

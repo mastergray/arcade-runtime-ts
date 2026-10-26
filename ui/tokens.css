@@ -273,7 +273,7 @@ button { color: inherit; }
 .menu-item-small { margin-inline-start: auto; font-size: var(--role-small); }
 .menu-item[data-radio="true"] .menu-item-label { font-weight: var(--weight-bold); }
 .separator { border: 0; border-top: var(--rule-width) solid var(--mid); border-bottom: var(--rule-width) solid var(--light); margin: calc(var(--role-gutter) / 2) 0; }
-.pinned { display: flex; margin-inline-start: auto; gap: calc(var(--role-gutter) / 2); }
+.pinned { display: flex; align-items: center; margin-inline-start: var(--role-gutter); padding-inline-start: var(--role-gutter); border-inline-start: var(--rule-width) solid var(--mid); gap: calc(var(--role-gutter) / 2); }
 
 .btn {
   position: relative;
@@ -323,7 +323,9 @@ button { color: inherit; }
 
 .games-list { max-block-size: var(--list-max-height); overflow: auto; }
 .list-head, .list-foot { display: flex; align-items: center; justify-content: space-between; gap: var(--role-gutter); padding: var(--role-row-y) var(--role-row-x); }
-.list-head { font-size: var(--role-heading); font-weight: var(--weight-bold); }
+.list-head { justify-content: flex-start; }
+.list-head .list-title { font-size: var(--role-heading); font-weight: var(--weight-bold); }
+.list-head .list-count { margin-inline-start: auto; font-size: var(--role-small); color: var(--note); }
 .list-foot { font-size: var(--role-small); }
 .game-row { border-bottom: var(--rule-width) solid var(--list-rule); }
 .game-row-main { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: var(--role-gutter); min-height: var(--role-min-target); padding: var(--role-row-y) var(--role-row-x); font-size: var(--role-list); }

@@ -182,7 +182,8 @@ const testFile: TestFile = {
 
         // isScalingMode
         predicateCase("isScalingMode accepts \"fill-height\"", isScalingMode, "fill-height", true),
-        predicateCase("isScalingMode rejects \"stretch\"", isScalingMode, "stretch", false),
+        predicateCase("isScalingMode accepts \"stretch\"", isScalingMode, "stretch", true),
+        predicateCase("isScalingMode rejects \"zoom\"", isScalingMode, "zoom", false),
 
         // Player and button literals
         predicateCase("isPlayerIndex accepts 4", isPlayerIndex, 4, true),

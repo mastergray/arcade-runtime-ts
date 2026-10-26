@@ -233,7 +233,7 @@ const cases: TestCase[] = [{
                 state.runningChrome = document.querySelector('[data-status-cell="video"]')?.textContent?.includes("4 × 3") === true;
             });
             await page.locator('[data-shortcut="pause"] button').click();
-            await page.waitForFunction(() => document.querySelector('[data-shortcut="pause"] button')?.textContent?.trim() === "Resume");
+            await page.waitForFunction(() => document.querySelector('[data-shortcut="pause"] button')?.textContent?.includes("Resume") === true);
             await page.locator('[data-shortcut="pause"] button').click();
             await page.locator('[data-shortcut="mute"] button').click();
             await page.locator('[data-shortcut="reset"] button').click();

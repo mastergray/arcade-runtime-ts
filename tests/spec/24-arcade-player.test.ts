@@ -265,7 +265,7 @@ const testFile: TestFile = {
                             isArcadeGameConfig(replacing(game as unknown as Record<string, unknown>, "dipswitches", { Difficulty: 1 })),
                             isArcadeGameConfig(replacing(game as unknown as Record<string, unknown>, "auditStrictness", "loose")),
                             isArcadeGameConfig(replacing(game as unknown as Record<string, unknown>, "options", { bad: {} })),
-                            isArcadeGameConfig(replacing(game as unknown as Record<string, unknown>, "display", { scaling: "stretch" })),
+                            isArcadeGameConfig(replacing(game as unknown as Record<string, unknown>, "display", { scaling: "zoom" })),
                             isArcadeGameConfig(replacing(game as unknown as Record<string, unknown>, "display", { imageRendering: "crisp" })),
                         ],
                         validConfig: isArcadePlayerConfig(config),

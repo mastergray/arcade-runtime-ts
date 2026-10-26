@@ -1069,8 +1069,10 @@ Port of `DosDisplay` with arcade layout:
 - `aspectRatio` defaults to `session.machine.aspectRatio`, so vertical
   games lay out portrait and CPS's 384-wide frames display at 4:3 with no
   page config.
-- Scaling modes `fit`, `integer` and `fill-height`. `fill-height` is the
-  default when the machine is vertical and the container is landscape.
+- Scaling modes `fit`, `integer`, `fill-height` and `stretch`. `fill-height` is the
+  default when the machine is vertical and the container is landscape;
+  `stretch` fills the container on both axes and ignores the aspect ratio
+  (added 2026-10-25 for the local page's Size: Stretch).
 - `imageRendering`: `"pixelated"` (default) or `"smooth"`.
 - Fullscreen, resize observation and `onLayout` as in the DOS runtime.
 - A `starting` placeholder: while `ArcadePlayer.status` is `starting` the

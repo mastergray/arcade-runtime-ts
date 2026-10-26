@@ -3,7 +3,6 @@
 import type { ReactNode } from "react";
 import { useFocusable } from "../focus/FocusController.js";
 import { Button } from "./Button.js";
-import { Icon } from "./Icon.js";
 
 export type GameStatus = "ready" | "Missing files" | "Bad file" | "Not stored" | "Not a game";
 
@@ -50,7 +49,6 @@ function GameRow({ listId, row, flat }: { readonly listId: string; readonly row:
             onFocus={focusable.onFocus}
             onClick={flat ? row.onPlay : row.onToggle}
         >
-            <Icon seed={row.seed} />
             <span className="game-name">{row.name ?? "Game name"}</span>
             <span className="game-status" data-tone={statusTone(row.status ?? "ready", row.active ?? false)}>{status}</span>
             {actionLabel === null ? null : <Button data-row-action={row.id} focusId={`${listId}-${row.id}-play`} focusGroup={listId} size="sm" play label={actionLabel} disabled={actionDisabled} onClick={onAction} />}
@@ -67,7 +65,7 @@ export function List({ id, rows, flat = false }: ListProps) {
 }
 
 export function ListHead({ count, action }: { readonly count: string; readonly action?: ReactNode }) {
-    return <header className="list-head" data-component="list-head"><span>Games</span><span>{count}</span>{action}</header>;
+    return <header className="list-head" data-component="list-head"><span className="list-title">Games</span><span className="list-count">{count}</span>{action}</header>;
 }
 
 export function ListFoot({ children }: { readonly children: ReactNode }) {

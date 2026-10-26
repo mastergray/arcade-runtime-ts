@@ -50,7 +50,7 @@
   gap: calc(var(--role-gutter) / 2);
 }
 
-.pane-actions { justify-content: flex-end; margin-block: var(--role-gutter); }
+.pane-actions { justify-content: flex-end; }
 .archive-detail-list { margin: 0; padding-inline-start: calc(var(--role-row-x) * 2); }
 .game-verdict { font-weight: var(--weight-bold); }
 .game-info { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: calc(var(--role-gutter) / 2) var(--role-gutter); }
@@ -75,6 +75,8 @@
 }
 
 [data-modal="import"] .modal { inline-size: min(var(--modal-phone-width), var(--gallery-max)); }
+[data-modal="import"] .modal-body { overflow-x: hidden; }
+:fullscreen .play-meta { display: none; }
 .import-pane, [data-stored-files-tab] { display: grid; gap: var(--role-gutter); }
 .status-bar { flex-wrap: wrap; }
 .status-bar .btn { min-height: auto; }

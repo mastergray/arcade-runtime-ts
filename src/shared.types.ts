@@ -100,9 +100,9 @@ export type EmscriptenModuleFactory = (options: Readonly<Record<string, unknown>
 // Injectable loader of a build's JavaScript; init methods default it to dynamic import.
 export type ModuleLoader = (moduleUrl: string) => Promise<EmscriptenModuleFactory>;
 
-// TYPE :: "fit" | "integer" | "fill-height"
-// How ArcadeDisplay scales the native frame into its container.
-export type ScalingMode = "fit" | "integer" | "fill-height";
+// TYPE :: "fit" | "integer" | "fill-height" | "stretch"
+// How ArcadeDisplay scales the native frame into its container; stretch fills both axes and ignores the aspect ratio.
+export type ScalingMode = "fit" | "integer" | "fill-height" | "stretch";
 
 /**
  *
@@ -484,7 +484,7 @@ export function isFetchResponseLike(value: unknown): value is FetchResponseLike 
 // PREDICATE :: UNKNOWN -> BOOLEAN
 // True when value is one of the ScalingMode literals
 export function isScalingMode(value: unknown): value is ScalingMode {
-    return value === "fit" || value === "integer" || value === "fill-height";
+    return value === "fit" || value === "integer" || value === "fill-height" || value === "stretch";
 }
 
 // PREDICATE :: UNKNOWN -> BOOLEAN

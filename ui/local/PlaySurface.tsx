@@ -18,11 +18,11 @@ export function PlaySurface({ canvasRef, session, showFps }: PlaySurfaceProps) {
             <canvas ref={canvasRef} data-play-canvas aria-label="Arcade display" />
             {running ? null : <p className="idle-prompt">Select a ready game and choose Play.</p>}
         </CanvasFrame>
-        <div className="play-meta" data-play-meta>
+        {session.fullscreen ? null : <div className="play-meta" data-play-meta>
             <span data-video-size>{machine === null ? "No video" : `${machine.width} × ${machine.height}`}</span>
             {machine === null ? null : <span data-video-rate>{machine.refreshHz.toFixed(2)} Hz</span>}
             {showFps && machine !== null ? <span data-fps>{machine.refreshHz.toFixed(1)} FPS</span> : null}
-        </div>
+        </div>}
     </section>;
 }
 

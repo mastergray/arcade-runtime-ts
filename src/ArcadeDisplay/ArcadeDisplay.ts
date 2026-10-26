@@ -147,7 +147,7 @@ export default class ArcadeDisplay {
     // Overrides automatic scaling and re-lays out
     // NOTE: Throws ArcadeRuntimeError INVALID_CONFIG unless value is a ScalingMode
     set scaling(value: ScalingMode) {
-        if (!isScalingMode(value)) throw ArcadeDisplay.invalidConfig("scaling must be \"fit\", \"integer\" or \"fill-height\".", value);
+        if (!isScalingMode(value)) throw ArcadeDisplay.invalidConfig("scaling must be \"fit\", \"integer\", \"fill-height\" or \"stretch\".", value);
         this._scalingOverride = true;
         this._scaling = value;
         this.updateLayout();
@@ -426,6 +426,7 @@ export default class ArcadeDisplay {
             return centered(availableHeight * aspectRatio, availableHeight);
         };
         if (mode === "fit") return fit();
+        if (mode === "stretch") return centered(Math.max(0, container.width), Math.max(0, container.height));
         if (mode === "fill-height") {
             const height = Math.max(0, container.height);
             return centered(height * aspectRatio, height);

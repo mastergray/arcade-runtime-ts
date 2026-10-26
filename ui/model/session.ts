@@ -33,7 +33,7 @@ export interface SessionModelConfig {
     readonly publishCabinet?: (cabinet: ArcadeCabinet | null) => void;
 }
 
-const displayScaling = (size: LocalSize): ScalingMode => size === "stretch" ? "fill-height" : size;
+const displayScaling = (size: LocalSize): ScalingMode => size;
 const messageFrom = (error: unknown, fallback: string): string => error instanceof Error ? error.message : fallback;
 
 export class SessionModel {
