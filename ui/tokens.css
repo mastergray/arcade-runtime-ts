@@ -405,6 +405,7 @@ button { color: inherit; }
 .gallery-section > h2 { color: var(--light); text-shadow: var(--dark) 1px 1px; }
 .component-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--columns-min)), 1fr)); gap: var(--role-gutter); }
 .component-instance { min-inline-size: 0; padding: var(--role-row-y) var(--role-row-x); }
+.component-instance[data-wide] { grid-column: 1 / -1; }
 .component-label { display: flex; justify-content: space-between; margin-block-end: var(--role-gutter); font-size: var(--role-small); font-weight: var(--weight-bold); }
 .phone-frame { inline-size: min(100%, var(--phone-frame-width)); block-size: var(--phone-frame-height); margin-inline: auto; overflow: auto; }
 .presentation-grid { display: grid; grid-template-columns: minmax(var(--instance-min), .7fr) minmax(0, 1.3fr); gap: var(--role-gutter); }

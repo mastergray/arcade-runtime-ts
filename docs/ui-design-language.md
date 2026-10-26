@@ -221,6 +221,8 @@ Trailing ellipsis means "opens a window"; none means it acts at once.
 
 ## 6. What M24 builds from this
 
+Built by W21 (merged 2026-10-25): `ui/tokens.css`, `ui/kit/`, `ui/focus/FocusController.tsx`, `ui/gallery/`; `npm run build:ui` then `/ui/gallery` on the dev server. The values W21 fixed where this document gave a range are in `docs/work/W21-merge-note.md` (TV small 18, tiny 16, title 25, heading 26; Page Up / Page Down as the keyboard tab keys; stick threshold 0.55).
+
 1. **Tokens** as CSS custom properties on `:root`, with the three
    densities selected by `data-density` on the root (desktop, phone,
    tv); the phone and TV values are the table in §1.2–1.3, not ad-hoc

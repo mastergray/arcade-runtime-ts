@@ -13,6 +13,7 @@ type Density = "desktop" | "phone" | "tv";
 interface SampleProps {
     readonly component: string;
     readonly state?: string;
+    readonly wide?: boolean;
     readonly children: ReactNode;
 }
 
@@ -22,8 +23,8 @@ const TAB_DEFINITIONS = [
     { id: "settings", label: "Settings" },
 ] as const;
 
-function Sample({ component, state = "default", children }: SampleProps) {
-    return <article className="bevel component-instance" data-component={component} data-state={state}>
+function Sample({ component, state = "default", wide = false, children }: SampleProps) {
+    return <article className="bevel component-instance" data-component={component} data-state={state} data-wide={wide || undefined}>
         <div className="component-label"><span>{component}</span><span>{state}</span></div>
         {children}
     </article>;
@@ -42,14 +43,14 @@ function ChromeSection({ allStates }: { readonly allStates: boolean }) {
         <h2>Chrome</h2>
         <div className="component-grid">
             <Sample component="title-bar"><TitleBar title="Arcade" secondary="playing" /></Sample>
-            <Sample component="menu-bar" state="open"><MenuBar menus={menus} openId={openMenu} onOpen={(id) => setOpenMenu(openMenu === id ? undefined : id)} shortcuts={<><Button size="sm" label="Pause" /><Button size="sm" label="Mute" /><Button size="sm" label="Reset" /></>} /></Sample>
+            <Sample wide component="menu-bar" state="open"><MenuBar menus={menus} openId={openMenu} onOpen={(id) => setOpenMenu(openMenu === id ? undefined : id)} shortcuts={<><Button size="sm" label="Pause" /><Button size="sm" label="Mute" /><Button size="sm" label="Reset" /></>} /></Sample>
             {allStates ? <Sample component="menu-item" state="disabled"><MenuBar menus={menus} openId="settings" /></Sample> : null}
             <Sample component="pinned-shortcuts"><div className="pinned"><Button size="sm" label="Pause" /><Button size="sm" label="Mute" /><Button size="sm" label="Fullscreen" /><Button size="sm" label="Controller" /></div></Sample>
             <Sample component="status-bar" state="running"><StatusBar message="Game name" state="running" secondary="ready" /></Sample>
             {allStates ? <><Sample component="status-bar" state="paused"><StatusBar message="Game name" state="paused" /></Sample><Sample component="status-bar" state="idle"><StatusBar message="Games" state="idle" /></Sample></> : null}
             <Sample component="separator"><hr className="separator" /></Sample>
             <Sample component="bevel"><Bevel>Raised surface</Bevel><Bevel kind="sunken">Sunken surface</Bevel></Sample>
-            <Sample component="window"><Window title="Arcade" status={<StatusBar message="Game name" state="running" />}><CanvasFrame /></Window></Sample>
+            <Sample wide component="window"><Window title="Arcade" status={<StatusBar message="Game name" state="running" />}><CanvasFrame /></Window></Sample>
         </div>
     </section>;
 }
@@ -104,7 +105,7 @@ function ListsSection({ allStates }: { readonly allStates: boolean }) {
     return <section id="lists" className="gallery-section" data-section="lists">
         <h2>Lists</h2>
         <div className="component-grid">
-            <Sample component="games-list"><ListHead count="3" action={<Button size="sm" label="Import" />} /><List id="games" rows={[
+            <Sample wide component="games-list"><ListHead count="3" action={<Button size="sm" label="Import" />} /><List id="games" rows={[
                 { id: "default", seed: "list-one", status: "ready", open: allStates },
                 ...(allStates ? [
                     { id: "selected", seed: "list-two", status: "ready" as const, selected: true },
@@ -131,11 +132,11 @@ function GameSection({ allStates, view, setView, tvTab, setTvTab }: {
         <h2>Game-specific and TV presentation</h2>
         <div className="component-grid">
             <Sample component="game-card"><Card seed="game-card" /></Sample>
-            <Sample component="controller-strip"><ControllerStrip pressedButton={allStates ? 1 : undefined} pressedDirection={allStates ? "up" : undefined} /></Sample>
+            <Sample wide component="controller-strip"><ControllerStrip pressedButton={allStates ? 1 : undefined} pressedDirection={allStates ? "up" : undefined} /></Sample>
             <Sample component="controls-picture"><ControlsPicture /></Sample>
             <Sample component="canvas-frame"><div className="demo-stack"><CanvasFrame />{allStates ? <CanvasFrame paused /> : null}</div></Sample>
             <Sample component="start-hint"><Hint>Press <b>Esc</b> for Menu</Hint></Sample>
-            <Sample component="presentation-window" state={view}>
+            <Sample wide component="presentation-window" state={view}>
                 <Window title="Play mode" secondary={view === "controls" ? "Controllers" : "paused"}>
                     <div className="presentation-grid">
                         <div className="action-column" data-focus-column>
