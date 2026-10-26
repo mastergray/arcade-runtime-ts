@@ -315,6 +315,7 @@ export function ControlsModal(props: ControlsModalProps) {
             setGestures({});
             setDeadZone(0.25);
             setGlobalAnalog({});
+            setClearGameControls(true);
             const gameAnalog = props.gameKey === null ? {} : props.preferences.getGame(props.gameKey).analog ?? {};
             setAnalog(gameAnalog);
             setAnalogTouched(new Set());
@@ -351,7 +352,7 @@ export function ControlsModal(props: ControlsModalProps) {
             }
             props.preferences.setGame(props.gameKey, {
                 ...game,
-                ...(scope === "game" ? { controls: clearGameControls ? undefined : { keyboard, gamepads: mappings } } : {}),
+                ...(scope === "game" ? { controls: clearGameControls ? undefined : { keyboard, gamepads: mappings } } : clearGameControls ? { controls: undefined } : {}),
                 ...(Object.keys(nextAnalog).length === 0 ? { analog: undefined } : { analog: nextAnalog as AnalogSettings }),
             });
         }
@@ -375,6 +376,6 @@ export function ControlsModal(props: ControlsModalProps) {
         ]} />
         {tab === "player1" ? playerPane(1) : tab === "player2" ? playerPane(2) : tab === "cabinet" ? cabinetPane : tab === "analogue" ? analogPane : testPane}
     </Modal>
-    {confirmRestore ? <div data-modal="restore-controls"><Confirm veil question={`Restore controls for ${scope === "game" ? "this game" : "all games"}?`} consequence="Keyboard and gamepad bindings in the selected scope return to their defaults. Saved play is untouched." confirmLabel="Restore defaults" onCancel={() => setConfirmRestore(false)} onConfirm={() => { setConfirmRestore(false); restore(); }} /></div> : null}
+    {confirmRestore ? <div data-modal="restore-controls"><Confirm veil question={`Restore controls for ${scope === "game" ? "this game" : "all games"}?`} consequence={scope === "game" ? "This game's own keyboard and gamepad bindings are removed; it uses the all-games bindings again. Saved play is untouched." : "Keyboard and gamepad bindings for all games return to the built-in defaults, and this game's own bindings are removed. Saved play is untouched."} confirmLabel="Restore defaults" onCancel={() => setConfirmRestore(false)} onConfirm={() => { setConfirmRestore(false); restore(); }} /></div> : null}
     </div>;
 }
