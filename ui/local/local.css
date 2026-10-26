@@ -24,7 +24,7 @@
 }
 
 .games-column > .games-list { max-block-size: none; min-block-size: 0; }
-.games-column .list-head { border-bottom: var(--rule-width) solid var(--mid); }
+.games-column .list-head { border-bottom: var(--rule-width) solid var(--mid); padding-inline-end: calc(var(--role-row-x) + var(--role-bevel)); }
 .games-column .list-foot { flex-wrap: wrap; border-top: var(--rule-width) solid var(--mid); }
 .empty-library, .build-warnings { margin: 0; padding: var(--role-row-y) var(--role-row-x); font-size: var(--role-small); }
 .build-warnings { color: var(--warn-note); }
