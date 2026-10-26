@@ -115,7 +115,7 @@ press/release ownership.
 
 - Chrome: `[data-menu]`, `[data-menu-title]`, `[data-menu-item]`,
   `[data-shortcut]`, `[data-slot-picker]`, `[data-status-cell]`,
-  `[data-status-controller]`.
+  (the status bar's Controller button was removed on 2026-10-25; the shortcut and the View menu remain).
 - Library: `[data-region="games"]`, `[data-row]`, `[data-row-action]`,
   `[data-game-detail]`, `[data-archive]`, `[data-card-action]`,
   `[data-library-count]`, `[data-import-open]`,
@@ -128,13 +128,13 @@ press/release ownership.
 - Import: `[data-modal="import"]`, `[data-tab]`,
   `[data-import-drop-zone]`, `[data-import-picker]`, `[data-choose-files]`,
   `[data-import-file]`, `[data-import-status]`, `[data-companion-notice]`,
-  `[data-store-all-check]`, `[data-close-import]`,
+  `[data-store-all-check]` (the modal closes through the title bar's `[data-modal-close]`),
   `[data-stored-files-tab]`, `[data-stored-file]`, `[data-remove-stored]`,
   `[data-remove-all-stored]`.
 - Diagnostics and confirmations: `[data-modal="technical-log"]`,
   `[data-copy-log]`, `[data-modal="file-check"]`,
   `[data-file-check-warnings]`, (both diagnostic modals close through the title bar's `[data-modal-close]`),
-  `[data-modal="clear-saved-play"]`, `[data-modal="restart"]`,
+  `[data-modal="clear-saved-play"]`, `[data-modal="restart"]`, `[data-modal="remove-file"]` (Remove and Remove all confirm here),
   `[data-confirm]`, `[data-cancel]`, `[data-modal-close]`.
 - Bootstrap: `[data-local-loading]` and `[data-local-error]`.
 

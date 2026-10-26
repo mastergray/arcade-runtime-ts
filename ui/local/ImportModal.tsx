@@ -13,9 +13,11 @@ export interface ImportModalProps {
     readonly onTab: (tab: "import" | "stored") => void;
     readonly onClose: () => void;
     readonly dragOver: boolean;
+    readonly onRemove: (name: string) => void;
+    readonly onRemoveAll: () => void;
 }
 
-export function ImportModal({ library, snapshot, tab, onTab, onClose, dragOver }: ImportModalProps) {
+export function ImportModal({ library, snapshot, tab, onTab, onClose, dragOver, onRemove, onRemoveAll }: ImportModalProps) {
     const picker = useRef<HTMLInputElement>(null);
     const companion = library.companionNotice();
     const importPane = <div className="import-pane" data-import-tab>
@@ -38,12 +40,11 @@ export function ImportModal({ library, snapshot, tab, onTab, onClose, dragOver }
         {companion === null ? null : <p className="note" data-companion-notice>{companion}</p>}
     </div>;
     return <div data-modal="import">
-        <Modal title="Import" onClose={onClose} foot={<>
+        <Modal title="Import" onClose={onClose} foot={tab !== "import" ? undefined : <>
             {tab === "import" ? <Button label="Store all and check" primary data-store-all-check disabled={snapshot.busy || !snapshot.importRows.some((row) => row.status === "Ready")} onClick={() => { void library.storeAllAndCheck(); }} /> : null}
-            <Button label="Close" data-close-import onClick={onClose} />
         </>}>
             <Tabs id="import-tabs" tabs={[{ id: "import", label: "Import" }, { id: "stored", label: "Stored files" }]} active={tab} onChange={(id) => onTab(id as "import" | "stored")} />
-            {tab === "import" ? importPane : <StoredFilesTab library={library} snapshot={snapshot} />}
+            {tab === "import" ? importPane : <StoredFilesTab library={library} snapshot={snapshot} onRemove={onRemove} onRemoveAll={onRemoveAll} />}
         </Modal>
     </div>;
 }

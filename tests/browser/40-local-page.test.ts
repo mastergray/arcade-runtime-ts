@@ -222,7 +222,7 @@ const cases: TestCase[] = [{
             await page.locator("[data-store-all-check]").click();
             await page.waitForFunction(() => document.querySelector('[data-row-action="synthetic-family/synthetic_machine"]')?.textContent?.trim() === "Play");
             await page.evaluate(() => { (window as unknown as Window & { __arcadeLocalTest: SyntheticState }).__arcadeLocalTest.checkThenPlay = true; });
-            await page.locator("[data-close-import]").click();
+            await page.locator('[data-modal="import"] [data-modal-close]').click();
         })
         .interact("start and drive the fixed runtime shortcuts and slot group", async ({ page }) => {
             await page.locator('[data-row-action="synthetic-family/synthetic_machine"]').click();
@@ -282,8 +282,9 @@ const cases: TestCase[] = [{
             await page.locator('[data-menu-item="stored-files"]').click();
             await page.waitForSelector('[data-modal="import"] [data-stored-files-tab]');
             await page.locator(`[data-remove-stored="${ARCHIVE}"]`).click();
+            await page.locator('[data-modal="remove-file"] [data-confirm]').click();
             await page.waitForFunction(() => document.querySelector("[data-stored-file]") === null);
-            await page.locator("[data-close-import]").click();
+            await page.locator('[data-modal="import"] [data-modal-close]').click();
             await page.evaluate(({ menu, row }) => {
                 const state = (window as unknown as Window & { __arcadeLocalTest: SyntheticState }).__arcadeLocalTest;
                 state.storedRemoved = document.querySelector('[data-library-count="files"]')?.textContent?.startsWith("0") === true;

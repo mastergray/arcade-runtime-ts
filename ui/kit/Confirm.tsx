@@ -10,14 +10,17 @@ export interface ConfirmProps {
     readonly onConfirm?: () => void;
     readonly onCancel?: () => void;
     readonly veil?: boolean;
+    readonly tone?: "warning" | "question";                        // The icon beside the text; warning is the default for anything destructive
 }
 
-export function Confirm({ question, consequence, confirmLabel, onConfirm, onCancel, veil = false }: ConfirmProps) {
-    return <div data-component="confirmation"><Modal title="Confirm" veil={veil} onClose={onCancel} foot={<>
+export function Confirm({ question, consequence, confirmLabel, onConfirm, onCancel, veil = false, tone = "warning" }: ConfirmProps) {
+    return <div data-component="confirmation" data-tone={tone}><Modal title="Confirm" veil={veil} onClose={onCancel} foot={<>
         <Button label={confirmLabel} data-confirm onClick={onConfirm} />
         <Button label="Cancel" data-cancel primary onClick={onCancel} />
     </>}>
-        <p className="confirm-question">{question}</p>
-        <p className="confirm-consequence">{consequence}</p>
+        <div className="confirm-body">
+            <span className="confirm-icon" aria-hidden="true">{tone === "warning" ? "⚠" : "?"}</span>
+            <div><p className="confirm-question">{question}</p><p className="confirm-consequence">{consequence}</p></div>
+        </div>
     </Modal></div>;
 }

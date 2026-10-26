@@ -79,6 +79,7 @@
   --action-glyph-width: 34px;
   --switch-label-width: 60px;
   --title-close-size: 18px;
+  --confirm-icon-size: 32px;
   --scrollbar-size: 16px;
   --section-gap: 28px;
   --gallery-max: 1320px;
@@ -313,6 +314,10 @@ button { color: inherit; }
 .modal > .title-bar { position: sticky; inset-block-start: 0; z-index: var(--z-modal); }
 .modal-body, .pane { padding: var(--role-row-y) var(--role-row-x); }
 .modal-foot { display: flex; justify-content: flex-end; gap: var(--role-gutter); padding: var(--role-row-y) var(--role-row-x); border-top: var(--rule-width) solid var(--mid); }
+.confirm-body { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--role-gutter); align-items: start; }
+.confirm-body p { margin: 0 0 calc(var(--role-gutter) / 2); }
+.confirm-icon { font-size: var(--confirm-icon-size); line-height: 1; color: var(--warn); text-shadow: 0 0 0 var(--ink); }
+[data-tone="question"] .confirm-icon { color: var(--title); }
 .confirm-question { font-weight: var(--weight-bold); }
 .confirm-consequence, .note { color: var(--note); font-size: var(--role-small); }
 .note[data-warn="true"] { color: var(--warn-note); }

@@ -13,6 +13,7 @@ export interface GamesColumnProps {
     readonly onToggle: (key: string) => void;
     readonly onImport: () => void;
     readonly onStored: () => void;
+    readonly onRemove: (name: string) => void;
     readonly onPlay: (key: string) => void;
     readonly onResume: () => void;
     readonly onFileCheck: (key: string) => void;
@@ -37,10 +38,11 @@ const archiveState = (library: LibraryModel, card: LibraryCard, name: string): {
     return { label: "Missing files", tone: "bad" };
 };
 
-function CardDetail({ card, library, onImport, onFileCheck }: {
+function CardDetail({ card, library, onImport, onFileCheck, onRemove }: {
     readonly card: LibraryCard;
     readonly library: LibraryModel;
     readonly onImport: () => void;
+    readonly onRemove: (name: string) => void;
     readonly onFileCheck: () => void;
 }) {
     const metadata = card.metadata;
@@ -65,7 +67,7 @@ function CardDetail({ card, library, onImport, onFileCheck }: {
         </dl>
         <div className="game-detail-actions">
             <span data-card-action="file-check"><Button size="sm" label="File check" disabled={card.report === null} onClick={onFileCheck} /></span>
-            {primary === undefined ? null : <span data-card-action="remove"><Button size="sm" label="Remove" onClick={() => { void library.removeArchive(primary.name); }} /></span>}
+            {primary === undefined ? null : <span data-card-action="remove"><Button size="sm" label="Remove" onClick={() => onRemove(primary.name)} /></span>}
             {library.verdict(card.key) === "ready" ? null : <span data-card-action="import"><Button size="sm" label="Import" onClick={onImport} /></span>}
         </div>
     </div>;
@@ -84,7 +86,7 @@ const rowForCard = (props: GamesColumnProps, card: LibraryCard): GameListRow => 
         active: props.activeKey === card.key,
         status,
         open: props.openRows.has(card.key),
-        detail: <CardDetail card={card} library={props.library} onImport={props.onImport} onFileCheck={() => props.onFileCheck(card.key)} />,
+        detail: <CardDetail card={card} library={props.library} onImport={props.onImport} onFileCheck={() => props.onFileCheck(card.key)} onRemove={props.onRemove} />,
         detailActions: false,
         actionLabel: props.activeKey === card.key ? "Resume" : primaryAction,
         actionDisabled: false,
@@ -109,7 +111,7 @@ const rows = (props: GamesColumnProps): ReadonlyArray<GameListRow> => [
         detailActions: false,
         actionLabel: "Remove",
         actionDisabled: false,
-        onAction: () => { void props.library.removeArchive(archive.name); },
+        onAction: () => props.onRemove(archive.name),
         onToggle: () => props.onToggle(`unknown:${archive.name}`),
     })),
 ];

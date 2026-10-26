@@ -55,6 +55,7 @@ function LocalWorkspace({ models }: { readonly models: LocalModels }) {
     const [dragOver, setDragOver] = useState(false);
     const [openRows, setOpenRows] = useState<ReadonlySet<string>>(new Set());
     const [selectedSlot, setSelectedSlot] = useState<LocalSlot>("slot1");
+    const [removal, setRemoval] = useState<{ readonly name: string } | { readonly all: true } | null>(null);
     const [fileCheckKey, setFileCheckKey] = useState<string | null>(null);
 
     const refreshPreferences = (): void => setPreferenceVersion((value) => value + 1);
@@ -190,7 +191,6 @@ function LocalWorkspace({ models }: { readonly models: LocalModels }) {
         <span className="status-cell" data-status-cell="video">{sessionState.machine === null ? "No video" : `${sessionState.machine.width} × ${sessionState.machine.height} · ${sessionState.machine.refreshHz.toFixed(2)} Hz`}</span>
         <span className="status-cell" data-status-cell="input">Keyboard · {sessionState.pads.length === 0 ? "no pads" : sessionState.pads.map((pad) => `P${pad.player}`).join(", ")}</span>
         <span className="status-cell" data-status-cell="autosave">Auto-save {preferences.autoSave ? "on" : "off"}</span>
-        <span className="status-cell" data-status-cell="controller"><Button size="sm" label="Controller" data-status-controller onClick={toggleController} /></span>
     </StatusBar>;
 
     const closeTop = (): void => {
@@ -201,7 +201,7 @@ function LocalWorkspace({ models }: { readonly models: LocalModels }) {
 
     return <FocusProvider onBack={closeTop} gamepadEnabled={!running}>
         <Desk>
-            <Window className="local-window" title={`Arcade Library — ${titleGame}`} secondary={`${library.gamesFound} games · ${library.readyCount} ready · ${library.filesSaved} files`} menu={menus} status={status}>
+            <Window className="local-window" title={`Arcade Library — ${titleGame}`} secondary="Play mode" menu={menus} status={status}>
                 <div className="local-layout">
                     <GamesColumn
                         library={models.library}
@@ -218,6 +218,7 @@ function LocalWorkspace({ models }: { readonly models: LocalModels }) {
                         }}
                         onImport={() => { setImportTab("import"); setModal("import"); }}
                         onStored={() => { setImportTab("stored"); setModal("import"); }}
+                        onRemove={(name) => setRemoval({ name })}
                         onPlay={(key) => { if (session !== null) void session.start(key); }}
                         onResume={() => { if (paused) session?.pauseResume(); }}
                         onFileCheck={openFileCheck}
@@ -229,13 +230,19 @@ function LocalWorkspace({ models }: { readonly models: LocalModels }) {
                 </div>
             </Window>
         </Desk>
-        {modal === "import" ? <ImportModal library={models.library} snapshot={library} tab={importTab} onTab={setImportTab} onClose={() => setModal(null)} dragOver={dragOver} /> : null}
+        {modal === "import" ? <ImportModal library={models.library} snapshot={library} tab={importTab} onTab={setImportTab} onClose={() => setModal(null)} dragOver={dragOver} onRemove={(name) => setRemoval({ name })} onRemoveAll={() => setRemoval({ all: true })} /> : null}
         {modal === "log" ? <LogModal lines={sessionState.log} onCopy={copyLog} onClose={() => setModal(null)} /> : null}
         {modal === "file-check" && fileCheckCard !== null ? <FileCheckModal card={fileCheckCard} onClose={() => setModal(null)} /> : null}
         {modal === "clear-saved-play" ? <div data-modal="clear-saved-play"><Confirm veil question="Clear saved play for this game?" consequence="NVRAM, configuration and all three slots will be removed. Game files stay." confirmLabel="Clear saved play for this game…" onCancel={() => setModal(null)} onConfirm={() => {
             setModal(null);
             if (session !== null) void session.clearSavedPlay().finally(refreshPreferences);
         }} /></div> : null}
+        {removal === null ? null : <div data-modal="remove-file"><Confirm veil
+            question={"all" in removal ? "Remove every stored file?" : `Remove ${removal.name}?`}
+            consequence={"all" in removal ? "Every game archive saved in this browser is deleted. Saved play is kept." : "The archive is deleted from this browser; the game needs it again before it can play. Saved play is kept."}
+            confirmLabel={"all" in removal ? "Remove all" : "Remove"}
+            onCancel={() => setRemoval(null)}
+            onConfirm={() => { const target = removal; setRemoval(null); void ("all" in target ? models.library.clearStored() : models.library.removeArchive(target.name)); }} /></div>}
         {modal === "restart" ? <div data-modal="restart"><Confirm veil question="Restart from power-on?" consequence="Current changes are saved, then the machine starts fresh." confirmLabel="Restart from power-on…" onCancel={() => setModal(null)} onConfirm={() => { setModal(null); session?.reset("hard"); }} /></div> : null}
     </FocusProvider>;
 }
