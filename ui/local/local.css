@@ -79,3 +79,6 @@
 .status-bar { flex-wrap: wrap; }
 .status-bar .btn { min-height: auto; }
 
+
+/* Modal hosts: each [data-modal] wrapper is the full-screen layer its veil fills, so it has a box of its own. */
+[data-modal] { position: fixed; inset: 0; z-index: var(--z-modal); }
