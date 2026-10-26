@@ -395,6 +395,7 @@ export default class ArcadeCabinet {
             this._analog = new AnalogDriver({
                 input,
                 inputs: input.machine.inputs.analog,
+                ...(input.machine.inputs.joystick === undefined ? {} : { joystick: input.machine.inputs.joystick }),
                 settings: this._analogSettings,
                 scheduler: this._frameScheduler,
             });

@@ -183,6 +183,25 @@ const testFile: TestFile = {
                 .start(undefined),
         },
         {
+            label: "a dial-only board (joystick false) takes the arrows into the driver at keySpeed",
+            run: () => CTGTest.init("dial-only arrows")
+                .stage("hold a direction with the joystick flag false", () => {
+                    const session = new FakeArcadeSession();
+                    const input = new ArcadeInput({ session });
+                    const scheduler = new FakeFrameScheduler();
+                    const keys = input.createChannel();
+                    const driver = new AnalogDriver({ input, scheduler, inputs: [{ player: 1, kind: "dial" }], joystick: false, settings: {} });
+                    keys.press(DIRECTION_RIGHT);
+                    scheduler.tick(16); scheduler.tick(16);
+                    const result = { spins: session.calls.filter((call) => call.method === "setAxis").length, digital: [...session.held] };
+                    keys.release(DIRECTION_RIGHT);
+                    driver.destroy();
+                    return result;
+                })
+                .assert("the arrow spins and never reaches the digital path", (state) => state.subject, P.equals<unknown>({ spins: 2, digital: [] }))
+                .start(undefined),
+        },
+        {
             label: "live updates change keyboard slope and inversion while the gamepad filter applies travel",
             run: () => CTGTest.init("analogue live update and filter")
                 .stage("update one running driver", () => {

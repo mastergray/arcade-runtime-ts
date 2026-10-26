@@ -471,6 +471,7 @@ extern "C" EMSCRIPTEN_KEEPALIVE const char *web_machine_info()
 	int players = 0;
 	int buttons = 0;
 	bool dual_stick = false;
+	bool joystick = false;
 	bool volume = false;
 	std::vector<std::pair<int, const char *> > analog_inputs;
 	struct key_input
@@ -487,6 +488,7 @@ extern "C" EMSCRIPTEN_KEEPALIVE const char *web_machine_info()
 			if (field->type() >= IPT_BUTTON1 && field->type() <= IPT_BUTTON6)
 				buttons = MAX(buttons, int(field->type() - IPT_BUTTON1 + 1));
 			dual_stick = dual_stick || web_dual_stick_type(field->type());
+			joystick = joystick || (field->type() >= IPT_JOYSTICK_UP && field->type() <= IPT_JOYSTICK_RIGHT);
 			volume = volume || field->type() == IPT_VOLUME_UP || field->type() == IPT_VOLUME_DOWN;
 			const char *kind = web_analog_kind(field->type());
 			int player = field->player() + 1;
@@ -566,6 +568,7 @@ extern "C" EMSCRIPTEN_KEEPALIVE const char *web_machine_info()
 	}
 
 	json << "],\"dualStick\":" << (dual_stick ? "true" : "false")
+		<< ",\"joystick\":" << (joystick ? "true" : "false")
 		<< ",\"keys\":[";
 
 	for (size_t index = 0; index < key_inputs.size(); index++)

@@ -326,10 +326,10 @@ index d78da73..36a7d37 100644
  		case OSD_OUTPUT_CHANNEL_ERROR:
 diff --git a/src/osd/modules/web/web_bridge.cpp b/src/osd/modules/web/web_bridge.cpp
 new file mode 100644
-index 0000000..f0cf53b
+index 0000000..e6832f3
 --- /dev/null
 +++ b/src/osd/modules/web/web_bridge.cpp
-@@ -0,0 +1,585 @@
+@@ -0,0 +1,588 @@
 +// license:BSD-3-Clause
 +// copyright-holders:Arcade Runtime contributors
 +
@@ -783,6 +783,7 @@ index 0000000..f0cf53b
 +	int players = 0;
 +	int buttons = 0;
 +	bool dual_stick = false;
++	bool joystick = false;
 +	bool volume = false;
 +	std::vector<std::pair<int, const char *> > analog_inputs;
 +	struct key_input
@@ -799,6 +800,7 @@ index 0000000..f0cf53b
 +			if (field->type() >= IPT_BUTTON1 && field->type() <= IPT_BUTTON6)
 +				buttons = MAX(buttons, int(field->type() - IPT_BUTTON1 + 1));
 +			dual_stick = dual_stick || web_dual_stick_type(field->type());
++			joystick = joystick || (field->type() >= IPT_JOYSTICK_UP && field->type() <= IPT_JOYSTICK_RIGHT);
 +			volume = volume || field->type() == IPT_VOLUME_UP || field->type() == IPT_VOLUME_DOWN;
 +			const char *kind = web_analog_kind(field->type());
 +			int player = field->player() + 1;
@@ -878,6 +880,7 @@ index 0000000..f0cf53b
 +	}
 +
 +	json << "],\"dualStick\":" << (dual_stick ? "true" : "false")
++		<< ",\"joystick\":" << (joystick ? "true" : "false")
 +		<< ",\"keys\":[";
 +
 +	for (size_t index = 0; index < key_inputs.size(); index++)

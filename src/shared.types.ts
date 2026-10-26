@@ -210,6 +210,7 @@ export type MachineAnalogKind =
 export interface MachineInputs {
     readonly analog: ReadonlyArray<{ readonly player: PlayerIndex; readonly kind: MachineAnalogKind }>;   // Declared analog ports
     readonly dualStick: boolean;                                  // Any JOYSTICKLEFT/JOYSTICKRIGHT field exists
+    readonly joystick?: boolean;                                  // Any ordinary JOYSTICK_UP/DOWN/LEFT/RIGHT field exists; absent on builds before 2026-10-26
     readonly keys: ReadonlyArray<{ readonly name: string; readonly key: ArcadeKeyName; readonly player: PlayerIndex }>;   // Field-level operator keys in port order
     readonly volume: boolean;                                     // Whether cabinet volume up/down ports exist
 }
@@ -623,6 +624,7 @@ export function isAnalogSettings(value: unknown): value is AnalogSettings {
 // True when value carries a deduplicated array of player/kind rows and a dual-stick flag.
 export function isMachineInputs(value: unknown): value is MachineInputs {
     if (!isObject(value) || !Array.isArray(value.analog) || typeof value.dualStick !== "boolean"
+        || (value.joystick !== undefined && typeof value.joystick !== "boolean")
         || !Array.isArray(value.keys) || typeof value.volume !== "boolean") return false;
     const rows = value.analog as unknown[];
     if (!rows.every((row) => isObject(row)

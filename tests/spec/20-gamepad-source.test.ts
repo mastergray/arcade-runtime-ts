@@ -482,6 +482,29 @@ const testFile: TestFile = {
                 .start(undefined),
         },
         {
+            label: "a relative kind beside a declared joystick yields the left stick to directions; without the flag it spins",
+            run: () => CTGTest.init("gamepad dial beside a joystick")
+                .stage("poll a right-deflected stick on both machine shapes", () => {
+                    const run = (joystick: boolean | undefined) => {
+                        const provider = new FakeGamepadProvider();
+                        provider.pads = [pad("pad", 0, [], [1, 0])];
+                        const scheduler = new FakeFrameScheduler();
+                        const { session } = attachedSource(provider, scheduler, new FakeEventTarget(), undefined, {
+                            analog: [{ player: 1, kind: "dial" }], dualStick: false, keys: [], volume: false, ...(joystick === undefined ? {} : { joystick }),
+                        });
+                        scheduler.tick(16);
+                        return { held: session.held, spins: session.calls.filter((call) => call.method === "setAxis").length };
+                    };
+                    return { withJoystick: run(true), unknown: run(undefined), dialOnly: run(false) };
+                })
+                .assert("the joystick board gets a direction and no spin; the others spin and hold nothing", (state) => state.subject, P.equals<unknown>({
+                    withJoystick: { held: ["p1:direction:right"], spins: 0 },
+                    unknown: { held: [], spins: 1 },
+                    dialOnly: { held: [], spins: 1 },
+                }))
+                .start(undefined),
+        },
+        {
             label: "dual-stick discovery maps both sticks separately while the d-pad remains ordinary",
             run: () => CTGTest.init("gamepad dual-stick binding")
                 .stage("poll diagonal sticks and one d-pad direction", () => {

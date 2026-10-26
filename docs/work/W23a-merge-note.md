@@ -53,9 +53,11 @@ package root.
 Ordinary `direction` controls remain digital, except on a player whose declared
 **absolute** horizontal or vertical port (stick, paddle, positional, light gun)
 covers that direction: there the driver takes the arrows and d-pad for the axis.
-Relative kinds (dial, trackball, mouse) never claim directions (2026-10-26: an
-F3 platform game declares a dial beside its joystick and lost its arrows), so
-they keep MAME's HAT1 increment path at its keydelta. Declared stick-1 and pedal-1/2
+Relative kinds (dial, trackball, mouse) claim directions only when the machine
+reports `inputs.joystick === false` (2026-10-26: an F3 platform game declares a
+dial beside its joystick and lost its arrows); with the flag true or absent they
+keep MAME's HAT1 increment path at its keydelta, and `GamepadSource` likewise
+leaves the left stick to the joystick on such boards. Declared stick-1 and pedal-1/2
 holds are consumed from the digital session path and become driver-owned axis
 writes; machines declaring no analogue rows retain the prior digital path.
 Conditional discovered kinds sharing one player/axis slot use their first

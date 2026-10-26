@@ -379,6 +379,7 @@ type MachineAnalogKind = "stick-x" | "stick-y" | "stick-z" | "paddle" | "paddle-
 interface MachineInputs {
     readonly analog: ReadonlyArray<{ readonly player: PlayerIndex; readonly kind: MachineAnalogKind }>;
     readonly dualStick: boolean;
+    readonly joystick?: boolean;   // any ordinary JOYSTICK_UP/DOWN/LEFT/RIGHT field; absent on family builds before 2026-10-26
     readonly keys: ReadonlyArray<{ readonly name: string; readonly key: ArcadeKeyName; readonly player: PlayerIndex }>;   // W29: fields with their own key code
     readonly volume: boolean;                                                                                              // W29: IPT_VOLUME_UP/DOWN declared
 }
@@ -395,7 +396,7 @@ control on a board without volume ports, is accepted and does nothing.
 canonical keys. Absolute axis values use [−1, 1], with sticks centred at 0
 and pedals ranging from −1 released to +1 floored; `spin-*` values are
 signed pixel deltas per call. `MachineInfo.inputs` reports one analogue row
-per distinct player and kind plus `dualStick`, and
+per distinct player and kind plus `dualStick`, `joystick` (whether an ordinary digital joystick is declared beside them; family builds from before 2026-10-26 omit it), and
 `ArcadeSession.setAxis(axis, value)` writes an absolute normalized value or
 a relative pixel delta: out-of-range absolute values are clamped and a
 non-finite value throws `INVALID_CONFIG`.
@@ -730,7 +731,7 @@ the machine is advanced only by `web_run_frames`.
 | `web_save_state` / `web_load_state` | `(name: char*) → void` | Schedules save/load of `/mame/sta/<name>.sta`; completion arrives on `onStateDone`. |
 | `web_flush_nvram` | `() → i32` | Flushes NVRAM (and memory card, F8) to MEMFS without exiting; returns 0 on success. |
 | `web_exit` | `() → void` | Schedules exit; `onExit` fires once the bridge has stopped and flushed. |
-| `web_machine_info` | `() → char*` | Returns a NUL-terminated JSON string owned by the bridge, valid until the next call: `{ name, description, width, height, refreshHz, orientation, aspectRatio, players, buttons, inputs: { analog: [{player, kind}], dualStick, keys: [{name, key, player}], volume }, bios: [{name, description, isDefault}], hasNvram, supportsSave }`. The adapter adds `family` from `build.json`. Before the run loop starts (`web_bridge_start`, after the controller and machine cfg have loaded) the bridge makes one idempotent pass over the live fields (W29): a field whose standard sequence is its own `PORT_CODE` gets the type sequence OR-ed in when it is the only coded field of that type and player, and an operator-key item OR-ed in for each of its codes in the F1/F2/F5/F6/0–9 table; `inputs.keys` lists those fields in port order. `width` and `height` are valid from the first `onFrame` onward (the 0.161 render target has no size before it first rasterizes), so the adapter reads this inside its first-frame callback. |
+| `web_machine_info` | `() → char*` | Returns a NUL-terminated JSON string owned by the bridge, valid until the next call: `{ name, description, width, height, refreshHz, orientation, aspectRatio, players, buttons, inputs: { analog: [{player, kind}], dualStick, joystick, keys: [{name, key, player}], volume }, bios: [{name, description, isDefault}], hasNvram, supportsSave }`. The adapter adds `family` from `build.json`. Before the run loop starts (`web_bridge_start`, after the controller and machine cfg have loaded) the bridge makes one idempotent pass over the live fields (W29): a field whose standard sequence is its own `PORT_CODE` gets the type sequence OR-ed in when it is the only coded field of that type and player, and an operator-key item OR-ed in for each of its codes in the F1/F2/F5/F6/0–9 table; `inputs.keys` lists those fields in port order. `width` and `height` are valid from the first `onFrame` onward (the 0.161 render target has no size before it first rasterizes), so the adapter reads this inside its first-frame callback. |
 
 **Callbacks** read from `Module.web` at the moment each fires:
 
@@ -1297,11 +1298,15 @@ fresh session receives the retained snapshot.
 Ordinary `direction` controls become stick input on the axes a player's
 declared **absolute** ports cover: left/right when a horizontal stick, paddle,
 positional or light-gun kind is declared, up/down when a vertical one is.
-Relative kinds (dial, trackball, mouse) never claim directions: boards declare
-them beside an ordinary joystick (the F3 platform games, 2026-10-26), and
-claiming the arrows would silence the joystick; MAME's HAT1 increment path from
-the generated controller configuration still spins those ports from the arrows
-at its keydelta, while stick-1 keys and the pad drive them through the driver.
+Relative kinds (dial, trackball, mouse) claim directions only when the machine
+reports `inputs.joystick === false`, a dial-only board; boards also declare them
+beside an ordinary joystick (the F3 platform games, 2026-10-26), where claiming
+the arrows would silence the joystick. When the flag is `true` or absent (older
+builds) the arrows stay digital and MAME's HAT1 increment path from the
+generated controller configuration still spins those ports at its keydelta,
+while stick-1 keys and the pad drive them through the driver. `GamepadSource`
+applies the same rule to the left stick: with `joystick === true` a relative
+kind yields the stick to directions and writes no spin.
 Depth (`stick-z`) and pedal kinds never claim directions either, so a shifter
 joystick on a racing board stays digital; so does every direction on a machine
 with no declared analogue port. `pedal-3` also remains digital because the

@@ -22,6 +22,7 @@ import {
 // The driver creates one channel from input and observes effective digital holds.
 export interface AnalogDriverConfig {
     readonly inputs: MachineInputs["analog"];                    // Machine-declared analogue player/kind rows
+    readonly joystick?: boolean;                                  // Whether the machine also declares an ordinary digital joystick; absent on older builds
     readonly settings?: AnalogSettings;                           // Initial per-port live tuning
     readonly scheduler: FrameScheduler;                           // One integration step per requested frame
     readonly input: ArcadeInput;                                  // Hold source and axis-channel owner
@@ -43,6 +44,7 @@ export function isAnalogDriverConfig(value: unknown): value is AnalogDriverConfi
             && isPlayerIndex(row.player) && isMachineAnalogKind(row.kind))
         && new Set(config.inputs.map((row) => `p${row.player}:${row.kind}`)).size === config.inputs.length
         && (config.settings === undefined || isAnalogSettings(config.settings))
+        && (config.joystick === undefined || typeof config.joystick === "boolean")
         && isFrameScheduler(config.scheduler)
         && config.input instanceof ArcadeInput;
 }

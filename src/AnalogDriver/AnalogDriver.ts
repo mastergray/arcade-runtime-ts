@@ -112,6 +112,7 @@ export default class AnalogDriver {
     private readonly _held = new Set<ArcadeControlKey>();
     private readonly _unsubscribeHold: Unsubscribe;
     private _settings: AnalogSettings;
+    private readonly _joystick: boolean | undefined;        // Machine declares an ordinary joystick (undefined on older builds)
     private _frameHandle: number | null = null;
     private _destroyed = false;
 
@@ -124,6 +125,7 @@ export default class AnalogDriver {
         this._scheduler = config.scheduler;
         this._channel = config.input.createChannel();
         this._settings = settingsCopy(config.settings);
+        this._joystick = config.joystick;
         const seenAxes = new Set<string>();
         this._ports = config.inputs.flatMap(({ player, kind }) => {
             const axisKind = axisKindFor(kind);
@@ -276,12 +278,14 @@ export default class AnalogDriver {
     // PRIVATE :: playerIndex, arcadeDirection -> BOOLEAN
     // True when a declared absolute horizontal (left/right) or vertical (up/down) port exists for the player.
     // Depth (stick-z) and pedals never claim directions, so a shifter joystick on a racing board stays digital.
-    // Relative kinds (dial, trackball, mouse) never claim them either: boards such as the F3 platform games declare a
-    // dial beside an ordinary joystick, and claiming the arrows there would silence the joystick. MAME's own
-    // HAT1 increment path (the W26 controller config) still spins those ports from the arrows at its keydelta.
+    // Relative kinds (dial, trackball, mouse) claim them only when the machine declares no ordinary joystick: boards
+    // such as the F3 platform games declare a dial beside a joystick, and claiming the arrows there would silence it.
+    // When the build does not say (joystick undefined) relative kinds stay off the arrows and MAME's own HAT1
+    // increment path (the W26 controller config) still spins those ports from the arrows at its keydelta.
     private coversDirection(player: PlayerIndex, direction: "up" | "down" | "left" | "right"): boolean {
         const kinds = direction === "left" || direction === "right" ? HORIZONTAL_KINDS : VERTICAL_KINDS;
-        return this._ports.some((port) => port.player === player && port.mode !== "relative" && kinds.has(port.kind));
+        return this._ports.some((port) => port.player === player && kinds.has(port.kind)
+            && (port.mode !== "relative" || this._joystick === false));
     }
 
     // PRIVATE :: arcadeControl -> BOOLEAN

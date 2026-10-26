@@ -75,6 +75,7 @@ const DEFAULT_START = 9;                                          // W3C Start b
 const DEFAULT_LEFT_AXES = Object.freeze([0, 1] as const);          // W3C standard left stick
 const DEFAULT_RIGHT_AXES = Object.freeze([2, 3] as const);         // W3C standard right stick
 const DEFAULT_PEDALS = Object.freeze([7, 6] as const);             // Right then left trigger
+const RELATIVE_LEFT_KINDS: ReadonlySet<MachineAnalogKind> = new Set(["dial", "dial-v", "trackball-x", "trackball-y", "mouse-x", "mouse-y"]);   // Left-stick kinds that yield to a declared joystick
 const DIRECTIONS = ["up", "down", "left", "right"] as const;   // Stable directional order
 const SPIN_PIXELS_PER_POLL = 20;                                  // Full deflection; matches the 20–30 px key delta the pinned dial and trackball drivers declare
 
@@ -408,8 +409,11 @@ export default class GamepadSource {
     // Builds machine-aware digital controls, reconciles their edges, then writes declared analog axes.
     private forward(assignment: AssignedPad, pad: GamepadLike, mapping: GamepadMapping): void {
         const inputs = this._input.machine.inputs;
+        // A relative kind beside an ordinary joystick (a dial on an F3 platform board) leaves the left stick to the
+        // joystick: the stick is quantized to directions and writes no spin. Older builds omit the flag and keep spin.
         const declared = new Set<MachineAnalogKind>(inputs.analog
             .filter((input) => input.player === assignment.player)
+            .filter((input) => inputs.joystick !== true || !RELATIVE_LEFT_KINDS.has(input.kind))
             .map((input) => input.kind));
         const leftAnalog = ["stick-x", "stick-y", "paddle", "paddle-v", "positional", "positional-v", "lightgun-x", "lightgun-y", "dial", "dial-v", "trackball-x", "trackball-y", "mouse-x", "mouse-y"]
             .some((kind) => declared.has(kind as MachineAnalogKind));
