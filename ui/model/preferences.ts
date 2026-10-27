@@ -33,7 +33,8 @@ export interface DisplayCropPreference {
 }
 
 export interface GlobalPreferences {
-    readonly controllerView: boolean;
+    readonly controllerView: boolean | "auto";
+    readonly swapSides: boolean;
     readonly size: LocalSize;
     readonly showFps: boolean;
     readonly autoSave: boolean;
@@ -105,7 +106,8 @@ const EMPTY_MAP = Object.freeze({});
 const DEFAULT_CROP = Object.freeze({ left: 0, right: 0 });
 
 export const DEFAULT_GLOBAL_PREFERENCES: GlobalPreferences = Object.freeze({
-    controllerView: false,
+    controllerView: "auto",
+    swapSides: false,
     size: "fit",
     showFps: false,
     autoSave: true,
@@ -194,7 +196,8 @@ const globalRecord = (value: unknown): GlobalPreferences => {
     const storage = record(source?.storage);
     const controls = record(source?.controls);
     return Object.freeze({
-        controllerView: typeof source?.controllerView === "boolean" ? source.controllerView : false,
+        controllerView: typeof source?.controllerView === "boolean" ? source.controllerView : "auto",
+        swapSides: typeof source?.swapSides === "boolean" ? source.swapSides : false,
         size: SIZES.includes(source?.size as LocalSize) ? source!.size as LocalSize : "fit",
         showFps: typeof source?.showFps === "boolean" ? source.showFps : false,
         autoSave: typeof source?.autoSave === "boolean" ? source.autoSave : true,
@@ -420,7 +423,7 @@ export class PreferenceStore {
         // Older v2 exports predate these additive fields; still reject explicitly invalid values.
         const importedGlobal = source.global as Record<string, unknown>;
         const importedGeneral = record(importedGlobal.general);
-        const compatibleGlobal = { ...importedGlobal, general: {
+        const compatibleGlobal = { controllerView: "auto", swapSides: false, ...importedGlobal, general: {
             presentationHint: true, mode: "local", ...importedGeneral,
         } };
         if (!jsonEqual(compatibleGlobal, global)) throw new TypeError("The settings file contains invalid global values.");
@@ -536,3 +539,7 @@ export class IndexedDbSavedPlayStore implements SavedPlayStore {
 }
 
 export const preferenceRecordKeys = Object.freeze({ global: GLOBAL_KEY, game: GAME_KEY });
+
+export function controllerVisible(view: GlobalPreferences["controllerView"], touchDevice: boolean, padCount: number): boolean {
+    return view === "auto" ? touchDevice && padCount === 0 : view;
+}

@@ -1,10 +1,12 @@
 // realizes: docs/ui-design-language.md > §3.3 Tabs
 
 import { useFocusable } from "../focus/FocusController.js";
+import { usePhoneLayout } from "./LayoutContext.js";
 
 export interface TabDefinition {
     readonly id: string;
     readonly label: string;
+    readonly shortLabel?: string;
     readonly disabled?: boolean;
 }
 
@@ -17,6 +19,7 @@ export interface TabsProps {
 }
 
 function Tab({ stripId, tab, active, onChange, onStep }: { readonly stripId: string; readonly tab: TabDefinition; readonly active: boolean; readonly onChange: (id: string) => void; readonly onStep?: (step: number) => void }) {
+    const phone = usePhoneLayout();
     const focusable = useFocusable(`${stripId}-${tab.id}`, stripId, { disabled: tab.disabled, onActivate: () => onChange(tab.id), selector: onStep !== undefined, onLeft: () => onStep?.(-1), onRight: () => onStep?.(1) });
     return <button
         ref={focusable.ref as never}
@@ -34,7 +37,7 @@ function Tab({ stripId, tab, active, onChange, onStep }: { readonly stripId: str
         tabIndex={focusable.tabIndex}
         onFocus={focusable.onFocus}
         onClick={() => onChange(tab.id)}
-    >{tab.label}</button>;
+    >{phone ? tab.shortLabel ?? tab.label : tab.label}</button>;
 }
 
 export function Tabs({ id, tabs, active, onChange, arrowSelect = false }: TabsProps) {

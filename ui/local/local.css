@@ -150,3 +150,97 @@
 [data-presentation-hint] { position: absolute; inset-inline: 0; inset-block-end: var(--role-gutter); z-index: 1; display: flex; justify-content: center; pointer-events: none; animation: presentation-hint 3s forwards; }
 [data-presentation-hint] .start-hint { position: static; transform: none; margin: 0; }
 @keyframes presentation-hint { 0%, 80% { opacity: 1; } 100% { opacity: 0; } }
+
+/* Phone layouts share the desktop PlaySurface's React position and display container. */
+.local-page[data-density="phone"] { --dpad-cell: 44px; --red-size: 44px; --role-control-x: 8px; }
+.local-page[data-density="phone"][data-mode="local"] { block-size: 100dvh; overflow: hidden; }
+[data-density="phone"] .local-window { block-size: 100dvh; min-block-size: 0; border: 0; box-shadow: none; }
+[data-density="phone"][data-mode="local"] .local-layout { display: block; padding: 0; }
+[data-density="phone"][data-mode="local"] .play-region { block-size: 100%; min-inline-size: 0; }
+[data-density="phone"][data-mode="local"] .play-meta { display: none; }
+[data-density="phone"] .title-bar { min-block-size: 44px; }
+[data-density="phone"] .title-close { min-inline-size: 44px; min-block-size: 44px; }
+[data-density="phone"] button, [data-density="phone"] select, [data-density="phone"] input:not([type="checkbox"]):not([type="radio"]), [data-density="phone"] .settings-check, [data-density="phone"] .scope-choice label { min-block-size: 44px; touch-action: manipulation; }
+[data-density="phone"] .tab { min-inline-size: 44px; padding-inline: 8px; }
+[data-density="phone"] .tabs { flex-wrap: wrap; }
+[data-density="phone"] .dpad, [data-density="phone"] .red-button { touch-action: none; user-select: none; -webkit-user-select: none; }
+[data-density="phone"] .dpad-key { touch-action: none; }
+[data-density="phone"] .dpad[data-mini="true"] { pointer-events: none; }
+[data-density="phone"] .dpad[data-mini="true"] button, [data-density="phone"] .red-button[data-mini="true"], [data-density="phone"] .pill[data-mini="true"] { min-block-size: 0; }
+.phone-bar { display: flex; align-items: center; gap: 4px; padding: 4px; background: var(--face); grid-area: bar; z-index: 2; transition: opacity .25s; }
+.phone-bar .btn { flex: 1; padding-inline: 6px; }
+.phone-bar [data-phone-action="menu"], .phone-bar [data-phone-action="fullscreen"] { flex: 0 0 44px; }
+.phone-bar [data-phone-bar-status] { flex: 1; color: var(--light); font-size: var(--role-small); text-align: center; }
+[data-bar-visible="false"] .phone-bar { opacity: 0; pointer-events: none; }
+:root:not([data-input="touch"]) [data-bar-visible="false"] .phone-bar:focus-within { opacity: 1; pointer-events: auto; }
+.phone-switches { display: flex; gap: 8px; overflow-x: auto; padding: 4px; min-inline-size: 0; }
+.phone-switches .switch-row { flex: none; flex-wrap: nowrap; }
+.phone-switches .switch-label { display: block; font-size: var(--role-tiny); }
+.phone-switches button { white-space: nowrap; }
+[data-layout="phone-portrait"][data-mode="local"] .play-region { grid-template: "bar" auto "game" minmax(0, 1fr) "switches" auto "controller" auto / minmax(0, 1fr); }
+[data-layout="phone-portrait"][data-mode="local"] .play-surface { grid-area: game; grid-template-rows: minmax(0, 1fr); }
+[data-layout="phone-portrait"] .play-region > .phone-switches { grid-area: switches; }
+[data-layout="phone-portrait"] .phone-controller { grid-area: controller; display: grid; grid-template-columns: 132px minmax(44px, 1fr) 132px; grid-template-rows: 66px 66px; align-items: center; justify-items: center; gap: 4px; padding: 4px; }
+[data-layout="phone-portrait"] .phone-side-panel { display: contents; }
+[data-layout="phone-portrait"] .phone-controller .dpad { grid-column: 1; grid-row: 1 / 3; }
+[data-layout="phone-portrait"] .phone-controller .button-bank { grid-column: 3; grid-row: 1 / 3; gap: 0; }
+[data-layout="phone-portrait"] .phone-controller [data-control="coin"] { grid-column: 2; grid-row: 1; }
+[data-layout="phone-portrait"] .phone-controller [data-control="start"] { grid-column: 2; grid-row: 2; }
+[data-layout="phone-portrait"] .phone-controller .pill { padding-inline: 2px; font-size: var(--role-tiny); min-inline-size: 44px; }
+[data-density="phone"] .status-bar { gap: 0; font-size: var(--role-small); }
+[data-density="phone"] .status-cell { padding-block: 2px; }
+[data-density="phone"] [data-status-cell="autosave"] { display: none; }
+[data-layout="phone-landscape"][data-mode="local"] .local-window { grid-template-rows: minmax(0, 1fr); }
+[data-layout="phone-landscape"][data-mode="local"] .local-window > .title-bar { display: none; }
+[data-layout="phone-landscape"][data-mode="local"] .play-region { position: relative; grid-template: "directions game buttons" minmax(0, 1fr) / minmax(148px, 20%) minmax(0, 1fr) minmax(148px, 20%); }
+[data-layout="phone-landscape"][data-mode="local"] .play-region[data-controller-visible="false"] { grid-template: "game" minmax(0, 1fr) / minmax(0, 1fr); }
+[data-layout="phone-landscape"][data-mode="local"] .play-surface { grid-area: game; grid-template-rows: minmax(0, 1fr); }
+[data-layout="phone-landscape"] .phone-bar { position: absolute; inset-block-start: 0; inset-inline: 0; background: rgba(40, 40, 40, .75); }
+[data-layout="phone-landscape"] .phone-controller { display: contents; }
+[data-layout="phone-landscape"] .phone-side-panel { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; min-block-size: 0; overflow: auto; gap: 4px; padding: 56px 4px 4px; background: var(--face); }
+[data-layout="phone-landscape"] [data-side-panel="directions"] { grid-area: directions; }
+[data-layout="phone-landscape"] [data-side-panel="buttons"] { grid-area: buttons; }
+[data-layout="phone-landscape"][data-swap-sides="true"] [data-side-panel="directions"] { grid-area: buttons; }
+[data-layout="phone-landscape"][data-swap-sides="true"] [data-side-panel="buttons"] { grid-area: directions; }
+[data-layout="phone-landscape"] .phone-switches { flex: 0 1 auto; inline-size: 100%; min-block-size: 44px; padding: 0; overflow: auto; }
+[data-layout="phone-landscape"] .phone-switches .switch-row { flex: 1; display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; }
+[data-layout="phone-landscape"] .phone-switches .switch-label { flex-basis: 100%; }
+[data-layout="phone-landscape"] .phone-controller .button-bank { gap: 2px; margin-block-start: auto; }
+[data-layout="phone-landscape"] .phone-controller .dpad { flex: none; margin-block-start: auto; }
+[data-density="phone"][data-fullscreen="true"][data-mode="local"] .local-window { grid-template-rows: minmax(0, 1fr); }
+[data-density="phone"] .veil { padding: 0; }
+[data-density="phone"] .modal { inline-size: 92%; max-block-size: 92dvh; }
+[data-density="phone"] .modal-body { padding: 8px; }
+[data-density="phone"] .modal-foot { flex-wrap: wrap; position: sticky; inset-block-end: 0; background: var(--face); padding: 8px; }
+[data-phone-games] .games-column { display: flex; flex-direction: column; }
+[data-phone-games] .games-list { flex: 1; }
+[data-phone-games] .list-foot { position: sticky; inset-block-end: 0; background: var(--face); }
+.phone-menu-list { display: grid; gap: 4px; padding-block: 8px; }
+.phone-menu-item { display: flex; align-items: center; justify-content: space-between; gap: 8px; inline-size: 100%; min-block-size: 44px; text-align: start; }
+.phone-menu-item small { font-size: var(--role-small); text-align: end; overflow-wrap: anywhere; }
+.phone-menu-selector { display: flex; align-items: center; justify-content: space-between; }
+.phone-game-card { display: grid; gap: 4px; padding: 8px; }
+[data-density="phone"] .table { table-layout: fixed; inline-size: 100%; overflow-wrap: anywhere; }
+[data-density="phone"] .table td, [data-density="phone"] .table th, [data-density="phone"] .controls-pane .table td:last-child { white-space: normal; padding: 4px; }
+[data-density="phone"] .table .btn { max-inline-size: 100%; white-space: normal; }
+[data-density="phone"] .controls-pane, [data-density="phone"] .settings-pane { padding: 8px 0; }
+[data-density="phone"] .controls-pane .range { min-inline-size: 0; }
+[data-density="phone"] .kv2 { grid-template-columns: minmax(0, 1fr); }
+.phone-table-boxes { display: grid; gap: 8px; }
+.phone-table-boxes fieldset { min-inline-size: 0; }
+.phone-table-field { display: grid; gap: 4px; margin-block: 8px; }
+[data-density="phone"] .presentation-overlay { padding: 4px; }
+[data-density="phone"] .presentation-columns { grid-template-columns: minmax(160px, .8fr) minmax(0, 1.2fr); gap: 8px; }
+[data-density="phone"] .presentation-window .window-main { padding: 4px; }
+[data-density="phone"] .presentation-slot { grid-template-columns: minmax(0, 1fr); }
+[data-density="phone"] .presentation-actions .action-button { padding: 6px; }
+[data-density="phone"] .presentation-actions .button-glyph { display: none; }
+[data-density="phone"] .presentation-frame, [data-density="phone"] [data-presentation-metadata] { display: none; }
+[data-density="phone"] .presentation-window .title-secondary { font-size: var(--role-small); }
+[data-density="phone"] .range { grid-template-columns: minmax(0, 1fr); }
+[data-density="phone"] .field-line { min-block-size: 44px; }
+[data-density="phone"] .phone-table-field > input[type="checkbox"] { min-block-size: 44px; min-inline-size: 44px; }
+[data-density="phone"] [data-presentation-frame] { display: none; }
+.local-page[data-density="phone"][data-mode="presentation"], [data-density="phone"] .desk { min-block-size: 100dvh; }
+.local-page[data-density="phone"][data-mode="presentation"] { block-size: 100dvh; }
+.phone-fps { position: absolute; inset-block-end: 4px; inset-inline-end: 8px; padding: 2px 4px; background: var(--stage); color: var(--light); font-size: var(--role-small); pointer-events: none; }
