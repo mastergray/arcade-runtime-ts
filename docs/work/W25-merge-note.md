@@ -169,3 +169,19 @@ but `git add` failed while creating the worktree's `index.lock`: Git metadata
 is mounted read-only. No alternate index, identity or attribution was used.
 The integrator must stage and commit the changes, and rerun the two restricted
 spec cases plus the browser/device gates above.
+
+## Integration (2026-10-26, on main)
+
+- The agent's sandbox could not write the worktree index; the integrator
+  committed the package as `c05f5b3` after a clean sweep.
+- Browser test 44 needed three Chromium facts: touch-derived pointer moves
+  are animation-frame aligned (the held set is polled), a `touchEnd` lists
+  the touches being released and an empty list releases all, and the first
+  tap after a raw CDP touch session loses its click (spent on the title bar).
+  The synthetic board declares a pedal instead of a paddle so the d-pad
+  directions stay digital for the adapter check. The portrait d-pad element
+  hugs its nine cells and the touch math measures the cells.
+- Gate on the branch: browser 45 passed, 0 failed, 23 skipped with the
+  general and analogue preload configs; spec 615; check clean. Merged as
+  `2e297e4`. The sixty-second physical-phone measurement of M10 is still
+  the user's, through Show FPS on a real phone.
