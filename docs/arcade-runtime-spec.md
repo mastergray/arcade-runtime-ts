@@ -1235,6 +1235,14 @@ exists; the mapper arrives with the touch primitives it binds.
 
 Each binding owns an `ArcadeInputChannel`; unbinding destroys that channel.
 
+**W25 page implementation note (§10.1–10.2):** the page's shared UI kit
+fulfils the digital touch primitives and their mapper over `ArcadeInput`
+channels: directions and buttons hold through the session's strip channel;
+COIN, START, Cabinet switches and Operator keys tap. No `src/` touch sources
+or mapper are planned for this page. The cabinet's touch configuration fields
+remain rejected; this does not enable the future analogue-stick or trackpad
+sources described above.
+
 ### 10.3 `KeyboardSource`
 
 Physical keyboard → `ArcadeInput` through a page-supplied map

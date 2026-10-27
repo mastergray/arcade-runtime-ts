@@ -7,14 +7,18 @@ import type { GlobalPreferences } from "../../model/preferences.js";
 import type { SessionModel } from "../../model/session.js";
 import type { SessionSnapshot } from "../../model/types.js";
 
-export function usePresentation(session: SessionModel | null, state: SessionSnapshot, preferences: GlobalPreferences, canvas: RefObject<HTMLCanvasElement | null>) {
+export function usePresentation(session: SessionModel | null, state: SessionSnapshot, preferences: GlobalPreferences, canvas: RefObject<HTMLCanvasElement | null>, phoneMenu?: () => void) {
+    const phoneCallback = useRef(phoneMenu);
+    phoneCallback.current = phoneMenu;
+    const phone = phoneMenu !== undefined;
     const detector = useRef(new MenuGestureDetector(preferences.controls.menuGesture, [10, 11]));
     const [padHint, setPadHint] = useState("L3 + R3");
     const [padStatus, setPadStatus] = useState("0 pads");
     useEffect(() => { detector.current.update(preferences.controls.menuGesture); }, [preferences.controls.menuGesture]);
 
     useEffect(() => {
-        if (session === null || state.mode !== "presentation") return;
+        if (session === null || state.mode !== "presentation" && !phone) return;
+        const toggle = (): void => { if (state.mode === "presentation") session.toggleWindow(); else phoneCallback.current?.(); };
         let frame = 0;
         const poll = (): void => {
             const pads = Array.from(navigator.getGamepads?.() ?? []).flatMap((pad) => pad === null ? [] : [{ id: pad.id, buttons: pad.buttons.map((button) => button.pressed) }]);
@@ -24,18 +28,18 @@ export function usePresentation(session: SessionModel | null, state: SessionSnap
             setPadHint(status === null ? "L3 + R3" : "missing" in status ? "Set a pad gesture in Controllers" : gamepadChordLabel(status.buttons));
             const fired = detector.current.sample(pads);
             // Controls capture owns the same physical presses while recording a new gesture.
-            if (fired.length > 0 && document.querySelector('[data-capturing="true"]') === null) session.toggleWindow();
+            if (fired.length > 0 && document.querySelector('[data-capturing="true"]') === null) toggle();
             frame = requestAnimationFrame(poll);
         };
         const key = (event: KeyboardEvent): void => {
-            if (event.key !== "Escape" || event.repeat || event.defaultPrevented) return;
+            if (state.mode !== "presentation" || event.key !== "Escape" || event.repeat || event.defaultPrevented) return;
             event.preventDefault();
-            session.toggleWindow();
+            toggle();
         };
         const touch = (event: TouchEvent): void => {
             if (event.touches.length !== 2) return;
             event.preventDefault();
-            session.toggleWindow();
+            toggle();
         };
         const target = canvas.current;
         frame = requestAnimationFrame(poll);
@@ -47,7 +51,7 @@ export function usePresentation(session: SessionModel | null, state: SessionSnap
             window.removeEventListener("keydown", key);
             target?.removeEventListener("touchstart", touch);
         };
-    }, [session, state.mode, canvas]);
+    }, [session, state.mode, canvas, phone]);
 
     useEffect(() => {
         if (!state.hintVisible || session === null) return;

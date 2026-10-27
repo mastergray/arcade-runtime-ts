@@ -100,6 +100,7 @@ export interface SessionSnapshot {
     readonly machine: MachineInfo | null;
     readonly muted: boolean;
     readonly fullscreen: boolean;
+    readonly touchDevice: boolean;
     readonly layout: { readonly width: number; readonly height: number; readonly scale: number } | null;
     readonly pads: ReadonlyArray<{ readonly player: number; readonly id: string }>;
     readonly log: ReadonlyArray<string>;

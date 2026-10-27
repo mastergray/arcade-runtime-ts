@@ -219,9 +219,9 @@ export function ControlsModal(props: ControlsModalProps) {
         const pad = currentPad(player);
         const map = currentMapping(player);
         return <div className="controls-pane" data-controls-tab={`player${player}`}>
-            <p className="device-line" data-controls-device={`player${player}`}>Keyboard ({player === 1 ? "left-hand set" : "right-hand set"}) · {pad === null ? `Gamepad ${player} not connected` : `${pad.id} (${pad.standard ? "standard layout" : "custom layout"})`} · Touch controller unavailable</p>
+            <p className="device-line" data-controls-device={`player${player}`}>Keyboard ({player === 1 ? "left-hand set" : "right-hand set"}) · {pad === null ? `Gamepad ${player} not connected` : `${pad.id} (${pad.standard ? "standard layout" : "custom layout"})`} · Touch {props.session?.snapshot().touchDevice ? "controller available" : "device not detected"}</p>
             <ControlsPicture player={player} buttons={props.machine?.buttons ?? 6} />
-            <Table id={`player-${player}-bindings`} columns={["Control", "Keyboard", `Gamepad ${player}`, "Change…"]} rows={controlsForPlayer(player).map(({ label, control }) => ({
+            <Table phoneGroups={[{ label: "Control", columns: [0, 3] }, { label: "Keyboard", columns: [1] }, { label: "Gamepad", columns: [2] }]} id={`player-${player}-bindings`} columns={["Control", "Keyboard", `Gamepad ${player}`, "Change…"]} rows={controlsForPlayer(player).map(({ label, control }) => ({
                 id: arcadeControlKey(control),
                 dim: control.kind === "button" && control.button > (props.machine?.buttons ?? 6),
                 focusable: true,
@@ -259,7 +259,7 @@ export function ControlsModal(props: ControlsModalProps) {
     const menuButtons = menuPadId === "" ? [10, 11] : gestures[menuPadId] ?? [10, 11];
     const cabinetPane = <div className="controls-pane" data-controls-tab="cabinet">
         <p className="note">Gamepad cabinet actions are captured while Select is held.</p>
-        <Table id="cabinet-bindings" columns={["Control", "Keyboard", "Gamepad (hold Select +)", "Change…"]} rows={[
+        <Table phoneGroups={[{ label: "Control", columns: [0, 3] }, { label: "Keyboard", columns: [1] }, { label: "Gamepad", columns: [2] }]} id="cabinet-bindings" columns={["Control", "Keyboard", "Gamepad (hold Select +)", "Change…"]} rows={[
             ...cabinetRows,
             { id: "menu-gesture", focusable: true, onActivate: () => begin({ id: "menu-gesture", kind: "menu" }), cells: ["Open the menu while playing", "Escape", gamepadChordLabel(menuButtons), captureButton({ id: "menu-gesture", kind: "menu" })] },
         ]} />
@@ -274,7 +274,7 @@ export function ControlsModal(props: ControlsModalProps) {
     };
     const analogPane = <div className="controls-pane" data-controls-tab="analogue">
         {props.machine === null ? <p className="note" data-analogue-disabled>No game is running. Start a game to edit its declared analogue controls.</p> : <>
-            <Table id="analogue-settings" columns={["Control", "Keyboard speed", "Gamepad travel", "Invert", "All games"]} rows={props.machine.inputs.analog.map(({ player, kind }) => {
+            <Table phoneStacked id="analogue-settings" columns={["Control", "Keyboard speed", "Gamepad travel", "Invert", "All games"]} rows={props.machine.inputs.analog.map(({ player, kind }) => {
                 const key = `p${player}:${kind}` as keyof AnalogSettings;
                 const setting = settingFor(analog, key);
                 return {
@@ -314,7 +314,7 @@ export function ControlsModal(props: ControlsModalProps) {
     }) ?? [];
     const testPane = <div className="controls-pane" data-controls-tab="test">
         <p className="note">Inputs are shown here but remain isolated from the running game.</p>
-        <Table id="test-input" columns={["Function", "Keyboard", "Gamepad 1", "Gamepad 2", "Now"]} rows={[...testRows, ...analogTestRows]} />
+        <Table phoneGroups={[{ label: "Control", columns: [0, 4] }, { label: "Keyboard", columns: [1] }, { label: "Gamepad 1 / 2", columns: [2, 3] }]} id="test-input" columns={["Function", "Keyboard", "Gamepad 1", "Gamepad 2", "Now"]} rows={[...testRows, ...analogTestRows]} />
     </div>;
 
     const restore = (): void => {
@@ -382,8 +382,8 @@ export function ControlsModal(props: ControlsModalProps) {
     </>;
     const content = <>
         <Tabs arrowSelect={props.inline} id="controls-tabs" active={tab} onChange={(id) => setTab(id as ControlsTab)} tabs={[
-            { id: "player1", label: "Player 1" }, { id: "player2", label: "Player 2" },
-            { id: "cabinet", label: "Cabinet" }, { id: "analogue", label: "Analogue" }, { id: "test", label: "Test input" },
+            { id: "player1", label: "Player 1", shortLabel: "P1" }, { id: "player2", label: "Player 2", shortLabel: "P2" },
+            { id: "cabinet", label: "Cabinet" }, { id: "analogue", label: "Analogue" }, { id: "test", label: "Test input", shortLabel: "Test" },
         ]} />
         {tab === "player1" ? playerPane(1) : tab === "player2" ? playerPane(2) : tab === "cabinet" ? cabinetPane : tab === "analogue" ? analogPane : testPane}
     </>;

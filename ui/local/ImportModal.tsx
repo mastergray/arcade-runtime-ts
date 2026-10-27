@@ -7,6 +7,7 @@ import type { LibrarySnapshot } from "../model/types.js";
 import { StoredFilesTab } from "./StoredFilesTab.js";
 
 export interface ImportModalProps {
+    readonly inline?: boolean;
     readonly library: LibraryModel;
     readonly snapshot: LibrarySnapshot;
     readonly tab: "import" | "stored";
@@ -18,11 +19,7 @@ export interface ImportModalProps {
     readonly onPlay: (key: string) => void;                         // Starts a game the modal just stored and checked
 }
 
-export function ImportModal({ library, snapshot, tab, onTab, onClose, dragOver, onRemove, onRemoveAll, onPlay }: ImportModalProps) {
-    // Games whose archive was stored from this table and that are ready to play now.
-    const storedKeys = new Set(snapshot.importRows.filter((row) => row.status === "Stored").map((row) => row.key));
-    const playable = snapshot.cards.filter((card) => card.metadata !== null && library.verdict(card.key) === "ready"
-        && card.metadata.archives.some((archive) => storedKeys.has(archive.name.toLowerCase())));
+export function ImportModal({ library, snapshot, tab, onTab, onClose, dragOver, onRemove, onRemoveAll, onPlay, inline = false }: ImportModalProps) {
     const picker = useRef<HTMLInputElement>(null);
     const companion = library.companionNotice();
     const importPane = <div className="import-pane" data-import-tab>
@@ -44,13 +41,22 @@ export function ImportModal({ library, snapshot, tab, onTab, onClose, dragOver, 
         <p className="note">{snapshot.importRows.length === 0 ? "Choose or drop one or more zip files." : "Stored files leave this list when it closes; everything stored in this browser is under Stored files."}</p>
         {companion === null ? null : <p className="note" data-companion-notice>{companion}</p>}
     </div>;
-    return <div data-modal="import">
-        <Modal title="Import" onClose={onClose} foot={tab !== "import" ? undefined : <>
-            {playable.map((card) => <Button glyph="▶" play label={`Play ${card.metadata?.description ?? card.indexed.machine}`} data-import-play={card.key} onClick={() => { onClose(); onPlay(card.key); }} key={card.key} />)}
-            {tab === "import" ? <Button label="Store all and check" primary data-store-all-check disabled={snapshot.busy || !snapshot.importRows.some((row) => row.status === "Ready")} onClick={() => { void library.storeAllAndCheck(); }} /> : null}
-        </>}>
-            <Tabs id="import-tabs" tabs={[{ id: "import", label: "Import" }, { id: "stored", label: "Stored files" }]} active={tab} onChange={(id) => onTab(id as "import" | "stored")} />
+    const foot = tab === "import" ? <ImportActions library={library} snapshot={snapshot} onClose={onClose} onPlay={onPlay} /> : undefined;
+    const content = <>
+            {inline ? null : <Tabs id="import-tabs" tabs={[{ id: "import", label: "Import" }, { id: "stored", label: "Stored files" }]} active={tab} onChange={(id) => onTab(id as "import" | "stored")} />}
             {tab === "import" ? importPane : <StoredFilesTab library={library} snapshot={snapshot} onRemove={onRemove} onRemoveAll={onRemoveAll} />}
-        </Modal>
-    </div>;
+    </>;
+    return inline ? <div className="inline-import" data-phone-import={tab}>{content}</div>
+        : <div data-modal="import"><Modal title="Import" onClose={onClose} foot={foot}>{content}</Modal></div>;
+}
+
+export function ImportActions({ library, snapshot, onClose, onPlay }: Pick<ImportModalProps, "library" | "snapshot" | "onClose" | "onPlay">) {
+    // Games whose archive was stored from this table and that are ready to play now.
+    const storedKeys = new Set(snapshot.importRows.filter((row) => row.status === "Stored").map((row) => row.key));
+    const playable = snapshot.cards.filter((card) => card.metadata !== null && library.verdict(card.key) === "ready"
+        && card.metadata.archives.some((archive) => storedKeys.has(archive.name.toLowerCase())));
+    return <>
+        {playable.map((card) => <Button glyph="▶" play label={`Play ${card.metadata?.description ?? card.indexed.machine}`} data-import-play={card.key} onClick={() => { onClose(); onPlay(card.key); }} key={card.key} />)}
+        <Button label="Store all and check" primary data-store-all-check disabled={snapshot.busy || !snapshot.importRows.some((row) => row.status === "Ready")} onClick={() => { void library.storeAllAndCheck(); }} />
+    </>;
 }

@@ -14,6 +14,7 @@ export interface ControllerStripProps {
     readonly cabinet?: ReadonlyArray<StripSwitch>;                  // Cabinet switches the running game exposes (Service, Test, Tilt, Volume)
     readonly operator?: ReadonlyArray<StripSwitch>;                 // Operator keys the running game reports (W29)
     readonly idle?: boolean;                                        // No game running: the switch rows give way to a note
+    readonly touch?: boolean;
     readonly pressedButton?: number;
     readonly pressedDirection?: "up" | "down" | "left" | "right";
     readonly buttons?: number;
@@ -33,7 +34,8 @@ const DEFAULT_OPERATOR: ReadonlyArray<StripSwitch> = [
     { id: "advance", label: "Advance" }, { id: "auto-up", label: "Auto Up" }, { id: "hs-reset", label: "HS Reset" },
 ];
 
-function SwitchRow({ label, switches, onSwitch }: { readonly label: string; readonly switches: ReadonlyArray<StripSwitch>; readonly onSwitch?: (id: string) => void }) {
+export function SwitchRow({ label, switches, onSwitch }: { readonly label: string; readonly switches: ReadonlyArray<StripSwitch>; readonly onSwitch?: (id: string) => void }) {
+    if (switches.length === 0) return null;
     return <div className="switch-row" data-row={label.toLowerCase()}>
         <span className="switch-label">{label}</span>
         {switches.map((item) => <Button size="sm" label={item.label} data-control={item.id} onClick={() => onSwitch?.(item.id)} key={item.id} />)}
@@ -41,11 +43,11 @@ function SwitchRow({ label, switches, onSwitch }: { readonly label: string; read
 }
 
 export function ControllerStrip({
-    cabinet = DEFAULT_CABINET, operator = DEFAULT_OPERATOR, idle = false,
+    cabinet = DEFAULT_CABINET, operator = DEFAULT_OPERATOR, idle = false, touch = false,
     pressedButton, pressedDirection, buttons = 6, onSwitch, onButton, onDirection, onButtonHold, onDirectionHold, onCoin, onStart,
 }: ControllerStripProps) {
     return <section className="controller-strip" data-component="controller-strip" data-idle={idle || undefined}>
-        <DPad pressed={pressedDirection} onPress={onDirection} onHold={onDirectionHold} />
+        <DPad touch={touch} pressed={pressedDirection} onPress={onDirection} onHold={onDirectionHold} />
         <div className="controller-centre">
             {idle
                 ? <p className="note">Cabinet and operator switches appear here when a game runs.</p>

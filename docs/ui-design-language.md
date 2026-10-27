@@ -128,6 +128,9 @@ reused. "Local" is `/local`, "phone" is `/mobile-local-*`, "TV" is
 | **Pinned shortcuts** | `.btn` row after a separator: Pause/Resume, Mute, Reset, slot group (Slot select · Save · Load), Fullscreen, Controller; hidden under 950 px | per button | menu bar right | the portrait bar carries Games · Pause · Mute · ↺ · ☰ as icon buttons | the action column (§3.5) |
 | **Status bar** | small text, cells divided by `--mid` rules, first cell flexes; state word `--ok` bold when running, `--warn` bold when paused | running, paused, idle | bottom of window | bottom of the page | none; the title bar's right text carries "paused" |
 | **Separator** | 1 px `--mid` vertical (bars) or horizontal (menus, panes) | — | | | |
+| **Phone bar** | Games, Pause/Resume, Mute, Reset and ☰; landscape adds status and Fullscreen. Raised 44 px targets; translucent over the landscape canvas | idle actions disabled, paused, muted; fades after three seconds with Controller off in landscape or fullscreen, tap reveals | — | portrait bar; landscape strip | — |
+| **Side panel** | Cabinet switches, d-pad, COIN on the left; Operator keys, six buttons, START on the right. Swap sides exchanges the panels | normal, swapped, hidden with Controller off | — | landscape | — |
+| **Switches row** | Declared Cabinet and Operator controls, labelled, with 44 px targets and horizontal overflow; absent before a game starts | running, scrolling | — | below portrait canvas; above landscape primary controls | — |
 
 ### 3.2 Buttons and controls
 
@@ -146,6 +149,13 @@ reused. "Local" is `/local`, "phone" is `/mobile-local-*`, "TV" is
 | **Red button** | 58 px round gradient button with the button number; `.off` 35 % for undeclared; `.mini` 22–34 px for pictures | pressed, off | controller strip | controller | controls picture only |
 | **D-pad** | 3 × 3 grid of raised keys round a flat centre; `.dpadmini` for pictures | pressed | controller strip | controller | controls picture only |
 | **Drop zone** | dashed `--dark` border on `#D6D6D6`, bold line and sub-line | drag-over (invert) | Import | Import | never (import is Play mode) |
+
+The phone d-pad captures one pointer over its nine cells. Moving through a
+corner holds two adjacent directions; the centre releases directions. Moving
+outside, release, cancellation, lost capture or removing the surface clears its
+holds. Each red button owns its pointers independently, so directions and
+several buttons can be held together; undeclared buttons are dim and disabled.
+COIN, START and switches tap. The desktop d-pad retains individual-key holds.
 
 The kit's `Range` wrapper added for W23b keeps the label, native slider and
 formatted output in one focusable row; it does not replace the browser's range
@@ -186,10 +196,22 @@ while a separate presentation `Window` supplies the visible title bar.
 
 | Component | Definition | States | Local | Phone | TV |
 | --- | --- | --- | --- | --- | --- |
-| **Games list** | sunken, scrolling; row = name · right-aligned status (no icon: generated icons were dropped on 2026-10-25, a game icon returns only if it can come from real game data); selected row inverted; status is `small` `#777`, red word in `--bad` for Missing files / Bad file / Not stored / Not a game | selected, active (running game: `--active` tint, "playing" in `--ok` 700), focus | accordion rows (`details`): closed row shows Play or Check or the red word; open row shows the harness card lines, inline game info, File check / Remove / Import on `--panel` | flat rows in the Games window, Play button per playable row | flat rows, Play per playable row, active row's button reads Resume; no accordion, no import |
+| **Games list** | sunken, scrolling; row = name · right-aligned status (no icon: generated icons were dropped on 2026-10-25, a game icon returns only if it can come from real game data); selected row inverted; status is `small` `#777`, red word in `--bad` for Missing files / Bad file / Not stored / Not a game | selected, active (running game: `--active` tint, "playing" in `--ok` 700), focus | accordion rows (`details`): closed row shows Play or Check or the red word; open row shows the harness card lines, inline game info, File check / Remove / Import on `--panel` | accordion rows in the Games window, Play button per playable row | flat rows, Play per playable row, active row's button reads Resume; no accordion, no import |
 | **List head / foot** | heading with right-aligned count; small foot line | — | Import button lives in the head | Import replaces the window content in place (‹ Games back) | foot says import is in Play mode |
 | **Stored files list** | same rows, status Stored / Pending / Skip | — | Import's Stored tab | same | never |
 | **Menu list** (phone) | one raised row per item with a right `small`, full width, 44 px min | focus | — | Menu window tabs | — |
+
+Phone Menu list rows also have disabled states with their reason or slot status
+on the right, and on/off values for Controller and Swap sides. State, View and
+Settings tabs share the kit's focus model. Slot and Size use selectors. A
+window-opening row closes Menu; ✕, Escape/B or tapping outside dismisses it.
+Games retains the local accordion and swaps its content to Import or Stored
+files inside the same centred window, with ‹ Games to return. Import shares
+the desktop table and action footer. At phone density all modal tables group
+their content into at most three columns without dropping actions; Controls
+uses Control / Keyboard / Gamepad, short tabs P1 / P2 / Cabinet / Analogue /
+Test, and one fieldset per analogue control. Modal footers remain at the window
+edge while content scrolls.
 
 ### 3.5 Game-specific
 

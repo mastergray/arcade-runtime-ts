@@ -2,14 +2,14 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FocusProvider } from "../focus/FocusController.js";
-import { Confirm, Desk, Hint, StatusBar, Window } from "../kit/index.js";
+import { Button, Confirm, Desk, Hint, Modal, StatusBar, Window } from "../kit/index.js";
 import { LibraryModel } from "../model/library.js";
-import { IndexedDbSavedPlayStore, PreferenceStore } from "../model/preferences.js";
+import { controllerVisible, IndexedDbSavedPlayStore, PreferenceStore } from "../model/preferences.js";
 import { SessionModel } from "../model/session.js";
 import type { LibrarySnapshot, LocalAdapterBoundary, LocalSlot, SessionSnapshot } from "../model/types.js";
 import { FileCheckModal } from "./FileCheckModal.js";
 import { GamesColumn } from "./GamesColumn.js";
-import { ImportModal } from "./ImportModal.js";
+import { ImportActions, ImportModal } from "./ImportModal.js";
 import { LogModal } from "./LogModal.js";
 import { LocalMenus, type LocalMenuActions } from "./menus.js";
 import { PlaySurface } from "./PlaySurface.js";
@@ -18,6 +18,10 @@ import { SettingsModal } from "./SettingsModal.js";
 import { ControlsModal } from "./ControlsModal.js";
 import { PerGameModal } from "./PerGameModal.js";
 import { PresentationWindow } from "./presentation/PresentationWindow.js";
+import { PhoneLayoutContext } from "../kit/LayoutContext.js";
+import { PhonePage } from "./phone/PhonePage.js";
+import { MenuWindow } from "./phone/MenuWindow.js";
+import { useLayout } from "./phone/useLayout.js";
 import { usePresentation } from "./presentation/usePresentation.js";
 
 interface LocalModels {
@@ -30,7 +34,7 @@ type OpenModal = "import" | "settings" | "controls" | "per-game" | "log" | "file
 const EMPTY_SESSION: SessionSnapshot = {
     mode: "local", windowOpen: false, windowView: "game", lastFrame: null, hintVisible: false,
     status: "idle", message: "Loading the arcade library…", activeKey: null, machine: null,
-    muted: false, fullscreen: false, layout: null, pads: [], log: [], busy: false,
+    muted: false, fullscreen: false, touchDevice: false, layout: null, pads: [], log: [], busy: false,
 };
 
 function useLibrarySnapshot(library: LibraryModel): LibrarySnapshot {
@@ -57,7 +61,14 @@ function LocalWorkspace({ models }: { readonly models: LocalModels }) {
     const [preferenceVersion, setPreferenceVersion] = useState(0);
     const preferences = useMemo(() => models.preferences.getGlobal(), [models.preferences, preferenceVersion]);
     const presentation = sessionState.mode === "presentation";
-    const { padHint, padStatus } = usePresentation(session, sessionState, preferences, canvasRef);
+    const layout = useLayout(sessionState.touchDevice);
+    const phone = layout !== "desktop";
+    const landscape = layout === "phone-landscape";
+    const controller = controllerVisible(preferences.controllerView, sessionState.touchDevice, sessionState.pads.length);
+    const [phoneWindow, setPhoneWindow] = useState<"games" | "menu" | null>(null);
+    const [barVisible, setBarVisible] = useState(true);
+    const [activity, setActivity] = useState(0);
+    const { padHint, padStatus } = usePresentation(session, sessionState, preferences, canvasRef, phone ? () => setPhoneWindow((current) => current === "menu" ? null : "menu") : undefined);
     const [openMenu, setOpenMenu] = useState<string>();
     const [modal, setModal] = useState<OpenModal>(null);
     const [importTab, setImportTab] = useState<"import" | "stored">("import");
@@ -92,24 +103,38 @@ function LocalWorkspace({ models }: { readonly models: LocalModels }) {
         const timer = window.setInterval(refresh, 1000);
         document.addEventListener("fullscreenchange", refresh);
         window.addEventListener("pagehide", refresh);
+        window.addEventListener("gamepadconnected", refresh);
+        window.addEventListener("gamepaddisconnected", refresh);
         refresh();
         return () => {
             window.clearInterval(timer);
             document.removeEventListener("fullscreenchange", refresh);
             window.removeEventListener("pagehide", refresh);
+            window.removeEventListener("gamepadconnected", refresh);
+            window.removeEventListener("gamepaddisconnected", refresh);
         };
     }, [session]);
 
     useEffect(() => {
         if (session === null) return;
-        session.setInputPaused(modal !== null || removal !== null);
+        session.setInputPaused(modal !== null || removal !== null || phone && phoneWindow !== null);
         return () => session.setInputPaused(false);
-    }, [modal, removal, session]);
+    }, [modal, removal, phone, phoneWindow, session]);
 
     useEffect(() => {
-        document.documentElement.dataset.density = presentation ? "tv" : "desktop";
+        document.documentElement.dataset.density = phone ? "phone" : presentation ? "tv" : "desktop";
+        document.documentElement.dataset.layout = layout;
         document.documentElement.dataset.mode = sessionState.mode;
-    }, [presentation, sessionState.mode]);
+    }, [phone, layout, presentation, sessionState.mode]);
+
+    useEffect(() => {
+        setBarVisible(true);
+        if (!phone || presentation || controller || (!landscape && !sessionState.fullscreen) || phoneWindow !== null || modal !== null) return;
+        const timer = window.setTimeout(() => setBarVisible(false), 3000);
+        return () => window.clearTimeout(timer);
+    }, [phone, presentation, controller, landscape, sessionState.fullscreen, phoneWindow, modal, activity]);
+
+    useEffect(() => { if (!phone || presentation) setPhoneWindow(null); }, [phone, presentation]);
 
     useEffect(() => {
         if (presentation) return;
@@ -164,10 +189,11 @@ function LocalWorkspace({ models }: { readonly models: LocalModels }) {
         if (key === null) return;
         setFileCheckKey(key);
         setModal("file-check");
+        setPhoneWindow(null);
         setOpenMenu(undefined);
     };
     const toggleController = (): void => {
-        models.preferences.updateGlobal({ controllerView: !preferences.controllerView });
+        models.preferences.updateGlobal({ controllerView: !controller });
         refreshPreferences();
         setOpenMenu(undefined);
     };
@@ -202,7 +228,7 @@ function LocalWorkspace({ models }: { readonly models: LocalModels }) {
         paused={paused}
         muted={sessionState.muted}
         supportsSave={supportsSave}
-        controllerView={preferences.controllerView}
+        controllerView={controller}
         showFps={preferences.showFps}
         menuHint={preferences.general.presentationHint}
         size={preferences.size}
@@ -215,7 +241,7 @@ function LocalWorkspace({ models }: { readonly models: LocalModels }) {
 
     const status = <StatusBar message={statusMessage} state={statusState(sessionState.status)}>
         <span className="status-cell" data-status-cell="video">{sessionState.machine === null ? "No video" : `${sessionState.machine.width} × ${sessionState.machine.height} · ${sessionState.machine.refreshHz.toFixed(2)} Hz`}</span>
-        <span className="status-cell" data-status-cell="input">Keyboard · {sessionState.pads.length === 0 ? "no pads" : sessionState.pads.map((pad) => `P${pad.player}`).join(", ")}</span>
+        <span className="status-cell" data-status-cell="input">{sessionState.touchDevice ? "touch" : "Keyboard"} · {sessionState.pads.length === 0 ? "no pads" : sessionState.pads.map((pad) => `P${pad.player}`).join(", ")}</span>
         <span className="status-cell" data-status-cell="autosave">Auto-save {preferences.autoSave ? "on" : "off"}</span>
     </StatusBar>;
 
@@ -224,48 +250,75 @@ function LocalWorkspace({ models }: { readonly models: LocalModels }) {
             if (sessionState.windowView !== "game") session.openWindow("game");
             else session.closeWindow();
         } else if (modal !== null) setModal(null);
+        else if (phoneWindow !== null) setPhoneWindow(null);
+        else if (phone) setPhoneWindow("menu");
         else if (openMenu !== undefined) setOpenMenu(undefined);
         else if (openRows.size > 0) setOpenRows(new Set());
     };
 
+    const games = <GamesColumn
+        library={models.library}
+        snapshot={library}
+        activeKey={sessionState.activeKey}
+        openRows={openRows}
+        onToggle={(key) => {
+            models.library.select(key.replace(/^unknown:/, ""));
+            setOpenRows((current) => {
+                const next = new Set(current);
+                if (next.has(key)) next.delete(key); else next.add(key);
+                return next;
+            });
+        }}
+        onImport={() => { setImportTab("import"); setModal("import"); }}
+        onStored={() => { setImportTab("stored"); setModal("import"); }}
+        onRemove={(name) => setRemoval({ name })}
+        onPlay={(key) => { if (session !== null) void session.start(key); setPhoneWindow(null); setModal(null); }}
+        onResume={() => { if (paused) session?.pauseResume(); setPhoneWindow(null); }}
+        onFileCheck={openFileCheck}
+    />;
+
     const presentationFocus = presentation && sessionState.windowOpen && sessionState.windowView !== "controllers";
-    return <div ref={rootRef} className="local-page" data-mode={sessionState.mode} data-density={presentation ? "tv" : "desktop"}>
-    <FocusProvider onBack={closeTop} gamepadEnabled={presentation ? presentationFocus : !running} keyboardEnabled={!presentation || presentationFocus} escapeEnabled={!presentation} columns={presentation}
+    const phoneDialog = phone && (modal !== null || removal !== null);
+    const acceptPhonePad = (pad: Gamepad): boolean => document.querySelector('[data-capturing="true"]') === null
+        && !(preferences.controls.menuGesture[pad.id] ?? [10, 11]).every((button) => pad.buttons[button]?.pressed);
+    return <PhoneLayoutContext.Provider value={phone}><div ref={rootRef} className="local-page" data-mode={sessionState.mode} data-layout={layout} data-density={phone ? "phone" : presentation ? "tv" : "desktop"} data-fullscreen={sessionState.fullscreen} data-bar-visible={barVisible} data-swap-sides={preferences.swapSides}
+        onPointerDownCapture={() => { setBarVisible(true); setActivity((value) => value + 1); }}>
+    <FocusProvider onBack={closeTop} gamepadEnabled={presentation ? presentationFocus : !running && phoneWindow === null && !phoneDialog} keyboardEnabled={presentation ? presentationFocus : phoneWindow === null && !phoneDialog} escapeEnabled={!presentation && phoneWindow === null && !phoneDialog} columns={presentation}
         acceptGamepad={presentation ? (pad) => session?.snapshot().windowOpen === true
             && !(preferences.controls.menuGesture[pad.id] ?? [10, 11]).every((button) => pad.buttons[button]?.pressed) : undefined}>
         <Desk>
-            <Window className="local-window" hideTitle={presentation} title={`Arcade Library — ${titleGame}`} secondary="Play mode" menu={presentation ? undefined : menus} status={presentation ? undefined : status}>
+            <Window className="local-window" hideTitle={presentation || phone && sessionState.fullscreen} title={phone ? "Arcade Library" : `Arcade Library — ${titleGame}`} secondary={phone ? titleGame : "Play mode"} menu={presentation || phone ? undefined : menus} status={presentation || phone && (landscape || sessionState.fullscreen) ? undefined : status}>
                 <div className="local-layout">
-                    {presentation ? null : <GamesColumn
-                        library={models.library}
-                        snapshot={library}
-                        activeKey={sessionState.activeKey}
-                        openRows={openRows}
-                        onToggle={(key) => {
-                            models.library.select(key.replace(/^unknown:/, ""));
-                            setOpenRows((current) => {
-                                const next = new Set(current);
-                                if (next.has(key)) next.delete(key); else next.add(key);
-                                return next;
-                            });
-                        }}
-                        onImport={() => { setImportTab("import"); setModal("import"); }}
-                        onStored={() => { setImportTab("stored"); setModal("import"); }}
-                        onRemove={(name) => setRemoval({ name })}
-                        onPlay={(key) => { if (session !== null) void session.start(key); }}
-                        onResume={() => { if (paused) session?.pauseResume(); }}
-                        onFileCheck={openFileCheck}
-                    />}
-                    <div className="play-region" data-region="play-and-controller" data-controller-visible={preferences.controllerView}>
+                    {presentation || phone ? null : games}
+                    <div className="play-region" data-region="play-and-controller" data-controller-visible={controller}>
                         <PlaySurface canvasRef={canvasRef} containerRef={containerRef} session={sessionState} showFps={preferences.showFps} presentation={presentation} />
-                        {!presentation && preferences.controllerView && session !== null ? <Strip model={session} session={sessionState} /> : null}
+                        {presentation || session === null ? null : phone ? <PhonePage model={session} state={sessionState} landscape={landscape} controller={controller} swapSides={preferences.swapSides} actions={actions}
+                            onGames={() => { setModal(null); setPhoneWindow("games"); }} onMenu={() => setPhoneWindow("menu")} /> : controller ? <Strip model={session} session={sessionState} /> : null}
                     </div>
                 </div>
             </Window>
         </Desk>
         {presentation && sessionState.hintVisible ? <div data-presentation-hint><Hint><b>{padHint}</b> · <b>Esc</b> · <b>two-finger tap</b> to open the menu</Hint></div> : null}
         {presentation && sessionState.windowOpen && session !== null ? <PresentationWindow session={session} state={sessionState} library={models.library} snapshot={library} preferences={models.preferences} padStatus={padStatus} onPreferences={refreshPreferences} /> : null}
-        {modal === "import" ? <ImportModal library={models.library} snapshot={library} tab={importTab} onTab={setImportTab} onClose={() => { setModal(null); models.library.dismissImports(); }} dragOver={dragOver} onRemove={(name) => setRemoval({ name })} onRemoveAll={() => setRemoval({ all: true })} onPlay={(key) => { if (session !== null) void session.start(key); }} /> : null}
+        {!phone && modal === "import" ? <ImportModal library={models.library} snapshot={library} tab={importTab} onTab={setImportTab} onClose={() => { setModal(null); models.library.dismissImports(); }} dragOver={dragOver} onRemove={(name) => setRemoval({ name })} onRemoveAll={() => setRemoval({ all: true })} onPlay={(key) => { if (session !== null) void session.start(key); }} /> : null}
+        {phone && !presentation && (phoneWindow === "games" || modal === "import") ? <FocusProvider acceptGamepad={acceptPhonePad} keyboardEnabled={removal === null} gamepadEnabled={removal === null} onBack={() => { if (modal === "import") { setModal(null); setPhoneWindow("games"); models.library.dismissImports(); } else setPhoneWindow(null); }}>
+            <div data-modal="phone-games" data-phone-games data-phone-games-state={modal === "import" ? importTab : "games"}>
+                <Modal title={modal === "import" ? importTab === "import" ? "Import" : "Stored files" : "Games"} onClose={() => { setPhoneWindow(null); setModal(null); models.library.dismissImports(); }}
+                    foot={modal === "import" && importTab === "import" ? <ImportActions library={models.library} snapshot={library} onClose={() => { setModal(null); setPhoneWindow(null); models.library.dismissImports(); }} onPlay={(key) => { void session?.start(key); }} /> : undefined}>
+                    {modal === "import" ? <>
+                        <Button label="‹ Games" data-phone-games-back onClick={() => { setModal(null); setPhoneWindow("games"); models.library.dismissImports(); }} />
+                        <ImportModal inline library={models.library} snapshot={library} tab={importTab} onTab={setImportTab} onClose={() => { setModal(null); setPhoneWindow(null); models.library.dismissImports(); }} dragOver={dragOver} onRemove={(name) => setRemoval({ name })} onRemoveAll={() => setRemoval({ all: true })} onPlay={(key) => { void session?.start(key); }} />
+                    </> : games}
+                </Modal>
+            </div>
+        </FocusProvider> : null}
+        {phone && !presentation && phoneWindow === "menu" && modal === null ? <MenuWindow acceptGamepad={acceptPhonePad} title={titleGame} status={sessionState.status} running={running} supportsSave={supportsSave} controllerView={controller} size={preferences.size} selectedSlot={selectedSlot} onSelectedSlot={setSelectedSlot} gamePreferences={gamePreferences} hasFileCheck={selectedCard?.report !== null && selectedCard !== null} actions={actions} landscape={landscape} swapSides={preferences.swapSides}
+            onSwapSides={() => { models.preferences.updateGlobal({ swapSides: !preferences.swapSides }); refreshPreferences(); }} onClose={() => setPhoneWindow(null)} /> : null}
+        <PhoneDialogScope acceptGamepad={acceptPhonePad} enabled={phoneDialog && modal !== "import" || phone && removal !== null} onBack={() => {
+            if (removal !== null) { setRemoval(null); return; }
+            // Use each dialog's own cancellation path so staged previews are restored.
+            Array.from(rootRef.current?.querySelectorAll<HTMLButtonElement>('[data-modal] [data-modal-close]') ?? []).at(-1)?.click();
+        }}>
         {modal === "settings" ? <SettingsModal
             preferences={models.preferences}
             library={models.library}
@@ -304,7 +357,12 @@ function LocalWorkspace({ models }: { readonly models: LocalModels }) {
             onCancel={() => setRemoval(null)}
             onConfirm={() => { const target = removal; setRemoval(null); void ("all" in target ? models.library.clearStored() : models.library.removeArchive(target.name)); }} /></div>}
         {modal === "restart" ? <div data-modal="restart"><Confirm veil question="Restart from power-on?" consequence="Current changes are saved, then the machine starts fresh." confirmLabel="Restart from power-on…" onCancel={() => setModal(null)} onConfirm={() => { setModal(null); session?.reset("hard"); }} /></div> : null}
-    </FocusProvider></div>;
+        </PhoneDialogScope>
+    </FocusProvider></div></PhoneLayoutContext.Provider>;
+}
+
+function PhoneDialogScope({ enabled, onBack, acceptGamepad, children }: { readonly enabled: boolean; readonly onBack: () => void; readonly acceptGamepad: (pad: Gamepad) => boolean; readonly children: import("react").ReactNode }) {
+    return enabled ? <FocusProvider onBack={onBack} acceptGamepad={acceptGamepad}>{children}</FocusProvider> : children;
 }
 
 export function LocalPage() {
@@ -315,9 +373,6 @@ export function LocalPage() {
         void (async () => {
             try {
                 const preferences = new PreferenceStore(localStorage, new IndexedDbSavedPlayStore(indexedDB));
-                if (!preferences.hasGlobalRecord() && navigator.maxTouchPoints > 0 && (navigator.getGamepads?.() ?? []).filter(Boolean).length === 0) {
-                    preferences.updateGlobal({ controllerView: true });
-                }
                 const library = await LibraryModel.init({
                     fetch: window.fetch.bind(window),
                     baseUrl: location.href,

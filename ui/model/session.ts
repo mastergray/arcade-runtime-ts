@@ -59,7 +59,7 @@ export class SessionModel {
     private snapshotValue: SessionSnapshot = {
         mode: "local", windowOpen: false, windowView: "game", lastFrame: null, hintVisible: false,
         status: "idle", message: "Import a game archive to begin.", activeKey: null, machine: null,
-        muted: false, fullscreen: false, layout: null, pads: [], log: [], busy: false,
+        muted: false, fullscreen: false, touchDevice: false, layout: null, pads: [], log: [], busy: false,
     };
 
     constructor(config: SessionModelConfig) {
@@ -73,6 +73,7 @@ export class SessionModel {
         this.now = config.now ?? (() => new Date());
         this.getGamepads = config.getGamepads ?? (() => []);
         this.publishCabinet = config.publishCabinet ?? (() => undefined);
+        this.snapshotValue = { ...this.snapshotValue, touchDevice: (config.canvas.ownerDocument.defaultView?.navigator.maxTouchPoints ?? 0) > 0 };
         if (this.preferences.getGlobal().general.mode === "presentation") {
             this.snapshotValue = { ...this.snapshotValue, mode: "presentation", windowOpen: true, windowView: "games" };
         }
@@ -153,7 +154,7 @@ export class SessionModel {
             catch (error) { this.appendLog(`Audio unlock needs another gesture: ${messageFrom(error, "unknown audio failure")}`); }
             if (preferences.general.muteOnStart) cabinet.player.audio.mute();
             if (preferences.general.fullscreenOnStart && this.snapshotValue.mode === "local") {
-                try { await cabinet.fullscreen(); }
+                try { await (this.phoneLayout() && this.presentationRoot !== undefined ? this.presentationRoot.requestFullscreen() : cabinet.fullscreen()); }
                 catch (error) { this.appendLog(`Fullscreen on start was unavailable: ${messageFrom(error, "unknown fullscreen failure")}`); }
             }
             this.update({
@@ -165,6 +166,7 @@ export class SessionModel {
                 status: "running",
                 message: "Running. Keyboard and gamepad controls are attached.",
             });
+            this.refreshExternalState();
             if (this.snapshotValue.mode === "presentation") {
                 this.closeWindow();
                 this.showPresentationHint();
@@ -393,7 +395,7 @@ export class SessionModel {
     }
 
     async fullscreen(stretched = false): Promise<void> {
-        if (this.running() === null && this.presentationRoot !== undefined) {
+        if ((this.running() === null || this.phoneLayout()) && this.presentationRoot !== undefined) {
             if (stretched) this.setSize("stretch");
             try {
                 const document = this.presentationRoot.ownerDocument;
@@ -448,6 +450,8 @@ export class SessionModel {
     }
 
     private running(): ArcadeCabinet | null { return this.cabinetValue?.isStarted === true ? this.cabinetValue : null; }
+
+    private phoneLayout(): boolean { return this.presentationRoot?.dataset.layout?.startsWith("phone-") === true; }
 
     private async run(fallback: string, action: (cabinet: ArcadeCabinet) => Promise<void>): Promise<void> {
         const cabinet = this.running();
