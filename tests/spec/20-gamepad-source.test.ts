@@ -485,9 +485,9 @@ const testFile: TestFile = {
             label: "a relative kind beside a declared joystick yields the left stick to directions; without the flag it spins",
             run: () => CTGTest.init("gamepad dial beside a joystick")
                 .stage("poll a right-deflected stick on both machine shapes", () => {
-                    const run = (joystick: boolean | undefined) => {
+                    const run = (joystick: boolean | undefined, axes: number[] = [1, 0]) => {
                         const provider = new FakeGamepadProvider();
-                        provider.pads = [pad("pad", 0, [], [1, 0])];
+                        provider.pads = [pad("pad", 0, [], axes)];
                         const scheduler = new FakeFrameScheduler();
                         const { session } = attachedSource(provider, scheduler, new FakeEventTarget(), undefined, {
                             analog: [{ player: 1, kind: "dial" }], dualStick: false, keys: [], volume: false, ...(joystick === undefined ? {} : { joystick }),
@@ -495,10 +495,11 @@ const testFile: TestFile = {
                         scheduler.tick(16);
                         return { held: session.held, spins: session.calls.filter((call) => call.method === "setAxis").length };
                     };
-                    return { withJoystick: run(true), unknown: run(undefined), dialOnly: run(false) };
+                    return { withJoystick: run(true), withJoystickRightStick: run(true, [0, 0, 1, 0]), unknown: run(undefined), dialOnly: run(false) };
                 })
-                .assert("the joystick board gets a direction and no spin; the others spin and hold nothing", (state) => state.subject, P.equals<unknown>({
+                .assert("the joystick board gets a direction from the left stick and spin from the right; the others spin from the left", (state) => state.subject, P.equals<unknown>({
                     withJoystick: { held: ["p1:direction:right"], spins: 0 },
+                    withJoystickRightStick: { held: [], spins: 1 },
                     unknown: { held: [], spins: 1 },
                     dialOnly: { held: [], spins: 1 },
                 }))

@@ -1311,7 +1311,10 @@ builds) the arrows stay digital and MAME's HAT1 increment path from the
 generated controller configuration still spins those ports at its keydelta,
 while stick-1 keys and the pad drive them through the driver. `GamepadSource`
 applies the same rule to the left stick: with `joystick === true` a relative
-kind yields the stick to directions and writes no spin.
+kind yields the left stick to directions and takes its spin from the right
+stick instead, unless `stick-z` or a dual-stick layout already owns the right
+stick (then no stick spins it). This covers the trackball cabinets that also
+wire a joystick and the dial-and-joystick boards as well as the F3 case.
 Depth (`stick-z`) and pedal kinds never claim directions either, so a shifter
 joystick on a racing board stays digital; so does every direction on a machine
 with no declared analogue port. `pedal-3` also remains digital because the

@@ -409,12 +409,17 @@ export default class GamepadSource {
     // Builds machine-aware digital controls, reconciles their edges, then writes declared analog axes.
     private forward(assignment: AssignedPad, pad: GamepadLike, mapping: GamepadMapping): void {
         const inputs = this._input.machine.inputs;
-        // A relative kind beside an ordinary joystick (a dial on an F3 platform board) leaves the left stick to the
-        // joystick: the stick is quantized to directions and writes no spin. Older builds omit the flag and keep spin.
-        const declared = new Set<MachineAnalogKind>(inputs.analog
+        // A relative kind beside an ordinary joystick (a dial on an F3 platform board, the trackball cabinets that also
+        // wire a joystick, a dial-and-joystick board) leaves the left stick to the joystick: it is quantized to directions,
+        // and the right stick spins the relative kind unless stick-z or a dual-stick layout already owns it. Older
+        // builds omit the flag and keep the left stick on the spin.
+        const declaredAll = new Set<MachineAnalogKind>(inputs.analog
             .filter((input) => input.player === assignment.player)
-            .filter((input) => inputs.joystick !== true || !RELATIVE_LEFT_KINDS.has(input.kind))
             .map((input) => input.kind));
+        const declared = new Set<MachineAnalogKind>([...declaredAll]
+            .filter((kind) => inputs.joystick !== true || !RELATIVE_LEFT_KINDS.has(kind)));
+        const spinSource: "left" | "right" | "none" = inputs.joystick !== true ? "left"
+            : inputs.dualStick || declaredAll.has("stick-z") ? "none" : "right";
         const leftAnalog = ["stick-x", "stick-y", "paddle", "paddle-v", "positional", "positional-v", "lightgun-x", "lightgun-y", "dial", "dial-v", "trackball-x", "trackball-y", "mouse-x", "mouse-y"]
             .some((kind) => declared.has(kind as MachineAnalogKind));
         const chordLayer = mapping.chords !== false;
@@ -469,7 +474,7 @@ export default class GamepadSource {
         for (const binding of bindings) if (pressed(pad, binding.button)) assignment.previousChordButtons.add(binding.button);
         this.forwardControls(assignment, controls);
         if (coinOnRelease) assignment.channel.tap({ kind: "coin", player: assignment.player });
-        this.forwardAxes(assignment, pad, mapping, declared);
+        this.forwardAxes(assignment, pad, mapping, declaredAll, spinSource);
     }
 
     // PRIVATE :: assignedPad, [arcadeControl] -> VOID
@@ -491,18 +496,20 @@ export default class GamepadSource {
 
     // PRIVATE :: assignedPad, gamepadLike, gamepadMapping, Set<machineAnalogKind> -> VOID
     // Writes only axes declared for this pad's player; relative axes emit one finite per-poll pixel delta.
-    private forwardAxes(assignment: AssignedPad, pad: GamepadLike, mapping: GamepadMapping, declared: ReadonlySet<MachineAnalogKind>): void {
+    private forwardAxes(assignment: AssignedPad, pad: GamepadLike, mapping: GamepadMapping, declared: ReadonlySet<MachineAnalogKind>, spinSource: "left" | "right" | "none"): void {
         const left = mapping.axes ?? DEFAULT_LEFT_AXES;
         const right = mapping.rightAxes ?? DEFAULT_RIGHT_AXES;
         const pedals = mapping.pedals ?? DEFAULT_PEDALS;
         const horizontal = rescaledAxis(pad.axes[left[0]] ?? 0, this._deadZone);
         const vertical = rescaledAxis(pad.axes[left[1]] ?? 0, this._deadZone);
+        const spinHorizontal = spinSource === "left" ? horizontal : spinSource === "right" ? rescaledAxis(pad.axes[right[0]] ?? 0, this._deadZone) : 0;
+        const spinVertical = spinSource === "left" ? vertical : spinSource === "right" ? rescaledAxis(pad.axes[right[1]] ?? 0, this._deadZone) : 0;
         if (declared.has("stick-x") || declared.has("paddle") || declared.has("positional") || declared.has("lightgun-x")) this.writeAxis(assignment, { player: assignment.player, kind: "stick-x" }, horizontal);
         if (declared.has("stick-y") || declared.has("paddle-v") || declared.has("positional-v") || declared.has("lightgun-y")) this.writeAxis(assignment, { player: assignment.player, kind: "stick-y" }, vertical);
-        if ((declared.has("dial") || declared.has("trackball-x") || declared.has("mouse-x")) && horizontal !== 0)
-            this.writeAxis(assignment, { player: assignment.player, kind: "spin-x" }, horizontal * SPIN_PIXELS_PER_POLL);
-        if ((declared.has("dial-v") || declared.has("trackball-y") || declared.has("mouse-y")) && vertical !== 0)
-            this.writeAxis(assignment, { player: assignment.player, kind: "spin-y" }, vertical * SPIN_PIXELS_PER_POLL);
+        if ((declared.has("dial") || declared.has("trackball-x") || declared.has("mouse-x")) && spinHorizontal !== 0)
+            this.writeAxis(assignment, { player: assignment.player, kind: "spin-x" }, spinHorizontal * SPIN_PIXELS_PER_POLL);
+        if ((declared.has("dial-v") || declared.has("trackball-y") || declared.has("mouse-y")) && spinVertical !== 0)
+            this.writeAxis(assignment, { player: assignment.player, kind: "spin-y" }, spinVertical * SPIN_PIXELS_PER_POLL);
         if (declared.has("stick-z"))
             this.writeAxis(assignment, { player: assignment.player, kind: "stick-z" }, rescaledAxis(pad.axes[right[1]] ?? 0, this._deadZone));
         if (declared.has("pedal-1"))
