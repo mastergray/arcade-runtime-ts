@@ -100,7 +100,8 @@ const SCRIPTED_ADAPTER = `
                     name: "synthetic_machine", description: "Synthetic game", family: "synthetic-family",
                     width: 320, height: 240, refreshHz: 60, orientation: "horizontal", aspectRatio: 4 / 3,
                     players: 2, buttons: 2,
-                    inputs: { analog: [{ player: 1, kind: "paddle" }], dualStick: false, keys: [{ name: "Operator", key: "F2", player: 1 }], volume: true },
+                    // A pedal keeps an analogue row without claiming the d-pad directions (a paddle would take left and right for its axis).
+                    inputs: { analog: [{ player: 1, kind: "pedal-1" }], dualStick: false, keys: [{ name: "Operator", key: "F2", player: 1 }], volume: true },
                     bios: [], hasNvram: true, supportsSave: true
                 },
                 sampleRate: 48000,
@@ -318,6 +319,8 @@ const cases: TestCase[] = [{
                 await cdp.send('Input.dispatchTouchEvent', { type: 'touchCancel', touchPoints: [] }).catch(() => undefined);   // nothing left to cancel after a clean sequence
                 await cdp.detach();
             }
+            // Chromium swallows the click of the first tap after a raw touch session; spend it on the title bar.
+            await tap(page, '.local-window > [data-component="title-bar"]');
         })
         .assertPage("every effective held control reached the adapter and was released", (page) => page.evaluate(() => {
             const events = (window as unknown as TestWindow).__arcadePhoneTest.controls;
