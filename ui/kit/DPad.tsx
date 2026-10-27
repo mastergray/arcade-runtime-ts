@@ -30,9 +30,13 @@ export function DPad({ mini = false, touch = false, pressed, onPress, onHold }: 
     useEffect(() => () => { for (const direction of held.current) callback.current?.(direction, false); }, []);
     const move = (event: PointerEvent<HTMLDivElement>): void => {
         if (pointer.current !== event.pointerId) return;
-        const rect = event.currentTarget.getBoundingClientRect();
-        const x = (event.clientX - rect.left) / rect.width;
-        const y = (event.clientY - rect.top) / rect.height;
+        // Measure the nine cells, not the element: a layout may stretch the element beyond its 3 × 3 grid (portrait
+        // spans two grid rows), and the thirds must follow the cells the thumb sees.
+        const cells = event.currentTarget.children;
+        const first = cells[0]?.getBoundingClientRect() ?? event.currentTarget.getBoundingClientRect();
+        const last = cells[8]?.getBoundingClientRect() ?? event.currentTarget.getBoundingClientRect();
+        const x = (event.clientX - first.left) / (last.right - first.left);
+        const y = (event.clientY - first.top) / (last.bottom - first.top);
         const next = new Set<Direction>();
         if (x < 0 || x >= 1 || y < 0 || y >= 1) { release(); return; }
         if (x < 1 / 3) next.add("left");

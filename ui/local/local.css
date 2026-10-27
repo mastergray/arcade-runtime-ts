@@ -182,7 +182,7 @@
 [data-layout="phone-portrait"] .play-region > .phone-switches { grid-area: switches; }
 [data-layout="phone-portrait"] .phone-controller { grid-area: controller; display: grid; grid-template-columns: 132px minmax(44px, 1fr) 132px; grid-template-rows: 66px 66px; align-items: center; justify-items: center; gap: 4px; padding: 4px; }
 [data-layout="phone-portrait"] .phone-side-panel { display: contents; }
-[data-layout="phone-portrait"] .phone-controller .dpad { grid-column: 1; grid-row: 1 / 3; }
+[data-layout="phone-portrait"] .phone-controller .dpad { grid-column: 1; grid-row: 1 / 3; align-self: center; justify-self: start; }   /* the element is its nine cells, nothing taller: the thumb math and tests measure it */
 [data-layout="phone-portrait"] .phone-controller .button-bank { grid-column: 3; grid-row: 1 / 3; gap: 0; }
 [data-layout="phone-portrait"] .phone-controller [data-control="coin"] { grid-column: 2; grid-row: 1; }
 [data-layout="phone-portrait"] .phone-controller [data-control="start"] { grid-column: 2; grid-row: 2; }

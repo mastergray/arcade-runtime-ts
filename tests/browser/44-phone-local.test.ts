@@ -203,9 +203,17 @@ const tap = async (page: Page, selector: string): Promise<void> => {
 };
 const heldKeys = (page: Page) => page.evaluate(() => (window as unknown as TestWindow).__arcadeLocalCabinet.player.input.snapshot.map((control) =>
     control.kind === "direction" ? control.direction : control.kind === "button" ? `button-${control.button}` : control.kind).sort());
+// Touch-derived pointer moves are animation-frame aligned in Chromium, so the held set settles a frame or two after
+// the touch event is dispatched; poll briefly before judging it.
 const expectHeld = async (page: Page, expected: string[]): Promise<void> => {
-    const actual = await heldKeys(page);
-    if (JSON.stringify(actual) !== JSON.stringify([...expected].sort())) throw new Error(`Held controls: ${actual.join(", ")}; expected ${expected.join(", ")}`);
+    const wanted = JSON.stringify([...expected].sort());
+    let actual: string[] = [];
+    for (let attempt = 0; attempt < 20; attempt++) {
+        actual = await heldKeys(page);
+        if (JSON.stringify(actual) === wanted) return;
+        await page.waitForTimeout(50);
+    }
+    throw new Error(`Held controls: ${actual.join(", ")}; expected ${expected.join(", ")}`);
 };
 const menu = async (page: Page, tab = "state"): Promise<void> => {
     await tap(page, '[data-phone-action="menu"]');
@@ -294,18 +302,22 @@ const cases: TestCase[] = [{
                 await expectHeld(page, ['right', 'button-1']);
                 await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [right, button1, button2] });
                 await expectHeld(page, ['right', 'button-1', 'button-2']);
-                await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [button1, button2] });
+                // A touchEnd lists the touches being released; an empty list releases every active touch.
+                await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [right] });
                 await expectHeld(page, ['button-1', 'button-2']);
-                await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [button2] });
+                await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [button1] });
                 await expectHeld(page, ['button-2']);
-                await cdp.send('Input.dispatchTouchEvent', { type: 'touchCancel', touchPoints: [] });
+                await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [button2] });
                 await expectHeld(page, []);
                 // Leaving the captured pad releases directions even before the finger lifts.
                 await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [up] });
                 await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ ...await point(page, pad, 1.1, .5), id: 1 }] });
                 await expectHeld(page, []);
                 await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-            } finally { await cdp.send('Input.dispatchTouchEvent', { type: 'touchCancel', touchPoints: [] }); await cdp.detach(); }
+            } finally {
+                await cdp.send('Input.dispatchTouchEvent', { type: 'touchCancel', touchPoints: [] }).catch(() => undefined);   // nothing left to cancel after a clean sequence
+                await cdp.detach();
+            }
         })
         .assertPage("every effective held control reached the adapter and was released", (page) => page.evaluate(() => {
             const events = (window as unknown as TestWindow).__arcadePhoneTest.controls;
