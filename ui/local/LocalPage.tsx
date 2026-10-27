@@ -265,7 +265,7 @@ function LocalWorkspace({ models }: { readonly models: LocalModels }) {
         </Desk>
         {presentation && sessionState.hintVisible ? <div data-presentation-hint><Hint><b>{padHint}</b> · <b>Esc</b> · <b>two-finger tap</b> to open the menu</Hint></div> : null}
         {presentation && sessionState.windowOpen && session !== null ? <PresentationWindow session={session} state={sessionState} library={models.library} snapshot={library} preferences={models.preferences} padStatus={padStatus} onPreferences={refreshPreferences} /> : null}
-        {modal === "import" ? <ImportModal library={models.library} snapshot={library} tab={importTab} onTab={setImportTab} onClose={() => setModal(null)} dragOver={dragOver} onRemove={(name) => setRemoval({ name })} onRemoveAll={() => setRemoval({ all: true })} onPlay={(key) => { if (session !== null) void session.start(key); }} /> : null}
+        {modal === "import" ? <ImportModal library={models.library} snapshot={library} tab={importTab} onTab={setImportTab} onClose={() => { setModal(null); models.library.dismissImports(); }} dragOver={dragOver} onRemove={(name) => setRemoval({ name })} onRemoveAll={() => setRemoval({ all: true })} onPlay={(key) => { if (session !== null) void session.start(key); }} /> : null}
         {modal === "settings" ? <SettingsModal
             preferences={models.preferences}
             library={models.library}

@@ -233,9 +233,10 @@ export class LibraryModel {
     }
 
     // PUBLIC :: VOID -> VOID
-    // Drops the import rows that are resolved (stored, pending a companion, or skipped); chosen files not yet stored stay listed.
+    // Drops the rows whose file is stored, so the next opening lists only files still waiting (ready, pending a
+    // companion) or rejected ones (decided 2026-10-26: stored files live under Stored files, not in this list).
     dismissImports(): void {
-        for (const [key, row] of this.imports) if (row.status !== "Ready") this.imports.delete(key);
+        for (const [key, row] of this.imports) if (row.status === "Stored") this.imports.delete(key);
         this.emit();
     }
 

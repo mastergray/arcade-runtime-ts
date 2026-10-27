@@ -41,7 +41,7 @@ export function ImportModal({ library, snapshot, tab, onTab, onClose, dragOver, 
                 <span className="import-details" data-tone={row.detailsTone} key="details">{row.details}</span>,
             ],
         }))} />
-        <p className="note">{snapshot.importRows.length === 0 ? "Choose or drop one or more zip files." : "Files added since this page was opened. Everything stored in this browser is under Stored files."}</p>
+        <p className="note">{snapshot.importRows.length === 0 ? "Choose or drop one or more zip files." : "Stored files leave this list when it closes; everything stored in this browser is under Stored files."}</p>
         {companion === null ? null : <p className="note" data-companion-notice>{companion}</p>}
     </div>;
     return <div data-modal="import">

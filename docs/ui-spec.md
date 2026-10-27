@@ -283,10 +283,12 @@ details move into the games column as accordions.
   all and check**: rows update in place to Stored, Pending (naming the
   companion still needed) or Skip, more files can be dropped while it is
   open, and the games column behind it updates live. The rows are the
-  files added since the page was opened and stay listed across closing
-  and reopening the modal in that visit (decided 2026-10-25 after trying
-  the alternative); a note under the table says so and points at Stored
-  files for everything stored in the browser. Second tab Stored
+  files added in this visit; rows whose file is stored leave the list when
+  the modal closes, so reopening it shows only files still waiting (ready,
+  pending a companion) or rejected ones (decided 2026-10-26, replacing the
+  2026-10-25 rule that kept every row for the visit); a note under the
+  table says so and points at Stored files for everything stored in the
+  browser. Second tab Stored
   files (§7.4). No search or filter in 1.0: the column scrolls.
 - **One row per game found**, the harness's cards folded into
   **accordions**: the closed row shows the generated icon, the name, and
