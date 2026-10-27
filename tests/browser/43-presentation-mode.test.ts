@@ -327,15 +327,15 @@ const cases: TestCase[] = [{
             await page.locator('[data-presentation-action="play-mode"]').click();
             await page.waitForSelector('.local-page[data-mode="local"][data-density="desktop"]');
         })
-        .assertPage("switching back keeps the canvas and cabinet and resumes the owned pause", (page) => page.evaluate(() => {
+        .assertPage("switching back keeps the canvas and cabinet, keeps the pause and frees the input", (page) => page.evaluate(() => {
             const browser = window as unknown as TestWindow;
             return browser.__arcadeLocalCabinet === browser.__arcadePresentationTest.originalCabinet
                 && document.querySelector('[data-play-canvas]') === browser.__arcadePresentationTest.originalCanvas
-                && browser.__arcadeLocalCabinet.player.status === 'running' && !browser.__arcadeLocalCabinet.player.input.suspended
+                && browser.__arcadeLocalCabinet.player.status === 'paused' && !browser.__arcadeLocalCabinet.player.input.suspended
                 && browser.__arcadePresentationTest.starts === 1 && document.querySelector('[data-component="menu-bar"]') !== null;
         }), P.equals(true))
         .interact("a user-owned pause survives another presentation round trip and refusals are logged", async ({ page }) => {
-            await page.locator('[data-shortcut="pause"] button').click();
+            // Play mode left the game paused, so the pause is now the user's own; the window must not claim it.
             await page.locator('[data-menu-title="configure"]').click();
             await page.locator('[data-menu-item="presentation"]').click();
             await page.keyboard.press('Escape');

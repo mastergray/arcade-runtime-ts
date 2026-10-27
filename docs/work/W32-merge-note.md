@@ -99,8 +99,10 @@ and the existing local device/status refresh remain unchanged.
 Opening over a running machine records that exact cabinet in
 `windowPausedCabinet`, captures its frame, suspends ArcadeInput and pauses it.
 Opening over an already paused machine does not claim that pause. Closing,
-Resume, a gesture or Play mode resumes only the recorded cabinet, only if it
-is still current and paused. A user pause therefore survives closing the
+Resume or a gesture resumes only the recorded cabinet, only if it is still
+current and paused. Play mode (2026-10-26, integrator) drops that ownership
+without resuming: the game stays paused on the local page and its Pause /
+Resume shortcut takes over. A user pause therefore survives closing the
 window and leaving presentation. Switching subviews never changes ownership;
 stop/exit clears the cabinet reference.
 

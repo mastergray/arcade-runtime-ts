@@ -202,7 +202,7 @@ export class SessionModel {
     }
 
     leavePresentation(): void {
-        this.restoreWindowOwnership();
+        this.windowPausedCabinet = null;   // Play mode keeps the game paused (decided 2026-10-26); the local page's Pause / Resume shortcut takes over
         const general = this.preferences.getGlobal().general;
         this.preferences.updateGlobal({ general: { ...general, mode: "local" } });
         this.update({ mode: "local", windowOpen: false, hintVisible: false });

@@ -163,7 +163,7 @@ is player 1.
 | Feature | L | P | Runtime | Notes |
 | --- | :-: | :-: | --- | --- |
 | Enter presentation mode: switch the page to the TV skin, lock landscape, go fullscreen when a game starts | yes | — | new: skin, orientation lock | The device is already mirrored or cabled; the page cannot tell and does not try, beyond offering the mode when a second screen is reported |
-| Leave presentation mode: back to the local skin, the game keeps running | — | yes | new | |
+| Leave presentation mode: back to the local skin; the game stays as it was, so a game paused under the window stays paused and the local Pause / Resume shortcut takes over (decided 2026-10-26) | — | yes | new | |
 | On-screen touch pad in presentation mode: off by default, switchable | — | yes | M28 | It shows on the TV when on |
 | Menu gesture status: the connected pad's gesture, or the warning that it has none | — | yes | new | Links to Controls |
 | Hint on first start: how to open the menu | — | yes | new | Three seconds, once per session |
