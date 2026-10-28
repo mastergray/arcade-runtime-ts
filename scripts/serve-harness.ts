@@ -3,10 +3,13 @@
 // realizes: docs/arcade-runtime-spec.md > §11 Developer harness and §11.1 Preload config
 
 // Dependencies:
-import { existsSync, readFileSync, statSync } from "node:fs";       // Loads and validates the explicitly named preload files
+import { existsSync, mkdirSync, readFileSync, statSync } from "node:fs";   // Loads and validates the explicitly named preload files; writes the --tls certificate
 import { readFile, readdir, realpath, stat } from "node:fs/promises";   // Serves harness, source, UI and family-build resources
-import { createServer, type Server, type ServerResponse } from "node:http";   // Loopback development server
-import { basename, dirname, extname, isAbsolute, relative, resolve, sep } from "node:path";   // Resolves and confines served paths
+import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";   // Loopback development server
+import { createServer as createTlsServer } from "node:https";   // --tls: a secure context for phones on the LAN (Web Crypto needs one)
+import { networkInterfaces } from "node:os";                   // LAN addresses for the self-signed certificate
+import { spawnSync } from "node:child_process";                // openssl generates the development certificate once
+import { basename, dirname, extname, isAbsolute, join, relative, resolve, sep } from "node:path";   // Resolves and confines served paths
 import { fileURLToPath, pathToFileURL } from "node:url";           // Locates repository resources and detects command execution
 import ts from "typescript";                                       // Transpiles the consumer page and library source in memory
 
@@ -62,6 +65,7 @@ export interface HarnessServerConfig {
     readonly uiRoot?: string;                                      // Defaults to dist/ui from the invoking directory
     readonly preload?: string;                                     // Optional private preload config
     readonly pages?: ReadonlyArray<string>;                        // Optional extra local HTML pages, served at /<basename without .html>
+    readonly tls?: string;                                         // Optional directory holding cert.pem and key.pem; generated with openssl when absent
 }
 
 // INTERFACE :: listening server and its browser URL
@@ -300,7 +304,7 @@ export const startHarnessServer = async (config: HarnessServerConfig = {}): Prom
     const preloadFiles = new Map(preload?.files.map((file) => [file.url, file.path]));
     const pageFiles = loadPages(config.pages ?? []);
 
-    const server = createServer((request, response) => {
+    const handler = (request: IncomingMessage, response: ServerResponse): void => {
         void (async () => {
             const head = request.method === "HEAD";
             if (request.method !== "GET" && !head) {
@@ -380,7 +384,8 @@ export const startHarnessServer = async (config: HarnessServerConfig = {}): Prom
             if (!response.headersSent) send(response, 500, "text/plain; charset=utf-8", "internal server error\n", request.method === "HEAD");
             else response.destroy();
         });
-    });
+    };
+    const server: Server = config.tls === undefined ? createServer(handler) : createTlsServer(developmentCertificate(resolve(config.tls), host), handler);
 
     await new Promise<void>((resolveListening, reject) => {
         server.once("error", reject);
@@ -391,7 +396,27 @@ export const startHarnessServer = async (config: HarnessServerConfig = {}): Prom
     });
     const address = server.address();
     if (address === null || typeof address === "string") throw new Error("Harness server did not bind a TCP port.");
-    return { server, url: `http://${hostForUrl(host)}:${address.port}/` };
+    return { server, url: `${config.tls === undefined ? "http" : "https"}://${hostForUrl(host)}:${address.port}/` };
+};
+
+// HELPER :: STRING, STRING -> { cert, key }
+// Reads cert.pem and key.pem from the directory, generating a self-signed pair with openssl on first use. The
+// certificate names localhost, the loopback address, the bound host and every IPv4 address of this machine, so a
+// phone on the LAN gets a secure context (Web Crypto, and so the ROM audit, need one) once it trusts the certificate.
+export const developmentCertificate = (directory: string, host: string): { readonly cert: Buffer; readonly key: Buffer } => {
+    const certPath = join(directory, "cert.pem");
+    const keyPath = join(directory, "key.pem");
+    if (!existsSync(certPath) || !existsSync(keyPath)) {
+        mkdirSync(directory, { recursive: true });
+        const addresses = new Set<string>(["127.0.0.1"]);
+        if (/^\d+\.\d+\.\d+\.\d+$/.test(host) && host !== "0.0.0.0") addresses.add(host);
+        for (const entries of Object.values(networkInterfaces())) for (const entry of entries ?? []) if (entry.family === "IPv4" && !entry.internal) addresses.add(entry.address);
+        const names = ["DNS:localhost", ...[...addresses].map((address) => `IP:${address}`)].join(",");
+        const result = spawnSync("openssl", ["req", "-x509", "-newkey", "rsa:2048", "-nodes", "-keyout", keyPath, "-out", certPath, "-days", "825",
+            "-subj", "/CN=arcade-runtime development", "-addext", `subjectAltName=${names}`], { encoding: "utf8" });
+        if (result.status !== 0) throw new Error(`--tls could not generate a certificate with openssl: ${result.stderr?.trim() || result.error?.message || "unknown failure"}`);
+    }
+    return { cert: readFileSync(certPath), key: readFileSync(keyPath) };
 };
 
 // HELPER :: [STRING] -> harnessServerConfig
@@ -411,6 +436,7 @@ const parseArguments = (args: string[]): HarnessServerConfig => {
         else if (option === "--ui-root") config.uiRoot = value;
         else if (option === "--preload") config.preload = value;
         else if (option === "--page") pages.push(value);
+        else if (option === "--tls") config.tls = value;
         else throw new Error(`Unknown option ${option}.`);
     }
     if (pages.length > 0) config.pages = pages;

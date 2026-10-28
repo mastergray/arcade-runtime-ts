@@ -1,7 +1,8 @@
 // realizes: docs/arcade-runtime-spec.md > §11.1 Preload config (validation, sanitisation and allowlisted serving)
 
 // Dependencies:
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";   // Creates disposable synthetic preload inputs
+import { mkdtempSync, mkdirSync, readdirSync, rmSync, writeFileSync } from "node:fs";   // Creates disposable synthetic preload inputs
+import { request as httpsRequest } from "node:https";          // Fetches the tls server without trusting its self-signed certificate
 import { tmpdir } from "node:os";                                  // Parent for test-only directories
 import { join, relative } from "node:path";                        // Builds config-relative paths without recording local roots
 import CTGTest, { CTGTestPredicates as P } from "ctg-js-test";     // Pipeline API and predicate builders
@@ -133,6 +134,29 @@ const pageServing = async (): Promise<Record<string, unknown>> => {
 const testFile: TestFile = {
     label: "harness preload config",
     cases: [
+        {
+            label: "--tls serves the same routes over https with a generated self-signed certificate",
+            run: () => CTGTest.init("harness tls")
+                .stage("start a tls server and fetch over https", async () => {
+                    const directory = mkdtempSync(join(tmpdir(), "arcade-harness-tls-"));
+                    writeFileSync(join(directory, "builds.json"), JSON.stringify({ families: [] }));
+                    const harness = await startHarnessServer({ port: 0, buildRoot: directory, tls: join(directory, "tls") });
+                    try {
+                        const status = await new Promise<number>((resolveStatus, reject) => {
+                            const request = httpsRequest(new URL("/builds.json", harness.url), { rejectUnauthorized: false }, (response) => { response.resume(); resolveStatus(response.statusCode ?? 0); });
+                            request.on("error", reject);
+                            request.end();
+                        });
+                        return { scheme: new URL(harness.url).protocol, status, files: readdirSync(join(directory, "tls")).sort() };
+                    } finally {
+                        harness.server.closeAllConnections();
+                        await new Promise<void>((closed) => harness.server.close(() => closed()));
+                        rmSync(directory, { recursive: true, force: true });
+                    }
+                })
+                .assert("https answers and the certificate pair was written", (state) => state.subject, P.equals<unknown>({ scheme: "https:", status: 200, files: ["cert.pem", "key.pem"] }))
+                .start(undefined),
+        },
         {
             label: "isPreloadConfig accepts the complete shape and rejects every invalid required or optional field",
             run: () => CTGTest.init("preload predicate")
