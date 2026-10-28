@@ -170,8 +170,9 @@
 .phone-bar { display: flex; align-items: center; gap: 4px; padding: 4px; background: var(--face); grid-area: bar; z-index: 2; transition: opacity .25s; }
 .phone-bar .btn { flex: 1; padding-inline: 6px; }
 .phone-bar [data-phone-action="menu"], .phone-bar [data-phone-action="fullscreen"] { flex: 0 0 44px; }
-.phone-bar [data-phone-bar-status] { flex: 1; color: var(--light); font-size: var(--role-small); text-align: center; }
+.phone-bar [data-phone-bar-status] { flex: 1; color: var(--ink); font-size: var(--role-small); text-align: center; }
 [data-bar-visible="false"] .phone-bar { opacity: 0; pointer-events: none; }
+[data-layout="phone-landscape"][data-bar-visible="false"] .phone-bar { display: none; }   /* the row collapses so the canvas takes the whole screen; a tap brings it back */
 :root:not([data-input="touch"]) [data-bar-visible="false"] .phone-bar:focus-within { opacity: 1; pointer-events: auto; }
 .phone-switches { display: flex; gap: 8px; overflow-x: auto; padding: 4px; min-inline-size: 0; }
 .phone-switches .switch-row { flex: none; flex-wrap: nowrap; }
@@ -192,12 +193,13 @@
 [data-density="phone"] [data-status-cell="autosave"] { display: none; }
 [data-layout="phone-landscape"][data-mode="local"] .local-window { grid-template-rows: minmax(0, 1fr); }
 [data-layout="phone-landscape"][data-mode="local"] .local-window > .title-bar { display: none; }
-[data-layout="phone-landscape"][data-mode="local"] .play-region { position: relative; grid-template: "directions game buttons" minmax(0, 1fr) / minmax(148px, 20%) minmax(0, 1fr) minmax(148px, 20%); }
-[data-layout="phone-landscape"][data-mode="local"] .play-region[data-controller-visible="false"] { grid-template: "game" minmax(0, 1fr) / minmax(0, 1fr); }
+/* The bar is a row of its own above the panels and the canvas (decided 2026-10-28: nothing sits over the game or the switches). */
+[data-layout="phone-landscape"][data-mode="local"] .play-region { position: relative; grid-template: "bar bar bar" auto "directions game buttons" minmax(0, 1fr) / minmax(148px, 20%) minmax(0, 1fr) minmax(148px, 20%); }
+[data-layout="phone-landscape"][data-mode="local"] .play-region[data-controller-visible="false"] { grid-template: "bar" auto "game" minmax(0, 1fr) / minmax(0, 1fr); }
 [data-layout="phone-landscape"][data-mode="local"] .play-surface { grid-area: game; grid-template-rows: minmax(0, 1fr); }
-[data-layout="phone-landscape"] .phone-bar { position: absolute; inset-block-start: 0; inset-inline: 0; background: rgba(40, 40, 40, .75); }
+[data-layout="phone-landscape"] .phone-bar { grid-area: bar; }
 [data-layout="phone-landscape"] .phone-controller { display: contents; }
-[data-layout="phone-landscape"] .phone-side-panel { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; min-block-size: 0; overflow: auto; gap: 4px; padding: 56px 4px 4px; background: var(--face); }
+[data-layout="phone-landscape"] .phone-side-panel { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; min-block-size: 0; overflow: auto; gap: 4px; padding: 4px; background: var(--face); }
 [data-layout="phone-landscape"] [data-side-panel="directions"] { grid-area: directions; }
 [data-layout="phone-landscape"] [data-side-panel="buttons"] { grid-area: buttons; }
 [data-layout="phone-landscape"][data-swap-sides="true"] [data-side-panel="directions"] { grid-area: buttons; }

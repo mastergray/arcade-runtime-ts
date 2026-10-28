@@ -409,12 +409,13 @@ The canvas fills the middle; the controller splits into two side panels.
 Operator keys, the six buttons, START** (decided 2026-10-25: switches
 above the primary controls, so thumbs rest on the d-pad and buttons at
 the bottom). **Swap sides** in the View tab mirrors the panels for
-left-handed play. The bar is a translucent strip over the top of the
-canvas in the same order as portrait: Games, Pause/Resume, Mute, Reset,
-the status text, Fullscreen, ☰. Games, Import, the Menu window with its
+left-handed play. The bar is a row of its own above the panels and the
+canvas (decided 2026-10-28 after the first phone hand test: nothing sits
+over the game or the switches), in the same order as portrait: Games,
+Pause/Resume, Mute, Reset, the status text, Fullscreen, ☰. Games, Import, the Menu window with its
 tabs and the windows behind the items are the portrait ones, centred and
 wider. With the controller off the canvas takes the whole screen and the
-strip stays.
+bar stays until it collapses (§8.3).
 
 ### 8.3 Rules
 
@@ -422,9 +423,10 @@ strip stays.
   long-press. Two-finger tap on the canvas opens the menu (§1.1).
 - The on-screen pad is on by default on a touch device and off when a
   gamepad connects; the Controller item turns it back on.
-- Fullscreen on a phone hides the title bar and status line; the strip
-  (landscape) or the bar (portrait) stays until the controller is off,
-  then it fades and returns on a tap.
+- Fullscreen on a phone hides the title bar and status line; the bar
+  stays until the controller is off, then in landscape it collapses
+  after a few seconds so the canvas has the whole screen, and returns on
+  a tap. Portrait keeps its bar.
 
 ## 9. Presentation mode
 
