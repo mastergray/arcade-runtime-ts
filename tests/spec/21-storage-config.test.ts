@@ -1,7 +1,9 @@
 // realizes: docs/arcade-runtime-spec.md > §10.7 ArcadeStorage and ArcadeRomStore predicates, construction and typed failures
 
 // Dependencies:
-import CTGTest, { CTGTestPredicates as P } from "ctg-js-test";   // Pipeline API and predicate builders
+import CTGTest, { CTGTestPredicates as P } from "ctg-js-test";
+import { createHash } from "node:crypto";                          // Reference digests for the pure SHA-256
+import { PURE_SHA256_SUBTLE, sha256 } from "../../src/ArcadeRomStore/sha256.js";   // The fallback outside secure contexts   // Pipeline API and predicate builders
 import ArcadeRomStore from "../../src/ArcadeRomStore/ArcadeRomStore.ts";
 import {
     isArcadeRomStoreConfig,
@@ -126,6 +128,25 @@ const withoutGlobal = async <T>(name: "indexedDB" | "crypto", run: () => Promise
 const testFile: TestFile = {
     label: "Arcade storage configuration and failures",
     cases: [
+        {
+            label: "the pure SHA-256 matches Node's digest for empty, short, block-boundary and multi-block inputs",
+            run: () => CTGTest.init("pure sha256")
+                .stage("digest reference inputs", async () => {
+                    const inputs = [new Uint8Array(0), new TextEncoder().encode("abc"), new Uint8Array(55).fill(7), new Uint8Array(56).fill(9), new Uint8Array(64).fill(1), new Uint8Array(1000).map((_, i) => i & 0xff)];
+                    const hex = (buffer: ArrayBuffer): string => [...new Uint8Array(buffer)].map((b) => b.toString(16).padStart(2, "0")).join("");
+                    const matches = inputs.map((bytes) => hex(sha256(bytes)) === createHash("sha256").update(bytes).digest("hex"));
+                    const viaSubtle = hex(await PURE_SHA256_SUBTLE.digest("SHA-256", inputs[1]!));
+                    const rejected = await PURE_SHA256_SUBTLE.digest("SHA-1", inputs[1]!).then(() => false, () => true);
+                    return { matches, viaSubtle, rejected };
+                })
+                .assert("every digest matches and other algorithms are refused", (state) => state.subject, P.equals<unknown>({
+                    matches: [true, true, true, true, true, true],
+                    viaSubtle: "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+                    rejected: true,
+                }))
+                .start(undefined),
+        },
+
 
         // IDBFactoryLike and ArcadeStorage configs
         predicateCase("isIDBFactoryLike accepts an object with open()", isIDBFactoryLike, FACTORY, true),
@@ -217,7 +238,16 @@ const testFile: TestFile = {
         // Unsupported browser defaults
         unsupportedCase("ArcadeStorage.init throws UNSUPPORTED when globalThis.indexedDB is absent", () => withoutGlobal("indexedDB", async () => thrownBy(() => ArcadeStorage.init(STORAGE_INIT_CONFIG)))),
         unsupportedCase("ArcadeRomStore.init rejects UNSUPPORTED when globalThis.indexedDB is absent", () => withoutGlobal("indexedDB", () => rejectedBy(ArcadeRomStore.init({ subtle: SUBTLE, now: NOW })))),
-        unsupportedCase("ArcadeRomStore.init rejects UNSUPPORTED when globalThis.crypto.subtle is absent", () => withoutGlobal("crypto", () => rejectedBy(ArcadeRomStore.init({ indexedDB: FACTORY, now: NOW })))),
+        {
+            label: "ArcadeRomStore.init falls back to the pure SHA-256 when globalThis.crypto.subtle is absent",
+            run: () => CTGTest.init("ROM-store digest fallback")
+                .stage("init without Web Crypto", () => withoutGlobal("crypto", async () => {
+                    const store = await ArcadeRomStore.init({ indexedDB: FACTORY, now: NOW, name: "test-rom-store" });
+                    return store instanceof ArcadeRomStore;
+                }))
+                .assert("the store constructs outside a secure context", (state) => state.subject, P.equals(true))
+                .start(undefined),
+        },
 
         // Complete IndexedDB failure boundary
         indexedDBFailureCase("open"),

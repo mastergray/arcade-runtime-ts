@@ -2,6 +2,7 @@
 
 // Dependencies:
 import ArcadeRuntimeError from "../ArcadeRuntimeError/ArcadeRuntimeError.js";   // INVALID_CONFIG and UNSUPPORTED failures
+import { PURE_SHA256_SUBTLE } from "./sha256.js";           // Digest fallback outside secure contexts
 import { storageFailed, withObjectStore } from "../ArcadeStorage/indexedDB.js";   // Complete IndexedDB failure boundary
 import { isRomFile, isRomName, romNameKey } from "../shared.types.js";   // Public ROM validation and key folding
 
@@ -165,11 +166,9 @@ export default class ArcadeRomStore {
             code: ArcadeRuntimeError.CODE.UNSUPPORTED,
             message: "This environment has no IndexedDB.",
         });
-        const subtle = config.subtle ?? (globalThis as { crypto?: { subtle?: SubtleCryptoLike } }).crypto?.subtle;
-        if (subtle === undefined) throw new ArcadeRuntimeError({
-            code: ArcadeRuntimeError.CODE.UNSUPPORTED,
-            message: "This environment has no Web Crypto digest support.",
-        });
+        // Web Crypto exists only in a secure context; a page served over plain http on a LAN address (a phone against
+        // the development server) has none, so the pure SHA-256 stands in. Same digests, slower, which archives tolerate.
+        const subtle = config.subtle ?? (globalThis as { crypto?: { subtle?: SubtleCryptoLike } }).crypto?.subtle ?? PURE_SHA256_SUBTLE;
         return new ArcadeRomStore({
             indexedDB: factory,
             subtle,

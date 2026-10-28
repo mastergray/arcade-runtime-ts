@@ -1581,7 +1581,7 @@ page can offer "pick your ROM zips once":
 ```ts
 interface ArcadeRomStoreConfig {
     readonly indexedDB: IDBFactoryLike;     // injected; init supplies globalThis.indexedDB
-    readonly subtle: SubtleCryptoLike;      // injected; init supplies crypto.subtle
+    readonly subtle: SubtleCryptoLike;      // injected; init supplies crypto.subtle, or a pure SHA-256 outside secure contexts (plain http on a LAN address, 2026-10-28)
     readonly now: () => number;             // injected; init supplies Date.now
     readonly name?: string;                 // database name override
 }
