@@ -46,6 +46,7 @@ function useLibrarySnapshot(library: LibraryModel): LibrarySnapshot {
 function useSessionSnapshot(session: SessionModel | null): SessionSnapshot {
     const [, render] = useState(0);
     useEffect(() => session?.subscribe(() => render((value) => value + 1)), [session]);
+
     return session?.snapshot() ?? EMPTY_SESSION;
 }
 
@@ -66,6 +67,12 @@ function LocalWorkspace({ models }: { readonly models: LocalModels }) {
     const landscape = layout === "phone-landscape";
     const controller = controllerVisible(preferences.controllerView, sessionState.touchDevice, sessionState.pads.length);
     const [phoneWindow, setPhoneWindow] = useState<"games" | "menu" | null>(null);
+    const phoneMenuOpen = phone && !presentation && phoneWindow === "menu";
+    useEffect(() => {
+        if (!phoneMenuOpen || session === null) return;
+        session.takePause();
+        return () => session.releasePause();
+    }, [phoneMenuOpen, session]);
     const [barVisible, setBarVisible] = useState(true);
     const [activity, setActivity] = useState(0);
     const { padHint, padStatus } = usePresentation(session, sessionState, preferences, canvasRef, phone ? () => setPhoneWindow((current) => current === "menu" ? null : "menu") : undefined);

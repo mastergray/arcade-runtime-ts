@@ -376,7 +376,9 @@ const cases: TestCase[] = [{
             await page.waitForSelector('[data-modal="controls"]', { state: 'detached' });
             await twoFingerTap(page);
             await page.waitForSelector('[data-phone-menu]');
+            if ((await page.evaluate(() => (window as unknown as TestWindow).__arcadeLocalCabinet.player.status)) !== 'paused') throw new Error('The Menu window did not pause the game');
             await closeMenu(page);
+            await page.waitForFunction(() => (window as unknown as TestWindow).__arcadeLocalCabinet.player.status === 'running');
         })
         .interact("connect a standard pad, then explicitly turn the controller back on", async ({ page }) => {
             await page.evaluate(() => { (window as unknown as TestWindow).__arcadePhoneTest.connected = true; window.dispatchEvent(new Event('gamepadconnected')); });

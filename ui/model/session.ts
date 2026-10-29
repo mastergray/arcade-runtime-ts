@@ -278,9 +278,22 @@ export class SessionModel {
     pauseResume(): void {
         const cabinet = this.running();
         if (cabinet === null) return;
+        this.windowPausedCabinet = null;   // The user took the pause over; no window resumes it on close
         if (cabinet.player.status === "paused") cabinet.player.resume();
         else cabinet.player.pause();
     }
+
+    // The phone Menu window pauses a running game while it is open (decided 2026-10-28), with the presentation
+    // window's ownership rule: a pause the user already held, or takes over inside the window, stays.
+    takePause(): void {
+        const cabinet = this.running();
+        if (cabinet?.player.status === "running") {
+            this.windowPausedCabinet = cabinet;
+            cabinet.player.pause();
+        }
+    }
+
+    releasePause(): void { this.restoreWindowOwnership(); }
 
     async toggleMute(): Promise<void> {
         await this.run("Sound could not be changed", async (cabinet) => {

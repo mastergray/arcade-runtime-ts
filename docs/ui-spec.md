@@ -206,10 +206,14 @@ play. While the menu is open the pad belongs to the UI.
 
 ### 4.4 Pause
 
-Presentation: the menu opens over the paused game; Resume unpauses. Local:
-the menu is beside the game and never pauses by itself; the cabinet strip
-has Pause, and the Game view mirrors it. Both: a hidden tab pauses and
-return resumes, as today.
+Presentation: the menu opens over the paused game; Resume unpauses. Local
+desktop: the menu is beside the game and never pauses by itself; the
+cabinet strip has Pause, and the Game view mirrors it. Local phone: the
+Menu window pauses a running game while it is open and resumes it on
+close, whichever way it was opened (☰, the pad gesture, the two-finger
+tap; decided 2026-10-28); a pause the user already held, or takes over
+inside the window, stays. Both: a hidden tab pauses and return resumes,
+as today.
 
 ### 4.5 Per-game and global settings: the preference store
 
