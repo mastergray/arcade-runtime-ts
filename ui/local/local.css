@@ -212,6 +212,13 @@
 [data-density="phone"][data-fullscreen="true"][data-mode="local"] .local-window { grid-template-rows: minmax(0, 1fr); }
 /* Fullscreen on a phone is the game and, when on, the controller: the bar goes with the title and status (decided 2026-10-28). */
 [data-density="phone"][data-fullscreen="true"][data-mode="local"] .phone-bar { display: none; }
+/* Fullscreen on a phone targets the page root, not the display container, so the frame's bevel and the window's
+   edges would stay: drop them as the desktop's :fullscreen and the presentation stage do, and let the stage colour fill. */
+[data-density="phone"][data-fullscreen="true"][data-mode="local"] .local-window { border: 0; box-shadow: none; background: var(--stage); }
+[data-density="phone"][data-fullscreen="true"][data-mode="local"] .canvas-frame { border: 0; box-shadow: none; }
+[data-density="phone"][data-fullscreen="true"][data-mode="local"] .play-region { gap: 0; padding: 0; background: var(--stage); }
+[data-density="phone"][data-fullscreen="true"][data-mode="local"] .play-surface { padding: 0; }
+[data-density="phone"][data-fullscreen="true"][data-mode="local"] .phone-controller, [data-density="phone"][data-fullscreen="true"][data-mode="local"] .phone-switches { background: var(--face); }
 [data-density="phone"] .veil { padding: 0; }
 [data-density="phone"] .modal { inline-size: 92%; max-block-size: 92dvh; }
 [data-density="phone"] .modal-body { padding: 8px; }
