@@ -35,7 +35,8 @@ export function PhonePage({ model, state, landscape, controller, swapSides, acti
             {landscape ? <><span data-phone-bar-status>{state.status}</span><Button label="⛶" aria-label="Fullscreen" data-phone-action="fullscreen" onClick={() => actions.fullscreen(false)} /></> : null}
             <Button label="☰" aria-label="Menu" data-phone-action="menu" onClick={onMenu} />
         </PhoneBar>
-        {!landscape && running ? <SwitchesRow cabinet={controls.cabinet} operator={controls.operator} onSwitch={tapSwitch} /> : null}
+        {/* The switches belong to the controller: off hides them too (2026-10-28). */}
+        {!landscape && running && controller ? <SwitchesRow cabinet={controls.cabinet} operator={controls.operator} onSwitch={tapSwitch} /> : null}
         {controller ? <div className="phone-controller" data-phone-controller data-swap-sides={swapSides}>
             <SidePanel side="directions">
                 {landscape && running ? <SwitchesRow cabinet={controls.cabinet} onSwitch={tapSwitch} /> : null}

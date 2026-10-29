@@ -423,10 +423,15 @@ bar stays until it collapses (§8.3).
   long-press. Two-finger tap on the canvas opens the menu (§1.1).
 - The on-screen pad is on by default on a touch device and off when a
   gamepad connects; the Controller item turns it back on.
-- Fullscreen on a phone hides the title bar and status line; the bar
-  stays until the controller is off, then in landscape it collapses
-  after a few seconds so the canvas has the whole screen, and returns on
-  a tap. Portrait keeps its bar.
+- Fullscreen on a phone hides the title bar, the status line and the
+  bar (decided 2026-10-28 after the first phone hand test: fullscreen is
+  the game, as on the desktop, plus the controller when it is on). The
+  Menu stays reachable by the two-finger tap, and its Fullscreen item
+  leaves fullscreen. Outside fullscreen the bar stays until the
+  controller is off, then in landscape it collapses after a few seconds
+  so the canvas has the whole screen, and returns on a tap.
+- The controller switch hides the switches row with the d-pad and
+  buttons; the Cabinet and Operator switches are part of the controller.
 
 ## 9. Presentation mode
 

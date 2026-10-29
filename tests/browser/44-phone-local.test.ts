@@ -342,8 +342,10 @@ const cases: TestCase[] = [{
             await tap(page, '[data-phone-menu-item="fullscreen"]');
             await page.waitForSelector('[data-fullscreen="true"]');
             if (await page.locator('.local-window > [data-component="title-bar"], .local-window > [data-component="status-bar"]').count() !== 0) throw new Error('Fullscreen retained the title or status line');
-            if (await page.locator('[data-phone-bar]').count() !== 1) throw new Error('Fullscreen lost the phone bar');
-            await menu(page, 'view');
+            if (await page.locator('[data-phone-bar]:visible').count() !== 0) throw new Error('Fullscreen kept the phone bar');
+            await twoFingerTap(page);   // the bar is gone in fullscreen; the Menu comes from the canvas gesture
+            await page.waitForSelector('[data-phone-menu]');
+            await tap(page, '[data-phone-menu] [data-tab="view"]');
             await tap(page, '[data-phone-menu-item="fullscreen"]');
             await page.waitForSelector('[data-fullscreen="false"]');
             await page.evaluate(() => { (window as unknown as TestWindow).__arcadePhoneTest.allowFullscreen = false; });

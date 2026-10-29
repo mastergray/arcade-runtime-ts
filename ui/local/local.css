@@ -210,6 +210,8 @@
 [data-layout="phone-landscape"] .phone-controller .button-bank { gap: 2px; margin-block-start: auto; }
 [data-layout="phone-landscape"] .phone-controller .dpad { flex: none; margin-block-start: auto; }
 [data-density="phone"][data-fullscreen="true"][data-mode="local"] .local-window { grid-template-rows: minmax(0, 1fr); }
+/* Fullscreen on a phone is the game and, when on, the controller: the bar goes with the title and status (decided 2026-10-28). */
+[data-density="phone"][data-fullscreen="true"][data-mode="local"] .phone-bar { display: none; }
 [data-density="phone"] .veil { padding: 0; }
 [data-density="phone"] .modal { inline-size: 92%; max-block-size: 92dvh; }
 [data-density="phone"] .modal-body { padding: 8px; }
