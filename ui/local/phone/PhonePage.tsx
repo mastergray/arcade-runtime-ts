@@ -16,9 +16,10 @@ export interface PhonePageProps {
     readonly actions: LocalMenuActions;
     readonly onGames: () => void;
     readonly onMenu: () => void;
+    readonly bar?: boolean;   // false in presentation mode: the window is the menu, nothing else on screen
 }
 
-export function PhonePage({ model, state, landscape, controller, swapSides, actions, onGames, onMenu }: PhonePageProps) {
+export function PhonePage({ model, state, landscape, controller, swapSides, actions, onGames, onMenu, bar = true }: PhonePageProps) {
     const controls = model.stripControls();
     const running = state.machine !== null;
     const tapSwitch = (id: string): void => {
@@ -27,14 +28,14 @@ export function PhonePage({ model, state, landscape, controller, swapSides, acti
         else if (id.startsWith("key:")) model.tap({ kind: "key", key: id.slice(4) as ArcadeKeyName });
     };
     return <>
-        <PhoneBar>
+        {bar ? <PhoneBar>
             <Button label="Games" data-phone-action="games" onClick={onGames} />
             <Button label={state.status === "paused" ? "Resume" : "Pause"} data-phone-action="pause" disabled={!running} onClick={actions.pauseResume} />
             <Button label="Mute" aria-pressed={state.muted} data-phone-action="mute" disabled={!running} onClick={actions.mute} />
             <Button label="Reset" data-phone-action="reset" disabled={!running} onClick={actions.reset} />
             {landscape ? <><span data-phone-bar-status>{state.status}</span><Button label="⛶" aria-label="Fullscreen" data-phone-action="fullscreen" onClick={() => actions.fullscreen(false)} /></> : null}
             <Button label="☰" aria-label="Menu" data-phone-action="menu" onClick={onMenu} />
-        </PhoneBar>
+        </PhoneBar> : null}
         {/* The switches belong to the controller: off hides them too (2026-10-28). */}
         {!landscape && running && controller ? <SwitchesRow cabinet={controls.cabinet} operator={controls.operator} onSwitch={tapSwitch} /> : null}
         {controller ? <div className="phone-controller" data-phone-controller data-swap-sides={swapSides}>

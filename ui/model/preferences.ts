@@ -42,6 +42,7 @@ export interface GlobalPreferences {
         readonly fullscreenOnStart: boolean;
         readonly muteOnStart: boolean;
         readonly presentationHint: boolean;
+        readonly presentationController: boolean;   // The on-screen controller in presentation mode on a touch device; off by default (it shows on the TV)
         readonly mode: "local" | "presentation";
     };
     readonly video: {
@@ -111,7 +112,7 @@ export const DEFAULT_GLOBAL_PREFERENCES: GlobalPreferences = Object.freeze({
     size: "fit",
     showFps: false,
     autoSave: true,
-    general: Object.freeze({ fullscreenOnStart: false, muteOnStart: false, presentationHint: true, mode: "local" }),
+    general: Object.freeze({ fullscreenOnStart: false, muteOnStart: false, presentationHint: true, presentationController: false, mode: "local" }),
     video: Object.freeze({ filter: "pixelated", crop: DEFAULT_CROP }),
     audio: Object.freeze({ volume: 1 }),
     storage: Object.freeze({ strictness: "strict" }),
@@ -205,6 +206,7 @@ const globalRecord = (value: unknown): GlobalPreferences => {
             fullscreenOnStart: typeof general?.fullscreenOnStart === "boolean" ? general.fullscreenOnStart : false,
             muteOnStart: typeof general?.muteOnStart === "boolean" ? general.muteOnStart : false,
             presentationHint: typeof general?.presentationHint === "boolean" ? general.presentationHint : true,
+            presentationController: typeof general?.presentationController === "boolean" ? general.presentationController : false,
             mode: general?.mode === "presentation" ? "presentation" : "local",
         }),
         video: Object.freeze({
@@ -424,7 +426,7 @@ export class PreferenceStore {
         const importedGlobal = source.global as Record<string, unknown>;
         const importedGeneral = record(importedGlobal.general);
         const compatibleGlobal = { controllerView: "auto", swapSides: false, ...importedGlobal, general: {
-            presentationHint: true, mode: "local", ...importedGeneral,
+            presentationHint: true, presentationController: false, mode: "local", ...importedGeneral,
         } };
         if (!jsonEqual(compatibleGlobal, global)) throw new TypeError("The settings file contains invalid global values.");
         const games: Record<string, GamePreferences> = {};

@@ -164,7 +164,7 @@ is player 1.
 | --- | :-: | :-: | --- | --- |
 | Enter presentation mode: switch the page to the TV skin, lock landscape, go fullscreen when a game starts | yes | — | new: skin, orientation lock | The device is already mirrored or cabled; the page cannot tell and does not try, beyond offering the mode when a second screen is reported |
 | Leave presentation mode: back to the local skin; the game stays as it was, so a game paused under the window stays paused and the local Pause / Resume shortcut takes over (decided 2026-10-26) | — | yes | new | |
-| On-screen touch pad in presentation mode: off by default, switchable | — | yes | M28 | It shows on the TV when on |
+| On-screen touch pad in presentation mode: off by default, switchable | — | yes | done 2026-10-28 with the phone work: the window's **Controller** action on a touch device, preference `general.presentationController` | It shows on the TV when on |
 | Menu gesture status: the connected pad's gesture, or the warning that it has none | — | yes | new | Links to Controls |
 | Hint on first start: how to open the menu | — | yes | new | Three seconds, once per session |
 
@@ -480,4 +480,9 @@ button away.
 
 The same window at phone-landscape size, the buttons narrower and the
 card reduced to name and status. Portrait is not supported in
-presentation mode: the page locks landscape when a game starts.
+presentation mode: the page locks landscape when a game starts. On a
+touch device the window gains a **Controller** action (off by default,
+remembered): on, the phone's on-screen controller sits beside the game
+exactly as on the local phone page, without the bar, so a phone with no
+pad can still play while mirrored; it shows on the TV, which is why it
+is off by default (2026-10-28).

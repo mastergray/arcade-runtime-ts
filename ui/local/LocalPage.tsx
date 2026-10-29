@@ -297,8 +297,9 @@ function LocalWorkspace({ models }: { readonly models: LocalModels }) {
             <Window className="local-window" hideTitle={presentation || phone && sessionState.fullscreen} title={phone ? "Arcade Library" : `Arcade Library — ${titleGame}`} secondary={phone ? titleGame : "Play mode"} menu={presentation || phone ? undefined : menus} status={presentation || phone && (landscape || sessionState.fullscreen) ? undefined : status}>
                 <div className="local-layout">
                     {presentation || phone ? null : games}
-                    <div className="play-region" data-region="play-and-controller" data-controller-visible={controller}>
+                    <div className="play-region" data-region="play-and-controller" data-controller-visible={presentation ? phone && preferences.general.presentationController : controller}>
                         <PlaySurface canvasRef={canvasRef} containerRef={containerRef} session={sessionState} showFps={preferences.showFps} presentation={presentation} />
+                        {session !== null && presentation && phone && preferences.general.presentationController ? <PhonePage model={session} state={sessionState} landscape={landscape} controller swapSides={preferences.swapSides} actions={actions} bar={false} onGames={() => undefined} onMenu={() => undefined} /> : null}
                         {presentation || session === null ? null : phone ? <PhonePage model={session} state={sessionState} landscape={landscape} controller={controller} swapSides={preferences.swapSides} actions={actions}
                             onGames={() => { setModal(null); setPhoneWindow("games"); }} onMenu={() => setPhoneWindow("menu")} /> : controller ? <Strip model={session} session={sessionState} /> : null}
                     </div>
