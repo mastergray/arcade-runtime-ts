@@ -63,7 +63,7 @@ for v1.0.0 because no lawful set was available locally.
 
 ## Status
 
-Private, version 0.0.0; the 1.0.0 release is a separate decision. As of
+Private, version 0.99.0 (set 2026-10-30 for the wider hand test); the 1.0.0 release is a separate decision. As of
 2026-10-29 the runtime, 26 family builds, the desktop page with its dialogs,
 presentation mode and the phone layouts are merged and hand-tested; the
 remaining work is on the roadmap. The implementation path is direct MAME

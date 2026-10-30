@@ -1,6 +1,6 @@
 {
   "name": "arcade-runtime-ts",
-  "version": "0.0.0",
+  "version": "0.99.0",
   "description": "TypeScript runtime for playing arcade games in the browser from user-supplied ROMs",
   "private": true,
   "type": "module",
