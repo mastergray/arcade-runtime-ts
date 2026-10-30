@@ -45,7 +45,7 @@ exactly which archive and file a set is missing.
 | `atari-classic` | Atari vector boards (`bzone.c`, `tempest.c`), `rampart.c` and the 6502 `centiped.c` board | measured |
 | `misc-16` | Data East (`dec0.c`, `karnov.c`), Seibu (`raiden.c`, `raiden2.c`, `r2dx_v33.c`), Toaplan `snowbros.c`, Technos `shadfrce.c`, Rare `btoads.c` and Data East `cninja.c` boards (`btoads.c` needs the user's `bsmt2000.zip` device ROM) | measured |
 | `namco-s1` | Namco System 1 and System 86 | builds; evidence deferred |
-| `namco-s2` | Namco System 2 | builds; evidence deferred |
+| `namco-s2` | Namco System 2 | measured |
 | `taito-classic` | Taito 8-bit boards (`bublbobl.c`, `arkanoid.c`, `tnzs.c` and related) and the Taito America `qix.c` board | measured |
 | `nintendo-classic` | Nintendo Z80 board (`dkong.c`; 8035 sound, NES APU, discrete) | measured |
 | `leland` | Leland twin-Z80 board with the 80186 sound CPU (`leland.c`) | measured |

@@ -64,7 +64,7 @@ not create startup-decrypted ROM copies. No machine in the family fails the
 
 ## F4 — What is the slowest Chromium time from `callMain` to first frame?
 
-pending private set
+Measured 2026-10-30 by the integrator on the desktop reference host with the `namcos2.c` title from a private preload config, through `tests/browser/33-family-measurements.test.ts`: 440 ms from `callMain` to the first frame.
 
 The integrator must use an ignored `ARCADE_PRELOAD_CONFIG` for a lawful set
 and the mechanics from `tests/browser/27-mame-adapter.test.ts`. For the
@@ -75,7 +75,7 @@ network transfer. Record the browser version and desktop CPU with the result.
 
 ## F5 — Are native refresh and upright geometry correct?
 
-pending private set
+Measured 2026-10-30: 224 × 288 vertical at 60.606 Hz, frames valid; cadences 60 Hz → 60.58 fps (−0.04 %), 90 Hz → 60.82 fps (0.35 %), 120 Hz → 60.62 fps (0.03 %), 144 Hz → 60.60 fps (0.00 %).
 
 The integrator must use a lawful set and record its expected native upright
 width, height and refresh from public MAME metadata. Record the first frame's
@@ -86,7 +86,7 @@ arrive upright at the expected geometry.
 
 ## F6 — Does the heaviest title sustain full speed?
 
-pending private set
+Measured 2026-10-30: 60-second sustained ratio 1.0001 on the desktop reference host. The user's hand test the same day found the title playable at speed. The family is measured; its first title runs from a set rebuilt to the 0.161 layout.
 
 The integrator must use a lawful set for the family's heaviest title. After
 startup and a warm-up interval, measure exactly 60 seconds of wall time on

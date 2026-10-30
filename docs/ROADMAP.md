@@ -110,6 +110,7 @@ Status values: `todo`, `ready` (brief written, can be started),
 
 ## Log
 
+- 2026-10-30 — `namco-s2` measured for the first time (F4 440 ms, F5 within 0.35 %, F6 1.0001) from a set rebuilt to the 0.161 layout; the user's hand test agrees. W33 merged the same day: `gradius3.c` into `konami-16` (F4 556 ms, F6 1.0000). Reset resumes a paused game; version 0.99.0.
 - 2026-10-26 — W23b hand test: Restore defaults honours both scopes. W32 presentation mode merged (`74cfd89`) and hand-tested: Play mode keeps the pause, the last frame fills its frame, TV d-pad sizing. The W23a analogue driver gained four fixes from the per-board hand test (relative kinds leave the arrows digital, paddles centre, key speed matches MAME, keyboard pedals write the −1..1 axis). Machine info gained `inputs.joystick` (bridge patch 2 regenerated); on a joystick board a dial or trackball spins from the right stick. Every family rebuilt with the flag; gate 43 passed, 0 failed, 23 skipped. Import modal drops stored rows on close (§7.1).
 - 2026-10-24 — Family wave 5 merged the same evening it was cut: three agents in parallel, three gates green, 25 families in the matrix. Build ids reproduced on main after the merges.
 - 2026-10-24 — Family wave 5 cut as W31a–c after the user asked for all three remaining boards: the VS. System driver, the Mitchell board and the `taito-f3` extension with `superchs.c` (the W27g row of wave 3, now decided). M32 grouped with M26.
