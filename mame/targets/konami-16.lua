@@ -61,6 +61,8 @@ _G["createProjects_mame_konami-16"] = function(_target, _subtarget)
 		MAME_DIR .. "src/mame/video/xmen.c",
 		MAME_DIR .. "src/mame/drivers/gijoe.c",
 		MAME_DIR .. "src/mame/video/gijoe.c",
+		MAME_DIR .. "src/mame/drivers/gradius3.c",
+		MAME_DIR .. "src/mame/video/gradius3.c",
 		MAME_DIR .. "src/mame/drivers/mystwarr.c",
 		MAME_DIR .. "src/mame/video/mystwarr.c",
 		MAME_DIR .. "src/mame/drivers/spy.c",

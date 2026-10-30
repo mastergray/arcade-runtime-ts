@@ -13,6 +13,8 @@
         "src/mame/video/xmen.c",
         "src/mame/drivers/gijoe.c",
         "src/mame/video/gijoe.c",
+        "src/mame/drivers/gradius3.c",
+        "src/mame/video/gradius3.c",
         "src/mame/drivers/mystwarr.c",
         "src/mame/video/mystwarr.c",
         "src/mame/drivers/spy.c",

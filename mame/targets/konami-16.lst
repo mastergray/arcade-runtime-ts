@@ -1,5 +1,5 @@
 // Derived from pinned MAME 0.161 source (run at the source root):
-// for driver in tmnt simpsons xmen gijoe mystwarr spy; do
+// for driver in tmnt simpsons xmen gijoe gradius3 mystwarr spy; do
 //   comm -12 \
 //     <(sed -nE 's/^[[:space:]]*(GAME|GAMEL|GAME_CUSTOM)[[:space:]]*[(][^,]+,[[:space:]]*([a-z0-9_]+).*/\2/p' "src/mame/drivers/$driver.c" | LC_ALL=C sort -u) \
 //     <(sed -nE 's/^([a-z0-9_]+)([[:space:]]*\/\/.*)?$/\1/p' src/mame/mame.lst | LC_ALL=C sort -u) \
@@ -19,6 +19,9 @@ gijoej // src/mame/drivers/gijoe.c
 gijoeu // src/mame/drivers/gijoe.c
 glfgreat // src/mame/drivers/tmnt.c
 glfgreatj // src/mame/drivers/tmnt.c
+gradius3 // src/mame/drivers/gradius3.c
+gradius3a // src/mame/drivers/gradius3.c
+gradius3j // src/mame/drivers/gradius3.c
 lgtnfght // src/mame/drivers/tmnt.c
 lgtnfghta // src/mame/drivers/tmnt.c
 lgtnfghtu // src/mame/drivers/tmnt.c

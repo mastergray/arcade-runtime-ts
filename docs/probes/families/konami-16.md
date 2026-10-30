@@ -1,54 +1,50 @@
 # Konami 16-bit family probe
 
-Observed 2026-10-21 on Linux x86-64 with Node.js 22.22.2, npm 10.9.7,
-GNU gzip 1.10, Brotli 1.1.0, the pinned MAME 0.161 source archive and
-Emscripten 1.38.31. No ROM content was supplied to the build or metadata
-steps. A lawful ignored preload config was available for the browser probes;
-no private identity or path is recorded here.
+Observed 2026-10-30 on Linux x86-64 with Node.js 22.22.2, npm 10.9.7,
+GNU gzip 1.10, Node's Brotli encoder, the pinned MAME 0.161 source archive
+and Emscripten 1.38.31. No ROM content was supplied to the build or metadata
+steps. The W33 extension adds the board defined by `gradius3.c`; private
+machine, archive and path identities are not recorded here.
 
 ## F1 — Does the target pair compile and expose every machine?
 
-The committed [`konami-16.lua`](../../../mame/targets/konami-16.lua) and
+The extended [`konami-16.lua`](../../../mame/targets/konami-16.lua) and
 [`konami-16.lst`](../../../mame/targets/konami-16.lst) pair built through the
 production pipeline. The generated module completed the ROM-free `-listfull`
-and `-listxml` paths, and both the pipeline and explicit threading gates
-reported one fixed, non-shared 4,096-page memory with no worker or pthread
-markers.
+and `-listxml` paths, and the pipeline and explicit threading gates reported
+one fixed, non-shared 4,096-page memory with no worker or pthread markers.
 
 ```sh
-EMSDK_DIR="$PWD/res/emsdk" \
-  node --import tsx scripts/build-mame.ts konami-16 --jobs 4
+BASH_ENV="$PWD/.cache/w29-bash-env.sh" EMSDK_DIR="$PWD/res/emsdk" \
+  node --import tsx scripts/build-mame.ts konami-16 --jobs 8
 
 npm run probe:mame:threading -- \
   "$PWD/dist/mame/konami-16/mamekonami-16"
 ```
 
-| Result | Final corrected build wall time | `-listfull` machines | ROM-set metadata files |
-| ------ | ------------------------------: | -------------------: | ---------------------: |
-| Pass | 57.89 s on the reused source/object cache | 98 | 98 |
+| Result | Extended build wall time | `-listfull` machines | ROM-set metadata files |
+| ------ | -----------------------: | -------------------: | ---------------------: |
+| Pass | 47.10 s on the reused source/object cache | 101 | 101 |
 
-The first invocation unpacked the source and reached the link after 129.09 s,
-but the emsdk-bundled Node 8 could not initialize stderr when launched beneath
-the current Node 22 `spawnSync` capture (`ERR_UNKNOWN_STREAM_TYPE`). For the
-successful invocation, the local emsdk configuration temporarily selected the
-host Node 22 as Emscripten's JavaScript engine; the config was restored by a
-shell trap afterward. The MAME source, Emscripten version, LLVM tools and link
-flags remained pinned. A successful clean-source timing was therefore not
-available without the prohibited `--fresh` operation.
+The same prescribed command first built the unextended 98-machine baseline in
+108.76 s. The sandbox initially denied the shared SDK cache lock; redirecting
+only Emscripten's cache and temporary directories into ignored worktree
+storage allowed the pinned compiler, optimizer, source, patches and flags to
+run unchanged.
 
-The independently derived list had 98 entries and exactly matched the
-production count, so no list correction was needed. Source inspection added
-the six driver groups, their adjacent units and the shared Konami video IC
-units. In this release, `CPUS["M6809"]` supplies the M6809, HD6309 and KONAMI
-variants. The drivers also prove the need for YM3812, samples, OKIM6295,
-address-map banks and K053252 beyond the matrix shorthand.
+Independent derivation found 98 entries across the six existing driver files
+and three entries in `gradius3.c`. The 101-entry result exactly matched
+production `-listfull`, so no list correction was needed. Although the W33
+brief says the prior count was 106, the checked-in list, derivation, earlier
+probe and production baseline all establish that the actual prior count was
+98.
 
-The first genuine link identified the remaining `mystwarr.c`-class
-dependencies: `machine/konamigx.c` and `video/konamigx.c` provide the reused
-GX word handlers and mixer, while those helpers require the TMS57002 and
-K056800 cores. Adding those target-level dependencies resolved every undefined
-symbol. The resulting build identity is
-`04f873e154c60d13a083558a4e3f300ed603a437d4e86082f28975f529fe0d25`.
+The added board configures two M68000 CPUs, one Z80, YM2151, K007232, K052109
+and K051960. All selectable cores and shared video units were already present
+in the target. The only additions were `drivers/gradius3.c` and
+`video/gradius3.c`; the first complete extended link reported no further
+dependency. The resulting build identity is
+`f6c7c72d6f4bf82568e4897b8ee0fb5b40a12e258e811df5e09ed0c77a19ce0d`.
 
 ## F2 — What are the raw, gzip and Brotli sizes of the Wasm and JavaScript?
 
@@ -58,87 +54,79 @@ method in [`family-sizes.md`](../mame0161/family-sizes.md).
 
 | Artifact | Raw bytes | gzip -9 | Brotli 11 |
 | -------- | --------: | -------: | ---------: |
-| Wasm | 6,511,127 | 1,671,011 | 1,248,272 |
-| JavaScript | 302,191 | 65,596 | 55,293 |
+| Wasm | 6,538,443 | 1,679,491 | 1,254,423 |
+| JavaScript | 302,305 | 65,607 | 55,338 |
+
+The extension changes the Wasm download for every machine already in this
+family:
+
+| Wasm state | Raw bytes | gzip -9 | Brotli 11 |
+| ---------- | --------: | -------: | ---------: |
+| Before extension | 6,520,690 | 1,675,113 | 1,250,512 |
+| After extension | 6,538,443 | 1,679,491 | 1,254,423 |
+| Increase | 17,753 (0.27%) | 4,378 (0.26%) | 3,911 (0.31%) |
 
 ## F3 — Does the largest ROM set fit in 4,096 pages, and what is the peak?
 
-Summing the public ROM sizes in every generated metadata file finds `dadandrn`
-largest at 21,233,792 bytes. The safe adapter budget is:
+Summing the public ROM sizes in every generated metadata file finds the
+whole-family maximum in `mystwarr.c` at 21,233,792 bytes. The added
+`gradius3.c` board's maximum is 3,997,952 bytes. The safe adapter budget is:
 
 ```text
 4,096 × 65,536 × 0.75 = 201,326,592 bytes (192 MiB)
 ```
 
-Using the full uncompressed ROM sum once for supplied archive bytes and once
-for loaded regions gives a conservative metadata-only peak estimate of
-42,467,584 bytes, 21.09% of the safe budget, leaving 158,859,008 bytes. No
-machine in the family fails the §5 estimate, so the build remains at 4,096
-pages.
+Using the whole-family maximum once for supplied archive bytes and once for
+loaded regions gives a conservative metadata-only peak estimate of 42,467,584
+bytes, 21.09% of the safe budget, leaving 158,859,008 bytes. No machine in the
+family fails the §5 estimate, so the build remains at 4,096 pages.
+
+The added driver does not decode a large graphics region into a larger
+startup allocation. It maps a 2 MiB graphics region and copies selected data
+at run time into a fixed 128 KiB character-RAM window, so it does not displace
+the existing whole-family maximum.
 
 ## F4 — What is the slowest Chromium time from `callMain` to first frame?
 
-measured 2026-10-21/22: 521–929 ms to the first valid frame across five titles (four of them loaded); see the measured section below.
-
-The ignored lawful preload config validated and named an available family
-set, but this sandbox forbids the browser mechanics before any adapter code
-runs. The repository browser command failed every listening case with
-`listen EPERM: operation not permitted 127.0.0.1`. A throwaway probe then
-replaced localhost with Playwright request interception, but both the headless
-shell and full Chromium were terminated during process startup by the same
-socket policy (`sandbox_host_linux` or Crashpad `Operation not permitted`).
-Consequently neither startup time nor the required non-blank first-frame
-confirmation was observed.
-
-Outside this restricted sandbox, run the ignored preload through the real
-adapter and record Chromium wall-clock milliseconds from immediately before
-`adapter.start()`/`callMain()` to its first valid frame, plus time to the first
-frame containing a non-black RGB pixel. Exclude file selection and network
-transfer, and record browser version and desktop CPU.
+Pending integrator Chromium run for the parent machine from `gradius3.c`.
+This agent cannot run Chromium. Measure from immediately before
+`adapter.start()`/`callMain()` to the first valid frame and separately confirm
+the first non-black frame. The earlier six-driver family evidence remains
+521–929 ms across five private configurations, but it does not answer F4 for
+the added board.
 
 ## F5 — Are native refresh and upright geometry correct?
 
-measured: five titles at 320×224/60.000 Hz, 288×224/59.186 Hz, 304×224/59.170 Hz and 304×224/60.000 Hz, every frame at native size; worst cadence error 0.76 % (loaded), 0.25 % quiet; see the table below.
-
-The same pre-browser sandbox failure prevented geometry or cadence evidence.
-Outside this sandbox, record the first frame's upright width and height and
-the public MAME native refresh. Then measure emulated ticks per wall second at
-controlled 60, 90, 120 and 144 Hz scheduler cadences. Report each percentage
-error; every rate must be within 0.5% of native refresh, every delivered frame
-must retain native geometry, and at least one frame must be non-blank.
+Pending integrator Chromium run for the parent machine from `gradius3.c`.
+Source metadata describes a 320×224 horizontal display at 60 Hz; confirm
+native-size frames and non-blank output, then measure 60, 90, 120 and 144 Hz
+scheduler cadences against native refresh. The earlier six-driver evidence
+held native geometry with a worst measured cadence error of 0.76%.
 
 ## F6 — Does the heaviest title sustain full speed?
 
-measured: 60 s ratios 0.9990–1.0000; the heaviest title (288×224 at 59.186 Hz) holds 1.0000 on a quiet host.
+Pending integrator Chromium run for the parent machine from `gradius3.c`.
+After warm-up, measure exactly 60 seconds and report emulated seconds divided
+by wall seconds on desktop; the 4× CPU-throttled proxy remains informational.
+The existing `mystwarr.c`-class whole-family result held 1.0000 on a quiet
+host, but the added dual-M68000 board needs its own result before the extension
+is accepted for the family.
 
-The available private config is not a `mystwarr.c`-class title, so even a
-successful run would be representative rather than the strict heaviest-family
-gate. The sandbox prevented that representative run as well. Outside this
-environment, measure exactly 60 seconds after warm-up and report
-`emulated seconds / wall seconds` on desktop, then repeat under Chromium's 4×
-CPU-throttled mobile proxy. The desktop ratio must establish full speed; the
-proxy result is informational. A lawful `mystwarr.c`-class set is still
-needed for the strict F6 family result.
+## Earlier F4–F6 evidence for the six-driver family
 
-## F4–F6 measured 2026-10-21/22
+Measured 2026-10-21/22 with the production artifact, headless Chromium on the
+desktop host and the real adapter. Private identities remained in ignored
+preload configs. Loaded runs overlapped three Emscripten builds and are
+conservative; the quiet run established the earlier family's heaviest-board
+result.
 
-Measured with the `build-mame` production artifact, headless Chromium on the
-desktop host, the real adapter driven through
-`tests/browser/33-family-measurements.test.ts` (injected scheduler at a
-controlled cadence against a real clock) and the M3–M5 acceptance in
-`tests/browser/36-input-audio-acceptance.test.ts`. Identities stay in the
-ignored preload configs; titles are described by their native geometry.
-Runs marked "loaded" overlapped three Emscripten builds on the same host and
-are conservative; the 60 s ratio tolerance is 2 %, the cadence tolerance 1 %.
+| Configuration | F4 | F5 | F6 |
+| ------------- | -- | -- | -- |
+| 320×224 at 60.000 Hz (loaded) | 929 ms | 60 → 60.00 (−0.01%), 90 → 59.95 (−0.09%), 120 → 59.91 (−0.15%), 144 → 59.93 (−0.12%) | 1.0000 |
+| 288×224 at 59.186 Hz (loaded) | 795 ms | 60 → 59.27 (+0.15%), 90 → 59.46 (+0.46%), 120 → 59.21 (+0.04%), 144 → 59.26 (+0.12%) | 1.0000 |
+| 304×224 at 59.170 Hz (loaded) | 881 ms | 60 → 59.05 (−0.21%), 90 → 59.25 (+0.14%), 120 → 58.99 (−0.31%), 144 → 59.62 (+0.76%) | 0.9996 |
+| 288×224 at 59.186 Hz (quiet, earlier heaviest board) | 740 ms | 60 → 59.33 (+0.25%), 90 → 59.18 (−0.01%), 120 → 59.26 (+0.13%), 144 → 59.25 (+0.11%) | 1.0000 |
+| 304×224 at 60.000 Hz (loaded) | 521 ms | 60 → 60.15 (+0.25%), 90 → 59.95 (−0.08%), 120 → 60.12 (+0.21%), 144 → 59.99 (−0.02%) | 0.9990 |
 
-| Title | F4 | F5 | F6 | Acceptance |
-| ----- | -- | -- | -- | ---------- |
-| 320×224 at 60.000 Hz (loaded) | 929 ms | 60 → 60.00 (−0.01 %), 90 → 59.95 (−0.09 %), 120 → 59.91 (−0.15 %), 144 → 59.93 (−0.12 %) | 1.0000 | pass |
-| 288×224 at 59.186 Hz (loaded) | 795 ms | 60 → 59.27 (+0.15 %), 90 → 59.46 (+0.46 %), 120 → 59.21 (+0.04 %), 144 → 59.26 (+0.12 %) | 1.0000 | pass |
-| 304×224 at 59.170 Hz (loaded) | 881 ms | 60 → 59.05 (−0.21 %), 90 → 59.25 (+0.14 %), 120 → 58.99 (−0.31 %), 144 → 59.62 (+0.76 %) | 0.9996 | pass |
-| 288×224 at 59.186 Hz, heaviest (quiet) | 740 ms | 60 → 59.33 (+0.25 %), 90 → 59.18 (−0.01 %), 120 → 59.26 (+0.13 %), 144 → 59.25 (+0.11 %) | 1.0000 | pass |
-| 304×224 at 60.000 Hz (loaded) | 521 ms | 60 → 60.15 (+0.25 %), 90 → 59.95 (−0.08 %), 120 → 60.12 (+0.21 %), 144 → 59.99 (−0.02 %) | 0.9990 | pass |
-
-The heaviest title missed the 1 % cadence gate at 90 and 120 Hz (−2.3 %)
-only while three builds shared the host; the quiet re-measure is the row
-recorded.
+These measurements do not cover the added `gradius3.c` parent and therefore
+do not close W33's F4–F6 handoff.

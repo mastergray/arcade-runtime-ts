@@ -106,10 +106,11 @@ const FAMILY_TARGETS: readonly FamilyTarget[] = [
             "src/mame/drivers/simpsons.c",
             "src/mame/drivers/xmen.c",
             "src/mame/drivers/gijoe.c",
+            "src/mame/drivers/gradius3.c",
             "src/mame/drivers/mystwarr.c",
             "src/mame/drivers/spy.c",
         ],
-        expectedMachines: 98,
+        expectedMachines: 101,
     },
     {
         id: "leland",
