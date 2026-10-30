@@ -96,7 +96,7 @@ automatic controller resolver read those session facts.
   `[data-import-picker]`, `[data-import-file]`, `[data-import-status]`,
   `[data-store-all-check]`, `[data-import-play]` and the stored-file selectors.
 - Menu: `[data-modal="phone-menu"]`, `[data-phone-menu]`,
-  `[data-phone-menu-tab="state" | "view" | "settings"]`, its `[data-tab]`,
+  `[data-phone-menu-tab="view" | "configure" | "state"]` (reordered and renamed 2026-10-29), its `[data-tab]`,
   `#phone-slot`, `#phone-size` and `[data-phone-menu-item="save-slot" |
   "load-slot" | "save-progress" | "clear-saved-play" | "reset" | "restart" |
   "controller" | "fullscreen" | "swap-sides" | "presentation" | "settings" |

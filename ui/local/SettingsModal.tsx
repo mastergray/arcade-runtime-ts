@@ -117,7 +117,7 @@ export function SettingsModal(props: SettingsModalProps) {
             { label: "Stored files", value: <><span data-storage-count="files">{props.librarySnapshot.stored.length} · {formatArchiveSize(storedBytes)}</span> <Button size="sm" label="Manage" data-settings-manage="stored" onClick={props.onManageStored} /></> },
             { label: "Saved play", value: <span data-storage-count="saved-play">{savedPlayCount} games</span> },
             { label: "Per-game settings", value: <><span data-storage-count="overrides">{overrideCount}</span> <Button size="sm" label="Manage" data-settings-manage="per-game" onClick={props.onManageGames} /></> },
-            { label: "File check policy", value: <select data-setting="strictness" value={draft.storage.strictness} onChange={(event) => preview(replace(draft, "storage", { strictness: event.currentTarget.value as "strict" | "mame" }))}><option value="strict">Strict</option><option value="mame">MAME</option></select> },
+            { label: "File check policy", value: <select data-setting="strictness" value={draft.storage.strictness} onChange={(event) => preview(replace(draft, "storage", { strictness: event.currentTarget.value as "strict" | "mame" }))}><option value="strict">Strict: every file must match</option><option value="mame">As MAME: PLD files may be missing</option></select> },
         ]} />
         <Fieldset legend="Move settings">
             <FieldLine><input data-setting="include-saved-play" type="checkbox" checked={includeSavedPlay} onChange={(event) => setIncludeSavedPlay(event.currentTarget.checked)} /> Include saved play</FieldLine>

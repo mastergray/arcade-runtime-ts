@@ -395,12 +395,13 @@ buttons right); the status line (state, game metadata, touch, pads).
   Stored, Pending (naming the companion) and Skip, Store all and check.
   The screen stays until the user goes back, so several files can be
   added in turn.
-- **☰** opens a centred **Menu window** with three **tabs**, State (slot picker,
-  Save to slot, Load slot, Save progress, Clear saved play, Reset,
-  Restart from power-on), View (Controller on/off, Fullscreen, Size,
-  Presentation) and Settings (Settings, Controls, Stored files,
-  Technical log, File check), and a ✕ in its title bar; tapping outside
-  also closes it. No Close button.
+- **☰** opens a centred **Menu window** with three **tabs** in the order
+  View (Controller on/off, Fullscreen, Size, Presentation), Configure
+  (Settings, Controls, Stored files, Technical log, File check) and
+  State (slot picker, Save to slot, Load slot, Save progress, Clear saved
+  play, Reset, Restart from power-on), View first (order and the
+  Configure name decided 2026-10-29), and a ✕ in its title bar; tapping
+  outside also closes it. No Close button.
 - **The windows behind the items** (Settings, Controls, Presentation,
   Stored files, Per-game settings, Technical log, File check, the two
   confirmations) are the §7 modals as centred windows at 92 % width:

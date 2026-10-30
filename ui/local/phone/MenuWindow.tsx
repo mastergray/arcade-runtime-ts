@@ -18,15 +18,15 @@ interface MenuWindowProps extends Pick<LocalMenusProps, "running" | "supportsSav
 }
 
 export function MenuWindow(props: MenuWindowProps) {
-    const [tab, setTab] = useState("state");
+    const [tab, setTab] = useState("view");   // View · Configure · State (order decided 2026-10-29)
     const { actions } = props;
     const saveReason = !props.running ? "no game" : !props.supportsSave ? "driver cannot save" : undefined;
     const saved = props.gamePreferences.slots[props.selectedSlot]?.savedAt;
     const close = (action: () => void): (() => void) => () => { props.onClose(); action(); };
-    const step = (offset: number): void => setTab((current) => ["state", "view", "settings"][(["state", "view", "settings"].indexOf(current) + offset + 3) % 3]!);
+    const step = (offset: number): void => setTab((current) => ["view", "configure", "state"][(["view", "configure", "state"].indexOf(current) + offset + 3) % 3]!);
     return <FocusProvider acceptGamepad={props.acceptGamepad} onBack={props.onClose} onTabPrevious={() => step(-1)} onTabNext={() => step(1)}>
         <div data-modal="phone-menu" data-phone-menu data-phone-menu-tab={tab}><Modal title="Menu" onClose={props.onClose}>
-            <Tabs arrowSelect id="phone-menu-tabs" tabs={[{ id: "state", label: "State" }, { id: "view", label: "View" }, { id: "settings", label: "Settings" }]} active={tab} onChange={setTab} />
+            <Tabs arrowSelect id="phone-menu-tabs" tabs={[{ id: "view", label: "View" }, { id: "configure", label: "Configure" }, { id: "state", label: "State" }]} active={tab} onChange={setTab} />
             <div className="phone-menu-list">
                 {tab === "state" ? <>
                     <div className="phone-game-card"><strong>{props.title}</strong><small>{props.status}</small></div>

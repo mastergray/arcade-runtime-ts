@@ -216,7 +216,7 @@ const expectHeld = async (page: Page, expected: string[]): Promise<void> => {
     }
     throw new Error(`Held controls: ${actual.join(", ")}; expected ${expected.join(", ")}`);
 };
-const menu = async (page: Page, tab = "state"): Promise<void> => {
+const menu = async (page: Page, tab = "view"): Promise<void> => {
     await tap(page, '[data-phone-action="menu"]');
     await page.waitForSelector('[data-phone-menu]');
     await tap(page, `[data-phone-menu] [data-tab="${tab}"]`);
@@ -332,7 +332,7 @@ const cases: TestCase[] = [{
         .interact("keep fullscreen refusals in the log and preserve phone chrome on successful entry", async ({ page }) => {
             await menu(page, 'view');
             await tap(page, '[data-phone-menu-item="fullscreen"]');
-            await menu(page, 'settings');
+            await menu(page, 'configure');
             await tap(page, '[data-phone-menu-item="technical-log"]');
             await page.waitForFunction(() => document.querySelector('[data-modal="technical-log"]')?.textContent?.includes('Synthetic fullscreen refusal') === true);
             await page.touchscreen.tap(1, 1);
@@ -351,10 +351,10 @@ const cases: TestCase[] = [{
             await page.evaluate(() => { (window as unknown as TestWindow).__arcadePhoneTest.allowFullscreen = false; });
         })
         .interact("save slot 1, open Settings and Controls, then dismiss by tapping outside", async ({ page }) => {
-            await menu(page);
+            await menu(page, 'state');
             await tap(page, '[data-phone-menu-item="save-slot"]');
             await page.waitForFunction(() => (window as unknown as TestWindow).__arcadePhoneTest.saves.includes('slot1') && JSON.parse(localStorage.getItem('arcade-runtime:ui:game:synthetic-family/synthetic_machine') ?? '{}').slots?.slot1?.savedAt !== undefined);
-            await tap(page, '[data-phone-menu] [data-tab="settings"]');
+            await tap(page, '[data-phone-menu] [data-tab="configure"]');
             await tap(page, '[data-phone-menu-item="settings"]');
             await page.waitForSelector('[data-modal="settings"]');
             if (await page.locator('[data-phone-menu]').count() !== 0) throw new Error('Menu remained behind Settings');
@@ -364,7 +364,7 @@ const cases: TestCase[] = [{
             await page.waitForSelector('[data-settings-tab="video"]');
             await page.touchscreen.tap(1, 1);
             await page.waitForSelector('[data-modal="settings"]', { state: 'detached' });
-            await menu(page, 'settings');
+            await menu(page, 'configure');
             await tap(page, '[data-phone-menu-item="controls"]');
             await page.waitForSelector('[data-controls-tab="player1"]');
             const labels = await page.locator('[data-modal="controls"] [role="tab"]').allTextContents();
