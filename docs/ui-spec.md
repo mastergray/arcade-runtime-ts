@@ -294,6 +294,10 @@ details move into the games column as accordions.
   table says so and points at Stored files for everything stored in the
   browser. Second tab Stored
   files (§7.4). No search or filter in 1.0: the column scrolls.
+- A row whose strict check failed only on PLD files says so in its
+  details and offers **Use the MAME file check** (2026-10-29), which sets
+  the file check policy to MAME (the same setting as Settings › Storage)
+  and re-checks; MAME itself runs without those files.
 - **One row per game found**, the harness's cards folded into
   **accordions**: the closed row shows the generated icon, the name, and
   on the right either a **Play** button (the set is complete and checked)
@@ -460,7 +464,8 @@ three seconds; the local View menu can turn it off.
 | Area | Contents |
 | --- | --- |
 | Title bar | Library name; "Presentation mode · game paused" on the right |
-| Left | **Resume** (or **Play** when a different game is selected); **Games** (count); **Save state** ◀ slot 1–3 ▶; **Load state** ◀ slot ▶; **Reset** (MAME soft reset); **Controllers** (which pad is which player, the chords, the menu gesture, Test input; read-mostly, no key mapping); then **Play mode** (back to the full local page; the game keeps running) |
+| Left | **Resume** (or **Play** when a different game is selected); **Games** (count); **Save state** ◀ slot 1–3 ▶; **Load state** ◀ slot ▶; **Reset** (MAME soft reset); **Size** ◀ Fit / Stretch / Integer ▶ (the local
+View setting, added 2026-10-29 at the user's request); **Controllers** (which pad is which player, the chords, the menu gesture, Test input; read-mostly, no key mapping); then **Play mode** (back to the full local page; the game keeps running) |
 | Right, default | The current game: its last frame in a sunken frame, name, manufacturer · year · resolution · players · buttons, and a status line (Playing / Ready, when progress was saved, which slots are saved or empty) |
 | Right, after **Games** | The games list in place of the frame: flat rows with icon, name and a **Play** button on every playable row, or the red word (Missing files, Bad file, Not stored, Not a game). The running game's row is **highlighted as active** (tinted, "playing" in green, its button reads Resume). Up and down move the selection, A on a ready row launches it and closes the window; B goes back to the current game. A footer line says import and file management are in Play mode |
 | Right, after **Controllers** | The local **Controls dialog** (§7) scaled for the TV, nothing added: tabs Player 1 · Player 2 · Cabinet · Analogue · Test input; the device line, controller picture and Control / Keyboard / Gamepad n table with Change… on each row (Change… waits for a pad button or a key, so remapping works from the pad); Apply to ◀ this game / all games ▶; the Cabinet table with the Select chords, operator keys and the menu gesture row; Analogue rows as ◀ ▶ selectors; Test input table with the Now column; Restore defaults · OK · Cancel. Left and right at the tab strip switch tabs; B is Cancel |

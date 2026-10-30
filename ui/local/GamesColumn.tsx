@@ -15,6 +15,7 @@ export interface GamesColumnProps {
     readonly onStored: () => void;
     readonly onRemove: (name: string) => void;
     readonly onPlay: (key: string) => void;
+    readonly onMamePolicy?: () => void;   // Switch the file check policy to MAME from a row that only lacks PLD files
     readonly onResume: () => void;
     readonly onFileCheck: (key: string) => void;
 }
@@ -38,12 +39,13 @@ const archiveState = (library: LibraryModel, card: LibraryCard, name: string): {
     return { label: "Missing files", tone: "bad" };
 };
 
-function CardDetail({ card, library, onImport, onFileCheck, onRemove }: {
+function CardDetail({ card, library, onImport, onFileCheck, onRemove, onMamePolicy }: {
     readonly card: LibraryCard;
     readonly library: LibraryModel;
     readonly onImport: () => void;
     readonly onRemove: (name: string) => void;
     readonly onFileCheck: () => void;
+    readonly onMamePolicy?: () => void;
 }) {
     const metadata = card.metadata;
     if (metadata === null) return <p>{card.metadataError ?? "Game details are unavailable."}</p>;
@@ -57,6 +59,10 @@ function CardDetail({ card, library, onImport, onFileCheck, onRemove }: {
             })}
         </ul>
         <p className="game-verdict">{library.verdict(card.key) === "ready" ? "Ready to play." : card.checkError ?? "Add the required archives, then check them."}</p>
+        {library.mamePolicyWouldPass(card.key) ? <p className="game-verdict" data-mame-policy-hint>
+            Only PLD files are missing, and MAME runs without them.{" "}
+            {onMamePolicy === undefined ? "Switch the file check policy to MAME under Settings › Storage." : <Button size="sm" label="Use the MAME file check" data-use-mame-policy onClick={onMamePolicy} />}
+        </p> : null}
         <dl className="game-info">
             <dt>Family</dt><dd>{card.indexed.family}</dd>
             <dt>Machine</dt><dd>{metadata.machine}</dd>
@@ -86,7 +92,7 @@ const rowForCard = (props: GamesColumnProps, card: LibraryCard): GameListRow => 
         active: props.activeKey === card.key,
         status,
         open: props.openRows.has(card.key),
-        detail: <CardDetail card={card} library={props.library} onImport={props.onImport} onFileCheck={() => props.onFileCheck(card.key)} onRemove={props.onRemove} />,
+        detail: <CardDetail onMamePolicy={props.onMamePolicy} card={card} library={props.library} onImport={props.onImport} onFileCheck={() => props.onFileCheck(card.key)} onRemove={props.onRemove} />,
         detailActions: false,
         actionLabel: props.activeKey === card.key ? "Resume" : primaryAction,
         actionDisabled: false,

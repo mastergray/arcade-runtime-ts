@@ -5,7 +5,7 @@ import { ActionButton, Selector, Table, Window } from "../../kit/index.js";
 import type { LibraryModel } from "../../model/library.js";
 import type { PreferenceStore } from "../../model/preferences.js";
 import type { SessionModel } from "../../model/session.js";
-import type { LibrarySnapshot, LocalSlot, SessionSnapshot } from "../../model/types.js";
+import type { LibrarySnapshot, LocalSize, LocalSlot, SessionSnapshot } from "../../model/types.js";
 import { ControlsModal } from "../ControlsModal.js";
 
 export interface PresentationWindowProps {
@@ -19,6 +19,8 @@ export interface PresentationWindowProps {
 }
 
 const slots: LocalSlot[] = ["slot1", "slot2", "slot3"];
+const SIZES: LocalSize[] = ["fit", "stretch", "integer"];
+const sizeName = (size: LocalSize): string => size[0]!.toUpperCase() + size.slice(1);
 const slotName = (slot: LocalSlot): string => slot.replace("slot", "slot ");
 
 export function PresentationWindow({ session, state, library, snapshot, preferences, padStatus, onPreferences }: PresentationWindowProps) {
@@ -35,6 +37,11 @@ export function PresentationWindow({ session, state, library, snapshot, preferen
     const resume = (): void => { void session.presentationFullscreen(); session.closeWindow(); };
     const play = (key: string): void => { if (key === state.activeKey) resume(); else void session.start(key); };
     const activate = (): void => { if (playSelected) play(selected.key); else resume(); };
+    const applySize = (size: LocalSize): void => { session.setSize(size); onPreferences(); };
+    const changeSize = (step: number): void => {
+        const current = SIZES.indexOf(preferences.getGlobal().size);
+        applySize(SIZES[(current + step + SIZES.length) % SIZES.length]!);
+    };
     const slotAction = (kind: "save" | "load") => {
         const slot = kind === "save" ? saveSlot : loadSlot;
         const setSlot = kind === "save" ? setSaveSlot : setLoadSlot;
@@ -73,6 +80,10 @@ export function PresentationWindow({ session, state, library, snapshot, preferen
                     {slotAction("save")}
                     {slotAction("load")}
                     <ActionButton glyph="↺" label="Reset" data-presentation-action="reset" focusGroup="presentation-actions" disabled={!running || state.busy} onClick={() => session.reset("soft")} />
+                    <div className="presentation-slot" data-presentation-size>
+                        <ActionButton glyph="▭" label="Size" focusGroup="presentation-actions" data-presentation-action="size" focusLeft={() => changeSize(-1)} focusRight={() => changeSize(1)} onClick={() => changeSize(1)} />
+                        <Selector id="presentation-size" group="presentation-actions" label="Size" values={SIZES.map(sizeName)} value={sizeName(preferences.getGlobal().size)} onChange={(value) => applySize(value.toLowerCase() as LocalSize)} />
+                    </div>
                     <ActionButton glyph="⚙" label="Controllers" trailing={<small>{padStatus}</small>} data-presentation-action="controllers" focusGroup="presentation-actions" onClick={() => session.openWindow("controllers")} />
                     {state.touchDevice ? <ActionButton glyph="🕹" label="Controller" trailing={<small>{preferences.getGlobal().general.presentationController ? "on · shows on the TV" : "off"}</small>} data-presentation-action="controller" aria-pressed={preferences.getGlobal().general.presentationController} focusGroup="presentation-actions" onClick={() => {
                         const general = preferences.getGlobal().general;

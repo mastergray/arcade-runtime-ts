@@ -314,6 +314,16 @@ export class LibraryModel {
         return card === undefined ? 0 : this.pendingForCard(card).length;
     }
 
+    // True when the strict check failed only on PLD entries, which MAME itself runs without: the MAME file check
+    // policy (Settings › Storage, or the row's own switch) would make this game ready.
+    mamePolicyWouldPass(key: string): boolean {
+        const card = this.cards.get(key);
+        if (card?.metadata === null || card === undefined || card.report === null || card.report.status !== "incomplete" || this.strictness === "mame") return false;
+        const regionOf = new Map(card.metadata.roms.map((rom) => [`${rom.archive.toLowerCase()}/${rom.name.toLowerCase()}`, rom.region ?? ""]));
+        const failures = card.report.files.filter((file) => file.status !== "ok" && card.metadata!.roms.some((rom) => !rom.optional && rom.name.toLowerCase() === file.name.toLowerCase() && rom.archive.toLowerCase() === file.archive.toLowerCase()));
+        return failures.length > 0 && failures.every((file) => (regionOf.get(`${file.archive.toLowerCase()}/${file.name.toLowerCase()}`) ?? "").toLowerCase().endsWith("plds"));
+    }
+
     verdict(key: string): string {
         const card = this.cards.get(key);
         if (card === undefined) return "Not a game";

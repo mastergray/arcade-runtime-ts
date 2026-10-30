@@ -251,6 +251,13 @@ const cases: TestCase[] = [{
             return browser.__arcadePresentationTest.pause === 2 && browser.__arcadePresentationTest.resume === 1
                 && browser.__arcadeLocalCabinet.player.input.suspended;
         }), P.equals(true))
+        .interact("the Size picker changes the display scaling from the window", async ({ page }) => {
+            await page.locator('#presentation-size').focus();
+            await page.keyboard.press('ArrowRight');
+            await page.waitForFunction(() => (window as unknown as TestWindow).__arcadeLocalCabinet.player.display.scaling === 'stretch');
+            await page.keyboard.press('ArrowLeft');
+            await page.waitForFunction(() => (window as unknown as TestWindow).__arcadeLocalCabinet.player.display.scaling === 'fit');
+        })
         .interact("slot arrows and A save slot 2, then load that same slot", async ({ page }) => {
             await page.locator('[data-presentation-action="save"]').focus();
             await pressPad(page, [15]);

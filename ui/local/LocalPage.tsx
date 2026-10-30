@@ -263,9 +263,16 @@ function LocalWorkspace({ models }: { readonly models: LocalModels }) {
         else if (openRows.size > 0) setOpenRows(new Set());
     };
 
+    const useMamePolicy = (): void => {
+        const global = models.preferences.getGlobal();
+        models.preferences.updateGlobal({ storage: { ...global.storage, strictness: "mame" } });
+        refreshPreferences();
+        if (session !== null) void session.applyPreferences(); else void models.library.setStrictness("mame");
+    };
     const games = <GamesColumn
         library={models.library}
         snapshot={library}
+        onMamePolicy={useMamePolicy}
         activeKey={sessionState.activeKey}
         openRows={openRows}
         onToggle={(key) => {
