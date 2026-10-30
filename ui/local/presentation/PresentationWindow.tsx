@@ -85,11 +85,6 @@ export function PresentationWindow({ session, state, library, snapshot, preferen
                         <Selector id="presentation-size" group="presentation-actions" label="Size" values={SIZES.map(sizeName)} value={sizeName(preferences.getGlobal().size)} onChange={(value) => applySize(value.toLowerCase() as LocalSize)} />
                     </div>
                     <ActionButton glyph="⚙" label="Controllers" trailing={<small>{padStatus}</small>} data-presentation-action="controllers" focusGroup="presentation-actions" onClick={() => session.openWindow("controllers")} />
-                    {state.touchDevice ? <ActionButton glyph="🕹" label="Controller" trailing={<small>{preferences.getGlobal().general.presentationController ? "on · shows on the TV" : "off"}</small>} data-presentation-action="controller" aria-pressed={preferences.getGlobal().general.presentationController} focusGroup="presentation-actions" onClick={() => {
-                        const general = preferences.getGlobal().general;
-                        preferences.updateGlobal({ general: { ...general, presentationController: !general.presentationController } });
-                        onPreferences();
-                    }} /> : null}
                     <div className="presentation-mode-switch" data-mode-switch="local"><ActionButton glyph="▣" label="Play mode" data-presentation-action="play-mode" focusGroup="presentation-actions" onClick={() => { session.leavePresentation(); onPreferences(); }} /></div>
                 </nav>
                 <section className="presentation-content" aria-label={state.windowView === "games" ? "Games" : state.windowView === "controllers" ? "Controllers" : "Current game"}>

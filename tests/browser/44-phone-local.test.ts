@@ -418,14 +418,10 @@ const cases: TestCase[] = [{
             await menu(page, 'view');
             await tap(page, '[data-phone-menu-item="presentation"]');
             await page.waitForSelector('[data-mode="presentation"]');
-            if (await page.locator('[data-mode="presentation"] [data-phone-controller]').count() !== 0) throw new Error('The presentation controller is on by default');
+            if (await page.locator('[data-mode="presentation"] [data-phone-controller], [data-mode="presentation"] [data-phone-bar]').count() !== 0) throw new Error('Presentation mode showed phone chrome');
             await twoFingerTap(page);
             await page.waitForSelector('[data-presentation-window]');
-            await tap(page, '[data-presentation-action="controller"]');
-            await page.waitForSelector('[data-mode="presentation"] [data-phone-controller]');
-            if (await page.locator('[data-mode="presentation"] [data-phone-bar]').count() !== 0) throw new Error('The presentation controller brought the bar');
-            await tap(page, '[data-presentation-action="controller"]');
-            await page.waitForSelector('[data-mode="presentation"] [data-phone-controller]', { state: 'detached' });
+            if (await page.locator('[data-presentation-action="controller"]').count() !== 0) throw new Error('Presentation mode offered an on-screen controller');
         })
         .assertPage("phone presentation reduces the card and attempts fullscreen on the page root", (page) => page.evaluate(() => {
             const state = (window as unknown as TestWindow).__arcadePhoneTest;

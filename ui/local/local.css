@@ -114,12 +114,6 @@
 [data-mode="presentation"] .local-layout { display: block; padding: 0; }
 [data-mode="presentation"] .play-region { block-size: 100%; grid-template-rows: minmax(0, 1fr); }
 [data-mode="presentation"] .play-surface { grid-template-rows: minmax(0, 1fr); }
-/* The on-screen controller in presentation mode on a phone (off by default): the same panels as the local phone page, no bar. */
-[data-layout="phone-landscape"][data-mode="presentation"] .play-region[data-controller-visible="true"] { position: relative; grid-template: "directions game buttons" minmax(0, 1fr) / minmax(148px, 20%) minmax(0, 1fr) minmax(148px, 20%); }
-[data-layout="phone-landscape"][data-mode="presentation"] .play-region[data-controller-visible="true"] .play-surface { grid-area: game; }
-[data-layout="phone-portrait"][data-mode="presentation"] .play-region[data-controller-visible="true"] { grid-template: "game" minmax(0, 1fr) "switches" auto "controller" auto / minmax(0, 1fr); }
-[data-layout="phone-portrait"][data-mode="presentation"] .play-region[data-controller-visible="true"] .play-surface { grid-area: game; }
-[data-mode="presentation"] .phone-controller, [data-mode="presentation"] .phone-switches { background: var(--face); }
 [data-mode="presentation"] .canvas-frame { border: 0; box-shadow: none; }
 .presentation-overlay { position: absolute; inset: 0; padding: var(--role-desk-margin); background: var(--desk); z-index: var(--z-veil); }
 .local-page { position: relative; }
