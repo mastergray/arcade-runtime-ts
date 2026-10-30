@@ -10,7 +10,12 @@ packages, copies, hosts or links to ROMs. A page composes the runtime, obtains
 ROM zips from its own user, and is responsible for what it loads.
 
 The runtime owns the pinned MAME-to-WebAssembly family builds, video, audio,
-input, saves and lifecycle.
+input, saves and lifecycle. On top of it the repository carries a player's
+page built from a small React kit (`ui/`): a desktop library with Settings
+and Controls dialogs, a phone layout with an on-screen controller, and a
+presentation mode that puts the game fullscreen on a mirrored TV with a
+pad-driven window over it. The page is the reference consumer; the
+developer harness (`harness/`) is the baseline it is tested against.
 
 ## Supported families
 
@@ -45,6 +50,8 @@ exactly which archive and file a set is missing.
 | `nintendo-classic` | Nintendo Z80 board (`dkong.c`; 8035 sound, NES APU, discrete) | measured |
 | `leland` | Leland twin-Z80 board with the 80186 sound CPU (`leland.c`) | measured |
 | `gottlieb` | Gottlieb 8088 board with the rev 1 sound board (`gottlieb.c`) | measured |
+| `nintendo-vs` | Nintendo VS. System (`vsnes.c`; 2A03, PPU, RP5H01) | measured |
+| `capcom-mitchell` | Capcom/Mitchell board (`mitchell.c`; Kabuki, OKI, YM2413, 93C46) | measured |
 
 The `neogeo` and `cps2` builds link a 512 MiB fixed heap because their largest sets need more than 256 MiB once loaded and decoded; the other families link 256 MiB. A browser must be able to reserve that much for the tab.
 
@@ -56,13 +63,12 @@ for v1.0.0 because no lawful set was available locally.
 
 ## Status
 
-Implementation stage. M1 (bridge, adapter, display, preload harness) closed
-on 2026-10-20 with a Neo Geo title running at its native refresh on 60 and
-120 Hz cadences from a clean-checkout build; the family build matrix (M2) is
-in progress. The M0 feasibility probe is inherited complete from the parent
-project: direct MAME 0.161 source, built with a
-pinned Emscripten 1.38.31 toolchain, is the implementation path, and the
-probe evidence lives under `docs/probes/mame0161/`.
+Private, version 0.0.0; the 1.0.0 release is a separate decision. As of
+2026-10-29 the runtime, 26 family builds, the desktop page with its dialogs,
+presentation mode and the phone layouts are merged and hand-tested; the
+remaining work is on the roadmap. The implementation path is direct MAME
+0.161 source built with a pinned Emscripten 1.38.31 toolchain, inherited
+from the parent project's M0 probe (`docs/probes/mame0161/`).
 
 See the [roadmap](docs/ROADMAP.md) for current status and the
 [implementation spec](docs/arcade-runtime-spec.md) for the
@@ -88,17 +94,34 @@ decision are recorded in the [release procedure](docs/release.md).
 
 ## Development
 
-The scaffold requires Node.js 22.13 or newer and npm:
+Node.js 22.13 or newer and npm:
 
 ```sh
 npm install
-npm run check
-npm test
-npm run build
+npm run check          # typecheck: library, UI, tests
+npm test               # the spec suite (Node, no browser)
+npm run build          # every family build (hours; needs the pinned emsdk under res/emsdk)
+node --import tsx scripts/build-mame.ts <family> --jobs 8   # one family
+npm run build:ui       # the page and the kit gallery into dist/ui
+npm run test:browser   # the browser suite (headless Chromium)
 ```
 
-The package currently exposes an intentionally empty public module. Runtime
-exports begin with M1.
+The browser suite runs its synthetic cases without any game content. The
+production cases run only when a private preload config is named:
+`ARCADE_PRELOAD_CONFIG` for a digital board and
+`ARCADE_ANALOG_PRELOAD_CONFIG` for a board with an analogue stick, both
+ignored files under `res/`.
+
+The dev server serves the harness, the page and the family builds:
+
+```sh
+node --import tsx scripts/serve-harness.ts --host 0.0.0.0 --port 8787 [--preload res/<config>.json] [--tls .cache/tls]
+```
+
+Routes: `/` the harness, `/ui/local` the page, `/ui/gallery` the kit. It
+listens on the LAN so a phone on the same network can open the page;
+`--tls` serves https with a self-signed certificate written on first use, for
+browsers that want a secure context. The ROM store needs no secure context.
 
 ## Repository policy
 
@@ -111,8 +134,10 @@ the developer harness, tests, caches and every locally built family artifact;
 no prebuilt MAME artifact, emulator notice bundle or game content is
 distributed through npm.
 
-The harness is a local development tool, not a deployment. It is never hosted
-publicly with ROMs, BIOS or sample content, and private preload configuration
-is never committed or attached to a release. A consumer-hosted page obtains
+The harness and the page are local development tools, not deployments. They
+are never hosted publicly with ROMs, BIOS or sample content, and private
+preload configuration is never committed or attached to a release. Tracked
+files name boards by MAME driver file and set names only where a test or a
+machine list needs them; game titles stay in the ignored `res/` files. A consumer-hosted page obtains
 lawful ROM files from its own user at run time and is responsible for what it
 loads.
