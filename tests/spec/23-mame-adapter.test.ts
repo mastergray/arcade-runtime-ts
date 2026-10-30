@@ -722,6 +722,20 @@ const testFile: TestFile = {
                 .start(undefined),
         },
         {
+            label: "a soft reset while paused resumes natively for two frames and pauses again",
+            run: () => CTGTest.init("MAME paused reset")
+                .stage("reset while paused", async () => {
+                    const module = new FakeMameModule();
+                    const { session } = await startAndFrame(module);
+                    session.pause();
+                    const before = { runs: module.runCalls.length, pause: module.pauseCalls, resume: module.resumeCalls, resets: module.resetCalls };
+                    session.reset("soft");
+                    return { runs: module.runCalls.slice(before.runs), pause: module.pauseCalls - before.pause, resume: module.resumeCalls - before.resume, resets: module.resetCalls - before.resets };
+                })
+                .assert("one native resume, two frames, one pause around the reset", (state) => state.subject, P.equals<unknown>({ runs: [2], pause: 1, resume: 1, resets: 1 }))
+                .start(undefined),
+        },
+        {
             label: "a state operation while paused resumes natively for one frame and pauses again",
             run: () => CTGTest.init("MAME paused state service")
                 .stage("save while paused", async () => {

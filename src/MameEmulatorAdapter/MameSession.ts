@@ -384,6 +384,7 @@ export default class MameSession implements ArcadeSession, MameWebCallbacks {
             data: kind,
         });
         this._webReset(0);
+        if (this._paused) this.serviceWhilePaused(2);   // The reset lands on the next timeslice; show its first frame while staying paused
     }
 
     // INSTANCE :: STRING -> PROMISE(VOID)
@@ -570,13 +571,14 @@ export default class MameSession implements ArcadeSession, MameWebCallbacks {
         if (!this._destroyed) this._schedulerHandle = this._scheduler.request(() => this.schedulerTick());
     }
 
-    // PRIVATE :: VOID -> VOID
-    // MAME services a scheduled state operation only inside a frame advance, and web_run_frames declines while the
-    // machine is paused, so a paused session resumes natively for exactly one frame and pauses again. The session
-    // stays paused from the page's point of view; the machine advances one frame, which a save or load needs anyway.
-    private serviceStateWhilePaused(): void {
+    // PRIVATE :: NUMBER -> VOID
+    // MAME services a scheduled state operation or a soft reset only inside a frame advance, and web_run_frames
+    // declines while the machine is paused, so a paused session resumes natively for a few frames and pauses again.
+    // The session stays paused from the page's point of view; the machine advances those frames, which a save, a
+    // load or a reset needs anyway, and the display shows the result.
+    private serviceWhilePaused(frames: number): void {
         this._webResume();
-        try { this._runFrames(1); }
+        try { this._runFrames(frames); }
         finally { this._webPause(); }
     }
 
@@ -594,7 +596,7 @@ export default class MameSession implements ArcadeSession, MameWebCallbacks {
         try {
             if (operation === "save") this._webSaveState(slot);
             else this._webLoadState(slot);
-            if (this._paused) this.serviceStateWhilePaused();
+            if (this._paused) this.serviceWhilePaused(1);
         } catch (error) {
             this._pendingState = null;
             return Promise.reject(new ArcadeRuntimeError({

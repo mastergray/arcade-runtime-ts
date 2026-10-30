@@ -724,6 +724,8 @@ the machine is advanced only by `web_run_frames`.
 | ------ | --------- | ---- |
 | `web_run_frames` | `(count: i32) → i32` | Advances the device scheduler until `count` emulated screen frames have elapsed, or fewer if exit became pending; services at most one pending scheduled state operation at the between-timeslice boundary before the first frame. Returns frames actually run. A no-op returning 0 while paused. |
 | `web_pump` | `() → void` | Runs the video/OSD boundary once without advancing the scheduler (used while paused so the last frame can be redrawn). |
+
+A paused session still honours a save, a load or a soft reset: `MameSession` resumes natively, advances one frame for a state operation or two for a reset so MAME services it, and pauses again, so the page stays paused and the display shows the result (2026-10-26 and 2026-10-30).
 | `web_set_control` | `(pad: i32, item: i32, pressed: i32) → void` | Writes virtual device state. `pad` is 0–3; `item` is the §4.4 row order: 0–3 hat up/down/left/right, 4–9 buttons 1–6, 10 coin, 11 start, 12 select, 13 service, 14 test, 15 tilt, 16–26 the M11 stick and pedal items, 27–28 volume up/down, 29–42 operator keys (§4.2). |
 | `web_set_axis` | `(pad: i32, axis: i32, value: f32) → void` | Writes a virtual-pad axis (M11); `axis` is the §4.2 axis index 0–6, absolute values are clamped to [−1, 1], relative values are pixel deltas accumulated until the next sample. |
 | `web_pause` / `web_resume` | `() → void` | `machine().pause()` / `resume()`. |
