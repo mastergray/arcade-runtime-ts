@@ -41,7 +41,7 @@ exactly which archive and file a set is missing.
 | `seta-2` | Seta 2 board (`seta2.c`; TMP68301 with X1-010 sound) | measured |
 | `namco-nb` | Namco NB-1 and NB-2 (`namconb1.c`; 68EC020 with the C75 sound MCU and C352) | builds; below the F6 gate on desktop (0.82–0.92) |
 | `midway-mcr` | Bally/Midway MCR-1/2/3, MCR-68k and the Williams 6809 board (`williams.c`) | measured |
-| `konami-16` | Konami 68000 boards (`tmnt.c`, `simpsons.c`, `xmen.c`, `gijoe.c`, `mystwarr.c`, `spy.c` hardware) | measured |
+| `konami-16` | Konami 68000 boards (`tmnt.c`, `simpsons.c`, `xmen.c`, `gijoe.c`, `mystwarr.c`, `spy.c` and `gradius3.c` hardware) | measured |
 | `atari-classic` | Atari vector boards (`bzone.c`, `tempest.c`), `rampart.c` and the 6502 `centiped.c` board | measured |
 | `misc-16` | Data East (`dec0.c`, `karnov.c`), Seibu (`raiden.c`, `raiden2.c`, `r2dx_v33.c`), Toaplan `snowbros.c`, Technos `shadfrce.c`, Rare `btoads.c` and Data East `cninja.c` boards (`btoads.c` needs the user's `bsmt2000.zip` device ROM) | measured |
 | `namco-s1` | Namco System 1 and System 86 | builds; evidence deferred |

@@ -139,3 +139,11 @@ The integrator-owned specification remains stale: §4.6's `konami-16` row
 should add `drivers/gradius3.c` and `video/gradius3.c`, update the family count
 to 101, describe the dual-M68000 board, and record the F6 retention decision.
 This package did not edit the spec because it is outside W33's write set.
+
+## Integration (2026-10-30, on main)
+
+Merged as `bca07c7`; the family rebuilt on main to the same build id. Gate
+with the board's private preload: browser 40 passed, 0 failed, 25 skipped by
+design (M1 acceptance ratios 1.0012 and 1.0007); family measurement F4 556 ms,
+F5 cadences within 0.27 %, F6 1.0000 over 60 s. Recorded in the family probe
+record. Spec 618.

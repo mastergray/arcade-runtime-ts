@@ -88,7 +88,7 @@ the existing whole-family maximum.
 
 ## F4 — What is the slowest Chromium time from `callMain` to first frame?
 
-Pending integrator Chromium run for the parent machine from `gradius3.c`.
+Measured 2026-10-30 by the integrator on the desktop reference host with the `gradius3.c` parent from a private preload config: 556 ms from `callMain` to the first frame (test 33, `FAMILY-MEASURE`).
 This agent cannot run Chromium. Measure from immediately before
 `adapter.start()`/`callMain()` to the first valid frame and separately confirm
 the first non-black frame. The earlier six-driver family evidence remains
@@ -97,7 +97,7 @@ the added board.
 
 ## F5 — Are native refresh and upright geometry correct?
 
-Pending integrator Chromium run for the parent machine from `gradius3.c`.
+Measured 2026-10-30: 320 × 224 horizontal at 60.000 Hz, frames valid; cadences 60 Hz → 60.08 fps (0.14 %), 90 Hz → 60.16 fps (0.27 %), 120 Hz → 60.02 fps (0.03 %), 144 Hz → 59.98 fps (−0.03 %). The M1 acceptance (test 30) also passed on this machine at ratios 1.0012 and 1.0007.
 Source metadata describes a 320×224 horizontal display at 60 Hz; confirm
 native-size frames and non-blank output, then measure 60, 90, 120 and 144 Hz
 scheduler cadences against native refresh. The earlier six-driver evidence
@@ -105,7 +105,7 @@ held native geometry with a worst measured cadence error of 0.76%.
 
 ## F6 — Does the heaviest title sustain full speed?
 
-Pending integrator Chromium run for the parent machine from `gradius3.c`.
+Measured 2026-10-30: 60-second sustained ratio 1.0000 on the desktop reference host. The board ships.
 After warm-up, measure exactly 60 seconds and report emulated seconds divided
 by wall seconds on desktop; the 4× CPU-throttled proxy remains informational.
 The existing `mystwarr.c`-class whole-family result held 1.0000 on a quiet
@@ -128,5 +128,4 @@ result.
 | 288×224 at 59.186 Hz (quiet, earlier heaviest board) | 740 ms | 60 → 59.33 (+0.25%), 90 → 59.18 (−0.01%), 120 → 59.26 (+0.13%), 144 → 59.25 (+0.11%) | 1.0000 |
 | 304×224 at 60.000 Hz (loaded) | 521 ms | 60 → 60.15 (+0.25%), 90 → 59.95 (−0.08%), 120 → 60.12 (+0.21%), 144 → 59.99 (−0.02%) | 0.9990 |
 
-These measurements do not cover the added `gradius3.c` parent and therefore
-do not close W33's F4–F6 handoff.
+These measurements predate the `gradius3.c` parent, whose own F4–F6 above (2026-10-30) close W33's handoff.
