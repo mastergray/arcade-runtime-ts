@@ -313,6 +313,8 @@ export class SessionModel {
         if (cabinet === null) return;
         cabinet.player.reset(kind);
         // A soft reset keeps the session running; a hard one restarts it and the player's status events follow.
+        // A reset resumes a paused game (decided 2026-10-30): the user wants to play from the start, not look at it.
+        if (kind === "soft" && cabinet.player.status === "paused") { this.windowPausedCabinet = null; cabinet.player.resume(); }
         this.update({ message: kind === "soft" ? "Reset requested." : "Restart from power-on requested." });
     }
 

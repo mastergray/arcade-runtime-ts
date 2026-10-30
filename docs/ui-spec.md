@@ -361,7 +361,9 @@ Vocabulary, so the menu says what the runtime does:
 
 - **Reset** is the cabinet's reset button: MAME's soft reset, CPUs and
   devices restart, NVRAM and the loaded ROMs stay, no reload. The
-  shortcut runs this one.
+  shortcut runs this one. A reset resumes a paused game and, on the phone
+  Menu and the presentation window, closes the window (decided
+  2026-10-30).
 - **Restart from power-on** is the runtime's hard reset: the current
   state is saved to the overlay, the session exits and a fresh module
   starts from the cached ROMs and that overlay. NVRAM survives; it is

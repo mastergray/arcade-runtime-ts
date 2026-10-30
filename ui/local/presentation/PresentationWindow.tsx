@@ -79,7 +79,7 @@ export function PresentationWindow({ session, state, library, snapshot, preferen
                     <ActionButton glyph="▤" label="Games" trailing={<small>{snapshot.gamesFound}</small>} data-presentation-action="games" focusGroup="presentation-actions" onClick={() => session.openWindow("games")} />
                     {slotAction("save")}
                     {slotAction("load")}
-                    <ActionButton glyph="↺" label="Reset" data-presentation-action="reset" focusGroup="presentation-actions" disabled={!running || state.busy} onClick={() => session.reset("soft")} />
+                    <ActionButton glyph="↺" label="Reset" data-presentation-action="reset" focusGroup="presentation-actions" disabled={!running || state.busy} onClick={() => { session.reset("soft"); session.closeWindow(); }} />
                     <div className="presentation-slot" data-presentation-size>
                         <ActionButton glyph="▭" label="Size" focusGroup="presentation-actions" data-presentation-action="size" focusLeft={() => changeSize(-1)} focusRight={() => changeSize(1)} onClick={() => changeSize(1)} />
                         <Selector id="presentation-size" group="presentation-actions" label="Size" values={SIZES.map(sizeName)} value={sizeName(preferences.getGlobal().size)} onChange={(value) => applySize(value.toLowerCase() as LocalSize)} />

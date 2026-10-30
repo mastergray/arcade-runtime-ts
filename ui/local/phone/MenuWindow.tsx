@@ -35,7 +35,7 @@ export function MenuWindow(props: MenuWindowProps) {
                     <MenuListItem id="load-slot" label="Load state" small={saveReason ?? saved ?? "empty"} disabled={saveReason !== undefined || saved === undefined} onSelect={() => actions.loadSlot(props.selectedSlot)} />
                     <MenuListItem id="save-progress" label="Save progress" disabled={!props.running} onSelect={actions.saveChanges} />
                     <MenuListItem id="clear-saved-play" label="Clear saved play for this game…" disabled={!props.running} onSelect={close(actions.clearSavedPlay)} />
-                    <MenuListItem id="reset" label="Reset" disabled={!props.running} onSelect={actions.reset} />
+                    <MenuListItem id="reset" label="Reset" disabled={!props.running} onSelect={close(actions.reset)} />
                     <MenuListItem id="restart" label="Restart from power-on…" disabled={!props.running} onSelect={close(actions.restart)} />
                 </> : tab === "view" ? <>
                     <MenuListItem id="controller" label="Controller" small={props.controllerView ? "on" : "off"} onSelect={actions.controller} />
