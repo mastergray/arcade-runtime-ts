@@ -552,7 +552,10 @@ export class LibraryModel {
         const response = await this.fetch("/preload.json");
         if (response.status === 404) return null;
         if (!response.ok) throw new Error("The private preload settings could not be loaded.");
-        return await response.json() as LocalPreloadConfig;
+        // A deployment answers this probe with a literal null rather than a 404, which a shared host may serve slowly
+        // through its error document; both mean "no preload" (2026-10-31).
+        const value: unknown = await response.json();
+        return value === null ? null : value as LocalPreloadConfig;
     }
 
     private async buildMachineIndex(families: ReadonlyArray<string>): Promise<void> {
