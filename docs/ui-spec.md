@@ -277,6 +277,8 @@ column on the left, the play surface on the right with the controller
 view under it, and a menu bar on top. The developer harness's card
 details move into the games column as accordions.
 
+A deployment names the library: the page reads `<meta name="arcade-library-name">` from the HTML it is served in for every title bar, and the development page keeps "Arcade Library" (2026-10-30).
+
 ### 7.1 Games column
 
 - **Import** button at the top of the column, where the mockup had

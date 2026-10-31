@@ -7,6 +7,7 @@ import type { PreferenceStore } from "../../model/preferences.js";
 import type { SessionModel } from "../../model/session.js";
 import type { LibrarySnapshot, LocalSize, LocalSlot, SessionSnapshot } from "../../model/types.js";
 import { ControlsModal } from "../ControlsModal.js";
+import { libraryName } from "../libraryName.js";
 
 export interface PresentationWindowProps {
     readonly session: SessionModel;
@@ -72,7 +73,7 @@ export function PresentationWindow({ session, state, library, snapshot, preferen
     }, [state.windowView]);
 
     return <div ref={root} className="presentation-overlay" data-presentation-window data-presentation-view={state.windowView}>
-        <Window title="Arcade Library" secondary={`Presentation mode · ${running ? `${name} paused` : "no game"}`} className="presentation-window">
+        <Window title={libraryName()} secondary={`Presentation mode · ${running ? `${name} paused` : "no game"}`} className="presentation-window">
             <div className="presentation-columns">
                 <nav className="presentation-actions" aria-label="Presentation actions">
                     <ActionButton glyph="▶" label={playSelected ? "Play" : "Resume"} data-presentation-action="resume" focusId="presentation-resume" focusGroup="presentation-actions" disabled={state.busy || !running && !playSelected} onClick={activate} />

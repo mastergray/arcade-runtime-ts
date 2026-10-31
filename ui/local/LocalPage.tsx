@@ -9,6 +9,7 @@ import { SessionModel } from "../model/session.js";
 import type { LibrarySnapshot, LocalAdapterBoundary, LocalSlot, SessionSnapshot } from "../model/types.js";
 import { FileCheckModal } from "./FileCheckModal.js";
 import { GamesColumn } from "./GamesColumn.js";
+import { libraryName } from "./libraryName.js";
 import { ImportActions, ImportModal } from "./ImportModal.js";
 import { LogModal } from "./LogModal.js";
 import { LocalMenus, type LocalMenuActions } from "./menus.js";
@@ -301,7 +302,7 @@ function LocalWorkspace({ models }: { readonly models: LocalModels }) {
         acceptGamepad={presentation ? (pad) => session?.snapshot().windowOpen === true
             && !(preferences.controls.menuGesture[pad.id] ?? [10, 11]).every((button) => pad.buttons[button]?.pressed) : undefined}>
         <Desk>
-            <Window className="local-window" hideTitle={presentation || phone && sessionState.fullscreen} title={phone ? "Arcade Library" : `Arcade Library — ${titleGame}`} secondary={phone ? titleGame : "Play mode"} menu={presentation || phone ? undefined : menus} status={presentation || phone && (landscape || sessionState.fullscreen) ? undefined : status}>
+            <Window className="local-window" hideTitle={presentation || phone && sessionState.fullscreen} title={phone ? libraryName() : `${libraryName()} — ${titleGame}`} secondary={phone ? titleGame : "Play mode"} menu={presentation || phone ? undefined : menus} status={presentation || phone && (landscape || sessionState.fullscreen) ? undefined : status}>
                 <div className="local-layout">
                     {presentation || phone ? null : games}
                     <div className="play-region" data-region="play-and-controller" data-controller-visible={presentation ? false : controller}>
@@ -401,7 +402,7 @@ export function LocalPage() {
         })();
         return () => { cancelled = true; };
     }, []);
-    if (error !== null) return <Desk><Window title="Arcade Library — no game"><p data-local-error>{error}</p></Window></Desk>;
-    if (models === null) return <Desk><Window title="Arcade Library — no game"><p data-local-loading>Loading the arcade library…</p></Window></Desk>;
+    if (error !== null) return <Desk><Window title={`${libraryName()} — no game`}><p data-local-error>{error}</p></Window></Desk>;
+    if (models === null) return <Desk><Window title={`${libraryName()} — no game`}><p data-local-loading>Loading the arcade library…</p></Window></Desk>;
     return <LocalWorkspace models={models} />;
 }
