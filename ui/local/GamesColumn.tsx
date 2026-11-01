@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { Button, Dot, List, ListFoot, ListHead, type GameListRow, type GameStatus } from "../kit/index.js";
-import type { LibraryModel } from "../model/library.js";
+import { formatArchiveSize, type LibraryModel } from "../model/library.js";
 import type { LibraryCard, LibrarySnapshot } from "../model/types.js";
 
 export interface GamesColumnProps {
@@ -55,7 +55,8 @@ function CardDetail({ card, library, onImport, onFileCheck, onRemove, onMamePoli
         <ul className="archive-detail-list">
             {metadata.archives.map((archive) => {
                 const state = archiveState(library, card, archive.name);
-                return <li data-archive={archive.name} key={archive.name}><Dot label={`${archive.name} — ${state.label}`} tone={state.tone} /></li>;
+                const size = library.storedSize(archive.name);
+                return <li data-archive={archive.name} key={archive.name}><Dot label={`${archive.name} — ${state.label}${size === null ? "" : ` · ${formatArchiveSize(size)}`}`} tone={state.tone} /></li>;
             })}
         </ul>
         <p className="game-verdict">{library.verdict(card.key) === "ready" ? "Ready to play." : card.checkError ?? "Add the required archives, then check them."}</p>

@@ -301,6 +301,9 @@ export class LibraryModel {
             .map((card) => card.metadata?.description ?? card.indexed.machine);
     }
 
+    // The stored archive's size in bytes, or null when it is not in the browser's store.
+    storedSize(name: string): number | null { return this.storedEntries.get(archiveKey(name))?.size ?? null; }
+
     archiveAvailability(name: string): "pending" | "preloaded" | "stored" | "missing" {
         const key = archiveKey(name);
         if (this.pendingFiles.has(key)) return "pending";

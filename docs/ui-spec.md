@@ -296,6 +296,8 @@ A deployment names the library: the page reads `<meta name="arcade-library-name"
   table says so and points at Stored files for everything stored in the
   browser. Second tab Stored
   files (§7.4). No search or filter in 1.0: the column scrolls.
+- Each archive line of an open row ends with the stored file's size
+  (2026-11-01), the same figure as the Stored files tab.
 - A row whose strict check failed only on PLD files says so in its
   details and offers **Use the MAME file check** (2026-10-29), which sets
   the file check policy to MAME (the same setting as Settings › Storage)
