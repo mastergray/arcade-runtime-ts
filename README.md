@@ -134,9 +134,14 @@ the developer harness, tests, caches and every locally built family artifact;
 no prebuilt MAME artifact, emulator notice bundle or game content is
 distributed through npm.
 
-The harness and the page are local development tools, not deployments. They
-are never hosted publicly with ROMs, BIOS or sample content, and private
-preload configuration is never committed or attached to a release. Tracked
+The harness is a local development tool, not a deployment, and this
+repository ships no deployment of its own. The page is deployed only by a
+consumer project (arcade.mastergray.com, in its own repository) that serves
+the page bundle, the family builds with their licence notices and the
+modified emulator source, and no game content: its visitors supply their own
+archives in their own browsers. Neither the harness nor any deployment is
+ever hosted with ROMs, BIOS or sample content, and private preload
+configuration is never committed, deployed or attached to a release. Tracked
 files name boards by MAME driver file and set names only where a test or a
 machine list needs them; game titles stay in the ignored `res/` files. A consumer-hosted page obtains
 lawful ROM files from its own user at run time and is responsible for what it
